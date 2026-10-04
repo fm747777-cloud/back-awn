@@ -1,0 +1,8 @@
+{
+  "name": "AWN Administrative Platform",
+  "description": "AWN (عَوْن) enterprise administrative platform for service management, workflows, and operations.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

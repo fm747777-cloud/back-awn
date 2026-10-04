@@ -1,0 +1,306 @@
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { serviceApi } from "../../api/api"; // اضبط المسار حسب مشروعك
+import { servicePortalSchema, type ServicePortalFormValues } from "../../schemas/serviceSchema";
+
+interface AddServicePortalModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
+    isOpen,
+    onClose,
+}) => {
+    const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+    const queryClient = useQueryClient();
+
+    const {
+        register,
+        handleSubmit,
+        trigger,
+        reset,
+        formState: { errors },
+    } = useForm<ServicePortalFormValues>({
+        resolver: zodResolver(servicePortalSchema),
+        mode: "onTouched",
+    });
+
+    const mutation = useMutation({
+        mutationFn: serviceApi.createServicePortal,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["servicePortals"] });
+            handleClose();
+        },
+    });
+
+    const handleClose = () => {
+        reset();
+        setCurrentStep(1);
+        onClose();
+    };
+
+    // التحقق من حقول الخطوة الأولى فقط عند الضغط على Next
+    const handleNext = async () => {
+        const isStepOneValid = await trigger(["name", "url", "description"]);
+        if (isStepOneValid) {
+            setCurrentStep(2);
+        }
+    };
+
+    const handleBack = () => {
+        setCurrentStep(1);
+    };
+
+    const onSubmit = (data: ServicePortalFormValues) => {
+        console.log('data', data);
+
+        mutation.mutate(data);
+    };
+
+    return (
+        <div
+            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${isOpen ? "pointer-events-auto" : "pointer-events-none"
+                }`}
+        >
+            {/* Overlay Backdrop */}
+            <div
+                className={`fixed inset-0 duration-300 ${isOpen ? "opacity-100" : "opacity-0"
+                    }`}
+                onClick={handleClose}
+            />
+
+            {/* Drawer Panel */}
+            <div
+                className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-slate-50 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"
+                    }`}
+            >
+                {/* Header */}
+                <div className="flex justify-between items-center px-8 py-5 bg-white border-b border-slate-100">
+                    <h2 className="text-xl font-semibold text-slate-800">
+                        Add Service Portal
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {/* Content Body */}
+                <div className="p-8 overflow-y-auto flex-1 space-y-6">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                        Define and create a new portal tag to categorize and streamline
+                        portal organization for better management.
+                    </p>
+
+                    {/* Stepper Progress Bar */}
+                    <div className="relative flex items-center justify-between max-w-md mx-auto py-4">
+                        {/* Dashed Connecting Line */}
+                        <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 border-t-2 border-dashed border-slate-300 -z-0" />
+
+                        {/* Step 1 Indicator */}
+                        <div className="relative z-10 flex flex-col items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-[#0d7a78] text-white flex items-center justify-center transition-colors">
+                                <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2.5"
+                                        d="5 13l4 4L19 7"
+                                    />
+                                </svg>
+                            </div>
+                            <span
+                                className={`text-xs font-semibold ${currentStep === 1 ? "text-[#0d7a78]" : "text-slate-400"
+                                    }`}
+                            >
+                                Portal Details
+                            </span>
+                        </div>
+
+                        {/* Step 2 Indicator */}
+                        <div className="relative z-10 flex flex-col items-center gap-2">
+                            <div
+                                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-medium text-sm transition-colors ${currentStep === 2
+                                    ? "border-[#0d7a78] text-[#0d7a78] bg-white border-dashed"
+                                    : "border-slate-300 text-slate-400 bg-white border-dashed"
+                                    }`}
+                            >
+                                2
+                            </div>
+                            <span
+                                className={`text-xs font-semibold ${currentStep === 2 ? "text-[#0d7a78]" : "text-slate-300"
+                                    }`}
+                            >
+                                Portal Contact Details
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Form Card Container */}
+                    <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
+                        <form id="portal-form" onSubmit={handleSubmit(onSubmit)}>
+                            {/* STEP 1: Portal Details */}
+                            <div className={'currentStep === 1 ? "space-y-5" : "hidden"'}>
+                                <h3 className="text-base font-bold text-slate-800 mb-4">
+                                    Portal Details
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Portal Name */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Portal Name <span className="text-teal-600">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Portal Name"
+                                            {...register("name")}
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                        />
+                                        {errors.name && (
+                                            <span className="text-[10px] text-red-500 mt-1 block">
+                                                {errors.name.message}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Portal URL */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Portal URL <span className="text-teal-600">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Portal URL"
+                                            {...register("url")}
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                        />
+                                        {errors.url && (
+                                            <span className="text-[10px] text-red-500 mt-1 block">
+                                                {errors.url.message}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Portal Description */}
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                        Portal Description
+                                    </label>
+                                    <textarea
+                                        rows={4}
+                                        placeholder="Enter Portal Description"
+                                        {...register("description")}
+                                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
+                                    />
+                                    {errors.description && (
+                                        <span className="text-[10px] text-red-500 mt-1 block">
+                                            {errors.description.message}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* STEP 2: Portal Contact Details */}
+                            <div className={currentStep === 2 ? "space-y-5" : "hidden"}>
+                                <h3 className="text-base font-bold text-slate-800 mb-4">
+                                    Portal Contact Details
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Contact Number */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Contact Number <span className="text-teal-600">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Contact Number"
+                                            {...register("contact_number", { valueAsNumber: true })}
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                        />
+                                        {errors.contact_number && (
+                                            <span className="text-[10px] text-red-500 mt-1 block">
+                                                {String(errors.contact_number.message || '')}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Email Address */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                                            Email Address <span className="text-teal-600">*</span>
+                                        </label>
+                                        <input
+                                            type="email"
+                                            placeholder="Enter Email Address"
+                                            {...register("email")}
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                        />
+                                        {errors.email && (
+                                            <span className="text-[10px] text-red-500 mt-1 block">
+                                                {errors.email.message}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex justify-end items-center gap-3 px-8 py-4 border-t border-slate-100 bg-white">
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
+                    >
+                        Cancel
+                    </button>
+
+                    {currentStep === 2 && (
+                        <button
+                            type="button"
+                            onClick={handleBack}
+                            className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+                        >
+                            Back
+                        </button>
+                    )}
+
+                    {currentStep === 1 ? (
+                        <button
+                            type="button"
+                            onClick={handleNext}
+                            className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+                        >
+                            Next
+                        </button>
+                    ) : (
+                        <button
+                            type="submit"
+                            form="portal-form"
+                            disabled={mutation.isPending}
+                            className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        >
+                            {mutation.isPending ? "Submitting..." : "Submit"}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};

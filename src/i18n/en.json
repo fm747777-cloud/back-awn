@@ -1,0 +1,41 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "services": "Services",
+    "search": "Search",
+    "export": "Export",
+    "addNew": "Add New",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "actions": "Actions",
+    "welcome": "Welcome",
+    "logout": "Logout",
+    "myProfile": "My Profile",
+    "accountSettings": "Account Settings",
+    "next": "Next",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "noRecords": "No records found"
+  },
+  "services": {
+    "title": "Service Management",
+    "availableServices": "Available Services",
+    "availableServiceGroups": "Available Service Groups",
+    "availableServicePackages": "Available Service Packages",
+    "availableServiceCategories": "Available Service Categories",
+    "serviceCode": "Service Code",
+    "serviceTitle": "Service Title",
+    "servicePortal": "Service Portal",
+    "serviceType": "Service Type",
+    "serviceCategory": "Service Category",
+    "serviceTag": "Service Tag",
+    "processingTime": "Processing Time",
+    "frequency": "Frequency",
+    "serviceFee": "Service Fee",
+    "createDate": "Create Date",
+    "createdBy": "Created By"
+  }
+}

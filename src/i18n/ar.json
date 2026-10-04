@@ -1,0 +1,41 @@
+{
+  "common": {
+    "dashboard": "لوحة التحكم",
+    "services": "الخدمات",
+    "search": "بحث",
+    "export": "تصدير",
+    "addNew": "إضافة جديد",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "actions": "إجراءات",
+    "welcome": "مرحباً",
+    "logout": "تسجيل الخروج",
+    "myProfile": "الملف الشخصي",
+    "accountSettings": "إعدادات الحساب",
+    "next": "التالي",
+    "back": "السابق",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جاري التحميل...",
+    "noRecords": "لا توجد سجلات"
+  },
+  "services": {
+    "title": "إدارة الخدمات",
+    "availableServices": "الخدمات المتاحة",
+    "availableServiceGroups": "مجموعات الخدمات",
+    "availableServicePackages": "باقات الخدمات",
+    "availableServiceCategories": "تصنيفات الخدمات",
+    "serviceCode": "كود الخدمة",
+    "serviceTitle": "اسم الخدمة",
+    "servicePortal": "بوابة الخدمة",
+    "serviceType": "نوع الخدمة",
+    "serviceCategory": "تصنيف الخدمة",
+    "serviceTag": "وسم الخدمة",
+    "processingTime": "وقت المعالجة",
+    "frequency": "التكرار",
+    "serviceFee": "رسوم الخدمة",
+    "createDate": "تاريخ الإنشاء",
+    "createdBy": "تم الإنشاء بواسطة"
+  }
+}
