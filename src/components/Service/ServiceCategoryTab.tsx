@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { serviceApi } from "../../api/api";
 import { AddServiceCategoryModal, ServiceCategoryStatus } from "./AddServiceCategoryModal";
 import { DataTable } from "../DataTable";
+import { TableRowActions } from "../TableRowActions";
 
 export interface ServiceCategoryItem {
     id: string;
@@ -15,10 +17,12 @@ export interface ServiceCategoryItem {
 }
 
 export const ServiceCategoryTab: React.FC = () => {
+    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<ServiceCategoryItem | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ["serviceCategories", pageIndex, pageSize, searchTerm],
@@ -38,25 +42,31 @@ export const ServiceCategoryTab: React.FC = () => {
         setPageIndex(0);
     };
 
+    const handleDeleteCategory = async (category: ServiceCategoryItem) => {
+        await serviceApi.deleteServiceCategory(category.id);
+        queryClient.invalidateQueries({ queryKey: ["serviceCategories"] });
+        toast.success(`Service Category "${category.name}" deleted successfully`);
+    };
+
     const renderStatusBadge = (status: ServiceCategoryStatus) => {
         switch (status) {
             case ServiceCategoryStatus.ACTIVE:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
                         Active
                     </span>
                 );
             case ServiceCategoryStatus.INITIATED:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#8C6046]/10 text-[#8C6046] border border-[#8C6046]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8C6046]" />
                         Initiated
                     </span>
                 );
             case ServiceCategoryStatus.REJECTED:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                         Rejected
                     </span>
@@ -64,8 +74,8 @@ export const ServiceCategoryTab: React.FC = () => {
             case ServiceCategoryStatus.INACTIVE:
             default:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#595550]/10 text-[#595550] border border-[#595550]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
                         Inactive
                     </span>
                 );
@@ -81,7 +91,7 @@ export const ServiceCategoryTab: React.FC = () => {
                         type="checkbox"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
                 cell: ({ row }) => (
@@ -89,7 +99,7 @@ export const ServiceCategoryTab: React.FC = () => {
                         type="checkbox"
                         checked={row.getIsSelected()}
                         onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
             },
@@ -97,7 +107,7 @@ export const ServiceCategoryTab: React.FC = () => {
                 accessorKey: "tagCode",
                 header: "Category Code",
                 cell: (info) => (
-                    <span className="font-medium text-slate-800">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -106,7 +116,7 @@ export const ServiceCategoryTab: React.FC = () => {
                 accessorKey: "name",
                 header: "Category Name",
                 cell: (info) => (
-                    <span className="font-medium text-slate-700">
+                    <span className="font-medium text-[#0D0D0D]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -118,10 +128,10 @@ export const ServiceCategoryTab: React.FC = () => {
                     const creator = row.original.createdBy;
                     return creator ? (
                         <div>
-                            <div className="font-medium text-slate-800">{creator}</div>
+                            <div className="font-medium text-[#0D0D0D]">{creator}</div>
                         </div>
                     ) : (
-                        <span className="text-slate-400 italic">undefined</span>
+                        <span className="text-[#857E74] italic">undefined</span>
                     );
                 },
             },
@@ -129,7 +139,7 @@ export const ServiceCategoryTab: React.FC = () => {
                 accessorKey: "createdAt",
                 header: "Create Date",
                 cell: (info) => (
-                    <span className="text-slate-500">{info.getValue() as string}</span>
+                    <span className="text-[#6E6862]">{info.getValue() as string}</span>
                 ),
             },
             {
@@ -139,10 +149,17 @@ export const ServiceCategoryTab: React.FC = () => {
             },
             {
                 id: "actions",
-                header: () => <div className="text-right">•••</div>,
-                cell: () => (
-                    <div className="text-right text-slate-400 cursor-pointer hover:text-slate-600 font-bold">
-                        •••
+                header: () => <div className="text-right">Actions</div>,
+                cell: ({ row }) => (
+                    <div className="text-right">
+                        <TableRowActions
+                            recordName={row.original.name}
+                            onEdit={() => {
+                                setEditingCategory(row.original);
+                                setIsModalOpen(true);
+                            }}
+                            onDelete={() => handleDeleteCategory(row.original)}
+                        />
                     </div>
                 ),
             },
@@ -151,7 +168,7 @@ export const ServiceCategoryTab: React.FC = () => {
     );
 
     return (
-        <div className="p-6 bg-slate-100/60 min-h-screen">
+        <div className="space-y-4">
             <DataTable
                 columns={columns}
                 data={categoryList}
@@ -164,13 +181,21 @@ export const ServiceCategoryTab: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
                 onSearchChange={handleSearchChange}
-                onAddNew={() => setIsModalOpen(true)}
-                title="Add Service Category"
+                onAddNew={() => {
+                    setEditingCategory(null);
+                    setIsModalOpen(true);
+                }}
+                title="Service Categories"
+                addNewLabel="Add Category"
             />
 
             <AddServiceCategoryModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingCategory(null);
+                }}
+                initialData={editingCategory}
             />
         </div>
     );

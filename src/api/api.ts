@@ -489,8 +489,8 @@ export const serviceApi = {
         const tagObj = tags.find((t) => t.id === data.serviceTag_id);
 
         const newService = {
-            id: `srv-${Date.now()}`,
-            code: `SRV-${1000 + list.length + 1}`,
+            id: data.id || `srv-${Date.now()}`,
+            code: data.code || `SRV-${1000 + list.length + 1}`,
             title: data.service_title || 'New Service',
             description: data.service_description || '',
             process_description: data.process_description || '',
@@ -512,9 +512,40 @@ export const serviceApi = {
             status: 'Active' as const,
         };
 
-        const updated = [newService, ...list];
+        const existingIdx = data.id ? list.findIndex((s: any) => s.id === data.id) : -1;
+        let updated: any[];
+        let resultService: any;
+        if (existingIdx >= 0) {
+            resultService = {
+                ...list[existingIdx],
+                ...newService,
+                id: data.id,
+                code: list[existingIdx].code || newService.code,
+                createDate: list[existingIdx].createDate || newService.createDate,
+            };
+            updated = [...list];
+            updated[existingIdx] = resultService;
+        } else {
+            resultService = newService;
+            updated = [newService, ...list];
+        }
+
         setLocal('services', updated);
-        return newService;
+        return resultService;
+    },
+
+    deleteService: async (id: string) => {
+        if (import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service/${id}`);
+            } catch {
+                // Fallback
+            }
+        }
+        const list = getLocal('services', initialServices);
+        const updated = list.filter((s: any) => s.id !== id);
+        setLocal('services', updated);
+        return { success: true };
     },
 
     getServiceTags: async (data: any = {}) => {
@@ -560,6 +591,20 @@ export const serviceApi = {
         }
 
         const list = getLocal('tags', initialTags);
+        const existingIdx = data.id ? list.findIndex((t: any) => t.id === data.id) : -1;
+        if (existingIdx >= 0) {
+            const updatedTag = {
+                ...list[existingIdx],
+                name: data.name ?? list[existingIdx].name,
+                description: data.description ?? list[existingIdx].description,
+                status: data.status ?? list[existingIdx].status,
+            };
+            const updated = [...list];
+            updated[existingIdx] = updatedTag;
+            setLocal('tags', updated);
+            return updatedTag;
+        }
+
         const newTag = {
             id: `tag-${Date.now()}`,
             tagCode: `TAG-${String(list.length + 1).padStart(3, '0')}`,
@@ -572,6 +617,20 @@ export const serviceApi = {
         const updated = [newTag, ...list];
         setLocal('tags', updated);
         return newTag;
+    },
+
+    deleteServiceTag: async (id: string) => {
+        if (import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-tag/${id}`);
+            } catch {
+                // Fallback
+            }
+        }
+        const list = getLocal('tags', initialTags);
+        const updated = list.filter((t: any) => t.id !== id);
+        setLocal('tags', updated);
+        return { success: true };
     },
 
     getServicePortals: async (data: any = {}) => {
@@ -618,6 +677,22 @@ export const serviceApi = {
         }
 
         const list = getLocal('portals', initialPortals);
+        const existingIdx = data.id ? list.findIndex((p: any) => p.id === data.id) : -1;
+        if (existingIdx >= 0) {
+            const updatedPortal = {
+                ...list[existingIdx],
+                name: data.name ?? list[existingIdx].name,
+                url: data.url ?? list[existingIdx].url,
+                contact_number: data.contact_number !== undefined ? String(data.contact_number) : list[existingIdx].contact_number,
+                email: data.email ?? list[existingIdx].email,
+                description: data.description ?? list[existingIdx].description,
+            };
+            const updated = [...list];
+            updated[existingIdx] = updatedPortal;
+            setLocal('portals', updated);
+            return updatedPortal;
+        }
+
         const newPortal = {
             id: `prt-${Date.now()}`,
             tagCode: `PRT-${String(list.length + 1).padStart(3, '0')}`,
@@ -633,6 +708,20 @@ export const serviceApi = {
         const updated = [newPortal, ...list];
         setLocal('portals', updated);
         return newPortal;
+    },
+
+    deleteServicePortal: async (id: string) => {
+        if (import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-portal/${id}`);
+            } catch {
+                // Fallback
+            }
+        }
+        const list = getLocal('portals', initialPortals);
+        const updated = list.filter((p: any) => p.id !== id);
+        setLocal('portals', updated);
+        return { success: true };
     },
 
     getServiceCategories: async (data: any = {}) => {
@@ -678,6 +767,20 @@ export const serviceApi = {
         }
 
         const list = getLocal('categories', initialCategories);
+        const existingIdx = data.id ? list.findIndex((c: any) => c.id === data.id) : -1;
+        if (existingIdx >= 0) {
+            const updatedCat = {
+                ...list[existingIdx],
+                name: data.name ?? list[existingIdx].name,
+                description: data.description ?? list[existingIdx].description,
+                status: data.status ?? list[existingIdx].status,
+            };
+            const updated = [...list];
+            updated[existingIdx] = updatedCat;
+            setLocal('categories', updated);
+            return updatedCat;
+        }
+
         const newCat = {
             id: `cat-${Date.now()}`,
             tagCode: `CAT-${String(list.length + 1).padStart(3, '0')}`,
@@ -690,6 +793,20 @@ export const serviceApi = {
         const updated = [newCat, ...list];
         setLocal('categories', updated);
         return newCat;
+    },
+
+    deleteServiceCategory: async (id: string) => {
+        if (import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-category/${id}`);
+            } catch {
+                // Fallback
+            }
+        }
+        const list = getLocal('categories', initialCategories);
+        const updated = list.filter((c: any) => c.id !== id);
+        setLocal('categories', updated);
+        return { success: true };
     },
 
     getServiceTypes: async (data: any = {}) => {
@@ -739,6 +856,21 @@ export const serviceApi = {
         const categories = getLocal('categories', initialCategories);
         const cat = categories.find((c) => c.id === data.serviceCategory_id);
 
+        const existingIdx = data.id ? list.findIndex((t: any) => t.id === data.id) : -1;
+        if (existingIdx >= 0) {
+            const updatedType = {
+                ...list[existingIdx],
+                name: data.name ?? list[existingIdx].name,
+                serviceCategory: cat ? { id: cat.id, name: cat.name } : list[existingIdx].serviceCategory,
+                description: data.description ?? list[existingIdx].description,
+                status: data.status ?? list[existingIdx].status,
+            };
+            const updated = [...list];
+            updated[existingIdx] = updatedType;
+            setLocal('types', updated);
+            return updatedType;
+        }
+
         const newType = {
             id: `typ-${Date.now()}`,
             typeCode: `TYP-${String(list.length + 1).padStart(3, '0')}`,
@@ -752,5 +884,19 @@ export const serviceApi = {
         const updated = [newType, ...list];
         setLocal('types', updated);
         return newType;
+    },
+
+    deleteServiceType: async (id: string) => {
+        if (import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-type/${id}`);
+            } catch {
+                // Fallback
+            }
+        }
+        const list = getLocal('types', initialTypes);
+        const updated = list.filter((t: any) => t.id !== id);
+        setLocal('types', updated);
+        return { success: true };
     },
 };

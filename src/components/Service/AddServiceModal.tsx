@@ -19,6 +19,7 @@ interface AddServiceModalProps {
         id?: string;
         input_documents?: string[];
         output_documents?: string[];
+        [key: string]: any;
     };
 }
 
@@ -42,7 +43,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     const [isItalic, setIsItalic] = useState(false);
     const [isUnderline, setIsUnderline] = useState(false);
     const [isHeading, setIsHeading] = useState(false);
-    const [editorText, setEditorText] = useState("");
+    const [hasEditorContent, setHasEditorContent] = useState(false);
 
     // 1. Fetching Dynamic Options via React Query
     const { data: portalsData, isLoading: isLoadingPortals } = useQuery({
@@ -80,7 +81,6 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         "National ID / Iqama (الهوية الوطنية / الإقامة)",
     ]);
     const [selectedInputPreset, setSelectedInputPreset] = useState("");
-    const [customInputDoc, setCustomInputDoc] = useState("");
 
     const [outputDocs, setOutputDocs] = useState<string[]>([
         "شهادة السجل التجاري (Commercial Registration Certificate)",
@@ -93,7 +93,6 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         trigger,
         setValue,
         watch,
-        getValues,
         clearErrors,
         reset,
         formState: { errors },
@@ -133,22 +132,93 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
 
     // Synchronize editor DOM content when modal opens or initialData changes
     useEffect(() => {
-        if (isOpen && editorRef.current) {
-            const initialDesc = initialData?.process_description || getValues("process_description") || "";
-            if (editorRef.current.innerHTML !== initialDesc) {
-                editorRef.current.innerHTML = initialDesc;
+        if (isOpen) {
+            if (initialData) {
+                const initDesc = initialData.process_description || (initialData as any).processDescription || "";
+                const initInputs = initialData.input_documents || (initialData as any).inputDocuments || [];
+                const initOutputs = initialData.output_documents || (initialData as any).outputDocuments || [];
+                
+                reset({
+                    group_type: initialData.group_type || (initialData as any).relatedTo || "business",
+                    service_title: initialData.service_title || (initialData as any).title || "",
+                    service_description: initialData.service_description || (initialData as any).description || "",
+                    serviceGroup_id: initialData.serviceGroup_id || "",
+                    servicePortal_id: initialData.servicePortal_id || "",
+                    service_category_id: initialData.service_category_id || "",
+                    serviceType_id: initialData.serviceType_id || "",
+                    service_processing_time: String(initialData.service_processing_time || (initialData as any).processingTime || "1"),
+                    service_processing_frequen: initialData.service_processing_frequen || (initialData as any).frequency || "days",
+                    serviceTag_id: initialData.serviceTag_id || "",
+                    service_validity: initialData.service_validity || ((initialData as any).validity === "Recurring" ? "recurring" : "one_time"),
+                    service_period: initialData.service_period || "1",
+                    period_type: initialData.period_type || "years",
+                    recurring_type: initialData.recurring_type || "yearly",
+                    service_responsible_department_id: initialData.service_responsible_department_id || "dept-1",
+                    service_submission_mode: initialData.service_submission_mode || "hybrid",
+                    confirmation_required: Boolean(initialData.confirmation_required),
+                    delegation_required: initialData.delegation_required !== undefined ? initialData.delegation_required : ((initialData as any).delegationRequired === "Yes"),
+                    sadad_payment_available: initialData.sadad_payment_available !== undefined ? initialData.sadad_payment_available : ((initialData as any).sadadAvailable === "Yes"),
+                    other_payment_method_id: initialData.other_payment_method_id || "",
+                    service_fees: String(initialData.service_fees !== undefined ? initialData.service_fees : (initialData as any).fee !== undefined ? (initialData as any).fee : "00"),
+                    input_documents: initInputs,
+                    output_documents: initOutputs,
+                    process_description: initDesc,
+                });
+
+                setInputDocs(initInputs);
+                setOutputDocs(initOutputs);
+
+                const hasText = Boolean(initDesc && initDesc.replace(/<[^>]*>/g, "").trim().length > 0);
+                setHasEditorContent(hasText);
+
+                if (editorRef.current) {
+                    editorRef.current.innerHTML = initDesc;
+                }
+            } else {
+                const defaultInputs = [
+                    "Commercial Registration (السجل التجاري)",
+                    "National ID / Iqama (الهوية الوطنية / الإقامة)",
+                ];
+                const defaultOutputs = [
+                    "شهادة السجل التجاري (Commercial Registration Certificate)",
+                ];
+                reset({
+                    group_type: "business",
+                    service_title: "",
+                    service_description: "",
+                    serviceGroup_id: "",
+                    servicePortal_id: "",
+                    service_category_id: "",
+                    serviceType_id: "",
+                    service_processing_time: "1",
+                    service_processing_frequen: "days",
+                    serviceTag_id: "",
+                    service_validity: "recurring",
+                    service_period: "1",
+                    period_type: "years",
+                    recurring_type: "yearly",
+                    service_responsible_department_id: "dept-1",
+                    service_submission_mode: "hybrid",
+                    confirmation_required: false,
+                    delegation_required: false,
+                    sadad_payment_available: false,
+                    other_payment_method_id: "",
+                    service_fees: "00",
+                    input_documents: defaultInputs,
+                    output_documents: defaultOutputs,
+                    process_description: "",
+                });
+
+                setInputDocs(defaultInputs);
+                setOutputDocs(defaultOutputs);
+                setHasEditorContent(false);
+
+                if (editorRef.current) {
+                    editorRef.current.innerHTML = "";
+                }
             }
-            setEditorText(editorRef.current.innerText || editorRef.current.textContent || "");
         }
-        if (isOpen && initialData) {
-            if (initialData.input_documents) {
-                setInputDocs(initialData.input_documents);
-            }
-            if (initialData.output_documents) {
-                setOutputDocs(initialData.output_documents);
-            }
-        }
-    }, [isOpen, initialData, getValues]);
+    }, [isOpen, initialData, reset]);
 
     // 2. Mutation for Submitting the Form
     const mutation = useMutation({
@@ -165,7 +235,6 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         if (editorRef.current) {
             editorRef.current.innerHTML = "";
         }
-        setEditorText("");
         setEditorDirection("rtl");
         setIsBold(false);
         setIsItalic(false);
@@ -223,7 +292,6 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             setInputDocs(updated);
             setValue("input_documents", updated);
             setSelectedInputPreset("");
-            setCustomInputDoc("");
         }
     };
 
@@ -249,18 +317,32 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         setValue("output_documents", updated);
     };
 
+    const isInsideHeading = (): boolean => {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return false;
+        let node: Node | null = sel.anchorNode;
+        while (node && node !== editorRef.current) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tag = (node as HTMLElement).tagName.toLowerCase();
+                if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+                    return true;
+                }
+            }
+            node = node.parentNode;
+        }
+        return false;
+    };
+
     const checkActiveFormats = () => {
         try {
             setIsBold(document.queryCommandState("bold"));
             setIsItalic(document.queryCommandState("italic"));
             setIsUnderline(document.queryCommandState("underline"));
             const block = document.queryCommandValue("formatBlock");
-            setIsHeading(block === "h3" || block === "H3" || block === "<h3>");
+            const headingActive = block === "h3" || block === "H3" || block === "<h3>" || isInsideHeading();
+            setIsHeading(headingActive);
         } catch {
             // ignore
-        }
-        if (editorRef.current) {
-            setEditorText(editorRef.current.innerText || editorRef.current.textContent || "");
         }
     };
 
@@ -276,23 +358,22 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     const syncEditorContent = () => {
         if (editorRef.current) {
             const html = editorRef.current.innerHTML;
-            setValue("process_description", html);
-            setEditorText(editorRef.current.innerText || editorRef.current.textContent || "");
+            const text = (editorRef.current.innerText || editorRef.current.textContent || "").trim();
+            const hasText = text.length > 0;
+            setHasEditorContent(hasText);
+            setValue("process_description", hasText ? html : "", { shouldDirty: true });
         }
     };
 
     const toggleHeading = () => {
         if (!editorRef.current) return;
         editorRef.current.focus();
-        let currentBlock = "";
-        try {
-            currentBlock = document.queryCommandValue("formatBlock");
-        } catch {
-            currentBlock = "";
-        }
-
-        if (currentBlock === "h3" || currentBlock === "H3" || currentBlock === "<h3>") {
-            document.execCommand("formatBlock", false, "<p>");
+        if (isInsideHeading()) {
+            try {
+                document.execCommand("formatBlock", false, "<p>");
+            } catch {
+                document.execCommand("formatBlock", false, "p");
+            }
         } else {
             try {
                 document.execCommand("formatBlock", false, "<h3>");
@@ -310,16 +391,36 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             editorRef.current.dir = dir;
             editorRef.current.style.direction = dir;
             editorRef.current.style.textAlign = dir === "rtl" ? "right" : "left";
+            
+            // Also apply direction to selected block element if inside editor
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                let node: Node | null = sel.anchorNode;
+                while (node && node !== editorRef.current) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const el = node as HTMLElement;
+                        if (['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li'].includes(el.tagName.toLowerCase())) {
+                            el.dir = dir;
+                            el.style.direction = dir;
+                            el.style.textAlign = dir === "rtl" ? "right" : "left";
+                            break;
+                        }
+                    }
+                    node = node.parentNode;
+                }
+            }
             editorRef.current.focus();
         }
         syncEditorContent();
     };
 
     const onSubmit = (data: AddServiceFormValues) => {
-        const finalProcess = editorRef.current ? editorRef.current.innerHTML : (data.process_description || "");
+        const text = editorRef.current ? (editorRef.current.innerText || editorRef.current.textContent || "").trim() : "";
+        const finalProcess = text ? (editorRef.current?.innerHTML || data.process_description || "") : "";
         mutation.mutate({
             ...data,
-            process_description: finalProcess === "<br>" ? "" : finalProcess,
+            ...(initialData?.id ? { id: initialData.id } : {}),
+            process_description: finalProcess,
             input_documents: inputDocs,
             output_documents: outputDocs,
         });
@@ -351,10 +452,12 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 shrink-0">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">
-                            Add New Service
+                            {initialData?.id ? "Edit Service" : "Add New Service"}
                         </h2>
                         <p className="text-xs text-slate-500 mt-0.5">
-                            Introduce a new service by entering key details to enhance offerings and streamline customer access.
+                            {initialData?.id
+                                ? "Update service details, documents, and process descriptions."
+                                : "Introduce a new service by entering key details to enhance offerings and streamline customer access."}
                         </p>
                     </div>
                     <button
@@ -376,9 +479,9 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     <div
                                         className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                                             currentStep === step.id
-                                                ? "bg-[#b5925a] text-white ring-4 ring-[#b5925a]/10"
+                                                ? "bg-[#2D3F2C] text-white ring-4 ring-[#2D3F2C]/10"
                                                 : currentStep > step.id
-                                                    ? "bg-[#b5925a] text-white"
+                                                    ? "bg-[#2D3F2C] text-white"
                                                     : "bg-slate-100 text-slate-400 border border-slate-200"
                                         }`}
                                     >
@@ -397,7 +500,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                 {idx < steps.length - 1 && (
                                     <div
                                         className={`flex-1 h-[2px] -mt-5 mx-1 ${
-                                            currentStep > step.id ? "bg-[#b5925a]" : "bg-slate-200"
+                                            currentStep > step.id ? "bg-[#2D3F2C]" : "bg-slate-200"
                                         }`}
                                     />
                                 )}
@@ -427,7 +530,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     type="radio"
                                                     value={item}
                                                     {...register("group_type")}
-                                                    className="w-4 h-4 text-[#b5925a] focus:ring-[#b5925a] border-slate-300"
+                                                    className="w-4 h-4 text-[#2D3F2C] focus:ring-[#2D3F2C] border-slate-300"
                                                 />
                                                 {item}
                                             </label>
@@ -445,7 +548,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                             type="text"
                                             placeholder="Enter Service Title"
                                             {...register("service_title")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         />
                                         {errors.service_title && (
                                             <span className="text-[10px] text-red-500 block mt-1">
@@ -463,7 +566,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                             rows={2}
                                             placeholder="Provide general service description and purpose..."
                                             {...register("service_description")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20 resize-none"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 resize-none"
                                         />
                                     </div>
 
@@ -474,7 +577,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </label>
                                         <select
                                             {...register("serviceGroup_id")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
                                             <option value="">Select Service Group</option>
                                             {SERVICE_GROUPS_OPTIONS.map((g) => (
@@ -493,7 +596,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         <select
                                             {...register("servicePortal_id")}
                                             disabled={isLoadingPortals}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20 disabled:opacity-50"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
                                                 {isLoadingPortals ? "Loading Portals..." : "Select Service Portal"}
@@ -519,7 +622,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         <select
                                             {...register("service_category_id")}
                                             disabled={isLoadingCategories}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20 disabled:opacity-50"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
                                                 {isLoadingCategories ? "Loading Categories..." : "Select Service Category"}
@@ -540,7 +643,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         <select
                                             {...register("serviceType_id")}
                                             disabled={isLoadingTypes}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20 disabled:opacity-50"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
                                                 {isLoadingTypes ? "Loading Types..." : "Select Service Type"}
@@ -567,7 +670,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                             type="text"
                                             placeholder="Enter Service Processing Time (e.g. 2)"
                                             {...register("service_processing_time")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         />
                                         {errors.service_processing_time && (
                                             <span className="text-[10px] text-red-500 block mt-1">
@@ -583,7 +686,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </label>
                                         <select
                                             {...register("service_processing_frequen")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
                                             <option value="hours">Hours</option>
                                             <option value="days">Days</option>
@@ -603,7 +706,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         <select
                                             {...register("serviceTag_id")}
                                             disabled={isLoadingTags}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20 disabled:opacity-50"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
                                                 {isLoadingTags ? "Loading Tags..." : "Select Service Tag"}
@@ -628,7 +731,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </label>
                                         <select
                                             {...register("service_validity")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
                                             <option value="recurring">Recurring</option>
                                             <option value="oneTime">One Time</option>
@@ -644,7 +747,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                 </label>
                                                 <select
                                                     {...register("recurring_type")}
-                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                 >
                                                     <option value="monthly">Monthly</option>
                                                     <option value="yearly">Yearly</option>
@@ -658,7 +761,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                 <input
                                                     type="date"
                                                     {...register("service_due_date")}
-                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                 />
                                             </div>
 
@@ -671,7 +774,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                         type="text"
                                                         placeholder="e.g. 1"
                                                         {...register("service_period")}
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                     />
                                                     {errors.service_period && (
                                                         <span className="text-[10px] text-red-500 block mt-1">
@@ -685,7 +788,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     </label>
                                                     <select
                                                         {...register("period_type")}
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                     >
                                                         <option value="days">Days</option>
                                                         <option value="months">Months</option>
@@ -701,7 +804,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                 <input
                                                     type="date"
                                                     {...register("service_event_date")}
-                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                 />
                                             </div>
                                         </>
@@ -718,7 +821,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     type="radio"
                                                     onChange={() => setValue("confirmation_required", true)}
                                                     checked={watch("confirmation_required") === true}
-                                                    className="w-4 h-4 text-[#b5925a] border-slate-300"
+                                                    className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
                                                 Yes
                                             </label>
@@ -727,7 +830,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     type="radio"
                                                     onChange={() => setValue("confirmation_required", false)}
                                                     checked={watch("confirmation_required") === false}
-                                                    className="w-4 h-4 text-[#b5925a] border-slate-300"
+                                                    className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
                                                 No
                                             </label>
@@ -745,7 +848,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     type="radio"
                                                     onChange={() => setValue("delegation_required", true)}
                                                     checked={watch("delegation_required") === true}
-                                                    className="w-4 h-4 text-[#b5925a] border-slate-300"
+                                                    className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
                                                 Yes
                                             </label>
@@ -754,7 +857,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     type="radio"
                                                     onChange={() => setValue("delegation_required", false)}
                                                     checked={watch("delegation_required") === false}
-                                                    className="w-4 h-4 text-[#b5925a] border-slate-300"
+                                                    className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
                                                 No
                                             </label>
@@ -768,7 +871,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </label>
                                         <select
                                             {...register("service_responsible_department_id")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
                                             <option value="dept-1">Human Resources (الموارد البشرية)</option>
                                             <option value="dept-2">Finance & Accounting (المالية)</option>
@@ -789,7 +892,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </label>
                                         <select
                                             {...register("service_submission_mode")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
                                             <option value="hybrid">Hybrid (إلكتروني وحضوري)</option>
                                             <option value="online">Online (إلكتروني بالكامل)</option>
@@ -821,7 +924,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                         clearErrors("other_payment_method_id");
                                                     }}
                                                     checked={sadadPaymentAvailable === true}
-                                                    className="w-4 h-4 text-[#b5925a] focus:ring-[#b5925a]"
+                                                    className="w-4 h-4 text-[#2D3F2C] focus:ring-[#2D3F2C]"
                                                 />
                                                 Yes
                                             </label>
@@ -832,7 +935,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                         setValue("sadad_payment_available", false);
                                                     }}
                                                     checked={sadadPaymentAvailable === false}
-                                                    className="w-4 h-4 text-[#b5925a] focus:ring-[#b5925a]"
+                                                    className="w-4 h-4 text-[#2D3F2C] focus:ring-[#2D3F2C]"
                                                 />
                                                 No
                                             </label>
@@ -852,7 +955,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                             </label>
                                             <select
                                                 {...register("other_payment_method_id")}
-                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                             >
                                                 <option value="">Select Other Payment Method</option>
                                                 {OTHER_PAYMENT_METHODS.map((pm) => (
@@ -878,263 +981,275 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                             type="text"
                                             placeholder="Enter Service Fees"
                                             {...register("service_fees")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         />
                                     </div>
                                 </div>
                             </div>
-                        )}
 
                         {/* STEP 3: Documents Information */}
-                        {currentStep === 3 && (
-                            <div className="space-y-6 pt-2">
-                                <h3 className="text-sm font-bold text-slate-800">
-                                    Documents Information
-                                </h3>
+                        <div className={currentStep === 3 ? "space-y-6 pt-2" : "hidden"}>
+                            <h3 className="text-sm font-bold text-slate-800">
+                                Documents Information
+                            </h3>
 
-                                {/* Input Document Section */}
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-semibold text-slate-700">
-                                        Input Document <span className="text-slate-400 font-normal">(Required documents submitted by the client)</span>
-                                    </label>
+                            {/* Input Document Section */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-semibold text-slate-700">
+                                    Input Document <span className="text-slate-400 font-normal">(Required documents submitted by the client)</span>
+                                </label>
 
-                                    {/* Preset selector and custom add */}
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <select
-                                            value={selectedInputPreset}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                setSelectedInputPreset(val);
-                                                if (val) addInputDoc(val);
-                                            }}
-                                            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
-                                        >
-                                            <option value="">Select standard input document...</option>
-                                            {INPUT_DOCUMENT_PRESETS.map((preset) => (
-                                                <option key={preset} value={preset}>
-                                                    {preset}
-                                                </option>
-                                            ))}
-                                        </select>
+                                <div className="flex gap-2">
+                                    <select
+                                        value={selectedInputPreset}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setSelectedInputPreset(val);
+                                            if (val) addInputDoc(val);
+                                        }}
+                                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    >
+                                        <option value="">Select standard input document...</option>
+                                        {INPUT_DOCUMENT_PRESETS.map((preset) => (
+                                            <option key={preset} value={preset}>
+                                                {preset}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                                        <div className="flex gap-1.5 flex-1">
-                                            <input
-                                                type="text"
-                                                value={customInputDoc}
-                                                onChange={(e) => setCustomInputDoc(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        e.preventDefault();
-                                                        addInputDoc(customInputDoc);
-                                                    }
-                                                }}
-                                                placeholder="Or type custom document name..."
-                                                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => addInputDoc(customInputDoc)}
-                                                className="px-3 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition shrink-0 cursor-pointer flex items-center gap-1"
+                                {/* Tagged input documents (empty message completely removed) */}
+                                {inputDocs.length > 0 && (
+                                    <div className="min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap items-center gap-2">
+                                        {inputDocs.map((doc) => (
+                                            <span
+                                                key={doc}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200/60 rounded-md text-xs font-medium"
                                             >
-                                                <Plus size={14} /> Add
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Tagged input documents */}
-                                    <div className="min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap items-center gap-2">
-                                        {inputDocs.length > 0 ? (
-                                            inputDocs.map((doc) => (
-                                                <span
-                                                    key={doc}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200/60 rounded-md text-xs font-medium"
+                                                {doc}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeInputDoc(doc)}
+                                                    className="hover:text-amber-950 font-bold ml-1 cursor-pointer"
+                                                    title="Remove document"
                                                 >
-                                                    {doc}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeInputDoc(doc)}
-                                                        className="hover:text-amber-950 font-bold ml-1 cursor-pointer"
-                                                        title="Remove document"
-                                                    >
-                                                        <X size={12} />
-                                                    </button>
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span className="text-xs text-slate-400 italic">
-                                                No input documents linked yet.
+                                                    <X size={12} />
+                                                </button>
                                             </span>
-                                        )}
+                                        ))}
                                     </div>
-                                </div>
-
-                                {/* Output Document Section (Select/Dropdown, NOT free text) */}
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-semibold text-slate-700">
-                                        Output Document <span className="text-slate-400 font-normal">(Certificate or deliverable returned upon completion)</span>
-                                    </label>
-
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={selectedOutputPreset}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                setSelectedOutputPreset(val);
-                                                if (val) addOutputDoc(val);
-                                            }}
-                                            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#b5925a]/20"
-                                        >
-                                            <option value="">Select standard output document deliverable...</option>
-                                            {OUTPUT_DOCUMENT_OPTIONS.map((opt) => (
-                                                <option key={opt.id} value={opt.name}>
-                                                    {opt.code} — {opt.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {/* Tagged output documents */}
-                                    <div className="min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap items-center gap-2">
-                                        {outputDocs.length > 0 ? (
-                                            outputDocs.map((doc) => (
-                                                <span
-                                                    key={doc}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-200/80 rounded-md text-xs font-medium"
-                                                >
-                                                    {doc}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeOutputDoc(doc)}
-                                                        className="hover:text-emerald-950 font-bold ml-1 cursor-pointer"
-                                                        title="Remove document"
-                                                    >
-                                                        <X size={12} />
-                                                    </button>
-                                                </span>
-                                            ))
-                                        ) : (
-                                            <span className="text-xs text-slate-400 italic">
-                                                No output documents linked yet.
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                                )}
                             </div>
-                        )}
+
+                            {/* Output Document Section (Standard dropdown using existing demo data) */}
+                            <div className="space-y-2">
+                                <label className="block text-xs font-semibold text-slate-700">
+                                    Output Document <span className="text-slate-400 font-normal">(Certificate or deliverable returned upon completion)</span>
+                                </label>
+
+                                <div className="flex gap-2">
+                                    <select
+                                        value={selectedOutputPreset}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setSelectedOutputPreset(val);
+                                            if (val) addOutputDoc(val);
+                                        }}
+                                        className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    >
+                                        <option value="">Select standard output document deliverable...</option>
+                                        {OUTPUT_DOCUMENT_OPTIONS.map((opt) => (
+                                            <option key={opt.id} value={opt.name}>
+                                                {opt.code} — {opt.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Tagged output documents (empty message completely removed) */}
+                                {outputDocs.length > 0 && (
+                                    <div className="min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex flex-wrap items-center gap-2">
+                                        {outputDocs.map((doc) => (
+                                            <span
+                                                key={doc}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-200/80 rounded-md text-xs font-medium"
+                                            >
+                                                {doc}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeOutputDoc(doc)}
+                                                    className="hover:text-emerald-950 font-bold ml-1 cursor-pointer"
+                                                    title="Remove document"
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* STEP 4: Service Process */}
-                        {currentStep === 4 && (
-                            <div className="space-y-4 pt-2">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-bold text-slate-800">
-                                        Service Process
-                                    </h3>
-                                    <span className="text-xs text-slate-400">
-                                        Direction: <strong className="uppercase text-slate-700">{editorDirection}</strong>
-                                    </span>
-                                </div>
+                        <div className={currentStep === 4 ? "space-y-4 pt-2" : "hidden"}>
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-slate-800">
+                                    Service Process
+                                </h3>
+                                <span className="text-xs text-slate-400">
+                                    Direction: <strong className="uppercase text-slate-700">{editorDirection}</strong>
+                                </span>
+                            </div>
 
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-2">
-                                        Process Description <span className="text-slate-400 font-normal">(Steps, requirements, or execution flowchart)</span>
-                                    </label>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-2">
+                                    Process Description <span className="text-slate-400 font-normal">(Steps, requirements, or execution flowchart)</span>
+                                </label>
 
-                                    {/* Rich Text Editor Container */}
-                                    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs">
-                                        {/* Functional Toolbar */}
-                                        <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-700">
-                                            {/* B: Bold */}
-                                            <button
-                                                type="button"
-                                                onClick={() => executeEditorCommand("bold")}
-                                                className="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 font-bold transition cursor-pointer"
-                                                title="Bold (Ctrl+B)"
-                                            >
-                                                B
-                                            </button>
+                                {/* Rich Text Editor Container */}
+                                <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-2xs">
+                                    {/* Functional Toolbar */}
+                                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-700">
+                                        {/* B: Bold */}
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                executeEditorCommand("bold");
+                                            }}
+                                            className={`px-2.5 py-1 border rounded text-xs font-bold transition cursor-pointer ${
+                                                isBold
+                                                    ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                            }`}
+                                            title="Bold (Ctrl+B)"
+                                        >
+                                            B
+                                        </button>
 
-                                            {/* I: Italic */}
-                                            <button
-                                                type="button"
-                                                onClick={() => executeEditorCommand("italic")}
-                                                className="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 italic transition cursor-pointer"
-                                                title="Italic (Ctrl+I)"
-                                            >
-                                                I
-                                            </button>
+                                        {/* I: Italic */}
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                executeEditorCommand("italic");
+                                            }}
+                                            className={`px-2.5 py-1 border rounded text-xs italic font-serif transition cursor-pointer ${
+                                                isItalic
+                                                    ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                            }`}
+                                            title="Italic (Ctrl+I)"
+                                        >
+                                            I
+                                        </button>
 
-                                            {/* U: Underline */}
-                                            <button
-                                                type="button"
-                                                onClick={() => executeEditorCommand("underline")}
-                                                className="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 underline transition cursor-pointer"
-                                                title="Underline (Ctrl+U)"
-                                            >
-                                                U
-                                            </button>
+                                        {/* U: Underline */}
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                executeEditorCommand("underline");
+                                            }}
+                                            className={`px-2.5 py-1 border rounded text-xs underline transition cursor-pointer ${
+                                                isUnderline
+                                                    ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                            }`}
+                                            title="Underline (Ctrl+U)"
+                                        >
+                                            U
+                                        </button>
 
-                                            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
+                                        <div className="w-[1px] h-4 bg-slate-200 mx-1" />
 
-                                            {/* H: Heading */}
-                                            <button
-                                                type="button"
-                                                onClick={toggleHeading}
-                                                className="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 font-semibold transition cursor-pointer"
-                                                title="Heading Style"
-                                            >
-                                                H
-                                            </button>
+                                        {/* H: Heading */}
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                toggleHeading();
+                                            }}
+                                            className={`px-2.5 py-1 border rounded text-xs font-bold transition cursor-pointer ${
+                                                isHeading
+                                                    ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                                            }`}
+                                            title="Heading Style"
+                                        >
+                                            H
+                                        </button>
 
-                                            <div className="w-[1px] h-4 bg-slate-200 mx-1" />
+                                        <div className="w-[1px] h-4 bg-slate-200 mx-1" />
 
-                                            {/* RTL direction toggle */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setEditorDirection("rtl")}
-                                                className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
-                                                    editorDirection === "rtl"
-                                                        ? "bg-[#126b71] text-white"
-                                                        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
-                                                }`}
-                                                title="Set Right-to-Left (RTL)"
-                                            >
-                                                RTL (عربي)
-                                            </button>
+                                        {/* RTL direction toggle */}
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                handleSetDirection("rtl");
+                                            }}
+                                            className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
+                                                editorDirection === "rtl"
+                                                    ? "bg-[#2D3F2C] text-white"
+                                                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                                            }`}
+                                            title="Set Right-to-Left (RTL)"
+                                        >
+                                            RTL (عربي)
+                                        </button>
 
-                                            {/* LTR direction toggle */}
-                                            <button
-                                                type="button"
-                                                onClick={() => setEditorDirection("ltr")}
-                                                className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
-                                                    editorDirection === "ltr"
-                                                        ? "bg-[#126b71] text-white"
-                                                        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
-                                                }`}
-                                                title="Set Left-to-Right (LTR)"
-                                            >
-                                                LTR (English)
-                                            </button>
-                                        </div>
+                                        {/* LTR direction toggle */}
+                                        <button
+                                            type="button"
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                handleSetDirection("ltr");
+                                            }}
+                                            className={`px-2.5 py-1 rounded text-xs font-semibold transition cursor-pointer ${
+                                                editorDirection === "ltr"
+                                                    ? "bg-[#2D3F2C] text-white"
+                                                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                                            }`}
+                                            title="Set Left-to-Right (LTR)"
+                                        >
+                                            LTR (English)
+                                        </button>
+                                    </div>
 
-                                        {/* Editable Area */}
+                                    {/* Editable Area */}
+                                    <div className="relative">
                                         <div
                                             ref={editorRef}
                                             contentEditable
                                             dir={editorDirection}
                                             onInput={syncEditorContent}
                                             onBlur={syncEditorContent}
+                                            onKeyUp={checkActiveFormats}
+                                            onMouseUp={checkActiveFormats}
+                                            onSelect={checkActiveFormats}
                                             data-placeholder="Enter process description details ..."
-                                            className={`w-full min-h-[160px] p-3 text-xs focus:outline-none ${
+                                            className={`w-full min-h-[160px] p-3 text-xs focus:outline-none leading-relaxed [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-slate-900 [&_h3]:my-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-slate-900 [&_h2]:my-2 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-slate-900 [&_h1]:my-2 [&_p]:my-1.5 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline ${
                                                 editorDirection === "rtl" ? "text-right" : "text-left"
                                             }`}
                                         />
+                                        {!hasEditorContent && (
+                                            <div
+                                                onClick={() => editorRef.current?.focus()}
+                                                className={`absolute top-3 ${
+                                                    editorDirection === "rtl" ? "right-3 text-right" : "left-3 text-left"
+                                                } text-slate-400 text-xs pointer-events-none select-none`}
+                                            >
+                                                Enter process description details ...
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="text-[10px] text-slate-400 mt-1">
-                                        Use formatting toolbar above to style headings and text. Use RTL/LTR to adjust writing direction.
-                                    </p>
                                 </div>
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Use formatting toolbar above to style headings and text. Use RTL/LTR to adjust writing direction.
+                                </p>
                             </div>
-                        )}
+                        </div>
                     </form>
                 </div>
 
@@ -1162,7 +1277,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         <button
                             type="button"
                             onClick={handleNext}
-                            className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
+                            className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
                         >
                             Next
                         </button>
@@ -1171,7 +1286,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                             type="submit"
                             form="add-service-form"
                             disabled={mutation.isPending}
-                            className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                            className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                         >
                             {mutation.isPending ? "Submitting..." : "Submit"}
                         </button>

@@ -1,32 +1,112 @@
-import { SearchIcon } from 'lucide-react';
+import { Search as SearchIcon, Download, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 type SearchProps = {
     searchValue: string;
     title: string;
+    description?: string;
     onSearchChange?: (val: string) => void;
     searchPlaceholder?: string;
     delay?: number;
-    totalCount: number;
+    totalCount?: number;
     pageSize: number;
-    pageIndex: number;
+    pageIndex?: number;
     onPageSizeChange?: (size: number) => void;
     onAddNew?: () => void;
     onExport?: () => void;
+    addNewLabel?: string;
+};
+
+const PAGE_CONFIGS: Record<string, { title: string; description: string; addLabel: string }> = {
+    'Services': {
+        title: 'Services',
+        description: 'Manage and monitor government and enterprise administrative services.',
+        addLabel: 'Add Service',
+    },
+    'Add New Service': {
+        title: 'Services',
+        description: 'Manage and monitor government and enterprise administrative services.',
+        addLabel: 'Add Service',
+    },
+    'Service Groups': {
+        title: 'Service Groups',
+        description: 'Organize services into operational and functional business clusters.',
+        addLabel: 'New Service Group',
+    },
+    'New Service Group': {
+        title: 'Service Groups',
+        description: 'Organize services into operational and functional business clusters.',
+        addLabel: 'New Service Group',
+    },
+    'Service Packages': {
+        title: 'Service Packages',
+        description: 'Manage bundled service packages and customer subscription offerings.',
+        addLabel: 'Add Package',
+    },
+    'Service Types': {
+        title: 'Service Types',
+        description: 'Define service classifications, execution rules, and workflow types.',
+        addLabel: 'Add Service Type',
+    },
+    'Add Service Type': {
+        title: 'Service Types',
+        description: 'Define service classifications, execution rules, and workflow types.',
+        addLabel: 'Add Service Type',
+    },
+    'Service Categories': {
+        title: 'Service Categories',
+        description: 'Structure service taxonomy and categorical groupings.',
+        addLabel: 'Add Category',
+    },
+    'Add Service Category': {
+        title: 'Service Categories',
+        description: 'Structure service taxonomy and categorical groupings.',
+        addLabel: 'Add Category',
+    },
+    'Service Tags': {
+        title: 'Service Tags',
+        description: 'Manage discovery tags, metadata badges, and search identifiers.',
+        addLabel: 'Add Service Tag',
+    },
+    'Add Service Tag': {
+        title: 'Service Tags',
+        description: 'Manage discovery tags, metadata badges, and search identifiers.',
+        addLabel: 'Add Service Tag',
+    },
+    'Service Portals': {
+        title: 'Service Portals',
+        description: 'Configure external government integrations and administrative portals.',
+        addLabel: 'Add Service Portal',
+    },
+    'Add Service Portal': {
+        title: 'Service Portals',
+        description: 'Configure external government integrations and administrative portals.',
+        addLabel: 'Add Service Portal',
+    },
+    'Services Audit Trail': {
+        title: 'Audit Trail',
+        description: 'Track operational logs, system modifications, and administrative activities.',
+        addLabel: '',
+    },
+    'Audit Trail': {
+        title: 'Audit Trail',
+        description: 'Track operational logs, system modifications, and administrative activities.',
+        addLabel: '',
+    },
 };
 
 const Search = ({
     searchValue,
     title,
+    description,
     onSearchChange,
-    searchPlaceholder = 'Search Services',
-    delay = 500,
-    totalCount,
+    searchPlaceholder = 'Search records...',
+    delay = 400,
     pageSize,
-    pageIndex,
     onPageSizeChange,
     onAddNew,
     onExport,
+    addNewLabel,
 }: SearchProps) => {
     const [query, setQuery] = useState(searchValue);
     const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
@@ -46,65 +126,71 @@ const Search = ({
         return () => clearTimeout(handler);
     }, [query, delay, onSearchChange, searchValue]);
 
-    const startItem = totalCount === 0 ? 0 : pageIndex * pageSize + 1;
-    const endItem = Math.min((pageIndex + 1) * pageSize, totalCount);
+    const pageCfg = PAGE_CONFIGS[title];
+    const displayTitle = pageCfg?.title || title.replace(/^(Add |New |Add New )/i, '').trim();
+    const displayDesc = description || pageCfg?.description || 'Manage, organize, and monitor records within this administrative module.';
+    const addBtnText = addNewLabel || pageCfg?.addLabel || (title.startsWith('Add') || title.startsWith('New') ? title : `Add ${displayTitle}`);
 
     return (
-        <div className="mb-4 bg-white px-5 pb-2 rounded-lg">
-            {/* Top Bar: Title & Primary Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <h1 className="text-2xl font-bold text-slate-900">
-                    {title ? title.replace(/^(Add |New |Add New )/i, '').trim() : 'Services'}
-                </h1>
+        <div className="space-y-5 mb-5 select-none">
+            {/* 1. Page Header System */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
+                        {displayTitle}
+                    </h1>
+                    <p className="text-xs text-[#6E6862] mt-1 font-normal">
+                        {displayDesc}
+                    </p>
+                </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Search Input */}
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                            <SearchIcon />
-                        </span>
-                        <input
-                            type="text"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={searchPlaceholder}
-                            className="w-64 pl-9 pr-4 py-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                        />
-                    </div>
-
-                    {/* Export Dropdown */}
+                {/* Header Actions: Export + Add/Create */}
+                <div className="flex items-center gap-2.5 shrink-0">
                     <button
                         type="button"
                         onClick={onExport}
-                        className="flex items-center gap-2 px-4 py-4 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#DCD6CD] hover:border-[#BFAB93] text-[#2D3F2C] hover:bg-[#F8F6F2] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs active:scale-98"
                     >
-                        Export
-                        <span className="text-xs text-slate-400">▼</span>
+                        <Download size={14} className="text-[#6A7358]" />
+                        <span>Export</span>
                     </button>
 
-                    {/* Add New Button */}
-                    <button
-                        type="button"
-                        onClick={onAddNew}
-                        className="flex items-center gap-1.5 px-4 py-4 bg-[#b5925a] hover:bg-[#a1804c] text-white font-medium text-sm rounded-lg transition-colors shadow-sm"
-                    >
-                        <span>+</span> {title}
-                    </button>
+                    {onAddNew && (
+                        <button
+                            type="button"
+                            onClick={onAddNew}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-[#FAF8F5] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-xs active:scale-98"
+                        >
+                            <Plus size={14} className="text-[#BFAB93]" />
+                            <span>{addBtnText}</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Controls Bar: Entries counter & Page Size dropdown */}
-            <div className="flex items-center justify-between text-sm text-slate-600 pt-2">
-                <div>
-                    Showing <span className="font-semibold text-slate-900">{totalCount === 0 ? 0 : (endItem - startItem + 1)}</span> out of <span className="font-semibold text-slate-900">{totalCount}</span> entries
+            {/* 2. Search / Filters / Controls Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-[#E5E0D8] rounded-xl p-3 shadow-2xs">
+                {/* Search Input */}
+                <div className="relative flex-1 max-w-md">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#857E74] pointer-events-none">
+                        <SearchIcon size={15} />
+                    </span>
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={searchPlaceholder}
+                        className="w-full pl-9 pr-3.5 py-2 bg-[#FAF8F5]/80 hover:bg-[#FAF8F5] focus:bg-white border border-[#E5E0D8] focus:border-[#2D3F2C] rounded-lg text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/15 transition"
+                    />
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Show Page Size Controls */}
+                <div className="flex items-center gap-2 text-xs text-[#6E6862] shrink-0 self-end sm:self-center">
                     <span>Show</span>
                     <select
                         value={pageSize}
                         onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
-                        className="bg-white border border-slate-200 rounded px-2 py-1 text-sm text-slate-700 focus:outline-none focus:border-amber-500"
+                        className="bg-white border border-[#DCD6CD] hover:border-[#BFAB93] focus:border-[#2D3F2C] rounded-lg px-2.5 py-1.5 text-xs text-[#0D0D0D] font-medium focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]/20 transition cursor-pointer shadow-2xs"
                     >
                         <option value={10}>10</option>
                         <option value={25}>25</option>

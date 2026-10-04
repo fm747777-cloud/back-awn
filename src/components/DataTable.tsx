@@ -19,7 +19,9 @@ type DataTableProps<TData> = {
     onSearchChange?: (val: string) => void;
     onAddNew?: () => void;
     onExport?: () => void;
-    title: string
+    title: string;
+    description?: string;
+    addNewLabel?: string;
 };
 
 export const DataTable = <TData,>({
@@ -27,7 +29,7 @@ export const DataTable = <TData,>({
     data = [],
     count = 0,
     loading = false,
-    searchPlaceholder = "Search Services...",
+    searchPlaceholder = "Search records...",
     pageIndex,
     pageSize,
     onPageChange,
@@ -36,7 +38,9 @@ export const DataTable = <TData,>({
     onSearchChange,
     onAddNew,
     onExport,
-    title
+    title,
+    description,
+    addNewLabel,
 }: DataTableProps<TData>) => {
     const features = tableFeatures({
         rowPaginationFeature,
@@ -73,9 +77,12 @@ export const DataTable = <TData,>({
         },
     });
 
+    const startItem = count === 0 ? 0 : pageIndex * pageSize + 1;
+    const endItem = Math.min((pageIndex + 1) * pageSize, count);
+
     return (
-        <div className="w-full bg-slate-50/50 p-6 rounded-xl">
-            {/* Header / Search Controls */}
+        <div className="w-full space-y-4">
+            {/* Header / Search / Filters Controls */}
             <Search
                 searchValue={searchValue}
                 onSearchChange={onSearchChange}
@@ -87,19 +94,21 @@ export const DataTable = <TData,>({
                 onAddNew={onAddNew}
                 onExport={onExport}
                 title={title}
+                description={description}
+                addNewLabel={addNewLabel}
             />
 
             {/* Table Area */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden shadow-2xs">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs whitespace-nowrap">
-                        <thead className="bg-white border-b border-slate-200 text-slate-600">
+                        <thead className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[#595550]">
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <tr key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
                                         <th
                                             key={header.id}
-                                            className="px-3 py-3 font-semibold text-slate-600 border-r border-slate-100 last:border-none"
+                                            className="px-4 py-3.5 font-semibold text-[#595550] border-r border-[#F0ECE4] last:border-none tracking-wide text-xs"
                                         >
                                             {header.isPlaceholder ? null : (
                                                 <table.FlexRender header={header} />
@@ -110,33 +119,36 @@ export const DataTable = <TData,>({
                             ))}
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                        <tbody className="divide-y divide-[#EFECE6] text-[#0D0D0D]">
                             {loading ? (
                                 <tr>
                                     <td
                                         colSpan={columns.length}
-                                        className="text-center py-12 text-slate-400"
+                                        className="text-center py-16 text-[#857E74]"
                                     >
-                                        Loading data...
+                                        <div className="flex flex-col items-center justify-center gap-2">
+                                            <div className="w-6 h-6 border-2 border-[#2D3F2C] border-t-transparent rounded-full animate-spin" />
+                                            <span className="text-xs font-medium">Loading data...</span>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : data.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={columns.length}
-                                        className="text-center py-12 text-slate-400"
+                                        className="text-center py-16 text-[#857E74]"
                                     >
-                                        No records found.
+                                        <p className="text-xs font-medium">No records found matching criteria.</p>
                                     </td>
                                 </tr>
                             ) : (
                                 table.getRowModel().rows.map((row) => (
                                     <tr
                                         key={row.id}
-                                        className="hover:bg-slate-50/80 transition-colors"
+                                        className="hover:bg-[#F8F6F2]/75 transition-colors"
                                     >
                                         {row.getAllCells().map((cell) => (
-                                            <td key={cell.id} className="px-3 py-3">
+                                            <td key={cell.id} className="px-4 py-3.5">
                                                 <table.FlexRender cell={cell} />
                                             </td>
                                         ))}
@@ -148,13 +160,19 @@ export const DataTable = <TData,>({
                 </div>
             </div>
 
-            {/* Pagination Controls */}
-            <Pagination
-                table={table}
-                count={count}
-                pageIndex={pageIndex}
-                loading={loading}
-            />
+            {/* Bottom Bar: Showing counter on Left + Pagination on Right */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 pt-1 text-xs text-[#6E6862] select-none">
+                <div>
+                    Showing <span className="font-semibold text-[#0D0D0D]">{startItem}</span> to <span className="font-semibold text-[#0D0D0D]">{endItem}</span> of <span className="font-semibold text-[#0D0D0D]">{count}</span> entries
+                </div>
+
+                <Pagination
+                    table={table}
+                    count={count}
+                    pageIndex={pageIndex}
+                    loading={loading}
+                />
+            </div>
         </div>
     );
 };

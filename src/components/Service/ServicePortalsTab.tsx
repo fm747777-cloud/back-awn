@@ -38,16 +38,13 @@ export const ServicePortalsTab: React.FC = () => {
         setPageIndex(0);
     };
 
-    const renderStatusBadge = (status: any) => {
-        switch (status) {
-            default:
-                return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Active
-                    </span>
-                );
-        }
+    const renderStatusBadge = () => {
+        return (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
+                Active
+            </span>
+        );
     };
 
     const columns = useMemo<ColumnDef<any, any>[]>(
@@ -59,7 +56,7 @@ export const ServicePortalsTab: React.FC = () => {
                         type="checkbox"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
                 cell: ({ row }) => (
@@ -67,24 +64,24 @@ export const ServicePortalsTab: React.FC = () => {
                         type="checkbox"
                         checked={row.getIsSelected()}
                         onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
             },
             {
                 accessorKey: "tagCode",
-                header: "Tag Code",
+                header: "Portal Code",
                 cell: (info) => (
-                    <span className="font-medium text-slate-800">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
                         {info.getValue() as string}
                     </span>
                 ),
             },
             {
                 accessorKey: "name",
-                header: "Tag Name",
+                header: "Portal Name",
                 cell: (info) => (
-                    <span className="font-medium text-slate-700">
+                    <span className="font-medium text-[#0D0D0D]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -96,11 +93,10 @@ export const ServicePortalsTab: React.FC = () => {
                     const creator = row.original.createdBy;
                     return creator ? (
                         <div>
-                            <div className="font-medium text-slate-800">{creator}</div>
-                            {/* <div className="text-[10px] text-teal-600">{creator}</div> */}
+                            <div className="font-medium text-[#0D0D0D]">{creator}</div>
                         </div>
                     ) : (
-                        <span className="text-slate-400 italic">undefined</span>
+                        <span className="text-[#857E74] italic">undefined</span>
                     );
                 },
             },
@@ -108,19 +104,19 @@ export const ServicePortalsTab: React.FC = () => {
                 accessorKey: "createdAt",
                 header: "Create Date",
                 cell: (info) => (
-                    <span className="text-slate-500">{info.getValue() as string}</span>
+                    <span className="text-[#6E6862]">{info.getValue() as string}</span>
                 ),
             },
             {
                 accessorKey: "status",
                 header: "Status",
-                cell: ({ row }) => renderStatusBadge(row.original.status),
+                cell: () => renderStatusBadge(),
             },
             {
                 id: "actions",
                 header: () => <div className="text-right">•••</div>,
                 cell: () => (
-                    <div className="text-right text-slate-400 cursor-pointer hover:text-slate-600 font-bold">
+                    <div className="text-right text-[#857E74] cursor-pointer hover:text-[#0D0D0D] font-bold p-1">
                         •••
                     </div>
                 ),
@@ -130,7 +126,7 @@ export const ServicePortalsTab: React.FC = () => {
     );
 
     return (
-        <div className="p-6 bg-slate-100/60 min-h-screen">
+        <div className="space-y-4">
             <DataTable
                 columns={columns}
                 data={PortalsList}
@@ -144,8 +140,8 @@ export const ServicePortalsTab: React.FC = () => {
                 searchValue={searchTerm}
                 onSearchChange={handleSearchChange}
                 onAddNew={() => setIsModalOpen(true)}
-                title='Add Service Portal'
-
+                title="Service Portals"
+                addNewLabel="Add Service Portal"
             />
 
             <AddServicePortalModal

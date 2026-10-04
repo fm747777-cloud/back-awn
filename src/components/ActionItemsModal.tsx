@@ -29,35 +29,41 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({ isOpen, onCl
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+            <div className="w-full max-w-4xl bg-white border border-[#E5E0D8] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150">
                 {/* Modal Header */}
-                <div className="flex items-center gap-3 mb-6 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-3 mb-6 pb-3 border-b border-[#E5E0D8]">
                     <button
                         onClick={onClose}
-                        className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition cursor-pointer"
+                        className="w-8 h-8 rounded-lg bg-[#F8F6F2] hover:bg-[#EFECE6] flex items-center justify-center text-[#2D3F2C] transition cursor-pointer"
                     >
-                        <ChevronLeft size={20} />
+                        <ChevronLeft size={18} />
                     </button>
-                    <h3 className="text-xl font-bold text-slate-800">
-                        Action Items
-                    </h3>
+                    <div>
+                        <h3 className="text-lg font-bold text-[#0D0D0D]">
+                            AWN Modules & Operations
+                        </h3>
+                        <p className="text-xs text-[#6E6862]">Select a platform subsystem to navigate</p>
+                    </div>
                 </div>
 
                 {/* Options Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 py-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 py-2">
                     {MODULE_OPTIONS.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => onSelectModule(item)}
-                            className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition text-left group cursor-pointer"
+                            className="flex items-center gap-3.5 p-3.5 rounded-xl bg-[#FAF8F5] hover:bg-white border border-[#E5E0D8] hover:border-[#BFAB93] transition-all text-left group cursor-pointer shadow-2xs hover:shadow-xs"
                         >
-                            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 group-hover:scale-105 transition-transform shadow-xs">
-                                <LayoutGrid size={20} />
+                            <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] group-hover:border-[#BFAB93] flex items-center justify-center text-[#2D3F2C] group-hover:scale-105 transition-transform shadow-2xs">
+                                <LayoutGrid size={18} />
                             </div>
-                            <span className="font-semibold text-sm text-slate-800">
-                                {item.label}
-                            </span>
+                            <div>
+                                <span className="font-bold text-xs text-[#0D0D0D] block tracking-wide">
+                                    {item.label}
+                                </span>
+                                <span className="text-[10px] text-[#6E6862]">Administrative Module</span>
+                            </div>
                         </button>
                     ))}
                 </div>

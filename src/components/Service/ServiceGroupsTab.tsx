@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "../DataTable";
+import { TableRowActions } from "../TableRowActions";
 import { ServiceGroupDrawer } from "./ServiceGroupDrawer";
 import {
     GroupType,
@@ -98,22 +99,22 @@ const defaultGroups: ServiceGroupItem[] = [
 const renderGroupIcon = (iconName?: string) => {
     switch (iconName) {
         case "users":
-            return <Users size={13} className="text-[#126b71]" />;
+            return <Users size={13} className="text-[#2D3F2C]" />;
         case "building-2":
-            return <Building2 size={13} className="text-[#126b71]" />;
+            return <Building2 size={13} className="text-[#2D3F2C]" />;
         case "truck":
-            return <Truck size={13} className="text-[#126b71]" />;
+            return <Truck size={13} className="text-[#2D3F2C]" />;
         case "wallet":
-            return <Wallet size={13} className="text-[#126b71]" />;
+            return <Wallet size={13} className="text-[#2D3F2C]" />;
         case "shield-check":
-            return <ShieldCheck size={13} className="text-[#126b71]" />;
+            return <ShieldCheck size={13} className="text-[#2D3F2C]" />;
         case "layers":
-            return <Layers size={13} className="text-[#126b71]" />;
+            return <Layers size={13} className="text-[#2D3F2C]" />;
         case "file-text":
-            return <FileText size={13} className="text-[#126b71]" />;
+            return <FileText size={13} className="text-[#2D3F2C]" />;
         case "briefcase":
         default:
-            return <Briefcase size={13} className="text-[#126b71]" />;
+            return <Briefcase size={13} className="text-[#2D3F2C]" />;
     }
 };
 
@@ -146,6 +147,11 @@ export const ServiceGroupsTab: React.FC = () => {
     const handleOpenEdit = (group: ServiceGroupItem) => {
         setEditingGroup(group);
         setIsDrawerOpen(true);
+    };
+
+    const handleDeleteGroup = (group: ServiceGroupItem) => {
+        setGroups((prev) => prev.filter((g) => g.id !== group.id));
+        toast.success(`Service Group "${group.name}" deleted successfully`);
     };
 
     const handleDrawerSubmit = (dto: CreateServiceGroupDto, id?: string) => {
@@ -212,7 +218,7 @@ export const ServiceGroupsTab: React.FC = () => {
                         type="checkbox"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
-                        className="rounded border-slate-300 text-[#126b71] focus:ring-[#126b71]"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
                 cell: ({ row }) => (
@@ -220,7 +226,7 @@ export const ServiceGroupsTab: React.FC = () => {
                         type="checkbox"
                         checked={row.getIsSelected()}
                         onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-slate-300 text-[#126b71] focus:ring-[#126b71]"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
             },
@@ -228,7 +234,7 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "groupCode",
                 header: "Group Code",
                 cell: (info) => (
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -240,10 +246,10 @@ export const ServiceGroupsTab: React.FC = () => {
                     const item = row.original;
                     return (
                         <div className="flex items-center gap-2.5">
-                            <span className="w-6 h-6 rounded-md bg-slate-100 border border-slate-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                            <span className="w-6 h-6 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-[#6A7358] flex items-center justify-center shrink-0 shadow-2xs">
                                 {renderGroupIcon(item.group_icon)}
                             </span>
-                            <span className="font-medium text-slate-800">
+                            <span className="font-medium text-[#0D0D0D]">
                                 {item.name}
                             </span>
                         </div>
@@ -254,7 +260,7 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "servicesCount",
                 header: "Linked Services",
                 cell: (info) => (
-                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700">
+                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
                         {info.getValue() as number} Services
                     </span>
                 ),
@@ -263,7 +269,7 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "description",
                 header: "Description",
                 cell: (info) => (
-                    <span className="text-slate-500 max-w-xs truncate block">
+                    <span className="text-[#6E6862] max-w-xs truncate block">
                         {(info.getValue() as string) || "—"}
                     </span>
                 ),
@@ -272,7 +278,7 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "createdAt",
                 header: "Create Date",
                 cell: (info) => (
-                    <span className="text-slate-500">{info.getValue() as string}</span>
+                    <span className="text-[#6E6862]">{info.getValue() as string}</span>
                 ),
             },
             {
@@ -281,13 +287,13 @@ export const ServiceGroupsTab: React.FC = () => {
                 cell: ({ row }) => {
                     const isGroupActive = row.original.status === 'active';
                     return isGroupActive ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
                             Active
                         </span>
                     ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#595550]/10 text-[#595550] border border-[#595550]/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
                             Inactive
                         </span>
                     );
@@ -298,15 +304,11 @@ export const ServiceGroupsTab: React.FC = () => {
                 header: () => <div className="text-right">Actions</div>,
                 cell: ({ row }) => (
                     <div className="text-right">
-                        <button
-                            type="button"
-                            onClick={() => handleOpenEdit(row.original)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-[#126b71] hover:bg-[#126b71]/10 transition cursor-pointer"
-                            title="Edit Service Group"
-                        >
-                            <Edit2 size={13} />
-                            <span>Edit</span>
-                        </button>
+                        <TableRowActions
+                            recordName={row.original.name}
+                            onEdit={() => handleOpenEdit(row.original)}
+                            onDelete={() => handleDeleteGroup(row.original)}
+                        />
                     </div>
                 ),
             },
@@ -350,7 +352,8 @@ export const ServiceGroupsTab: React.FC = () => {
                     setPageIndex(0);
                 }}
                 onAddNew={handleOpenCreate}
-                title="New Service Group"
+                title="Service Groups"
+                addNewLabel="New Service Group"
             />
 
             {/* Create / Edit Drawer */}

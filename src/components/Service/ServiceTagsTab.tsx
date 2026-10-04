@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { serviceApi } from "../../api/api";
 import { AddServiceTagModal, ServiceTagStatus } from "./AddServiceTagModal";
 import { DataTable } from "../DataTable";
+import { TableRowActions } from "../TableRowActions";
 
 export interface ServiceTagItem {
     id: string;
@@ -15,10 +17,12 @@ export interface ServiceTagItem {
 }
 
 export const ServiceTagsTab: React.FC = () => {
+    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTag, setEditingTag] = useState<ServiceTagItem | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ["serviceTags", pageIndex, pageSize, searchTerm],
@@ -29,7 +33,6 @@ export const ServiceTagsTab: React.FC = () => {
                 search: searchTerm,
             }),
     });
-    console.log('data', data);
 
     const tagsList: ServiceTagItem[] = useMemo(() => data?.data || [], [data]);
     const totalCount = data?.count || 0;
@@ -39,25 +42,31 @@ export const ServiceTagsTab: React.FC = () => {
         setPageIndex(0);
     };
 
+    const handleDeleteTag = async (tag: ServiceTagItem) => {
+        await serviceApi.deleteServiceTag(tag.id);
+        queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
+        toast.success(`Service Tag "${tag.name}" deleted successfully`);
+    };
+
     const renderStatusBadge = (status: ServiceTagStatus) => {
         switch (status) {
             case ServiceTagStatus.ACTIVE:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
                         Active
                     </span>
                 );
             case ServiceTagStatus.INITIATED:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#8C6046]/10 text-[#8C6046] border border-[#8C6046]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8C6046]" />
                         Initiated
                     </span>
                 );
             case ServiceTagStatus.REJECTED:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                         Rejected
                     </span>
@@ -65,8 +74,8 @@ export const ServiceTagsTab: React.FC = () => {
             case ServiceTagStatus.INACTIVE:
             default:
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#595550]/10 text-[#595550] border border-[#595550]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
                         Inactive
                     </span>
                 );
@@ -82,7 +91,7 @@ export const ServiceTagsTab: React.FC = () => {
                         type="checkbox"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
                 cell: ({ row }) => (
@@ -90,7 +99,7 @@ export const ServiceTagsTab: React.FC = () => {
                         type="checkbox"
                         checked={row.getIsSelected()}
                         onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500/20"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
             },
@@ -98,7 +107,7 @@ export const ServiceTagsTab: React.FC = () => {
                 accessorKey: "tagCode",
                 header: "Tag Code",
                 cell: (info) => (
-                    <span className="font-medium text-slate-800">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -107,7 +116,7 @@ export const ServiceTagsTab: React.FC = () => {
                 accessorKey: "name",
                 header: "Tag Name",
                 cell: (info) => (
-                    <span className="font-medium text-slate-700">
+                    <span className="font-medium text-[#0D0D0D]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -119,11 +128,10 @@ export const ServiceTagsTab: React.FC = () => {
                     const creator = row.original.createdBy;
                     return creator ? (
                         <div>
-                            <div className="font-medium text-slate-800">{creator}</div>
-                            {/* <div className="text-[10px] text-teal-600">{creator}</div> */}
+                            <div className="font-medium text-[#0D0D0D]">{creator}</div>
                         </div>
                     ) : (
-                        <span className="text-slate-400 italic">undefined</span>
+                        <span className="text-[#857E74] italic">undefined</span>
                     );
                 },
             },
@@ -131,7 +139,7 @@ export const ServiceTagsTab: React.FC = () => {
                 accessorKey: "createdAt",
                 header: "Create Date",
                 cell: (info) => (
-                    <span className="text-slate-500">{info.getValue() as string}</span>
+                    <span className="text-[#6E6862]">{info.getValue() as string}</span>
                 ),
             },
             {
@@ -141,10 +149,17 @@ export const ServiceTagsTab: React.FC = () => {
             },
             {
                 id: "actions",
-                header: () => <div className="text-right">•••</div>,
-                cell: () => (
-                    <div className="text-right text-slate-400 cursor-pointer hover:text-slate-600 font-bold">
-                        •••
+                header: () => <div className="text-right">Actions</div>,
+                cell: ({ row }) => (
+                    <div className="text-right">
+                        <TableRowActions
+                            recordName={row.original.name}
+                            onEdit={() => {
+                                setEditingTag(row.original);
+                                setIsModalOpen(true);
+                            }}
+                            onDelete={() => handleDeleteTag(row.original)}
+                        />
                     </div>
                 ),
             },
@@ -153,7 +168,7 @@ export const ServiceTagsTab: React.FC = () => {
     );
 
     return (
-        <div className="p-6 bg-slate-100/60 min-h-screen">
+        <div className="space-y-4">
             <DataTable
                 columns={columns}
                 data={tagsList}
@@ -166,13 +181,21 @@ export const ServiceTagsTab: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
                 onSearchChange={handleSearchChange}
-                onAddNew={() => setIsModalOpen(true)}
-                title="Add Service Tag"
+                onAddNew={() => {
+                    setEditingTag(null);
+                    setIsModalOpen(true);
+                }}
+                title="Service Tags"
+                addNewLabel="Add Service Tag"
             />
 
             <AddServiceTagModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingTag(null);
+                }}
+                initialData={editingTag}
             />
         </div>
     );

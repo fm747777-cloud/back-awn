@@ -314,7 +314,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                     {/* SECTION 1: Group Information */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                            <span className="w-1.5 h-3.5 bg-[#126b71] rounded-full" />
+                            <span className="w-1.5 h-3.5 bg-[#2D3F2C] rounded-full" />
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                                 1. Group Information
                             </h3>
@@ -343,7 +343,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                 className={`w-full px-3.5 py-2.5 bg-slate-50/80 border rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 transition-colors ${
                                     nameError
                                         ? 'border-red-300 focus:ring-red-400/20 focus:border-red-500'
-                                        : 'border-slate-200 focus:ring-[#126b71]/20 focus:border-[#126b71]'
+                                        : 'border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
                                 }`}
                             />
                             {nameError && (
@@ -367,7 +367,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Describe the operational scope, related entity categories, or organizational context..."
-                                className="w-full px-3.5 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition-colors resize-none"
+                                className="w-full px-3.5 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors resize-none"
                             />
                         </div>
 
@@ -387,7 +387,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                             onClick={() => setGroupIcon(item.id)}
                                             className={`flex items-center gap-2 p-2 rounded-lg border text-left transition cursor-pointer ${
                                                 isSelected
-                                                    ? 'bg-[#126b71]/10 border-[#126b71] text-[#126b71] font-semibold ring-1 ring-[#126b71]'
+                                                    ? 'bg-[#2D3F2C]/10 border-[#2D3F2C] text-[#2D3F2C] font-semibold ring-1 ring-[#2D3F2C]'
                                                     : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
                                             }`}
                                         >
@@ -404,7 +404,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                     {/* SECTION 2: Classification & Status */}
                     <div className="space-y-4 pt-1">
                         <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                            <span className="w-1.5 h-3.5 bg-[#b5925a] rounded-full" />
+                            <span className="w-1.5 h-3.5 bg-[#6A7358] rounded-full" />
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                                 2. Classification & Status
                             </h3>
@@ -418,7 +418,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                             <button
                                 type="button"
                                 onClick={() => setIsPackageDropdownOpen((prev) => !prev)}
-                                className="w-full px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-left flex items-center justify-between text-slate-800 hover:bg-slate-100/70 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition cursor-pointer"
+                                className="w-full px-3.5 py-2.5 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-left flex items-center justify-between text-slate-800 hover:bg-slate-100/70 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition cursor-pointer"
                             >
                                 <span className={selectedPackage ? 'font-medium text-slate-800' : 'text-slate-400'}>
                                     {selectedPackage
@@ -441,7 +441,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                             value={packageSearch}
                                             onChange={(e) => setPackageSearch(e.target.value)}
                                             placeholder="Filter packages by name or code..."
-                                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#126b71] focus:border-[#126b71]"
+                                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
                                             autoFocus
                                         />
                                     </div>
@@ -461,7 +461,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                             }`}
                                         >
                                             <span>None (No package linked)</span>
-                                            {!servicePackageId && <Check size={12} className="text-[#126b71]" />}
+                                            {!servicePackageId && <Check size={12} className="text-[#2D3F2C]" />}
                                         </button>
 
                                         {filteredPackages.length > 0 ? (
@@ -478,7 +478,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                         }}
                                                         className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition flex items-center justify-between cursor-pointer ${
                                                             isPkgSelected
-                                                                ? 'bg-[#126b71]/10 text-[#126b71] font-semibold'
+                                                                ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] font-semibold'
                                                                 : 'text-slate-700 hover:bg-slate-50'
                                                         }`}
                                                     >
@@ -488,7 +488,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                                 {pkg.packageCode}
                                                             </div>
                                                         </div>
-                                                        {isPkgSelected && <Check size={14} className="text-[#126b71]" />}
+                                                        {isPkgSelected && <Check size={14} className="text-[#2D3F2C]" />}
                                                     </button>
                                                 );
                                             })
@@ -515,7 +515,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                     id="sg-group-type"
                                     value={groupType}
                                     onChange={(e) => setGroupType(e.target.value as GroupType)}
-                                    className="w-full px-3 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition"
+                                    className="w-full px-3 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition"
                                 >
                                     <option value={GroupType.EMPLOYEE}>Employee (موظف)</option>
                                     <option value={GroupType.BUSINESS}>Business (منشأة / أعمال)</option>
@@ -535,7 +535,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                     id="sg-boarding-type"
                                     value={boardingType}
                                     onChange={(e) => setBoardingType(e.target.value as BoardingType)}
-                                    className="w-full px-3 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition"
+                                    className="w-full px-3 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition"
                                 >
                                     <option value={BoardingType.OTHER}>Other (عام / أخرى)</option>
                                     <option value={BoardingType.ONBOARDING}>Onboarding (تهيئة وانضمام)</option>
@@ -557,7 +557,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                 id="sg-status"
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value as ServiceTagStatus)}
-                                className="w-full px-3 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition"
+                                className="w-full px-3 py-2 bg-slate-50/80 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition"
                             >
                                 <option value={ServiceTagStatus.ACTIVE}>Active (نشط)</option>
                                 <option value={ServiceTagStatus.INACTIVE}>Inactive (غير نشط)</option>
@@ -571,7 +571,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                     <div className="space-y-4 pt-1">
                         <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                             <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-3.5 bg-[#126b71] rounded-full" />
+                                <span className="w-1.5 h-3.5 bg-[#2D3F2C] rounded-full" />
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
                                     3. Service Selection
                                 </h3>
@@ -580,7 +580,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                 <button
                                     type="button"
                                     onClick={handleResetFilters}
-                                    className="text-[11px] font-medium text-slate-500 hover:text-[#126b71] flex items-center gap-1 transition cursor-pointer"
+                                    className="text-[11px] font-medium text-slate-500 hover:text-[#2D3F2C] flex items-center gap-1 transition cursor-pointer"
                                 >
                                     <RotateCcw size={11} />
                                     <span>Reset Filters</span>
@@ -608,7 +608,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                         }}
                                         onKeyDown={handleServiceSearchKeyDown}
                                         placeholder="Search Services (Press Enter To Search)"
-                                        className="w-full pl-8 pr-16 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition"
+                                        className="w-full pl-8 pr-16 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition"
                                     />
                                     <Search
                                         size={14}
@@ -635,7 +635,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                     <button
                                         type="button"
                                         onClick={() => setIsTypeDropdownOpen((prev) => !prev)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-left flex items-center justify-between text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-left flex items-center justify-between text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition cursor-pointer"
                                     >
                                         <span className={selectedTypeFilter ? 'font-medium text-slate-800' : 'text-slate-400'}>
                                             {selectedTypeFilter || 'Search for Service Type'}
@@ -656,7 +656,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                     value={typeSearch}
                                                     onChange={(e) => setTypeSearch(e.target.value)}
                                                     placeholder="Filter service type..."
-                                                    className="w-full pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#126b71]"
+                                                    className="w-full pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
                                                     autoFocus
                                                 />
                                             </div>
@@ -675,7 +675,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                     }`}
                                                 >
                                                     <span>All Types (الكل)</span>
-                                                    {!selectedTypeFilter && <Check size={12} className="text-[#126b71]" />}
+                                                    {!selectedTypeFilter && <Check size={12} className="text-[#2D3F2C]" />}
                                                 </button>
                                                 {filteredTypeOptions.map((opt) => {
                                                     const isSelected = selectedTypeFilter === opt;
@@ -690,12 +690,12 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                             }}
                                                             className={`w-full text-left px-2 py-1.5 rounded text-xs transition flex items-center justify-between cursor-pointer ${
                                                                 isSelected
-                                                                    ? 'bg-[#126b71]/10 text-[#126b71] font-semibold'
+                                                                    ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] font-semibold'
                                                                     : 'text-slate-700 hover:bg-slate-50'
                                                             }`}
                                                         >
                                                             <span>{opt}</span>
-                                                            {isSelected && <Check size={12} className="text-[#126b71]" />}
+                                                            {isSelected && <Check size={12} className="text-[#2D3F2C]" />}
                                                         </button>
                                                     );
                                                 })}
@@ -712,7 +712,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                     <button
                                         type="button"
                                         onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-left flex items-center justify-between text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 focus:border-[#126b71] transition cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-left flex items-center justify-between text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition cursor-pointer"
                                     >
                                         <span className={selectedCategoryFilter ? 'font-medium text-slate-800' : 'text-slate-400'}>
                                             {selectedCategoryFilter || 'Search for Service Category'}
@@ -733,7 +733,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                     value={categorySearch}
                                                     onChange={(e) => setCategorySearch(e.target.value)}
                                                     placeholder="Filter service category..."
-                                                    className="w-full pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#126b71]"
+                                                    className="w-full pl-7 pr-2.5 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
                                                     autoFocus
                                                 />
                                             </div>
@@ -752,7 +752,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                     }`}
                                                 >
                                                     <span>All Categories (الكل)</span>
-                                                    {!selectedCategoryFilter && <Check size={12} className="text-[#126b71]" />}
+                                                    {!selectedCategoryFilter && <Check size={12} className="text-[#2D3F2C]" />}
                                                 </button>
                                                 {filteredCategoryOptions.map((opt) => {
                                                     const isSelected = selectedCategoryFilter === opt;
@@ -767,12 +767,12 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                             }}
                                                             className={`w-full text-left px-2 py-1.5 rounded text-xs transition flex items-center justify-between cursor-pointer ${
                                                                 isSelected
-                                                                    ? 'bg-[#126b71]/10 text-[#126b71] font-semibold'
+                                                                    ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] font-semibold'
                                                                     : 'text-slate-700 hover:bg-slate-50'
                                                             }`}
                                                         >
                                                             <span>{opt}</span>
-                                                            {isSelected && <Check size={12} className="text-[#126b71]" />}
+                                                            {isSelected && <Check size={12} className="text-[#2D3F2C]" />}
                                                         </button>
                                                     );
                                                 })}
@@ -816,7 +816,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                             <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
                                                                 {svc.serviceCategory}
                                                             </span>
-                                                            <span className="text-[9px] bg-[#126b71]/10 text-[#126b71] px-1.5 py-0.5 rounded">
+                                                            <span className="text-[9px] bg-[#2D3F2C]/10 text-[#2D3F2C] px-1.5 py-0.5 rounded">
                                                                 {svc.serviceType}
                                                             </span>
                                                         </div>
@@ -832,7 +832,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleAddService(svc.id)}
-                                                                className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-[#126b71] hover:bg-[#0f555a] text-white font-medium transition cursor-pointer shadow-2xs active:scale-95"
+                                                                className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md bg-[#2D3F2C] hover:bg-[#233222] text-white font-medium transition cursor-pointer shadow-2xs active:scale-95"
                                                             >
                                                                 <Plus size={12} />
                                                                 Add
@@ -850,7 +850,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                 <button
                                                     type="button"
                                                     onClick={handleResetFilters}
-                                                    className="mt-2 text-[11px] text-[#126b71] font-medium underline"
+                                                    className="mt-2 text-[11px] text-[#2D3F2C] font-medium underline"
                                                 >
                                                     Reset filters
                                                 </button>
@@ -865,7 +865,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                 <div className="bg-slate-50/90 px-3.5 py-2.5 border-b border-slate-200 flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         <span className="font-semibold text-xs text-slate-800">Selected Services</span>
-                                        <span className="text-[10px] bg-[#126b71]/10 text-[#126b71] px-1.5 py-0.2 rounded font-bold">
+                                        <span className="text-[10px] bg-[#2D3F2C]/10 text-[#2D3F2C] px-1.5 py-0.2 rounded font-bold">
                                             ({selectedServiceIds.length})
                                         </span>
                                     </div>
@@ -939,7 +939,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                     <button
                         type="submit"
                         form="service-group-form"
-                        className="px-5 py-2 bg-[#126b71] hover:bg-[#0e5257] text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer active:scale-98"
+                        className="px-5 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer active:scale-98"
                     >
                         {isEdit ? 'Save Changes' : 'Create Group'}
                     </button>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,11 +15,13 @@ export enum ServiceCategoryStatus {
 interface AddServiceCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
+    initialData?: any;
 }
 
 export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = ({
     isOpen,
     onClose,
+    initialData,
 }) => {
     const queryClient = useQueryClient();
 
@@ -31,12 +33,34 @@ export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = (
     } = useForm<ServiceCategoryFormValues>({
         resolver: zodResolver(serviceCategorySchema),
         defaultValues: {
-            status: ServiceCategoryStatus.ACTIVE,
+            name: initialData?.name || "",
+            description: initialData?.description || "",
+            status: initialData?.status || ServiceCategoryStatus.ACTIVE,
         },
     });
 
+    useEffect(() => {
+        if (isOpen && initialData) {
+            reset({
+                name: initialData.name || "",
+                description: initialData.description || "",
+                status: initialData.status || ServiceCategoryStatus.ACTIVE,
+            });
+        } else if (isOpen && !initialData) {
+            reset({
+                name: "",
+                description: "",
+                status: ServiceCategoryStatus.ACTIVE,
+            });
+        }
+    }, [isOpen, initialData, reset]);
+
     const mutation = useMutation({
-        mutationFn: serviceApi.createServiceCategory,
+        mutationFn: (data: ServiceCategoryFormValues) =>
+            serviceApi.createServiceCategory({
+                ...data,
+                ...(initialData?.id ? { id: initialData.id } : {}),
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["serviceCategories"] });
             reset();
@@ -67,7 +91,7 @@ export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = (
             >
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
                     <h2 className="text-lg font-semibold text-slate-800">
-                        Add New Service Category
+                        {initialData ? "Edit Service Category" : "Add New Service Category"}
                     </h2>
                     <button
                         type="button"
@@ -92,7 +116,7 @@ export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = (
                                 type="text"
                                 placeholder="Enter category name"
                                 {...register("name")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                             />
                             {errors.name && (
                                 <span className="text-[10px] text-red-500 mt-1 block">
@@ -109,7 +133,7 @@ export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = (
                                 rows={4}
                                 placeholder="Enter description"
                                 {...register("description")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] resize-none"
                             />
                         </div>
 
@@ -119,7 +143,7 @@ export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = (
                             </label>
                             <select
                                 {...register("status")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                             >
                                 <option value={ServiceCategoryStatus.ACTIVE}>Active</option>
                                 <option value={ServiceCategoryStatus.INITIATED}>Initiated</option>
@@ -142,7 +166,7 @@ export const AddServiceCategoryModal: React.FC<AddServiceCategoryModalProps> = (
                         type="submit"
                         form="add-category-form"
                         disabled={mutation.isPending}
-                        className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
                     >
                         {mutation.isPending ? "Submitting..." : "Save Category"}
                     </button>

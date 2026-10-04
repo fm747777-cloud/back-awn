@@ -7,7 +7,7 @@ type PaginationProps = {
 
 const Pagination = ({ table, pageIndex, loading }: PaginationProps) => {
     return (
-        <div className="flex justify-end items-center mt-4 gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs select-none">
             <button
                 type="button"
                 onClick={() => {
@@ -16,12 +16,12 @@ const Pagination = ({ table, pageIndex, loading }: PaginationProps) => {
                     }
                 }}
                 disabled={!table.getCanPreviousPage() || loading}
-                className="px-3 py-1.5 rounded bg-white border border-slate-200 font-medium text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors shadow-sm"
+                className="px-3 py-1.5 rounded-lg bg-white border border-[#DCD6CD] hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#2D3F2C] disabled:opacity-40 disabled:hover:border-[#DCD6CD] disabled:hover:bg-white disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
             >
                 Previous
             </button>
 
-            <span className="px-3 py-1.5 bg-slate-100 rounded text-slate-700 font-medium">
+            <span className="px-3 py-1.5 bg-[#2D3F2C] text-[#FAF8F5] rounded-lg font-semibold min-w-8 text-center shadow-2xs">
                 {pageIndex + 1}
             </span>
 
@@ -33,7 +33,7 @@ const Pagination = ({ table, pageIndex, loading }: PaginationProps) => {
                     }
                 }}
                 disabled={!table.getCanNextPage() || loading}
-                className="px-3 py-1.5 rounded bg-white border border-slate-200 font-medium text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors shadow-sm"
+                className="px-3 py-1.5 rounded-lg bg-white border border-[#DCD6CD] hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#2D3F2C] disabled:opacity-40 disabled:hover:border-[#DCD6CD] disabled:hover:bg-white disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
             >
                 Next
             </button>

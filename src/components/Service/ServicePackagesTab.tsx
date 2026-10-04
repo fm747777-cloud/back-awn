@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { DataTable } from "../DataTable";
+import { TableRowActions } from "../TableRowActions";
 import { AddServicePackageModal } from "./AddServicePackageModal";
 import type { CreateServicePackageDto } from "../../schemas/serviceSchema";
 
@@ -60,6 +61,7 @@ export const ServicePackagesTab: React.FC = () => {
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPackage, setEditingPackage] = useState<ServicePackageItem | null>(null);
 
     const filtered = useMemo(() => {
         if (!searchTerm) return packages;
@@ -70,10 +72,29 @@ export const ServicePackagesTab: React.FC = () => {
         );
     }, [packages, searchTerm]);
 
-    const handleCreatePackage = (
+    const handleCreateOrUpdatePackage = (
         dto: CreateServicePackageDto,
         meta?: { service_group_id: string; group_name?: string }
     ) => {
+        if (editingPackage) {
+            setPackages((prev) =>
+                prev.map((item) =>
+                    item.id === editingPackage.id
+                        ? {
+                              ...item,
+                              name: dto.package_name,
+                              price: dto.unit_price,
+                              status: (dto.status?.toLowerCase() as 'active' | 'inactive') || item.status,
+                          }
+                        : item
+                )
+            );
+            toast.success(`Service package "${dto.package_name}" updated successfully`);
+            setEditingPackage(null);
+            setIsModalOpen(false);
+            return;
+        }
+
         const nextCodeNum = packages.length + 1;
         const newPackage: ServicePackageItem = {
             id: `pkg-${Date.now()}`,
@@ -91,6 +112,11 @@ export const ServicePackagesTab: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    const handleDeletePackage = (pkg: ServicePackageItem) => {
+        setPackages((prev) => prev.filter((p) => p.id !== pkg.id));
+        toast.success(`Service package "${pkg.name}" deleted successfully`);
+    };
+
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
@@ -100,7 +126,7 @@ export const ServicePackagesTab: React.FC = () => {
                         type="checkbox"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
-                        className="rounded border-slate-300 text-[#126b71]"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
                 cell: ({ row }) => (
@@ -108,7 +134,7 @@ export const ServicePackagesTab: React.FC = () => {
                         type="checkbox"
                         checked={row.getIsSelected()}
                         onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-slate-300 text-[#126b71]"
+                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
                     />
                 ),
             },
@@ -116,7 +142,7 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "packageCode",
                 header: "Package Code",
                 cell: (info) => (
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -125,7 +151,7 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "name",
                 header: "Package Name",
                 cell: (info) => (
-                    <span className="font-medium text-slate-800">
+                    <span className="font-medium text-[#0D0D0D]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -134,7 +160,7 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "servicesIncluded",
                 header: "Services Included",
                 cell: (info) => (
-                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700">
+                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
                         {info.getValue() as number} Services
                     </span>
                 ),
@@ -147,7 +173,7 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "price",
                 header: "Price (SAR)",
                 cell: (info) => (
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold font-mono text-[#0D0D0D]">
                         {(info.getValue() as number).toLocaleString()} SAR
                     </span>
                 ),
@@ -156,10 +182,26 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "status",
                 header: "Status",
                 cell: () => (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
                         Active
                     </span>
+                ),
+            },
+            {
+                id: "actions",
+                header: () => <div className="text-right">Actions</div>,
+                cell: ({ row }) => (
+                    <div className="text-right">
+                        <TableRowActions
+                            recordName={row.original.name}
+                            onEdit={() => {
+                                setEditingPackage(row.original);
+                                setIsModalOpen(true);
+                            }}
+                            onDelete={() => handleDeletePackage(row.original)}
+                        />
+                    </div>
                 ),
             },
         ],
@@ -180,14 +222,22 @@ export const ServicePackagesTab: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
                 onSearchChange={setSearchTerm}
-                onAddNew={() => setIsModalOpen(true)}
+                onAddNew={() => {
+                    setEditingPackage(null);
+                    setIsModalOpen(true);
+                }}
                 title="Service Packages"
+                addNewLabel="Add Package"
             />
 
             <AddServicePackageModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={handleCreatePackage}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingPackage(null);
+                }}
+                onSubmit={handleCreateOrUpdatePackage}
+                initialData={editingPackage}
             />
         </div>
     );

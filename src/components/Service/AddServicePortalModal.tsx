@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,11 +8,13 @@ import { servicePortalSchema, type ServicePortalFormValues } from "../../schemas
 interface AddServicePortalModalProps {
     isOpen: boolean;
     onClose: () => void;
+    initialData?: any;
 }
 
 export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
     isOpen,
     onClose,
+    initialData,
 }) => {
     const [currentStep, setCurrentStep] = useState<1 | 2>(1);
     const queryClient = useQueryClient();
@@ -26,12 +28,44 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
     } = useForm<ServicePortalFormValues>({
         resolver: zodResolver(servicePortalSchema),
         mode: "onTouched",
+        defaultValues: {
+            name: initialData?.name || "",
+            url: initialData?.url || "",
+            description: initialData?.description || "",
+            contact_number: initialData?.contact_number || undefined,
+            email: initialData?.email || "",
+        },
     });
 
+    useEffect(() => {
+        if (isOpen && initialData) {
+            reset({
+                name: initialData.name || "",
+                url: initialData.url || "",
+                description: initialData.description || "",
+                contact_number: initialData.contact_number || undefined,
+                email: initialData.email || "",
+            });
+        } else if (isOpen && !initialData) {
+            reset({
+                name: "",
+                url: "",
+                description: "",
+                contact_number: undefined,
+                email: "",
+            });
+        }
+    }, [isOpen, initialData, reset]);
+
     const mutation = useMutation({
-        mutationFn: serviceApi.createServicePortal,
+        mutationFn: (data: ServicePortalFormValues) =>
+            serviceApi.createServicePortal({
+                ...data,
+                ...(initialData?.id ? { id: initialData.id } : {}),
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["servicePortals"] });
+            queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
             handleClose();
         },
     });
@@ -80,7 +114,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                 {/* Header */}
                 <div className="flex justify-between items-center px-8 py-5 bg-white border-b border-slate-100">
                     <h2 className="text-xl font-semibold text-slate-800">
-                        Add Service Portal
+                        {initialData ? "Edit Service Portal" : "Add Service Portal"}
                     </h2>
                     <button
                         type="button"
@@ -105,7 +139,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
 
                         {/* Step 1 Indicator */}
                         <div className="relative z-10 flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-[#0d7a78] text-white flex items-center justify-center transition-colors">
+                            <div className="w-10 h-10 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center transition-colors">
                                 <svg
                                     className="w-5 h-5"
                                     fill="none"
@@ -116,12 +150,12 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         strokeWidth="2.5"
-                                        d="5 13l4 4L19 7"
+                                        d="M5 13l4 4L19 7"
                                     />
                                 </svg>
                             </div>
                             <span
-                                className={`text-xs font-semibold ${currentStep === 1 ? "text-[#0d7a78]" : "text-slate-400"
+                                className={`text-xs font-semibold ${currentStep === 1 ? "text-[#2D3F2C]" : "text-slate-400"
                                     }`}
                             >
                                 Portal Details
@@ -132,14 +166,14 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                         <div className="relative z-10 flex flex-col items-center gap-2">
                             <div
                                 className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-medium text-sm transition-colors ${currentStep === 2
-                                    ? "border-[#0d7a78] text-[#0d7a78] bg-white border-dashed"
+                                    ? "border-[#2D3F2C] text-[#2D3F2C] bg-white border-dashed"
                                     : "border-slate-300 text-slate-400 bg-white border-dashed"
                                     }`}
                             >
                                 2
                             </div>
                             <span
-                                className={`text-xs font-semibold ${currentStep === 2 ? "text-[#0d7a78]" : "text-slate-300"
+                                className={`text-xs font-semibold ${currentStep === 2 ? "text-[#2D3F2C]" : "text-slate-300"
                                     }`}
                             >
                                 Portal Contact Details
@@ -151,7 +185,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                     <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
                         <form id="portal-form" onSubmit={handleSubmit(onSubmit)}>
                             {/* STEP 1: Portal Details */}
-                            <div className={'currentStep === 1 ? "space-y-5" : "hidden"'}>
+                            <div className={currentStep === 1 ? "space-y-5" : "hidden"}>
                                 <h3 className="text-base font-bold text-slate-800 mb-4">
                                     Portal Details
                                 </h3>
@@ -160,13 +194,13 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                     {/* Portal Name */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Portal Name <span className="text-teal-600">*</span>
+                                            Portal Name <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             placeholder="Enter Portal Name"
                                             {...register("name")}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                                         />
                                         {errors.name && (
                                             <span className="text-[10px] text-red-500 mt-1 block">
@@ -178,13 +212,13 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                     {/* Portal URL */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Portal URL <span className="text-teal-600">*</span>
+                                            Portal URL <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             placeholder="Enter Portal URL"
                                             {...register("url")}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                                         />
                                         {errors.url && (
                                             <span className="text-[10px] text-red-500 mt-1 block">
@@ -203,7 +237,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                         rows={4}
                                         placeholder="Enter Portal Description"
                                         {...register("description")}
-                                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
+                                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] resize-none"
                                     />
                                     {errors.description && (
                                         <span className="text-[10px] text-red-500 mt-1 block">
@@ -223,13 +257,13 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                     {/* Contact Number */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Contact Number <span className="text-teal-600">*</span>
+                                            Contact Number <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
                                             placeholder="Enter Contact Number"
                                             {...register("contact_number", { valueAsNumber: true })}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                                         />
                                         {errors.contact_number && (
                                             <span className="text-[10px] text-red-500 mt-1 block">
@@ -241,13 +275,13 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                     {/* Email Address */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Email Address <span className="text-teal-600">*</span>
+                                            Email Address <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="email"
                                             placeholder="Enter Email Address"
                                             {...register("email")}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                                         />
                                         {errors.email && (
                                             <span className="text-[10px] text-red-500 mt-1 block">
@@ -285,7 +319,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                         <button
                             type="button"
                             onClick={handleNext}
-                            className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+                            className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
                         >
                             Next
                         </button>
@@ -294,7 +328,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                             type="submit"
                             form="portal-form"
                             disabled={mutation.isPending}
-                            className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                            className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
                         >
                             {mutation.isPending ? "Submitting..." : "Submit"}
                         </button>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,11 +15,13 @@ export enum ServiceTypeStatus {
 interface AddServiceTypeModalProps {
     isOpen: boolean;
     onClose: () => void;
+    initialData?: any;
 }
 
 export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
     isOpen,
     onClose,
+    initialData,
 }) => {
     const queryClient = useQueryClient();
 
@@ -38,12 +40,37 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
     } = useForm<ServiceTypeFormValues>({
         resolver: zodResolver(serviceTypeSchema),
         defaultValues: {
-            status: ServiceTypeStatus.ACTIVE as any,
+            name: initialData?.name || "",
+            description: initialData?.description || "",
+            serviceCategory_id: initialData?.serviceCategory?.id || initialData?.serviceCategory_id || "",
+            status: initialData?.status || ServiceTypeStatus.ACTIVE,
         },
     });
 
+    useEffect(() => {
+        if (isOpen && initialData) {
+            reset({
+                name: initialData.name || "",
+                description: initialData.description || "",
+                serviceCategory_id: initialData.serviceCategory?.id || initialData.serviceCategory_id || "",
+                status: initialData.status || ServiceTypeStatus.ACTIVE,
+            });
+        } else if (isOpen && !initialData) {
+            reset({
+                name: "",
+                description: "",
+                serviceCategory_id: "",
+                status: ServiceTypeStatus.ACTIVE,
+            });
+        }
+    }, [isOpen, initialData, reset]);
+
     const mutation = useMutation({
-        mutationFn: serviceApi.createServiceType,
+        mutationFn: (data: ServiceTypeFormValues) =>
+            serviceApi.createServiceType({
+                ...data,
+                ...(initialData?.id ? { id: initialData.id } : {}),
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["serviceTypes"] });
             reset();
@@ -76,7 +103,7 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
             >
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
                     <h2 className="text-lg font-semibold text-slate-800">
-                        Add New Service Type
+                        {initialData ? "Edit Service Type" : "Add New Service Type"}
                     </h2>
                     <button
                         type="button"
@@ -101,7 +128,7 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
                                 type="text"
                                 placeholder="Enter type name"
                                 {...register("name")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                             />
                             {errors.name && (
                                 <span className="text-[10px] text-red-500 mt-1 block">
@@ -116,7 +143,7 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
                             </label>
                             <select
                                 {...register("serviceCategory_id")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                                 disabled={isLoadingCategories}
                             >
                                 <option value="">
@@ -143,7 +170,7 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
                                 rows={4}
                                 placeholder="Enter description"
                                 {...register("description")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] resize-none"
                             />
                         </div>
 
@@ -153,7 +180,7 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
                             </label>
                             <select
                                 {...register("status")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                             >
                                 <option value={ServiceTypeStatus.ACTIVE}>Active</option>
                                 <option value={ServiceTypeStatus.INITIATED}>Initiated</option>
@@ -176,7 +203,7 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
                         type="submit"
                         form="add-type-form"
                         disabled={mutation.isPending}
-                        className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
                     >
                         {mutation.isPending ? "Submitting..." : "Save Type"}
                     </button>

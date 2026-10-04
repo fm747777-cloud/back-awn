@@ -21,16 +21,18 @@ interface AddServicePackageModalProps {
         data: CreateServicePackageDto,
         meta?: { service_group_id: string; group_name?: string }
     ) => void;
+    initialData?: any;
 }
 
 export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
     isOpen,
     onClose,
     onSubmit,
+    initialData,
 }) => {
     const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
     const [groupSearchQuery, setGroupSearchQuery] = useState("");
-    const [selectedGroupId, setSelectedGroupId] = useState("");
+    const [selectedGroupId, setSelectedGroupId] = useState(initialData?.service_group_id || "");
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,14 +46,38 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
     } = useForm<ServicePackageFormValues>({
         resolver: zodResolver(servicePackageSchema),
         defaultValues: {
-            group_type: GroupType.EMPLOYEE,
-            service_group_id: "",
-            package_name: "",
-            unit_price: 0,
-            description: "",
-            status: ServiceTagStatus.ACTIVE,
+            group_type: initialData?.group_type || GroupType.EMPLOYEE,
+            service_group_id: initialData?.service_group_id || "",
+            package_name: initialData?.name || initialData?.package_name || "",
+            unit_price: initialData?.price || initialData?.unit_price || 0,
+            description: initialData?.description || "",
+            status: initialData?.status === 'inactive' ? ServiceTagStatus.INACTIVE : ServiceTagStatus.ACTIVE,
         },
     });
+
+    useEffect(() => {
+        if (isOpen && initialData) {
+            reset({
+                group_type: initialData.group_type || GroupType.EMPLOYEE,
+                service_group_id: initialData.service_group_id || "",
+                package_name: initialData.name || initialData.package_name || "",
+                unit_price: initialData.price || initialData.unit_price || 0,
+                description: initialData.description || "",
+                status: initialData.status === 'inactive' ? ServiceTagStatus.INACTIVE : ServiceTagStatus.ACTIVE,
+            });
+            setSelectedGroupId(initialData.service_group_id || "");
+        } else if (isOpen && !initialData) {
+            reset({
+                group_type: GroupType.EMPLOYEE,
+                service_group_id: "",
+                package_name: "",
+                unit_price: 0,
+                description: "",
+                status: ServiceTagStatus.ACTIVE,
+            });
+            setSelectedGroupId("");
+        }
+    }, [isOpen, initialData, reset]);
 
     const selectedGroup = DEMO_SERVICE_GROUPS.find((g) => g.id === selectedGroupId);
 
@@ -154,7 +180,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                     <div>
                         <h2 className="text-base font-bold text-slate-800">
-                            Add Service Package
+                            {initialData ? "Edit Service Package" : "Add Service Package"}
                         </h2>
                         <p className="text-xs text-slate-500 mt-0.5">
                             Create and manage service packages including pricing, trial period, and grouping.
@@ -193,7 +219,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                 </label>
                                 <select
                                     {...register("group_type")}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 cursor-pointer"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 cursor-pointer"
                                 >
                                     <option value={GroupType.BUSINESS}>Business</option>
                                     <option value={GroupType.EMPLOYEE}>Employee</option>
@@ -215,7 +241,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => setIsGroupDropdownOpen((prev) => !prev)}
-                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs flex items-center justify-between cursor-pointer transition text-left focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 ${
+                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs flex items-center justify-between cursor-pointer transition text-left focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
                                         errors.service_group_id
                                             ? "border-red-300"
                                             : "border-slate-200"
@@ -259,7 +285,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                                 value={groupSearchQuery}
                                                 onChange={(e) => setGroupSearchQuery(e.target.value)}
                                                 placeholder="Search for Select Service Group"
-                                                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#126b71]"
+                                                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
                                             />
                                         </div>
 
@@ -275,7 +301,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                                             onClick={() => handleSelectGroup(group)}
                                                             className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition flex items-center justify-between cursor-pointer ${
                                                                 isSelected
-                                                                    ? "bg-[#126b71]/10 text-[#126b71] font-semibold"
+                                                                    ? "bg-[#2D3F2C]/10 text-[#2D3F2C] font-semibold"
                                                                     : "text-slate-700 hover:bg-slate-50"
                                                             }`}
                                                         >
@@ -292,7 +318,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                                             {isSelected && (
                                                                 <Check
                                                                     size={14}
-                                                                    className="text-[#126b71] shrink-0"
+                                                                    className="text-[#2D3F2C] shrink-0"
                                                                 />
                                                             )}
                                                         </button>
@@ -317,7 +343,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                     type="text"
                                     placeholder="Enter Package Name"
                                     {...register("package_name")}
-                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 ${
+                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
                                         errors.package_name
                                             ? "border-red-300"
                                             : "border-slate-200"
@@ -348,7 +374,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                             }
                                         }}
                                         {...register("unit_price", { valueAsNumber: true })}
-                                        className={`w-full pl-3 pr-14 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 ${
+                                        className={`w-full pl-3 pr-14 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
                                             errors.unit_price
                                                 ? "border-red-300"
                                                 : "border-slate-200"
@@ -374,7 +400,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                                     rows={3}
                                     placeholder="Enter Description"
                                     {...register("description")}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#126b71]/20 resize-none text-slate-700"
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 resize-none text-slate-700"
                                 />
                                 {errors.description && (
                                     <span className="text-[10px] text-red-500 mt-1 block">
@@ -399,7 +425,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                         type="submit"
                         form="add-service-package-form"
                         disabled={isSubmitting}
-                        className="px-6 py-2 bg-[#b5925a] hover:bg-[#a1804c] text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                        className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                     >
                         Submit
                     </button>

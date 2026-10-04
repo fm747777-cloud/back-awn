@@ -77,7 +77,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 accessorKey: "timestamp",
                 header: "Timestamp",
                 cell: (info) => (
-                    <span className="font-mono text-xs text-slate-600">
+                    <span className="font-mono text-xs text-[#2D3F2C] font-semibold">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -86,7 +86,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 accessorKey: "action",
                 header: "Action",
                 cell: (info) => (
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold text-[#0D0D0D]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -95,7 +95,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 accessorKey: "entityType",
                 header: "Module / Entity",
                 cell: (info) => (
-                    <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
+                    <span className="px-2 py-0.5 rounded text-xs bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] font-medium">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -104,7 +104,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 accessorKey: "entityName",
                 header: "Target Record",
                 cell: (info) => (
-                    <span className="font-medium text-slate-800">
+                    <span className="font-medium text-[#0D0D0D] dir-rtl inline-block text-right">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -112,12 +112,15 @@ export const ServiceAuditTrailTab: React.FC = () => {
             {
                 accessorKey: "performedBy",
                 header: "Performed By",
+                cell: (info) => (
+                    <span className="text-[#0D0D0D] font-medium">{info.getValue() as string}</span>
+                ),
             },
             {
                 accessorKey: "ipAddress",
                 header: "IP Address",
                 cell: (info) => (
-                    <span className="font-mono text-xs text-slate-500">
+                    <span className="font-mono text-xs text-[#6E6862]">
                         {info.getValue() as string}
                     </span>
                 ),
@@ -126,7 +129,8 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 accessorKey: "status",
                 header: "Status",
                 cell: () => (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
                         Success
                     </span>
                 ),
@@ -149,7 +153,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
                 onSearchChange={setSearchTerm}
-                title="Services Audit Trail"
+                title="Audit Trail"
             />
         </div>
     );
