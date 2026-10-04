@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { serviceApi } from "../../api/api"; // اضبط المسار حسب مشروعك
 import { servicePortalSchema, type ServicePortalFormValues } from "../../schemas/serviceSchema";
+import { focusAndScrollToFirstError } from "../../utils/formValidation";
 
 interface AddServicePortalModalProps {
     isOpen: boolean;
@@ -27,7 +28,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
         formState: { errors },
     } = useForm<ServicePortalFormValues>({
         resolver: zodResolver(servicePortalSchema),
-        mode: "onTouched",
+        mode: "onSubmit",
         defaultValues: {
             name: initialData?.name || "",
             url: initialData?.url || "",
@@ -76,11 +77,19 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
         onClose();
     };
 
-    // التحقق من حقول الخطوة الأولى فقط عند الضغط على Next
+    // Validate Step 1 fields before advancing
     const handleNext = async () => {
-        const isStepOneValid = await trigger(["name", "url", "description"]);
+        const isStepOneValid = await trigger(["name", "url"]);
         if (isStepOneValid) {
             setCurrentStep(2);
+        } else {
+            setTimeout(() => {
+                const el = document.querySelector('[name="name"], [name="url"]') as HTMLElement;
+                if (el) {
+                    el.focus({ preventScroll: true });
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 60);
         }
     };
 
@@ -89,9 +98,23 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
     };
 
     const onSubmit = (data: ServicePortalFormValues) => {
-        console.log('data', data);
-
         mutation.mutate(data);
+    };
+
+    const onInvalid = (formErrors: any) => {
+        if (formErrors.name || formErrors.url) {
+            setCurrentStep(1);
+            setTimeout(() => {
+                const first = formErrors.name ? "name" : "url";
+                const el = document.querySelector(`[name="${first}"]`) as HTMLElement;
+                if (el) {
+                    el.focus({ preventScroll: true });
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 80);
+        } else {
+            focusAndScrollToFirstError(formErrors, ["contact_number", "email"]);
+        }
     };
 
     return (
@@ -183,7 +206,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
 
                     {/* Form Card Container */}
                     <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
-                        <form id="portal-form" onSubmit={handleSubmit(onSubmit)}>
+                        <form id="portal-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
                             {/* STEP 1: Portal Details */}
                             <div className={currentStep === 1 ? "space-y-5" : "hidden"}>
                                 <h3 className="text-base font-bold text-slate-800 mb-4">
@@ -200,7 +223,11 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                             type="text"
                                             placeholder="Enter Portal Name"
                                             {...register("name")}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                            className={`w-full px-3.5 py-2.5 bg-slate-50/60 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                                errors.name
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
+                                                    : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                            }`}
                                         />
                                         {errors.name && (
                                             <span className="text-[10px] text-red-500 mt-1 block">
@@ -218,7 +245,11 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
                                             type="text"
                                             placeholder="Enter Portal URL"
                                             {...register("url")}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                            className={`w-full px-3.5 py-2.5 bg-slate-50/60 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                                errors.url
+                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
+                                                    : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                            }`}
                                         />
                                         {errors.url && (
                                             <span className="text-[10px] text-red-500 mt-1 block">

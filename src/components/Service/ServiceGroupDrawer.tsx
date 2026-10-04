@@ -171,6 +171,7 @@ export const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
         if (!trimmedName) {
             setNameError('Group Name is required');
             nameInputRef.current?.focus();
+            nameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 

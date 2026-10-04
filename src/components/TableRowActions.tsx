@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { MoreHorizontal, Edit2, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 export interface TableRowActionsProps {
@@ -16,44 +17,68 @@ export const TableRowActions: React.FC<TableRowActionsProps> = ({
     recordName,
     onEdit,
     onDelete,
-    editLabel = 'Edit',
-    deleteLabel = 'Delete',
+    editLabel,
+    deleteLabel,
     disabled = false,
 }) => {
     const id = useId();
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language?.startsWith('ar') || document.documentElement.dir === 'rtl' || document.body.dir === 'rtl';
+
+    const finalEditLabel = editLabel || t('common.edit', 'Edit');
+    const finalDeleteLabel = deleteLabel || t('common.delete', 'Delete');
+
     const [isOpen, setIsOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [menuCoords, setMenuCoords] = useState<{ top: number; left?: number; right?: number }>({
+    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({
         top: 0,
-        right: 0,
+        left: 0,
     });
 
     const buttonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+    const editBtnRef = useRef<HTMLButtonElement>(null);
+    const deleteBtnRef = useRef<HTMLButtonElement>(null);
 
     // Calculate menu position relative to viewport so it never clips
     const updatePosition = useCallback(() => {
         if (!buttonRef.current) return;
         const rect = buttonRef.current.getBoundingClientRect();
-        const menuWidth = 140;
-        const menuHeight = 84;
+        const menuWidth = 144;
+        const menuHeight = 86;
         const spacing = 4;
-        const isRtl = document.documentElement.dir === 'rtl' || document.body.dir === 'rtl';
+        const currentIsRtl = document.documentElement.dir === 'rtl' || document.body.dir === 'rtl';
 
         // Check if menu would overflow bottom of viewport
-        const openUpward = rect.bottom + menuHeight > window.innerHeight - 8;
-        const top = openUpward ? Math.max(8, rect.top - menuHeight - spacing) : rect.bottom + spacing;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const openUpward = spaceBelow < menuHeight + 10 && spaceAbove > spaceBelow;
+        const top = openUpward
+            ? Math.max(8, rect.top - menuHeight - spacing)
+            : Math.min(window.innerHeight - menuHeight - 8, rect.bottom + spacing);
 
-        if (isRtl) {
-            // Align to left of button in RTL, ensure it doesn't overflow left edge
-            const left = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, rect.left));
-            setMenuCoords({ top, left });
+        let left: number;
+        if (currentIsRtl) {
+            // In RTL: if button is on the left half, align to left edge
+            if (rect.left < window.innerWidth / 2) {
+                left = rect.left;
+            } else {
+                left = rect.right - menuWidth;
+            }
         } else {
-            // Align to right edge of button in LTR, ensure it doesn't overflow right edge
-            const right = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, window.innerWidth - rect.right));
-            setMenuCoords({ top, right });
+            // In LTR: if button is near the right edge (standard table column), align to right edge
+            if (rect.right > window.innerWidth / 2) {
+                left = rect.right - menuWidth;
+            } else {
+                left = rect.left;
+            }
         }
+
+        // Clamp inside screen bounds
+        left = Math.max(8, Math.min(window.innerWidth - menuWidth - 8, left));
+
+        setMenuPosition({ top, left });
     }, []);
 
     // Toggle menu
@@ -84,9 +109,18 @@ export const TableRowActions: React.FC<TableRowActionsProps> = ({
         return () => window.removeEventListener('awn-close-action-menus', handleCloseOthers);
     }, [id]);
 
-    // Handle outside click, escape key, and window resize/scroll
+    // Handle outside click, keyboard navigation, and window resize/scroll
     useEffect(() => {
         if (!isOpen) return;
+
+        // Auto-focus first available option
+        const timer = setTimeout(() => {
+            if (onEdit && editBtnRef.current) {
+                editBtnRef.current.focus();
+            } else if (onDelete && deleteBtnRef.current) {
+                deleteBtnRef.current.focus();
+            }
+        }, 30);
 
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as Node;
@@ -102,8 +136,25 @@ export const TableRowActions: React.FC<TableRowActionsProps> = ({
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
+                e.preventDefault();
                 setIsOpen(false);
                 buttonRef.current?.focus();
+            } else if (e.key === 'Tab') {
+                setIsOpen(false);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (document.activeElement === editBtnRef.current && deleteBtnRef.current) {
+                    deleteBtnRef.current.focus();
+                } else if (editBtnRef.current) {
+                    editBtnRef.current.focus();
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (document.activeElement === deleteBtnRef.current && editBtnRef.current) {
+                    editBtnRef.current.focus();
+                } else if (deleteBtnRef.current) {
+                    deleteBtnRef.current.focus();
+                }
             }
         };
 
@@ -117,12 +168,13 @@ export const TableRowActions: React.FC<TableRowActionsProps> = ({
         window.addEventListener('scroll', handleScrollOrResize, true);
 
         return () => {
+            clearTimeout(timer);
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('resize', handleScrollOrResize);
             window.removeEventListener('scroll', handleScrollOrResize, true);
         };
-    }, [isOpen]);
+    }, [isOpen, onEdit, onDelete]);
 
     const handleEditClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -159,8 +211,8 @@ export const TableRowActions: React.FC<TableRowActionsProps> = ({
                     disabled={disabled}
                     aria-haspopup="menu"
                     aria-expanded={isOpen}
-                    title="Actions"
-                    aria-label="Actions"
+                    title={t('common.actions', 'Actions')}
+                    aria-label={t('common.actions', 'Actions')}
                     className={`p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#F8F6F2] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
                         isOpen ? 'bg-[#F8F6F2] text-[#0D0D0D]' : ''
                     }`}
@@ -176,34 +228,38 @@ export const TableRowActions: React.FC<TableRowActionsProps> = ({
                         ref={menuRef}
                         role="menu"
                         aria-orientation="vertical"
+                        dir={isRtl ? 'rtl' : 'ltr'}
                         style={{
-                            top: `${menuCoords.top}px`,
-                            ...(menuCoords.left !== undefined ? { left: `${menuCoords.left}px` } : {}),
-                            ...(menuCoords.right !== undefined ? { right: `${menuCoords.right}px` } : {}),
+                            top: `${menuPosition.top}px`,
+                            left: `${menuPosition.left}px`,
                         }}
                         className="fixed z-[90] w-36 bg-white border border-[#E5E0D8] rounded-xl shadow-lg p-1 animate-in fade-in zoom-in-95 duration-100 select-none"
                     >
                         {onEdit && (
                             <button
+                                ref={editBtnRef}
                                 type="button"
                                 role="menuitem"
+                                tabIndex={0}
                                 onClick={handleEditClick}
-                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-[#0D0D0D] hover:bg-[#F8F6F2] rounded-lg transition-colors cursor-pointer text-left"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-[#0D0D0D] hover:bg-[#F8F6F2] focus:bg-[#F8F6F2] focus:outline-none rounded-lg transition-colors cursor-pointer text-start"
                             >
-                                <Edit2 className="w-3.5 h-3.5 text-[#6A7358]" />
-                                <span>{editLabel}</span>
+                                <Edit2 className="w-3.5 h-3.5 text-[#6A7358] shrink-0" />
+                                <span>{finalEditLabel}</span>
                             </button>
                         )}
 
                         {onDelete && (
                             <button
+                                ref={deleteBtnRef}
                                 type="button"
                                 role="menuitem"
+                                tabIndex={0}
                                 onClick={handleDeleteClick}
-                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50/80 rounded-lg transition-colors cursor-pointer text-left"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50/80 focus:bg-rose-50/80 focus:outline-none rounded-lg transition-colors cursor-pointer text-start"
                             >
-                                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                                <span>{deleteLabel}</span>
+                                <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                <span>{finalDeleteLabel}</span>
                             </button>
                         )}
                     </div>,

@@ -13,6 +13,7 @@ import {
     type ServiceGroupOption,
 } from "./serviceGroupTypes";
 import { Search, ChevronDown, Check, X } from "lucide-react";
+import { focusAndScrollToFirstError } from "../../utils/formValidation";
 
 interface AddServicePackageModalProps {
     isOpen: boolean;
@@ -45,6 +46,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
         formState: { errors, isSubmitting },
     } = useForm<ServicePackageFormValues>({
         resolver: zodResolver(servicePackageSchema),
+        mode: "onSubmit",
         defaultValues: {
             group_type: initialData?.group_type || GroupType.EMPLOYEE,
             service_group_id: initialData?.service_group_id || "",
@@ -65,7 +67,6 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                 description: initialData.description || "",
                 status: initialData.status === 'inactive' ? ServiceTagStatus.INACTIVE : ServiceTagStatus.ACTIVE,
             });
-            setSelectedGroupId(initialData.service_group_id || "");
         } else if (isOpen && !initialData) {
             reset({
                 group_type: GroupType.EMPLOYEE,
@@ -75,21 +76,29 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                 description: "",
                 status: ServiceTagStatus.ACTIVE,
             });
-            setSelectedGroupId("");
         }
     }, [isOpen, initialData, reset]);
 
     const selectedGroup = DEMO_SERVICE_GROUPS.find((g) => g.id === selectedGroupId);
 
-    // Adjust state during render when isOpen changes (per React docs)
+    // Adjust state during render when isOpen or initialData changes (per React docs)
     const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    const [prevInitialData, setPrevInitialData] = useState(initialData);
+
     if (prevIsOpen !== isOpen) {
         setPrevIsOpen(isOpen);
         setIsGroupDropdownOpen(false);
         setGroupSearchQuery("");
         if (!isOpen) {
             setSelectedGroupId("");
+        } else if (initialData?.service_group_id) {
+            setSelectedGroupId(initialData.service_group_id);
         }
+    }
+
+    if (prevInitialData !== initialData) {
+        setPrevInitialData(initialData);
+        setSelectedGroupId(initialData?.service_group_id || "");
     }
 
     // Handle click outside to close dropdown
@@ -200,7 +209,15 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                 <div className="p-6 overflow-y-auto flex-1">
                     <form
                         id="add-service-package-form"
-                        onSubmit={handleSubmit(handleFormSubmit)}
+                        onSubmit={handleSubmit(handleFormSubmit, (formErrors) =>
+                            focusAndScrollToFirstError(formErrors, [
+                                "group_type",
+                                "service_group_id",
+                                "package_name",
+                                "unit_price",
+                                "status",
+                            ])
+                        )}
                         className="space-y-5"
                     >
                         {/* Section Header */}
@@ -240,10 +257,12 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
 
                                 <button
                                     type="button"
+                                    name="service_group_id"
+                                    data-name="service_group_id"
                                     onClick={() => setIsGroupDropdownOpen((prev) => !prev)}
                                     className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs flex items-center justify-between cursor-pointer transition text-left focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
                                         errors.service_group_id
-                                            ? "border-red-300"
+                                            ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
                                             : "border-slate-200"
                                     }`}
                                 >

@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { serviceApi } from "../../api/api";
 import { serviceTagSchema, type ServiceTagFormValues } from "../../schemas/serviceSchema";
+import { focusAndScrollToFirstError } from "../../utils/formValidation";
 
 export enum ServiceTagStatus {
     ACTIVE = 'active',
@@ -32,6 +33,7 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
         formState: { errors },
     } = useForm<ServiceTagFormValues>({
         resolver: zodResolver(serviceTagSchema),
+        mode: "onSubmit",
         defaultValues: {
             name: initialData?.name || "",
             description: initialData?.description || "",
@@ -107,7 +109,13 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
                         Create a new service tag to categorize services efficiently across the platform.
                     </p>
 
-                    <form id="add-tag-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <form
+                        id="add-tag-form"
+                        onSubmit={handleSubmit(onSubmit, (formErrors) =>
+                            focusAndScrollToFirstError(formErrors, ["name"])
+                        )}
+                        className="space-y-4"
+                    >
                         <div>
                             <label className="block text-xs font-semibold text-slate-700 mb-1">
                                 Tag Name <span className="text-red-500">*</span>
@@ -116,7 +124,11 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
                                 type="text"
                                 placeholder="Enter tag name"
                                 {...register("name")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                    errors.name
+                                        ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
+                                        : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                }`}
                             />
                             {errors.name && (
                                 <span className="text-[10px] text-red-500 mt-1 block">

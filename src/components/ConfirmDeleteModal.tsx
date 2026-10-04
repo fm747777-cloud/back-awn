@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDeleteModalProps {
     isOpen: boolean;
@@ -17,9 +18,12 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
     recordName,
     isDeleting = false,
 }) => {
+    const { t } = useTranslation();
+    const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
+            if (e.key === 'Escape' && isOpen && !isDeleting) {
                 onClose();
             }
         };
@@ -27,17 +31,21 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         if (isOpen) {
             document.addEventListener('keydown', handleKeyDown);
             document.body.style.overflow = 'hidden';
+            // Auto-focus cancel button for safe keyboard navigation
+            setTimeout(() => {
+                cancelButtonRef.current?.focus();
+            }, 50);
         }
 
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
             document.body.style.overflow = '';
         };
-    }, [isOpen, onClose]);
+    }, [isOpen, isDeleting, onClose]);
 
     if (!isOpen) return null;
 
-    const displayName = recordName ? `"${recordName}"` : 'this record';
+    const displayName = recordName ? `"${recordName}"` : t('common.thisRecord', 'this record');
 
     return createPortal(
         <div
@@ -45,11 +53,14 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-dialog-title"
+            aria-describedby="delete-dialog-desc"
         >
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-[#0D0D0D]/50 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in"
-                onClick={onClose}
+                onClick={() => {
+                    if (!isDeleting) onClose();
+                }}
             />
 
             {/* Modal Card */}
@@ -57,8 +68,9 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#F8F6F2] transition cursor-pointer"
-                    aria-label="Close dialog"
+                    disabled={isDeleting}
+                    className="absolute top-4 end-4 w-7 h-7 flex items-center justify-center rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#F8F6F2] transition cursor-pointer disabled:opacity-40"
+                    aria-label={t('common.close', 'Close')}
                 >
                     <X size={16} />
                 </button>
@@ -68,27 +80,31 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                         <AlertTriangle size={20} />
                     </div>
 
-                    <div className="flex-1 pr-4">
+                    <div className="flex-1 pe-6">
                         <h3
                             id="delete-dialog-title"
                             className="text-base font-bold text-[#0D0D0D] tracking-tight leading-snug"
                         >
-                            Delete {displayName}?
+                            {t('common.confirmDeleteTitle', { name: displayName, defaultValue: `Delete ${displayName}?` })}
                         </h3>
-                        <p className="text-xs text-[#6E6862] mt-1.5 leading-relaxed">
-                            Are you sure you want to delete this record? This action cannot be undone.
+                        <p
+                            id="delete-dialog-desc"
+                            className="text-xs text-[#6E6862] mt-1.5 leading-relaxed"
+                        >
+                            {t('common.confirmDeleteMessage', 'Are you sure you want to delete this record? This action cannot be undone.')}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-[#E5E0D8]">
                     <button
+                        ref={cancelButtonRef}
                         type="button"
                         onClick={onClose}
                         disabled={isDeleting}
                         className="px-4 py-2 text-xs font-semibold rounded-lg bg-white border border-[#DCD6CD] text-[#0D0D0D] hover:bg-[#F8F6F2] transition cursor-pointer disabled:opacity-50"
                     >
-                        Cancel
+                        {t('common.cancel', 'Cancel')}
                     </button>
                     <button
                         type="button"
@@ -98,8 +114,17 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                         disabled={isDeleting}
                         className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
                     >
-                        <Trash2 size={13} />
-                        <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                        {isDeleting ? (
+                            <>
+                                <Loader2 size={13} className="animate-spin" />
+                                <span>{t('common.deleting', 'Deleting...')}</span>
+                            </>
+                        ) : (
+                            <>
+                                <Trash2 size={13} />
+                                <span>{t('common.delete', 'Delete')}</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
-    Edit2,
     Users,
     Briefcase,
     Building2,

@@ -1,26 +1,34 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { serviceApi } from "../../api/api";
 import { DataTable } from "../DataTable";
+import { TableRowActions } from "../TableRowActions";
 import { AddServicePortalModal } from "./AddServicePortalModal";
 
 export interface ServiceTagItem {
     id: string;
     tagCode: string;
     name: string;
-    createdBy?: string
+    createdBy?: string;
     createdAt: string;
+    url?: string;
+    description?: string;
+    contact_number?: string;
+    email?: string;
 }
 
 export const ServicePortalsTab: React.FC = () => {
+    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPortal, setEditingPortal] = useState<any | null>(null);
 
     const { data, isLoading } = useQuery({
-        queryKey: ["serviceTags", pageIndex, pageSize, searchTerm],
+        queryKey: ["servicePortals", pageIndex, pageSize, searchTerm],
         queryFn: () =>
             serviceApi.getServicePortals({
                 page: pageIndex + 1,
@@ -28,7 +36,6 @@ export const ServicePortalsTab: React.FC = () => {
                 search: searchTerm,
             }),
     });
-    console.log('data', data);
 
     const PortalsList: ServiceTagItem[] = useMemo(() => data?.data || [], [data]);
     const totalCount = data?.count || 0;
@@ -36,6 +43,13 @@ export const ServicePortalsTab: React.FC = () => {
     const handleSearchChange = (value: string) => {
         setSearchTerm(value);
         setPageIndex(0);
+    };
+
+    const handleDeletePortal = async (portal: any) => {
+        await serviceApi.deleteServicePortal(portal.id);
+        queryClient.invalidateQueries({ queryKey: ["servicePortals"] });
+        queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
+        toast.success(`Service Portal "${portal.name}" deleted successfully`);
     };
 
     const renderStatusBadge = () => {
@@ -96,7 +110,7 @@ export const ServicePortalsTab: React.FC = () => {
                             <div className="font-medium text-[#0D0D0D]">{creator}</div>
                         </div>
                     ) : (
-                        <span className="text-[#857E74] italic">undefined</span>
+                        <span className="text-[#857E74] italic">System Admin</span>
                     );
                 },
             },
@@ -114,14 +128,22 @@ export const ServicePortalsTab: React.FC = () => {
             },
             {
                 id: "actions",
-                header: () => <div className="text-right">•••</div>,
-                cell: () => (
-                    <div className="text-right text-[#857E74] cursor-pointer hover:text-[#0D0D0D] font-bold p-1">
-                        •••
+                header: () => <div className="text-right">Actions</div>,
+                cell: ({ row }: any) => (
+                    <div className="text-right">
+                        <TableRowActions
+                            recordName={row.original.name}
+                            onEdit={() => {
+                                setEditingPortal(row.original);
+                                setIsModalOpen(true);
+                            }}
+                            onDelete={() => handleDeletePortal(row.original)}
+                        />
                     </div>
                 ),
             },
         ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     );
 
@@ -139,14 +161,21 @@ export const ServicePortalsTab: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
                 onSearchChange={handleSearchChange}
-                onAddNew={() => setIsModalOpen(true)}
+                onAddNew={() => {
+                    setEditingPortal(null);
+                    setIsModalOpen(true);
+                }}
                 title="Service Portals"
                 addNewLabel="Add Service Portal"
             />
 
             <AddServicePortalModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingPortal(null);
+                }}
+                initialData={editingPortal}
             />
         </div>
     );

@@ -11,6 +11,7 @@ import {
 } from "../../schemas/serviceSchema";
 import { serviceApi } from "../../api/api";
 import { X } from "lucide-react";
+import { focusAndScrollToFirstError } from "../../utils/formValidation";
 
 interface AddServiceModalProps {
     isOpen: boolean;
@@ -98,6 +99,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         formState: { errors },
     } = useForm<AddServiceFormValues>({
         resolver: zodResolver(addServiceSchema),
+        mode: "onSubmit",
         defaultValues: {
             group_type: "business",
             service_title: "",
@@ -266,15 +268,42 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
 
     const handleNext = async () => {
         if (currentStep === 1) {
-            const isStep1Valid = await trigger(getStep1Fields());
-            if (isStep1Valid) setCurrentStep(2);
+            const step1Fields = getStep1Fields();
+            const isStep1Valid = await trigger(step1Fields);
+            if (isStep1Valid) {
+                setCurrentStep(2);
+            } else {
+                setTimeout(() => {
+                    for (const field of step1Fields) {
+                        const el = document.querySelector(`[name="${field}"]`) as HTMLElement;
+                        if (el && el.closest("div")?.querySelector(".text-red-500")) {
+                            el.focus({ preventScroll: true });
+                            el.scrollIntoView({ behavior: "smooth", block: "center" });
+                            break;
+                        }
+                    }
+                }, 60);
+            }
         } else if (currentStep === 2) {
             const step2Fields: (keyof AddServiceFormValues)[] = ["sadad_payment_available"];
             if (!sadadPaymentAvailable) {
                 step2Fields.push("other_payment_method_id");
             }
             const isStep2Valid = await trigger(step2Fields);
-            if (isStep2Valid) setCurrentStep(3);
+            if (isStep2Valid) {
+                setCurrentStep(3);
+            } else {
+                setTimeout(() => {
+                    for (const field of step2Fields) {
+                        const el = document.querySelector(`[name="${field}"]`) as HTMLElement;
+                        if (el && el.closest("div")?.querySelector(".text-red-500")) {
+                            el.focus({ preventScroll: true });
+                            el.scrollIntoView({ behavior: "smooth", block: "center" });
+                            break;
+                        }
+                    }
+                }, 60);
+            }
         } else if (currentStep === 3) {
             setCurrentStep(4);
         }
@@ -414,6 +443,65 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         syncEditorContent();
     };
 
+    const onInvalid = (formErrors: any) => {
+        const errorKeys = Object.keys(formErrors);
+        if (errorKeys.length === 0) return;
+
+        const step1Keys = [
+            "service_title",
+            "servicePortal_id",
+            "serviceCategory_id",
+            "serviceType_id",
+            "service_processing_time",
+            "service_processing_frequen",
+            "serviceTag_id",
+            "service_validity",
+            "service_period",
+            "period_type",
+            "recurring_type",
+            "service_responsible_department_id",
+            "service_submission_mode",
+            "confirmation_required",
+            "delegation_required",
+            "group_type",
+            "serviceGroup_id",
+        ];
+
+        const step2Keys = [
+            "sadad_payment_available",
+            "other_payment_method_id",
+            "service_fees",
+        ];
+
+        const step3Keys = ["input_documents", "output_documents"];
+        const step4Keys = ["process_description"];
+
+        let targetStep = 1;
+        let firstField = errorKeys[0];
+
+        const err1 = errorKeys.find((k) => step1Keys.includes(k));
+        const err2 = errorKeys.find((k) => step2Keys.includes(k));
+        const err3 = errorKeys.find((k) => step3Keys.includes(k));
+        const err4 = errorKeys.find((k) => step4Keys.includes(k));
+
+        if (err1) {
+            targetStep = 1;
+            firstField = err1;
+        } else if (err2) {
+            targetStep = 2;
+            firstField = err2;
+        } else if (err3) {
+            targetStep = 3;
+            firstField = err3;
+        } else if (err4) {
+            targetStep = 4;
+            firstField = err4;
+        }
+
+        setCurrentStep(targetStep);
+        focusAndScrollToFirstError(formErrors, [firstField]);
+    };
+
     const onSubmit = (data: AddServiceFormValues) => {
         const text = editorRef.current ? (editorRef.current.innerText || editorRef.current.textContent || "").trim() : "";
         const finalProcess = text ? (editorRef.current?.innerHTML || data.process_description || "") : "";
@@ -508,7 +596,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         ))}
                     </div>
 
-                    <form id="add-service-form" onSubmit={handleSubmit(onSubmit)}>
+                    <form id="add-service-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
                         {/* STEP 1: Service Information */}
                         <div className={currentStep === 1 ? "space-y-4 pt-2" : "hidden"}>
                             <h3 className="text-sm font-bold text-slate-800">

@@ -36,7 +36,7 @@ export const ServicesListTab = () => {
     const queryClient = useQueryClient();
     const [searchValue, setSearchValue] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
-    const [pageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<any>(null);
 
@@ -201,6 +201,7 @@ export const ServicesListTab = () => {
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={(newPageIndex) => setPageIndex(newPageIndex)}
+                onPageSizeChange={setPageSize}
                 searchValue={searchValue}
                 onSearchChange={(val) => {
                     setSearchValue(val);

@@ -110,10 +110,17 @@ const Search = ({
 }: SearchProps) => {
     const [query, setQuery] = useState(searchValue);
     const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
+    const [pageSizeInput, setPageSizeInput] = useState(String(pageSize));
+    const [prevPageSize, setPrevPageSize] = useState(pageSize);
 
     if (searchValue !== prevSearchValue) {
         setPrevSearchValue(searchValue);
         setQuery(searchValue);
+    }
+
+    if (pageSize !== prevPageSize) {
+        setPrevPageSize(pageSize);
+        setPageSizeInput(String(pageSize));
     }
 
     useEffect(() => {
@@ -187,16 +194,58 @@ const Search = ({
                 {/* Show Page Size Controls */}
                 <div className="flex items-center gap-2 text-xs text-[#6E6862] shrink-0 self-end sm:self-center">
                     <span>Show</span>
-                    <select
-                        value={pageSize}
-                        onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
-                        className="bg-white border border-[#DCD6CD] hover:border-[#BFAB93] focus:border-[#2D3F2C] rounded-lg px-2.5 py-1.5 text-xs text-[#0D0D0D] font-medium focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]/20 transition cursor-pointer shadow-2xs"
-                    >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
+                    <div className="relative inline-flex items-center bg-white border border-[#DCD6CD] hover:border-[#BFAB93] focus-within:border-[#2D3F2C] focus-within:ring-1 focus-within:ring-[#2D3F2C]/20 rounded-lg shadow-2xs transition">
+                        <input
+                            type="number"
+                            min={1}
+                            max={1000}
+                            value={pageSizeInput}
+                            onChange={(e) => {
+                                const valStr = e.target.value;
+                                setPageSizeInput(valStr);
+                                const num = parseInt(valStr, 10);
+                                if (!isNaN(num) && num > 0) {
+                                    onPageSizeChange?.(num);
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const num = parseInt(pageSizeInput, 10);
+                                    if (!isNaN(num) && num > 0) {
+                                        onPageSizeChange?.(num);
+                                    }
+                                }
+                            }}
+                            onBlur={() => {
+                                const num = parseInt(pageSizeInput, 10);
+                                if (isNaN(num) || num <= 0) {
+                                    setPageSizeInput(String(pageSize));
+                                }
+                            }}
+                            aria-label="Show entries per page"
+                            className="w-11 pl-2.5 pr-1 py-1.5 text-xs text-[#0D0D0D] font-medium text-center focus:outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <select
+                            value={pageSize}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if (val > 0) {
+                                    setPageSizeInput(String(val));
+                                    onPageSizeChange?.(val);
+                                }
+                            }}
+                            aria-label="Choose entries per page"
+                            className="bg-transparent border-l border-[#E5E0D8] pl-1 pr-1.5 py-1.5 text-xs text-[#595550] hover:text-[#0D0D0D] focus:outline-none cursor-pointer"
+                        >
+                            {![10, 25, 50, 100].includes(pageSize) && (
+                                <option value={pageSize}>{pageSize}</option>
+                            )}
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+                    </div>
                     <span>entries</span>
                 </div>
             </div>

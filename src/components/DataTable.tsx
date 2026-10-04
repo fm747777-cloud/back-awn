@@ -74,11 +74,22 @@ export const DataTable = <TData,>({
                 typeof updater === "function" ? updater(pagination) : updater;
 
             onPageChange(newState.pageIndex);
+            if (newState.pageSize !== pageSize && onPageSizeChange) {
+                onPageSizeChange(newState.pageSize);
+            }
         },
     });
 
     const startItem = count === 0 ? 0 : pageIndex * pageSize + 1;
     const endItem = Math.min((pageIndex + 1) * pageSize, count);
+
+    const handlePageSizeChange = (newPageSize: number) => {
+        if (!newPageSize || newPageSize <= 0) return;
+        if (onPageSizeChange) {
+            onPageSizeChange(newPageSize);
+        }
+        onPageChange(0);
+    };
 
     return (
         <div className="w-full space-y-4">
@@ -90,7 +101,7 @@ export const DataTable = <TData,>({
                 totalCount={count}
                 pageSize={pageSize}
                 pageIndex={pageIndex}
-                onPageSizeChange={onPageSizeChange}
+                onPageSizeChange={handlePageSizeChange}
                 onAddNew={onAddNew}
                 onExport={onExport}
                 title={title}
