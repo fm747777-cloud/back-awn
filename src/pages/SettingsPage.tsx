@@ -1,87 +1,75 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Settings, ShieldCheck, Bell, Building2, UserCheck } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-import { User, Shield, Mail, Bell, Building } from 'lucide-react';
 
-export const SettingsPage = () => {
-    const { user } = useAuthStore();
+export const SettingsPage: React.FC = () => {
+    const { t } = useTranslation();
+    const user = useAuthStore((state) => state.user);
 
     return (
-        <div className="space-y-6 max-w-4xl">
-            <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs">
-                <h1 className="text-2xl font-bold text-[#0D0D0D] tracking-tight">Account Settings</h1>
-                <p className="text-xs text-[#6E6862] mt-1 font-normal">
-                    Manage your personal profile, security, and administrative preferences.
-                </p>
+        <div className="space-y-6 text-start">
+            {/* Header Banner */}
+            <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-xs">
+                        <Settings className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-[#0D0D0D]">{t('settings.title')}</h1>
+                        <p className="text-xs text-[#6E6862] mt-0.5">
+                            {t('settings.subtitle')}
+                        </p>
+                    </div>
+                </div>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    {t('settings.platformLabel')}
+                </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Profile Card */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs flex flex-col items-center text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-[#2D3F2C] border-2 border-[#BFAB93]/40 text-[#FAF8F5] flex items-center justify-center font-extrabold text-2xl shadow-xs mb-4">
-                        {user?.fullName ? user.fullName.substring(0, 3).toUpperCase() : 'AWN'}
+            {/* Settings Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-[#EFECE6]">
+                        <UserCheck className="w-4 h-4 text-[#2D3F2C]" />
+                        <h2 className="text-sm font-bold text-[#0D0D0D]">{t('settings.accountInfo')}</h2>
                     </div>
-                    <h2 className="text-base font-bold text-[#0D0D0D]">
-                        {user?.fullName || 'Karim Wagdi'}
-                    </h2>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20 mt-1 capitalize">
-                        {user?.type || 'Super Admin'}
-                    </span>
-                    <p className="text-xs text-[#857E74] mt-2">
-                        AWN Enterprise Administrative Platform
-                    </p>
+                    <div className="space-y-3 text-sm">
+                        <div>
+                            <label className="block text-xs text-[#6E6862] mb-1">{t('settings.fullName')}</label>
+                            <div className="p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] font-medium text-[#0D0D0D]">
+                                {user?.fullName || t('common.adminUser')}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-[#6E6862] mb-1">{t('settings.emailId')}</label>
+                            <div className="p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] font-medium text-[#0D0D0D]" dir="ltr">
+                                {user?.id || 'admin@awn.sa'}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Account Details */}
-                <div className="md:col-span-2 bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs space-y-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0D0D0D] border-b border-[#E5E0D8] pb-3">
-                        Account Information
-                    </h3>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                            <span className="text-[11px] text-[#6E6862] flex items-center gap-1.5 font-medium">
-                                <User size={13} className="text-[#857E74]" /> Full Name
-                            </span>
-                            <span className="text-xs font-semibold text-[#0D0D0D] mt-1 block">
-                                {user?.fullName || 'Karim Wagdi'}
-                            </span>
-                        </div>
-
-                        <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                            <span className="text-[11px] text-[#6E6862] flex items-center gap-1.5 font-medium">
-                                <Mail size={13} className="text-[#857E74]" /> Email ID
-                            </span>
-                            <span className="text-xs font-semibold text-[#0D0D0D] mt-1 block">
-                                karim.wagdi@awn.sa
-                            </span>
-                        </div>
-
-                        <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                            <span className="text-[11px] text-[#6E6862] flex items-center gap-1.5 font-medium">
-                                <Shield size={13} className="text-[#857E74]" /> Role & Permissions
-                            </span>
-                            <span className="text-xs font-semibold text-[#0D0D0D] mt-1 block">
-                                Super Administrator
-                            </span>
-                        </div>
-
-                        <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                            <span className="text-[11px] text-[#6E6862] flex items-center gap-1.5 font-medium">
-                                <Building size={13} className="text-[#857E74]" /> Organization
-                            </span>
-                            <span className="text-xs font-semibold text-[#0D0D0D] mt-1 block">
-                                AWN Holding Ltd.
-                            </span>
-                        </div>
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs space-y-4">
+                    <div className="flex items-center gap-2.5 pb-3 border-b border-[#EFECE6]">
+                        <ShieldCheck className="w-4 h-4 text-[#2D3F2C]" />
+                        <h2 className="text-sm font-bold text-[#0D0D0D]">{t('settings.rolePermissions')}</h2>
                     </div>
-
-                    <div className="pt-4 border-t border-[#E5E0D8] flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Bell size={16} className="text-[#857E74]" />
-                            <span className="text-xs font-medium text-[#0D0D0D]">Notification Alerts</span>
+                    <div className="space-y-3 text-sm">
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
+                            <div className="flex items-center gap-2.5">
+                                <Building2 className="w-4 h-4 text-[#6A7358]" />
+                                <span className="text-xs font-medium text-[#45413C]">{t('settings.organization')}</span>
+                            </div>
+                            <span className="text-xs font-semibold text-[#0D0D0D]">{t('settings.organizationName')}</span>
                         </div>
-                        <span className="text-xs font-semibold text-[#2D3F2C] bg-[#2D3F2C]/10 px-2.5 py-0.5 rounded-full border border-[#2D3F2C]/20">
-                            Enabled
-                        </span>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
+                            <div className="flex items-center gap-2.5">
+                                <Bell className="w-4 h-4 text-[#6A7358]" />
+                                <span className="text-xs font-medium text-[#45413C]">{t('settings.notificationAlerts')}</span>
+                            </div>
+                            <span className="text-xs font-semibold text-[#265938]">{t('settings.enabled')}</span>
+                        </div>
                     </div>
                 </div>
             </div>

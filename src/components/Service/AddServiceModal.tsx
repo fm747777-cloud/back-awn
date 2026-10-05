@@ -10,8 +10,11 @@ import {
     type AddServiceFormValues,
 } from "../../schemas/serviceSchema";
 import { serviceApi } from "../../api/api";
+import { toast } from "sonner";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { focusAndScrollToFirstError } from "../../utils/formValidation";
+import { translateError } from "../../i18n";
 
 interface AddServiceModalProps {
     isOpen: boolean;
@@ -36,6 +39,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     onClose,
     initialData,
 }) => {
+    const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(1);
     const queryClient = useQueryClient();
     const editorRef = useRef<HTMLDivElement>(null);
@@ -69,6 +73,12 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         queryKey: ["serviceTags"],
         queryFn: () => serviceApi.getServiceTags({}),
         enabled: isOpen,
+    });
+
+    const { data: serviceDetailData } = useQuery({
+        queryKey: ["service", initialData?.id],
+        queryFn: () => serviceApi.getServiceById(initialData!.id!),
+        enabled: isOpen && Boolean(initialData?.id),
     });
 
     const portals = Array.isArray(portalsData) ? portalsData : portalsData?.data || [];
@@ -132,36 +142,104 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     const serviceValidity = watch("service_validity");
     const sadadPaymentAvailable = watch("sadad_payment_available");
 
-    // Synchronize editor DOM content when modal opens or initialData changes
+    // Synchronize editor DOM content when modal opens or initialData / serviceDetailData changes
     useEffect(() => {
         if (isOpen) {
-            if (initialData) {
-                const initDesc = initialData.process_description || (initialData as any).processDescription || "";
-                const initInputs = initialData.input_documents || (initialData as any).inputDocuments || [];
-                const initOutputs = initialData.output_documents || (initialData as any).outputDocuments || [];
-                
+            const sourceData: any = serviceDetailData
+                ? { ...initialData, ...serviceDetailData }
+                : initialData;
+
+            if (sourceData) {
+                const initDesc = sourceData.process_description ?? sourceData.processDescription ?? "";
+                const initInputs =
+                    Array.isArray(sourceData.input_documents) && sourceData.input_documents.length > 0
+                        ? sourceData.input_documents
+                        : Array.isArray(sourceData.inputDocuments) && sourceData.inputDocuments.length > 0
+                            ? sourceData.inputDocuments
+                            : [
+                                  "Commercial Registration (السجل التجاري)",
+                                  "National ID / Iqama (الهوية الوطنية / الإقامة)",
+                              ];
+                const initOutputs =
+                    Array.isArray(sourceData.output_documents) && sourceData.output_documents.length > 0
+                        ? sourceData.output_documents
+                        : Array.isArray(sourceData.outputDocuments) && sourceData.outputDocuments.length > 0
+                            ? sourceData.outputDocuments
+                            : ["شهادة السجل التجاري (Commercial Registration Certificate)"];
+
+                const resolvedTypeId = sourceData.serviceType_id || sourceData.serviceType?.id || "";
+                const matchedType = types.find((t: any) => t.id === resolvedTypeId);
+                const resolvedCategoryId =
+                    sourceData.service_category_id ||
+                    sourceData.serviceCategory?.id ||
+                    sourceData.serviceType?.serviceCategory?.id ||
+                    matchedType?.serviceCategory?.id ||
+                    "";
+
+                const rawValidity = sourceData.service_validity ?? sourceData.validity ?? "recurring";
+                const resolvedValidity =
+                    rawValidity === "oneTime" || rawValidity === "one_time" || rawValidity === "One Time"
+                        ? "oneTime"
+                        : "recurring";
+
+                const resolvedSadad =
+                    sourceData.sadad_payment_available !== undefined
+                        ? Boolean(sourceData.sadad_payment_available)
+                        : sourceData.servicePayment?.sadad_payment_available !== undefined
+                            ? String(sourceData.servicePayment.sadad_payment_available) === "true"
+                            : sourceData.sadadAvailable === "Yes";
+
+                const resolvedOtherPaymentMethod =
+                    sourceData.other_payment_method_id ||
+                    sourceData.servicePayment?.other_payment_method ||
+                    (!resolvedSadad ? OTHER_PAYMENT_METHODS[0]?.id || "bank_transfer" : "");
+
+                const resolvedDueDate = sourceData.service_due_date
+                    ? String(sourceData.service_due_date).split("T")[0]
+                    : "";
+                const resolvedEventDate = sourceData.service_event_date
+                    ? String(sourceData.service_event_date).split("T")[0]
+                    : "";
+
                 reset({
-                    group_type: initialData.group_type || (initialData as any).relatedTo || "business",
-                    service_title: initialData.service_title || (initialData as any).title || "",
-                    service_description: initialData.service_description || (initialData as any).description || "",
-                    serviceGroup_id: initialData.serviceGroup_id || "",
-                    servicePortal_id: initialData.servicePortal_id || "",
-                    service_category_id: initialData.service_category_id || "",
-                    serviceType_id: initialData.serviceType_id || "",
-                    service_processing_time: String(initialData.service_processing_time || (initialData as any).processingTime || "1"),
-                    service_processing_frequen: initialData.service_processing_frequen || (initialData as any).frequency || "days",
-                    serviceTag_id: initialData.serviceTag_id || "",
-                    service_validity: initialData.service_validity || ((initialData as any).validity === "Recurring" ? "recurring" : "one_time"),
-                    service_period: initialData.service_period || "1",
-                    period_type: initialData.period_type || "years",
-                    recurring_type: initialData.recurring_type || "yearly",
-                    service_responsible_department_id: initialData.service_responsible_department_id || "dept-1",
-                    service_submission_mode: initialData.service_submission_mode || "hybrid",
-                    confirmation_required: Boolean(initialData.confirmation_required),
-                    delegation_required: initialData.delegation_required !== undefined ? initialData.delegation_required : ((initialData as any).delegationRequired === "Yes"),
-                    sadad_payment_available: initialData.sadad_payment_available !== undefined ? initialData.sadad_payment_available : ((initialData as any).sadadAvailable === "Yes"),
-                    other_payment_method_id: initialData.other_payment_method_id || "",
-                    service_fees: String(initialData.service_fees !== undefined ? initialData.service_fees : (initialData as any).fee !== undefined ? (initialData as any).fee : "00"),
+                    group_type: sourceData.group_type || sourceData.relatedTo || "business",
+                    service_title: sourceData.service_title ?? sourceData.title ?? "",
+                    service_description: sourceData.service_description ?? sourceData.description ?? "",
+                    serviceGroup_id: sourceData.serviceGroup_id || sourceData.serviceGroup?.id || "",
+                    servicePortal_id: sourceData.servicePortal_id || sourceData.servicePortal?.id || "",
+                    service_category_id: resolvedCategoryId,
+                    serviceType_id: resolvedTypeId,
+                    service_processing_time: String(
+                        sourceData.service_processing_time ?? sourceData.processingTime ?? "1"
+                    ),
+                    service_processing_frequen:
+                        sourceData.service_processing_frequen || sourceData.frequency || "days",
+                    serviceTag_id: sourceData.serviceTag_id || sourceData.serviceTag?.id || "",
+                    service_validity: resolvedValidity,
+                    service_period: String(sourceData.service_period ?? "1"),
+                    period_type: sourceData.period_type || "years",
+                    recurring_type: sourceData.recurring_type || "yearly",
+                    service_due_date: resolvedDueDate,
+                    service_event_date: resolvedEventDate,
+                    service_responsible_department_id:
+                        sourceData.service_responsible_department_id || "dept-1",
+                    service_submission_mode: sourceData.service_submission_mode || "hybrid",
+                    confirmation_required: Boolean(sourceData.confirmation_required),
+                    delegation_required:
+                        sourceData.delegation_required !== undefined
+                            ? Boolean(sourceData.delegation_required)
+                            : sourceData.delegationRequired === "Yes",
+                    sadad_payment_available: resolvedSadad,
+                    other_payment_method_id: resolvedOtherPaymentMethod,
+                    service_fees: String(
+                        sourceData.service_fees !== undefined
+                            ? sourceData.service_fees
+                            : sourceData.servicePayment?.fees !== undefined
+                                ? sourceData.servicePayment.fees
+                                : sourceData.fee !== undefined
+                                    ? sourceData.fee
+                                    : "00"
+                    ),
                     input_documents: initInputs,
                     output_documents: initOutputs,
                     process_description: initDesc,
@@ -199,6 +277,8 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                     service_period: "1",
                     period_type: "years",
                     recurring_type: "yearly",
+                    service_due_date: "",
+                    service_event_date: "",
                     service_responsible_department_id: "dept-1",
                     service_submission_mode: "hybrid",
                     confirmation_required: false,
@@ -220,14 +300,40 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 }
             }
         }
-    }, [isOpen, initialData, reset]);
+    }, [isOpen, initialData, serviceDetailData, reset]);
+
+    // Ensure service_category_id is populated once types finish loading in Edit mode
+    useEffect(() => {
+        if (isOpen && initialData?.id && types.length > 0) {
+            const currentCat = watch("service_category_id");
+            const currentType = watch("serviceType_id");
+            if (!currentCat && currentType) {
+                const matchedType = types.find((t: any) => t.id === currentType);
+                if (matchedType?.serviceCategory?.id) {
+                    setValue("service_category_id", matchedType.serviceCategory.id);
+                }
+            }
+        }
+    }, [isOpen, initialData?.id, types, setValue, watch]);
 
     // 2. Mutation for Submitting the Form
     const mutation = useMutation({
-        mutationFn: (data: AddServiceFormValues) => serviceApi.createService(data),
-        onSuccess: () => {
+        mutationFn: (data: AddServiceFormValues & { id?: string }) =>
+            data.id ? serviceApi.updateService(data.id, data) : serviceApi.createService(data),
+        onSuccess: (res: any) => {
             queryClient.invalidateQueries({ queryKey: ["services"] });
+            if (initialData?.id) {
+                queryClient.invalidateQueries({ queryKey: ["service", initialData.id] });
+            }
+            toast.success(
+                res?.message ||
+                    (initialData?.id ? t("services.messages.updated") : t("services.messages.created"))
+            );
             handleClose();
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.message;
+            toast.error(Array.isArray(message) ? message[0] : message || t("services.messages.saveFailed"));
         },
     });
 
@@ -515,10 +621,10 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     };
 
     const steps = [
-        { id: 1, title: "Service Information" },
-        { id: 2, title: "Payment Information" },
-        { id: 3, title: "Documents Information" },
-        { id: 4, title: "Service Process" },
+        { id: 1, title: t("services.modal.step1") },
+        { id: 2, title: t("services.modal.step2") },
+        { id: 3, title: t("services.modal.step3") },
+        { id: 4, title: t("services.modal.step4") },
     ];
 
     return (
@@ -532,25 +638,26 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
 
             {/* Drawer Container */}
             <div
-                className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${
-                    isOpen ? "translate-x-0" : "translate-x-full"
+                className={`fixed top-0 end-0 h-full w-full max-w-2xl bg-white shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col text-start ${
+                    isOpen ? "translate-x-0" : "ltr:translate-x-full rtl:-translate-x-full"
                 }`}
             >
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 shrink-0">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">
-                            {initialData?.id ? "Edit Service" : "Add New Service"}
+                            {initialData?.id ? t("services.modal.editTitle") : t("services.modal.addTitle")}
                         </h2>
                         <p className="text-xs text-slate-500 mt-0.5">
                             {initialData?.id
-                                ? "Update service details, documents, and process descriptions."
-                                : "Introduce a new service by entering key details to enhance offerings and streamline customer access."}
+                                ? t("services.modal.editSubtitle")
+                                : t("services.modal.addSubtitle")}
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={handleClose}
+                        aria-label={t("common.close")}
                         className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
                     >
                         ✕
@@ -576,7 +683,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         {currentStep > step.id ? "✓" : step.id}
                                     </div>
                                     <span
-                                        className={`text-[10px] text-center max-w-[80px] ${
+                                        className={`text-[10px] text-center max-w-[90px] ${
                                             currentStep === step.id
                                                 ? "font-semibold text-slate-800"
                                                 : "text-slate-400"
@@ -600,19 +707,19 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         {/* STEP 1: Service Information */}
                         <div className={currentStep === 1 ? "space-y-4 pt-2" : "hidden"}>
                             <h3 className="text-sm font-bold text-slate-800">
-                                Service Information
+                                {t("services.modal.step1")}
                             </h3>
 
                                 {/* Group Type Radio */}
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-2">
-                                        Service Related to <span className="text-slate-400 font-normal">(Entity Classification)</span>
+                                        {t("services.relatedTo")} <span className="text-slate-400 font-normal">{t("services.modal.entityClassification")}</span>
                                     </label>
                                     <div className="flex items-center gap-6 text-xs text-slate-600">
                                         {["business", "employee", "asset"].map((item) => (
                                             <label
                                                 key={item}
-                                                className="flex items-center gap-2 cursor-pointer capitalize font-medium"
+                                                className="flex items-center gap-2 cursor-pointer font-medium"
                                             >
                                                 <input
                                                     type="radio"
@@ -620,7 +727,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     {...register("group_type")}
                                                     className="w-4 h-4 text-[#2D3F2C] focus:ring-[#2D3F2C] border-slate-300"
                                                 />
-                                                {item}
+                                                {t(`services.entityTypes.${item}`, item)}
                                             </label>
                                         ))}
                                     </div>
@@ -630,17 +737,17 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Title */}
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Title <span className="text-red-500">*</span>
+                                            {t("services.serviceTitle")} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter Service Title"
+                                            placeholder={t("services.modal.serviceTitlePlaceholder")}
                                             {...register("service_title")}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         />
                                         {errors.service_title && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.service_title.message}
+                                                {translateError(t, errors.service_title.message)}
                                             </span>
                                         )}
                                     </div>
@@ -648,11 +755,11 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Description */}
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Description <span className="text-slate-400 font-normal">(Optional)</span>
+                                            {t("services.modal.serviceDescription")} <span className="text-slate-400 font-normal">{t("common.optional")}</span>
                                         </label>
                                         <textarea
                                             rows={2}
-                                            placeholder="Provide general service description and purpose..."
+                                            placeholder={t("services.modal.serviceDescriptionPlaceholder")}
                                             {...register("service_description")}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 resize-none"
                                         />
@@ -661,16 +768,17 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Linked Service Group */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Group <span className="text-slate-400 font-normal">(Optional)</span>
+                                            {t("services.modal.serviceGroup")} <span className="text-slate-400 font-normal">{t("common.optional")}</span>
                                         </label>
                                         <select
                                             {...register("serviceGroup_id")}
+                                            value={watch("serviceGroup_id") || ""}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
-                                            <option value="">Select Service Group</option>
+                                            <option value="">{t("services.modal.selectServiceGroup")}</option>
                                             {SERVICE_GROUPS_OPTIONS.map((g) => (
                                                 <option key={g.id} value={g.id}>
-                                                    {g.name}
+                                                    {t(`groups.groupOptions.${g.name}`, { defaultValue: g.name })}
                                                 </option>
                                             ))}
                                         </select>
@@ -679,15 +787,16 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Portal Dropdown */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Portal <span className="text-red-500">*</span>
+                                            {t("services.servicePortal")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("servicePortal_id")}
+                                            value={watch("servicePortal_id") || ""}
                                             disabled={isLoadingPortals}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
-                                                {isLoadingPortals ? "Loading Portals..." : "Select Service Portal"}
+                                                {isLoadingPortals ? t("services.modal.loadingPortals") : t("services.modal.selectServicePortal")}
                                             </option>
                                             {portals.map((item: any) => (
                                                 <option key={item.id} value={item.id}>
@@ -697,7 +806,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </select>
                                         {errors.servicePortal_id && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.servicePortal_id.message}
+                                                {translateError(t, errors.servicePortal_id.message)}
                                             </span>
                                         )}
                                     </div>
@@ -705,15 +814,16 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Category Dropdown */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Category <span className="text-slate-400 font-normal">(Optional)</span>
+                                            {t("services.serviceCategory")} <span className="text-slate-400 font-normal">{t("common.optional")}</span>
                                         </label>
                                         <select
                                             {...register("service_category_id")}
+                                            value={watch("service_category_id") || ""}
                                             disabled={isLoadingCategories}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
-                                                {isLoadingCategories ? "Loading Categories..." : "Select Service Category"}
+                                                {isLoadingCategories ? t("services.modal.loadingCategories") : t("services.modal.selectServiceCategory")}
                                             </option>
                                             {categories.map((item: any) => (
                                                 <option key={item.id} value={item.id}>
@@ -726,15 +836,16 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Type Dropdown */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Type <span className="text-red-500">*</span>
+                                            {t("services.serviceType")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("serviceType_id")}
+                                            value={watch("serviceType_id") || ""}
                                             disabled={isLoadingTypes}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
-                                                {isLoadingTypes ? "Loading Types..." : "Select Service Type"}
+                                                {isLoadingTypes ? t("services.modal.loadingTypes") : t("services.modal.selectServiceType")}
                                             </option>
                                             {types.map((item: any) => (
                                                 <option key={item.id} value={item.id}>
@@ -744,7 +855,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </select>
                                         {errors.serviceType_id && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.serviceType_id.message}
+                                                {translateError(t, errors.serviceType_id.message)}
                                             </span>
                                         )}
                                     </div>
@@ -752,17 +863,18 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Processing Time */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Processing Time <span className="text-red-500">*</span>
+                                            {t("services.modal.processingTimeLabel")} <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter Service Processing Time (e.g. 2)"
+                                            dir="ltr"
+                                            placeholder={t("services.modal.processingTimePlaceholder")}
                                             {...register("service_processing_time")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 text-start"
                                         />
                                         {errors.service_processing_time && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.service_processing_time.message}
+                                                {translateError(t, errors.service_processing_time.message)}
                                             </span>
                                         )}
                                     </div>
@@ -770,18 +882,18 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Processing Frequency */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Processing Frequency <span className="text-red-500">*</span>
+                                            {t("services.modal.processingFrequencyLabel")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("service_processing_frequen")}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
-                                            <option value="hours">Hours</option>
-                                            <option value="days">Days</option>
+                                            <option value="hours">{t("services.hours")}</option>
+                                            <option value="days">{t("services.days")}</option>
                                         </select>
                                         {errors.service_processing_frequen && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.service_processing_frequen.message}
+                                                {translateError(t, errors.service_processing_frequen.message)}
                                             </span>
                                         )}
                                     </div>
@@ -789,15 +901,16 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Tag Dropdown */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Tag <span className="text-red-500">*</span>
+                                            {t("services.serviceTag")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("serviceTag_id")}
+                                            value={watch("serviceTag_id") || ""}
                                             disabled={isLoadingTags}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 disabled:opacity-50"
                                         >
                                             <option value="">
-                                                {isLoadingTags ? "Loading Tags..." : "Select Service Tag"}
+                                                {isLoadingTags ? t("services.modal.loadingTags") : t("services.modal.selectServiceTag")}
                                             </option>
                                             {tags.map((item: any) => (
                                                 <option key={item.id} value={item.id}>
@@ -807,7 +920,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         </select>
                                         {errors.serviceTag_id && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.serviceTag_id.message}
+                                                {translateError(t, errors.serviceTag_id.message)}
                                             </span>
                                         )}
                                     </div>
@@ -815,14 +928,14 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Validity */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Validity / Frequency <span className="text-red-500">*</span>
+                                            {t("services.validity")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("service_validity")}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
-                                            <option value="recurring">Recurring</option>
-                                            <option value="oneTime">One Time</option>
+                                            <option value="recurring">{t("services.recurring")}</option>
+                                            <option value="oneTime">{t("services.oneTime")}</option>
                                         </select>
                                     </div>
 
@@ -831,68 +944,71 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         <>
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-700 mb-1">
-                                                    Recurring Type
+                                                    {t("services.modal.recurringType")}
                                                 </label>
                                                 <select
                                                     {...register("recurring_type")}
                                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                 >
-                                                    <option value="monthly">Monthly</option>
-                                                    <option value="yearly">Yearly</option>
+                                                    <option value="monthly">{t("services.monthly")}</option>
+                                                    <option value="yearly">{t("services.yearly")}</option>
                                                 </select>
                                             </div>
 
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-700 mb-1">
-                                                    Service Due Date
+                                                    {t("services.modal.serviceDueDate")}
                                                 </label>
                                                 <input
                                                     type="date"
+                                                    dir="ltr"
                                                     {...register("service_due_date")}
-                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 text-start"
                                                 />
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-2">
                                                 <div>
                                                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                                                        Service Period <span className="text-red-500">*</span>
+                                                        {t("services.modal.servicePeriod")} <span className="text-red-500">*</span>
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        placeholder="e.g. 1"
+                                                        dir="ltr"
+                                                        placeholder={t("services.modal.servicePeriodPlaceholder")}
                                                         {...register("service_period")}
-                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 text-start"
                                                     />
                                                     {errors.service_period && (
                                                         <span className="text-[10px] text-red-500 block mt-1">
-                                                            {errors.service_period.message}
+                                                            {translateError(t, errors.service_period.message)}
                                                         </span>
                                                     )}
                                                 </div>
                                                 <div>
                                                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                                                        Period Type
+                                                        {t("services.modal.periodType")}
                                                     </label>
                                                     <select
                                                         {...register("period_type")}
                                                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                                     >
-                                                        <option value="days">Days</option>
-                                                        <option value="months">Months</option>
-                                                        <option value="years">Years</option>
+                                                        <option value="days">{t("services.days")}</option>
+                                                        <option value="months">{t("services.months")}</option>
+                                                        <option value="years">{t("services.years")}</option>
                                                     </select>
                                                 </div>
                                             </div>
 
                                             <div>
                                                 <label className="block text-xs font-medium text-slate-700 mb-1">
-                                                    Service Event Date
+                                                    {t("services.modal.serviceEventDate")}
                                                 </label>
                                                 <input
                                                     type="date"
+                                                    dir="ltr"
                                                     {...register("service_event_date")}
-                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 text-start"
                                                 />
                                             </div>
                                         </>
@@ -901,7 +1017,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Confirmation Required (Default: No) */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Confirmation Required
+                                            {t("services.modal.confirmationRequired")}
                                         </label>
                                         <div className="flex items-center gap-4 text-xs mt-2">
                                             <label className="flex items-center gap-1.5 cursor-pointer">
@@ -911,7 +1027,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     checked={watch("confirmation_required") === true}
                                                     className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
-                                                Yes
+                                                {t("common.yes")}
                                             </label>
                                             <label className="flex items-center gap-1.5 cursor-pointer">
                                                 <input
@@ -920,7 +1036,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     checked={watch("confirmation_required") === false}
                                                     className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
-                                                No
+                                                {t("common.no")}
                                             </label>
                                         </div>
                                     </div>
@@ -928,7 +1044,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Delegation Required (Default: No) */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Delegation Required
+                                            {t("services.delegationRequired")}
                                         </label>
                                         <div className="flex items-center gap-4 text-xs mt-2">
                                             <label className="flex items-center gap-1.5 cursor-pointer">
@@ -938,7 +1054,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     checked={watch("delegation_required") === true}
                                                     className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
-                                                Yes
+                                                {t("common.yes")}
                                             </label>
                                             <label className="flex items-center gap-1.5 cursor-pointer">
                                                 <input
@@ -947,7 +1063,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     checked={watch("delegation_required") === false}
                                                     className="w-4 h-4 text-[#2D3F2C] border-slate-300"
                                                 />
-                                                No
+                                                {t("common.no")}
                                             </label>
                                         </div>
                                     </div>
@@ -955,20 +1071,20 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Responsible Department */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Responsible Department <span className="text-red-500">*</span>
+                                            {t("services.modal.responsibleDepartment")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("service_responsible_department_id")}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
-                                            <option value="dept-1">Human Resources (الموارد البشرية)</option>
-                                            <option value="dept-2">Finance & Accounting (المالية)</option>
-                                            <option value="dept-3">Operations & Licensing (العمليات والتراخيص)</option>
-                                            <option value="dept-4">Government Relations (العلاقات الحكومية)</option>
+                                            <option value="dept-1">{t("services.departments.dept-1")}</option>
+                                            <option value="dept-2">{t("services.departments.dept-2")}</option>
+                                            <option value="dept-3">{t("services.departments.dept-3")}</option>
+                                            <option value="dept-4">{t("services.departments.dept-4")}</option>
                                         </select>
                                         {errors.service_responsible_department_id && (
                                             <span className="text-[10px] text-red-500 block mt-1">
-                                                {errors.service_responsible_department_id.message}
+                                                {translateError(t, errors.service_responsible_department_id.message)}
                                             </span>
                                         )}
                                     </div>
@@ -976,15 +1092,15 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Submission Mode */}
                                     <div>
                                         <label className="block text-xs font-medium text-slate-700 mb-1">
-                                            Service Submission Mode <span className="text-red-500">*</span>
+                                            {t("services.modal.submissionMode")} <span className="text-red-500">*</span>
                                         </label>
                                         <select
                                             {...register("service_submission_mode")}
                                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                         >
-                                            <option value="hybrid">Hybrid (إلكتروني وحضوري)</option>
-                                            <option value="online">Online (إلكتروني بالكامل)</option>
-                                            <option value="offline">Offline (ميداني)</option>
+                                            <option value="hybrid">{t("services.submissionModes.hybrid")}</option>
+                                            <option value="online">{t("services.submissionModes.online")}</option>
+                                            <option value="offline">{t("services.submissionModes.offline")}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -993,14 +1109,14 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         {/* STEP 2: Payment Information */}
                         <div className={currentStep === 2 ? "space-y-4 pt-2" : "hidden"}>
                             <h3 className="text-sm font-bold text-slate-800 mb-3">
-                                Payment Information
+                                {t("services.modal.step2")}
                             </h3>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                     {/* Sadad Payment Available (Default: No) */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-700 mb-2">
-                                            Sadad Payment Available <span className="text-red-500">*</span>
+                                            {t("services.sadadAvailable")} <span className="text-red-500">*</span>
                                         </label>
                                         <div className="flex items-center gap-6 text-xs">
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
@@ -1014,7 +1130,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     checked={sadadPaymentAvailable === true}
                                                     className="w-4 h-4 text-[#2D3F2C] focus:ring-[#2D3F2C]"
                                                 />
-                                                Yes
+                                                {t("common.yes")}
                                             </label>
                                             <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
                                                 <input
@@ -1025,13 +1141,13 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     checked={sadadPaymentAvailable === false}
                                                     className="w-4 h-4 text-[#2D3F2C] focus:ring-[#2D3F2C]"
                                                 />
-                                                No
+                                                {t("common.no")}
                                             </label>
                                         </div>
                                         <span className="text-[10px] text-slate-400 mt-1 block">
                                             {sadadPaymentAvailable
-                                                ? "Sadad bills will be generated automatically for this service."
-                                                : "Alternative payment gateway or transfer method is required."}
+                                                ? t("services.modal.sadadHelperYes")
+                                                : t("services.modal.sadadHelperNo")}
                                         </span>
                                     </div>
 
@@ -1039,22 +1155,22 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {!sadadPaymentAvailable && (
                                         <div className="animate-in fade-in duration-200">
                                             <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                                Other Payment Method <span className="text-red-500">*</span>
+                                                {t("services.modal.otherPaymentMethod")} <span className="text-red-500">*</span>
                                             </label>
                                             <select
                                                 {...register("other_payment_method_id")}
                                                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                             >
-                                                <option value="">Select Other Payment Method</option>
+                                                <option value="">{t("services.modal.selectOtherPaymentMethod")}</option>
                                                 {OTHER_PAYMENT_METHODS.map((pm) => (
                                                     <option key={pm.id} value={pm.id}>
-                                                        {pm.name}
+                                                        {t(`services.paymentMethods.${pm.id}`, pm.name)}
                                                     </option>
                                                 ))}
                                             </select>
                                             {errors.other_payment_method_id && (
                                                 <span className="text-[10px] text-red-500 block mt-1">
-                                                    {errors.other_payment_method_id.message}
+                                                    {translateError(t, errors.other_payment_method_id.message)}
                                                 </span>
                                             )}
                                         </div>
@@ -1063,13 +1179,14 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                     {/* Service Fees */}
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                            Service Fees (SAR)
+                                            {t("services.modal.serviceFeesSar")}
                                         </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter Service Fees"
+                                            dir="ltr"
+                                            placeholder={t("services.modal.serviceFeesPlaceholder")}
                                             {...register("service_fees")}
-                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 text-start"
                                         />
                                     </div>
                                 </div>
@@ -1078,13 +1195,13 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         {/* STEP 3: Documents Information */}
                         <div className={currentStep === 3 ? "space-y-6 pt-2" : "hidden"}>
                             <h3 className="text-sm font-bold text-slate-800">
-                                Documents Information
+                                {t("services.modal.step3")}
                             </h3>
 
                             {/* Input Document Section */}
                             <div className="space-y-2">
                                 <label className="block text-xs font-semibold text-slate-700">
-                                    Input Document <span className="text-slate-400 font-normal">(Required documents submitted by the client)</span>
+                                    {t("services.modal.inputDocument")} <span className="text-slate-400 font-normal">{t("services.modal.inputDocumentHint")}</span>
                                 </label>
 
                                 <div className="flex gap-2">
@@ -1097,10 +1214,10 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         }}
                                         className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                     >
-                                        <option value="">Select standard input document...</option>
+                                        <option value="">{t("services.modal.selectInputPreset")}</option>
                                         {INPUT_DOCUMENT_PRESETS.map((preset) => (
                                             <option key={preset} value={preset}>
-                                                {preset}
+                                                {t(`presets.inputDocuments.${preset}`, preset)}
                                             </option>
                                         ))}
                                     </select>
@@ -1114,12 +1231,12 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                 key={doc}
                                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-900 border border-amber-200/60 rounded-md text-xs font-medium"
                                             >
-                                                {doc}
+                                                {t(`presets.inputDocuments.${doc}`, doc)}
                                                 <button
                                                     type="button"
                                                     onClick={() => removeInputDoc(doc)}
-                                                    className="hover:text-amber-950 font-bold ml-1 cursor-pointer"
-                                                    title="Remove document"
+                                                    className="hover:text-amber-950 font-bold ms-1 cursor-pointer"
+                                                    title={t("services.modal.removeDocument")}
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -1132,7 +1249,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                             {/* Output Document Section (Standard dropdown using existing demo data) */}
                             <div className="space-y-2">
                                 <label className="block text-xs font-semibold text-slate-700">
-                                    Output Document <span className="text-slate-400 font-normal">(Certificate or deliverable returned upon completion)</span>
+                                    {t("services.modal.outputDocument")} <span className="text-slate-400 font-normal">{t("services.modal.outputDocumentHint")}</span>
                                 </label>
 
                                 <div className="flex gap-2">
@@ -1145,10 +1262,10 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                         }}
                                         className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
                                     >
-                                        <option value="">Select standard output document deliverable...</option>
+                                        <option value="">{t("services.modal.selectOutputPreset")}</option>
                                         {OUTPUT_DOCUMENT_OPTIONS.map((opt) => (
                                             <option key={opt.id} value={opt.name}>
-                                                {opt.code} — {opt.name}
+                                                {opt.code} — {t(`presets.outputDocuments.${opt.name}`, opt.name)}
                                             </option>
                                         ))}
                                     </select>
@@ -1162,12 +1279,12 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                 key={doc}
                                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-900 border border-emerald-200/80 rounded-md text-xs font-medium"
                                             >
-                                                {doc}
+                                                {t(`presets.outputDocuments.${doc}`, doc)}
                                                 <button
                                                     type="button"
                                                     onClick={() => removeOutputDoc(doc)}
-                                                    className="hover:text-emerald-950 font-bold ml-1 cursor-pointer"
-                                                    title="Remove document"
+                                                    className="hover:text-emerald-950 font-bold ms-1 cursor-pointer"
+                                                    title={t("services.modal.removeDocument")}
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -1182,16 +1299,16 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         <div className={currentStep === 4 ? "space-y-4 pt-2" : "hidden"}>
                             <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-slate-800">
-                                    Service Process
+                                    {t("services.modal.step4")}
                                 </h3>
                                 <span className="text-xs text-slate-400">
-                                    Direction: <strong className="uppercase text-slate-700">{editorDirection}</strong>
+                                    {t("services.modal.direction")}: <strong className="uppercase text-slate-700">{editorDirection}</strong>
                                 </span>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-medium text-slate-700 mb-2">
-                                    Process Description <span className="text-slate-400 font-normal">(Steps, requirements, or execution flowchart)</span>
+                                    {t("services.modal.processDescription")} <span className="text-slate-400 font-normal">{t("services.modal.processDescriptionHint")}</span>
                                 </label>
 
                                 {/* Rich Text Editor Container */}
@@ -1210,7 +1327,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
                                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                                             }`}
-                                            title="Bold (Ctrl+B)"
+                                            title={t("services.modal.boldTitle")}
                                         >
                                             B
                                         </button>
@@ -1227,7 +1344,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
                                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                                             }`}
-                                            title="Italic (Ctrl+I)"
+                                            title={t("services.modal.italicTitle")}
                                         >
                                             I
                                         </button>
@@ -1244,7 +1361,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
                                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                                             }`}
-                                            title="Underline (Ctrl+U)"
+                                            title={t("services.modal.underlineTitle")}
                                         >
                                             U
                                         </button>
@@ -1263,7 +1380,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     ? "bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-2xs"
                                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                                             }`}
-                                            title="Heading Style"
+                                            title={t("services.modal.headingTitle")}
                                         >
                                             H
                                         </button>
@@ -1282,9 +1399,9 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     ? "bg-[#2D3F2C] text-white"
                                                     : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                                             }`}
-                                            title="Set Right-to-Left (RTL)"
+                                            title={t("services.modal.rtlButton")}
                                         >
-                                            RTL (عربي)
+                                            {t("services.modal.rtlButton")}
                                         </button>
 
                                         {/* LTR direction toggle */}
@@ -1299,9 +1416,9 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     ? "bg-[#2D3F2C] text-white"
                                                     : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                                             }`}
-                                            title="Set Left-to-Right (LTR)"
+                                            title={t("services.modal.ltrButton")}
                                         >
-                                            LTR (English)
+                                            {t("services.modal.ltrButton")}
                                         </button>
                                     </div>
 
@@ -1316,7 +1433,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                             onKeyUp={checkActiveFormats}
                                             onMouseUp={checkActiveFormats}
                                             onSelect={checkActiveFormats}
-                                            data-placeholder="Enter process description details ..."
+                                            data-placeholder={t("services.modal.processPlaceholder")}
                                             className={`w-full min-h-[160px] p-3 text-xs focus:outline-none leading-relaxed [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-slate-900 [&_h3]:my-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-slate-900 [&_h2]:my-2 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-slate-900 [&_h1]:my-2 [&_p]:my-1.5 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline ${
                                                 editorDirection === "rtl" ? "text-right" : "text-left"
                                             }`}
@@ -1328,13 +1445,13 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                                                     editorDirection === "rtl" ? "right-3 text-right" : "left-3 text-left"
                                                 } text-slate-400 text-xs pointer-events-none select-none`}
                                             >
-                                                Enter process description details ...
+                                                {t("services.modal.processPlaceholder")}
                                             </div>
                                         )}
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-slate-400 mt-1">
-                                    Use formatting toolbar above to style headings and text. Use RTL/LTR to adjust writing direction.
+                                    {t("services.modal.editorHelper")}
                                 </p>
                             </div>
                         </div>
@@ -1349,7 +1466,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                             onClick={handleBack}
                             className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors cursor-pointer"
                         >
-                            Back
+                            {t("common.back")}
                         </button>
                     )}
 
@@ -1358,7 +1475,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         onClick={handleClose}
                         className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors cursor-pointer"
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </button>
 
                     {currentStep < 4 ? (
@@ -1367,7 +1484,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                             onClick={handleNext}
                             className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer"
                         >
-                            Next
+                            {t("common.next")}
                         </button>
                     ) : (
                         <button
@@ -1376,7 +1493,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                             disabled={mutation.isPending}
                             className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                         >
-                            {mutation.isPending ? "Submitting..." : "Submit"}
+                            {mutation.isPending ? t("common.submitting") : t("common.submit")}
                         </button>
                     )}
                 </div>

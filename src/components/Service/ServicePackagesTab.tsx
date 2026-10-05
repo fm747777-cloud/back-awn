@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { DataTable } from "../DataTable";
 import { TableRowActions } from "../TableRowActions";
@@ -56,6 +57,7 @@ const defaultPackages: ServicePackageItem[] = [
 ];
 
 export const ServicePackagesTab: React.FC = () => {
+    const { t } = useTranslation();
     const [packages, setPackages] = useState<ServicePackageItem[]>(defaultPackages);
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
@@ -65,17 +67,16 @@ export const ServicePackagesTab: React.FC = () => {
 
     const filtered = useMemo(() => {
         if (!searchTerm) return packages;
+        const term = searchTerm.toLowerCase();
         return packages.filter(
             (p) =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                p.packageCode.toLowerCase().includes(searchTerm.toLowerCase())
+                p.name.toLowerCase().includes(term) ||
+                t(`packages.packageOptions.${p.name}`, { defaultValue: p.name }).toLowerCase().includes(term) ||
+                p.packageCode.toLowerCase().includes(term)
         );
-    }, [packages, searchTerm]);
+    }, [packages, searchTerm, t]);
 
-    const handleCreateOrUpdatePackage = (
-        dto: CreateServicePackageDto,
-        meta?: { service_group_id: string; group_name?: string }
-    ) => {
+    const handleCreateOrUpdatePackage = (dto: CreateServicePackageDto) => {
         if (editingPackage) {
             setPackages((prev) =>
                 prev.map((item) =>
@@ -89,7 +90,11 @@ export const ServicePackagesTab: React.FC = () => {
                         : item
                 )
             );
-            toast.success(`Service package "${dto.package_name}" updated successfully`);
+            toast.success(
+                t("packages.messages.updated", {
+                    name: t(`packages.packageOptions.${dto.package_name}`, { defaultValue: dto.package_name }),
+                })
+            );
             setEditingPackage(null);
             setIsModalOpen(false);
             return;
@@ -107,15 +112,25 @@ export const ServicePackagesTab: React.FC = () => {
         };
 
         setPackages((prev) => [newPackage, ...prev]);
-        const groupLabel = meta?.group_name ? ` for "${meta.group_name}"` : "";
-        toast.success(`Service package "${dto.package_name}" created successfully${groupLabel}`);
+        toast.success(
+            t("packages.messages.created", {
+                name: t(`packages.packageOptions.${dto.package_name}`, { defaultValue: dto.package_name }),
+            })
+        );
         setIsModalOpen(false);
     };
 
-    const handleDeletePackage = (pkg: ServicePackageItem) => {
-        setPackages((prev) => prev.filter((p) => p.id !== pkg.id));
-        toast.success(`Service package "${pkg.name}" deleted successfully`);
-    };
+    const handleDeletePackage = useCallback(
+        (pkg: ServicePackageItem) => {
+            setPackages((prev) => prev.filter((p) => p.id !== pkg.id));
+            toast.success(
+                t("packages.messages.deleted", {
+                    name: t(`packages.packageOptions.${pkg.name}`, { defaultValue: pkg.name }),
+                })
+            );
+        },
+        [t]
+    );
 
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
@@ -140,61 +155,71 @@ export const ServicePackagesTab: React.FC = () => {
             },
             {
                 accessorKey: "packageCode",
-                header: "Package Code",
+                header: t("packages.packageCode"),
                 cell: (info) => (
-                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]" dir="ltr">
                         {info.getValue() as string}
                     </span>
                 ),
             },
             {
                 accessorKey: "name",
-                header: "Package Name",
-                cell: (info) => (
-                    <span className="font-medium text-[#0D0D0D]">
-                        {info.getValue() as string}
-                    </span>
-                ),
+                header: t("packages.packageName"),
+                cell: (info) => {
+                    const rawName = info.getValue() as string;
+                    return (
+                        <span className="font-medium text-[#0D0D0D]">
+                            {t(`packages.packageOptions.${rawName}`, { defaultValue: rawName })}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: "servicesIncluded",
-                header: "Services Included",
+                header: t("packages.servicesIncluded"),
                 cell: (info) => (
-                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
-                        {info.getValue() as number} Services
+                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold font-mono bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
+                        {t("common.servicesCountBadge", { count: info.getValue() as number })}
                     </span>
                 ),
             },
             {
                 accessorKey: "billingCycle",
-                header: "Billing Cycle",
+                header: t("packages.billingCycle"),
+                cell: (info) => {
+                    const val = String(info.getValue() || "");
+                    return t(`services.${val.toLowerCase()}`, { defaultValue: val });
+                },
             },
             {
                 accessorKey: "price",
-                header: "Price (SAR)",
+                header: t("packages.priceSar"),
                 cell: (info) => (
                     <span className="font-semibold font-mono text-[#0D0D0D]">
-                        {(info.getValue() as number).toLocaleString()} SAR
+                        {(info.getValue() as number).toLocaleString("en-US")} {t("common.sar")}
                     </span>
                 ),
             },
             {
                 accessorKey: "status",
-                header: "Status",
-                cell: () => (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
-                        Active
-                    </span>
-                ),
+                header: t("common.status"),
+                cell: ({ row }) => {
+                    const isPkgActive = row.original.status !== "inactive";
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
+                            {isPkgActive ? t("common.active") : t("common.inactive")}
+                        </span>
+                    );
+                },
             },
             {
                 id: "actions",
-                header: () => <div className="text-right">Actions</div>,
+                header: () => <div className="text-end">{t("common.actions")}</div>,
                 cell: ({ row }) => (
-                    <div className="text-right">
+                    <div className="text-end">
                         <TableRowActions
-                            recordName={row.original.name}
+                            recordName={t(`packages.packageOptions.${row.original.name}`, { defaultValue: row.original.name })}
                             onEdit={() => {
                                 setEditingPackage(row.original);
                                 setIsModalOpen(true);
@@ -205,7 +230,7 @@ export const ServicePackagesTab: React.FC = () => {
                 ),
             },
         ],
-        []
+        [t, handleDeletePackage]
     );
 
     return (
@@ -215,7 +240,7 @@ export const ServicePackagesTab: React.FC = () => {
                 data={filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
                 count={filtered.length}
                 loading={false}
-                searchPlaceholder="Search Service Packages..."
+                searchPlaceholder={t("pages.servicePackages.searchPlaceholder")}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={setPageIndex}
@@ -227,7 +252,7 @@ export const ServicePackagesTab: React.FC = () => {
                     setIsModalOpen(true);
                 }}
                 title="Service Packages"
-                addNewLabel="Add Package"
+                addNewLabel={t("pages.servicePackages.addLabel")}
             />
 
             <AddServicePackageModal

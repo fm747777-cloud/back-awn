@@ -1,160 +1,99 @@
 import { axiosClient } from "./axiosClient";
 
-// Default initial mock data for AWN Platform
-const initialServices = [
-    {
-        id: "srv-1",
-        code: "SRV-1001",
-        title: "تجديد رخصة القيادة للمركبات التجارية",
-        relatedTo: "asset",
-        category: "Commercial Licenses",
-        type: "Renewal",
-        tags: "Urgent",
-        processingTime: "2",
-        frequency: "days",
-        fee: 200,
-        delegationRequired: "Yes",
-        validity: "Recurring",
-        sadadAvailable: "Yes",
-        portal: "Absher Business",
-        createDate: "2026-01-12",
-        createdBy: { name: "Karim Wagdi", email: "karim.wagdi@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-2",
-        code: "SRV-1002",
-        title: "إصدار وتجديد الإقامة للموظفين",
-        relatedTo: "employee",
-        category: "Labor & Employment",
-        type: "Renewal",
-        tags: "Annual Compliance",
-        processingTime: "24",
-        frequency: "hours",
-        fee: 650,
-        delegationRequired: "Yes",
-        validity: "Recurring",
-        sadadAvailable: "Yes",
-        portal: "Muqeem",
-        createDate: "2026-01-15",
-        createdBy: { name: "Karim Wagdi", email: "karim.wagdi@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-3",
-        code: "SRV-1003",
-        title: "توثيق وتعديل عقود العمل",
-        relatedTo: "employee",
-        category: "Labor & Employment",
-        type: "Issuance",
-        tags: "Legal Requirement",
-        processingTime: "1",
-        frequency: "days",
-        fee: 0,
-        delegationRequired: "No",
-        validity: "One Time",
-        sadadAvailable: "No",
-        portal: "Qiwa Platform",
-        createDate: "2026-02-01",
-        createdBy: { name: "Admin User", email: "admin@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-4",
-        code: "SRV-1004",
-        title: "تجديد السجل التجاري الرئيسي",
-        relatedTo: "business",
-        category: "Commercial Licenses",
-        type: "Renewal",
-        tags: "Annual Compliance",
-        processingTime: "3",
-        frequency: "days",
-        fee: 1000,
-        delegationRequired: "Yes",
-        validity: "Recurring",
-        sadadAvailable: "Yes",
-        portal: "Ministry of Commerce",
-        createDate: "2026-02-10",
-        createdBy: { name: "Karim Wagdi", email: "karim.wagdi@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-5",
-        code: "SRV-1005",
-        title: "شهادة الالتزام بحماية الأجور",
-        relatedTo: "business",
-        category: "Labor & Employment",
-        type: "Issuance",
-        tags: "Quarterly Audit",
-        processingTime: "1",
-        frequency: "days",
-        fee: 0,
-        delegationRequired: "No",
-        validity: "Recurring",
-        sadadAvailable: "No",
-        portal: "Mudad Platform",
-        createDate: "2026-02-18",
-        createdBy: { name: "Admin User", email: "admin@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-6",
-        code: "SRV-1006",
-        title: "إصدار رخصة البلدية الفورية",
-        relatedTo: "asset",
-        category: "Municipal Services",
-        type: "Issuance",
-        tags: "Priority",
-        processingTime: "2",
-        frequency: "hours",
-        fee: 500,
-        delegationRequired: "Yes",
-        validity: "One Time",
-        sadadAvailable: "Yes",
-        portal: "Balady Portal",
-        createDate: "2026-03-01",
-        createdBy: { name: "Karim Wagdi", email: "karim.wagdi@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-7",
-        code: "SRV-1007",
-        title: "تحديث بيانات التأمينات الاجتماعية (GOSI)",
-        relatedTo: "employee",
-        category: "Social Insurance",
-        type: "Amendment",
-        tags: "Legal Requirement",
-        processingTime: "24",
-        frequency: "hours",
-        fee: 0,
-        delegationRequired: "No",
-        validity: "One Time",
-        sadadAvailable: "No",
-        portal: "GOSI Portal",
-        createDate: "2026-03-05",
-        createdBy: { name: "Karim Wagdi", email: "karim.wagdi@awn.sa" },
-        status: "Active" as const,
-    },
-    {
-        id: "srv-8",
-        code: "SRV-1008",
-        title: "إصدار شهادة تسجيل ضريبة القيمة المضافة",
-        relatedTo: "business",
-        category: "Tax & Customs",
-        type: "Issuance",
-        tags: "Legal Requirement",
-        processingTime: "2",
-        frequency: "days",
-        fee: 0,
-        delegationRequired: "Yes",
-        validity: "One Time",
-        sadadAvailable: "No",
-        portal: "ZATCA Portal",
-        createDate: "2026-03-10",
-        createdBy: { name: "Admin User", email: "admin@awn.sa" },
-        status: "Active" as const,
-    },
-];
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function mapServiceItem(item: any) {
+    const validityRaw = item.service_validity ?? item.validity ?? '';
+    const validityDisplay =
+        validityRaw === 'recurring'
+            ? 'Recurring'
+            : validityRaw === 'oneTime' || validityRaw === 'one_time'
+                ? 'One Time'
+                : validityRaw;
+
+    const delegationDisplay =
+        typeof item.delegation_required === 'boolean'
+            ? item.delegation_required
+                ? 'Yes'
+                : 'No'
+            : item.delegationRequired ?? 'No';
+
+    const sadadDisplay =
+        item.servicePayment?.sadad_payment_available !== undefined
+            ? String(item.servicePayment.sadad_payment_available) === 'true'
+                ? 'Yes'
+                : 'No'
+            : typeof item.sadad_payment_available === 'boolean'
+                ? item.sadad_payment_available
+                    ? 'Yes'
+                    : 'No'
+                : item.sadadAvailable ?? 'No';
+
+    return {
+        ...item,
+        code: item.code || item.serviceCode || (item.id ? String(item.id).slice(0, 8).toUpperCase() : '—'),
+        title: item.service_title ?? item.title ?? '',
+        relatedTo: item.group_type ?? item.relatedTo ?? '',
+        category: item.serviceType?.serviceCategory?.name ?? item.serviceCategory?.name ?? item.category ?? '—',
+        type: item.serviceType?.name ?? item.type ?? '—',
+        tags: item.serviceTag?.name ?? item.tags ?? '—',
+        processingTime: item.service_processing_time ?? item.processingTime ?? '',
+        frequency: item.service_processing_frequen ?? item.frequency ?? '',
+        fee: item.servicePayment?.fees ?? item.service_fees ?? item.fee ?? 0,
+        delegationRequired: delegationDisplay,
+        validity: validityDisplay,
+        sadadAvailable: sadadDisplay,
+        portal: item.servicePortal?.name ?? item.portal ?? '—',
+        createDate: item.createdAt ? String(item.createdAt).split('T')[0] : item.createDate ?? '',
+        createdBy: item.createdBy ?? 'N/A',
+        status: item.status ?? 'Active',
+    };
+}
+
+function buildServicePayload(data: any) {
+    const payload: Record<string, any> = {
+        servicePortal_id: data.servicePortal_id,
+        serviceType_id: data.serviceType_id,
+        serviceTag_id: data.serviceTag_id,
+        service_title: data.service_title,
+        service_processing_time: String(data.service_processing_time ?? ''),
+        service_processing_frequen: data.service_processing_frequen,
+        service_validity: data.service_validity,
+        confirmation_required: Boolean(data.confirmation_required),
+        delegation_required: Boolean(data.delegation_required),
+        service_submission_mode: data.service_submission_mode,
+    };
+
+    if (data.group_type) {
+        payload.group_type = data.group_type;
+    }
+    if (data.serviceGroup_id && UUID_REGEX.test(String(data.serviceGroup_id))) {
+        payload.serviceGroup_id = data.serviceGroup_id;
+    }
+    if (data.service_description !== undefined) {
+        payload.service_description = data.service_description;
+    }
+    if (data.process_description !== undefined) {
+        payload.process_description = data.process_description;
+    }
+    if (data.recurring_type) {
+        payload.recurring_type = data.recurring_type;
+    }
+    if (data.service_period) {
+        payload.service_period = String(data.service_period);
+    }
+    if (data.period_type) {
+        payload.period_type = data.period_type;
+    }
+    if (data.service_due_date && String(data.service_due_date).trim() !== '') {
+        payload.service_due_date = String(data.service_due_date);
+    }
+    if (data.service_event_date && String(data.service_event_date).trim() !== '') {
+        payload.service_event_date = String(data.service_event_date);
+    }
+
+    return payload;
+}
 
 const initialPortals = [
     {
@@ -400,152 +339,44 @@ function setLocal<T>(key: string, val: T): void {
 
 export const authApi = {
     login: async (data: any) => {
-        if (import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/auth/login', data);
-                return response.data;
-            } catch (err: any) {
-                // If remote backend explicitly responded with 401/400 credentials error, rethrow
-                if (err.response?.status === 401 || err.response?.status === 400) {
-                    throw err;
-                }
-            }
-        }
-
-        // Seamless fallback for development/preview:
-        await new Promise((res) => setTimeout(res, 300));
-        const email = data.email || 'karim.wagdi@awn.sa';
-        const namePart = email.split('@')[0].replace(/[._-]/g, ' ');
-        const formattedName = namePart
-            .split(' ')
-            .map((s: string) => s.charAt(0).toUpperCase() + s.slice(1))
-            .join(' ') || 'Karim Wagdi';
-
-        return {
-            access_token: 'awn-jwt-token-active-session',
-            user: {
-                id: 'usr-1',
-                type: 'Admin',
-                fullName: formattedName,
-            },
-        };
+        const response = await axiosClient.post('/auth/login', data);
+        return response.data;
     },
 };
 
 export const serviceApi = {
     getServices: async (data: any = {}) => {
-        if (import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service', { params: data });
-                return response.data;
-            } catch {
-                // Fallback to local store
-            }
-        }
-
-        const list = getLocal('services', initialServices);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item) =>
-                    item.title.toLowerCase().includes(search) ||
-                    item.code.toLowerCase().includes(search) ||
-                    item.portal.toLowerCase().includes(search) ||
-                    item.category.toLowerCase().includes(search)
-            )
-            : list;
-
-        const page = Number(data?.page || 1);
-        const limit = Number(data?.limit || 10);
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
-
+        const response = await axiosClient.get('/service', { params: data });
+        const resData = response.data;
+        const rawList = Array.isArray(resData?.data) ? resData.data : Array.isArray(resData) ? resData : [];
         return {
-            data: paged,
-            total: filtered.length,
-            count: filtered.length,
+            ...resData,
+            data: rawList.map(mapServiceItem),
+            count: resData?.count ?? rawList.length,
         };
+    },
+
+    getServiceById: async (id: string) => {
+        const response = await axiosClient.get(`/service/${id}`);
+        const item = response.data?.data ?? response.data;
+        return item ? mapServiceItem(item) : item;
     },
 
     createService: async (data: any) => {
-        if (import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service', data);
-                return response.data;
-            } catch {
-                // Fallback to local store
-            }
-        }
+        const payload = buildServicePayload(data);
+        const response = await axiosClient.post('/service', payload);
+        return response.data;
+    },
 
-        const list = getLocal('services', initialServices);
-        const portals = getLocal('portals', initialPortals);
-        const categories = getLocal('categories', initialCategories);
-        const types = getLocal('types', initialTypes);
-        const tags = getLocal('tags', initialTags);
-
-        const portalObj = portals.find((p) => p.id === data.servicePortal_id);
-        const categoryObj = categories.find((c) => c.id === data.service_category_id);
-        const typeObj = types.find((t) => t.id === data.serviceType_id);
-        const tagObj = tags.find((t) => t.id === data.serviceTag_id);
-
-        const newService = {
-            id: data.id || `srv-${Date.now()}`,
-            code: data.code || `SRV-${1000 + list.length + 1}`,
-            title: data.service_title || 'New Service',
-            description: data.service_description || '',
-            process_description: data.process_description || '',
-            input_documents: data.input_documents || [],
-            output_documents: data.output_documents || [],
-            relatedTo: data.group_type || 'business',
-            category: categoryObj?.name || 'General',
-            type: typeObj?.name || 'General',
-            tags: tagObj?.name || 'Standard',
-            processingTime: data.service_processing_time || '1',
-            frequency: data.service_processing_frequen || 'days',
-            fee: Number(data.service_fees) || 0,
-            delegationRequired: data.delegation_required ? 'Yes' : 'No',
-            validity: data.service_validity === 'recurring' ? 'Recurring' : 'One Time',
-            sadadAvailable: data.sadad_payment_available ? 'Yes' : 'No',
-            portal: portalObj?.name || 'Absher Business',
-            createDate: new Date().toISOString().split('T')[0],
-            createdBy: { name: 'Karim Wagdi', email: 'karim.wagdi@awn.sa' },
-            status: 'Active' as const,
-        };
-
-        const existingIdx = data.id ? list.findIndex((s: any) => s.id === data.id) : -1;
-        let updated: any[];
-        let resultService: any;
-        if (existingIdx >= 0) {
-            resultService = {
-                ...list[existingIdx],
-                ...newService,
-                id: data.id,
-                code: list[existingIdx].code || newService.code,
-                createDate: list[existingIdx].createDate || newService.createDate,
-            };
-            updated = [...list];
-            updated[existingIdx] = resultService;
-        } else {
-            resultService = newService;
-            updated = [newService, ...list];
-        }
-
-        setLocal('services', updated);
-        return resultService;
+    updateService: async (id: string, data: any) => {
+        const payload = buildServicePayload(data);
+        const response = await axiosClient.patch(`/service/${id}`, payload);
+        return response.data;
     },
 
     deleteService: async (id: string) => {
-        if (import.meta.env.VITE_BASE_URL) {
-            try {
-                await axiosClient.delete(`/service/${id}`);
-            } catch {
-                // Fallback
-            }
-        }
-        const list = getLocal('services', initialServices);
-        const updated = list.filter((s: any) => s.id !== id);
-        setLocal('services', updated);
-        return { success: true };
+        const response = await axiosClient.delete(`/service/${id}`);
+        return response.data;
     },
 
     getServiceTags: async (data: any = {}) => {

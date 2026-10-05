@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { serviceApi } from "../../api/api"; // اضبط المسار حسب مشروعك
+import { useTranslation } from "react-i18next";
+import { serviceApi } from "../../api/api";
 import { servicePortalSchema, type ServicePortalFormValues } from "../../schemas/serviceSchema";
 import { focusAndScrollToFirstError } from "../../utils/formValidation";
+import { translateError } from "../../i18n";
 
 interface AddServicePortalModalProps {
     isOpen: boolean;
@@ -17,6 +19,7 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
     onClose,
     initialData,
 }) => {
+    const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState<1 | 2>(1);
     const queryClient = useQueryClient();
 
@@ -38,6 +41,12 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
         },
     });
 
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    if (isOpen !== prevIsOpen) {
+        setPrevIsOpen(isOpen);
+        setCurrentStep(1);
+    }
+
     useEffect(() => {
         if (isOpen && initialData) {
             reset({
@@ -58,6 +67,18 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
         }
     }, [isOpen, initialData, reset]);
 
+    const handleCloseModal = () => {
+        reset({
+            name: "",
+            url: "",
+            description: "",
+            contact_number: undefined,
+            email: "",
+        });
+        setCurrentStep(1);
+        onClose();
+    };
+
     const mutation = useMutation({
         mutationFn: (data: ServicePortalFormValues) =>
             serviceApi.createServicePortal({
@@ -67,302 +88,271 @@ export const AddServicePortalModal: React.FC<AddServicePortalModalProps> = ({
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["servicePortals"] });
             queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
-            handleClose();
+            handleCloseModal();
+        },
+        onError: (error) => {
+            console.error("Failed to save service portal:", error);
         },
     });
 
-    const handleClose = () => {
-        reset();
-        setCurrentStep(1);
-        onClose();
-    };
-
-    // Validate Step 1 fields before advancing
-    const handleNext = async () => {
-        const isStepOneValid = await trigger(["name", "url"]);
-        if (isStepOneValid) {
+    const handleNextStep = async () => {
+        const isStep1Valid = await trigger(["name", "url", "description"]);
+        if (isStep1Valid) {
             setCurrentStep(2);
         } else {
-            setTimeout(() => {
-                const el = document.querySelector('[name="name"], [name="url"]') as HTMLElement;
-                if (el) {
-                    el.focus({ preventScroll: true });
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 60);
+            focusAndScrollToFirstError(errors);
         }
-    };
-
-    const handleBack = () => {
-        setCurrentStep(1);
     };
 
     const onSubmit = (data: ServicePortalFormValues) => {
         mutation.mutate(data);
     };
 
-    const onInvalid = (formErrors: any) => {
-        if (formErrors.name || formErrors.url) {
-            setCurrentStep(1);
-            setTimeout(() => {
-                const first = formErrors.name ? "name" : "url";
-                const el = document.querySelector(`[name="${first}"]`) as HTMLElement;
-                if (el) {
-                    el.focus({ preventScroll: true });
-                    el.scrollIntoView({ behavior: "smooth", block: "center" });
-                }
-            }, 80);
-        } else {
-            focusAndScrollToFirstError(formErrors, ["contact_number", "email"]);
-        }
-    };
+    if (!isOpen) return null;
 
     return (
-        <div
-            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${isOpen ? "pointer-events-auto" : "pointer-events-none"
-                }`}
-        >
-            {/* Overlay Backdrop */}
-            <div
-                className={`fixed inset-0 duration-300 ${isOpen ? "opacity-100" : "opacity-0"
-                    }`}
-                onClick={handleClose}
-            />
-
-            {/* Drawer Panel */}
-            <div
-                className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-slate-50 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
-            >
-                {/* Header */}
-                <div className="flex justify-between items-center px-8 py-5 bg-white border-b border-slate-100">
-                    <h2 className="text-xl font-semibold text-slate-800">
-                        {initialData ? "Edit Service Portal" : "Add Service Portal"}
-                    </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D0D0D]/40 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl border border-[#E5E0D8] w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] text-start">
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex justify-between items-start">
+                    <div>
+                        <h2 className="text-lg font-bold text-[#0D0D0D]">
+                            {initialData ? t("portals.editTitle") : t("portals.addTitle")}
+                        </h2>
+                        <p className="text-xs text-[#6E6862] mt-1">
+                            {t("portals.subtitle")}
+                        </p>
+                    </div>
                     <button
                         type="button"
-                        onClick={handleClose}
-                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                        onClick={handleCloseModal}
+                        disabled={mutation.isPending}
+                        aria-label={t("common.close")}
+                        className="text-[#8C847A] hover:text-[#0D0D0D] text-xl font-bold leading-none focus:outline-none p-1 rounded-md hover:bg-[#EFECE6]"
                     >
-                        ✕
+                        ×
                     </button>
                 </div>
 
-                {/* Content Body */}
-                <div className="p-8 overflow-y-auto flex-1 space-y-6">
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                        Define and create a new portal tag to categorize and streamline
-                        portal organization for better management.
-                    </p>
-
-                    {/* Stepper Progress Bar */}
-                    <div className="relative flex items-center justify-between max-w-md mx-auto py-4">
-                        {/* Dashed Connecting Line */}
-                        <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 border-t-2 border-dashed border-slate-300 -z-0" />
-
-                        {/* Step 1 Indicator */}
-                        <div className="relative z-10 flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center transition-colors">
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2.5"
-                                        d="M5 13l4 4L19 7"
-                                    />
-                                </svg>
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto flex-1">
+                    {/* Stepper UI */}
+                    <div className="flex items-center justify-center mb-8">
+                        {/* Step 1 */}
+                        <div className="flex items-center">
+                            <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    currentStep >= 1
+                                        ? "bg-[#2D3F2C] text-white"
+                                        : "bg-[#EFECE6] text-[#8C847A]"
+                                }`}
+                            >
+                                1
                             </div>
                             <span
-                                className={`text-xs font-semibold ${currentStep === 1 ? "text-[#2D3F2C]" : "text-slate-400"
-                                    }`}
+                                className={`ms-2 text-xs font-medium ${
+                                    currentStep >= 1
+                                        ? "text-[#2D3F2C] font-semibold"
+                                        : "text-[#8C847A]"
+                                }`}
                             >
-                                Portal Details
+                                {t("portals.step1")}
                             </span>
                         </div>
 
-                        {/* Step 2 Indicator */}
-                        <div className="relative z-10 flex flex-col items-center gap-2">
+                        {/* Line */}
+                        <div className="w-16 h-px bg-[#D6CFC4] mx-4"></div>
+
+                        {/* Step 2 */}
+                        <div className="flex items-center">
                             <div
-                                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-medium text-sm transition-colors ${currentStep === 2
-                                    ? "border-[#2D3F2C] text-[#2D3F2C] bg-white border-dashed"
-                                    : "border-slate-300 text-slate-400 bg-white border-dashed"
-                                    }`}
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    currentStep === 2
+                                        ? "bg-[#2D3F2C] text-white"
+                                        : "bg-[#EFECE6] text-[#8C847A]"
+                                }`}
                             >
                                 2
                             </div>
                             <span
-                                className={`text-xs font-semibold ${currentStep === 2 ? "text-[#2D3F2C]" : "text-slate-300"
-                                    }`}
+                                className={`ms-2 text-xs font-medium ${
+                                    currentStep === 2
+                                        ? "text-[#2D3F2C] font-semibold"
+                                        : "text-[#8C847A]"
+                                }`}
                             >
-                                Portal Contact Details
+                                {t("portals.step2")}
                             </span>
                         </div>
                     </div>
 
-                    {/* Form Card Container */}
-                    <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
-                        <form id="portal-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-                            {/* STEP 1: Portal Details */}
-                            <div className={currentStep === 1 ? "space-y-5" : "hidden"}>
-                                <h3 className="text-base font-bold text-slate-800 mb-4">
-                                    Portal Details
-                                </h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Portal Name */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Portal Name <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Enter Portal Name"
-                                            {...register("name")}
-                                            className={`w-full px-3.5 py-2.5 bg-slate-50/60 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
-                                                errors.name
-                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
-                                                    : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
-                                            }`}
-                                        />
-                                        {errors.name && (
-                                            <span className="text-[10px] text-red-500 mt-1 block">
-                                                {errors.name.message}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Portal URL */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Portal URL <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Enter Portal URL"
-                                            {...register("url")}
-                                            className={`w-full px-3.5 py-2.5 bg-slate-50/60 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
-                                                errors.url
-                                                    ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
-                                                    : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
-                                            }`}
-                                        />
-                                        {errors.url && (
-                                            <span className="text-[10px] text-red-500 mt-1 block">
-                                                {errors.url.message}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Portal Description */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                        Portal Description
-                                    </label>
-                                    <textarea
-                                        rows={4}
-                                        placeholder="Enter Portal Description"
-                                        {...register("description")}
-                                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] resize-none"
-                                    />
-                                    {errors.description && (
-                                        <span className="text-[10px] text-red-500 mt-1 block">
-                                            {errors.description.message}
-                                        </span>
-                                    )}
-                                </div>
+                    {/* Form Fields */}
+                    <form
+                        id="service-portal-form"
+                        noValidate
+                        onSubmit={handleSubmit(onSubmit, (errs) => focusAndScrollToFirstError(errs))}
+                        className="space-y-4"
+                    >
+                        {/* STEP 1 FIELDS */}
+                        <div className={currentStep === 1 ? "block space-y-4" : "hidden"}>
+                            {/* Portal Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                    {t("portals.portalName")} <span className="text-[#B83232]">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder={t("portals.portalNamePlaceholder")}
+                                    {...register("name")}
+                                    className={`w-full border rounded-lg p-2.5 text-sm outline-none transition ${
+                                        errors.name
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                            : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                    }`}
+                                />
+                                {errors.name && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.name.message)}
+                                    </p>
+                                )}
                             </div>
 
-                            {/* STEP 2: Portal Contact Details */}
-                            <div className={currentStep === 2 ? "space-y-5" : "hidden"}>
-                                <h3 className="text-base font-bold text-slate-800 mb-4">
-                                    Portal Contact Details
-                                </h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Contact Number */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Contact Number <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="Enter Contact Number"
-                                            {...register("contact_number", { valueAsNumber: true })}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
-                                        />
-                                        {errors.contact_number && (
-                                            <span className="text-[10px] text-red-500 mt-1 block">
-                                                {String(errors.contact_number.message || '')}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Email Address */}
-                                    <div>
-                                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                                            Email Address <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="email"
-                                            placeholder="Enter Email Address"
-                                            {...register("email")}
-                                            className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
-                                        />
-                                        {errors.email && (
-                                            <span className="text-[10px] text-red-500 mt-1 block">
-                                                {errors.email.message}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                            {/* Portal URL */}
+                            <div>
+                                <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                    {t("portals.portalUrl")} <span className="text-[#B83232]">*</span>
+                                </label>
+                                <input
+                                    type="url"
+                                    dir="ltr"
+                                    placeholder={t("portals.portalUrlPlaceholder")}
+                                    {...register("url")}
+                                    className={`w-full border rounded-lg p-2.5 text-sm outline-none transition text-start ${
+                                        errors.url
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                            : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                    }`}
+                                />
+                                {errors.url && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.url.message)}
+                                    </p>
+                                )}
                             </div>
-                        </form>
-                    </div>
+
+                            {/* Portal Description */}
+                            <div>
+                                <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                    {t("portals.portalDescription")}
+                                </label>
+                                <textarea
+                                    rows={3}
+                                    placeholder={t("portals.portalDescriptionPlaceholder")}
+                                    {...register("description")}
+                                    className="w-full border border-[#D6CFC4] rounded-lg p-2.5 text-sm outline-none focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15 transition resize-none bg-white"
+                                ></textarea>
+                                {errors.description && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.description.message)}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* STEP 2 FIELDS */}
+                        <div className={currentStep === 2 ? "block space-y-4" : "hidden"}>
+                            {/* Contact Number */}
+                            <div>
+                                <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                    {t("portals.contactNumber")}
+                                </label>
+                                <input
+                                    type="number"
+                                    dir="ltr"
+                                    placeholder={t("portals.contactNumberPlaceholder")}
+                                    {...register("contact_number", {
+                                        setValueAs: (v) =>
+                                            v === "" || v === null || isNaN(Number(v))
+                                                ? undefined
+                                                : Number(v),
+                                    })}
+                                    className={`w-full border rounded-lg p-2.5 text-sm outline-none transition text-start ${
+                                        errors.contact_number
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                            : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                    }`}
+                                />
+                                {errors.contact_number && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.contact_number.message)}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Email Address */}
+                            <div>
+                                <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                    {t("portals.emailAddress")}
+                                </label>
+                                <input
+                                    type="email"
+                                    dir="ltr"
+                                    placeholder={t("portals.emailAddressPlaceholder")}
+                                    {...register("email")}
+                                    className={`w-full border rounded-lg p-2.5 text-sm outline-none transition text-start ${
+                                        errors.email
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                            : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                    }`}
+                                />
+                                {errors.email && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.email.message)}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
-                {/* Footer Controls */}
-                <div className="flex justify-end items-center gap-3 px-8 py-4 border-t border-slate-100 bg-white">
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
-                    >
-                        Cancel
-                    </button>
-
-                    {currentStep === 2 && (
-                        <button
-                            type="button"
-                            onClick={handleBack}
-                            className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg transition-colors"
-                        >
-                            Back
-                        </button>
-                    )}
-
+                {/* Modal Footer */}
+                <div className="px-6 py-4 border-t border-[#E5E0D8] flex justify-end gap-3 bg-[#FAF8F5]">
                     {currentStep === 1 ? (
-                        <button
-                            type="button"
-                            onClick={handleNext}
-                            className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
-                        >
-                            Next
-                        </button>
+                        <>
+                            <button
+                                type="button"
+                                onClick={handleCloseModal}
+                                className="px-6 py-2 bg-white border border-[#D6CFC4] text-[#45413C] text-sm font-medium rounded-lg hover:bg-[#F5F2EC] transition"
+                            >
+                                {t("common.cancel")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleNextStep}
+                                className="px-6 py-2 bg-[#2D3F2C] text-[#FAF8F5] text-sm font-medium rounded-lg hover:bg-[#1F2C1E] transition"
+                            >
+                                {t("common.next")}
+                            </button>
+                        </>
                     ) : (
-                        <button
-                            type="submit"
-                            form="portal-form"
-                            disabled={mutation.isPending}
-                            className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
-                        >
-                            {mutation.isPending ? "Submitting..." : "Submit"}
-                        </button>
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setCurrentStep(1)}
+                                disabled={mutation.isPending}
+                                className="px-6 py-2 bg-white border border-[#D6CFC4] text-[#45413C] text-sm font-medium rounded-lg hover:bg-[#F5F2EC] transition"
+                            >
+                                {t("common.back")}
+                            </button>
+                            <button
+                                type="submit"
+                                form="service-portal-form"
+                                disabled={mutation.isPending}
+                                className="px-6 py-2 bg-[#2D3F2C] text-[#FAF8F5] text-sm font-medium rounded-lg hover:bg-[#1F2C1E] transition disabled:opacity-50"
+                            >
+                                {mutation.isPending ? t("common.submitting") : t("common.submit")}
+                            </button>
+                        </>
                     )}
                 </div>
             </div>

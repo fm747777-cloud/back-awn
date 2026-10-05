@@ -29,6 +29,11 @@ i18n
 
 export default i18n;
 
+export const translateError = (t: (key: string, options?: any) => string, message?: string): string => {
+  if (!message) return '';
+  return t(`validation.${message}`, { defaultValue: message });
+};
+
 if (typeof document !== 'undefined') {
   const updateDir = (lng: string) => {
     const isAr = lng.startsWith('ar');

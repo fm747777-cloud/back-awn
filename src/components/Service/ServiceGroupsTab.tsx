@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
 import {
     Users,
     Briefcase,
@@ -118,6 +119,7 @@ const renderGroupIcon = (iconName?: string) => {
 };
 
 export const ServiceGroupsTab: React.FC = () => {
+    const { t } = useTranslation();
     const [groups, setGroups] = useState<ServiceGroupItem[]>(defaultGroups);
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
@@ -133,25 +135,34 @@ export const ServiceGroupsTab: React.FC = () => {
         return groups.filter(
             (g) =>
                 g.name.toLowerCase().includes(term) ||
+                t(`groups.groupOptions.${g.name}`, { defaultValue: g.name }).toLowerCase().includes(term) ||
                 g.groupCode.toLowerCase().includes(term) ||
-                g.description.toLowerCase().includes(term)
+                g.description.toLowerCase().includes(term) ||
+                t(`groups.groupDescriptions.${g.description}`, { defaultValue: g.description }).toLowerCase().includes(term)
         );
-    }, [groups, searchTerm]);
+    }, [groups, searchTerm, t]);
 
     const handleOpenCreate = () => {
         setEditingGroup(null);
         setIsDrawerOpen(true);
     };
 
-    const handleOpenEdit = (group: ServiceGroupItem) => {
+    const handleOpenEdit = useCallback((group: ServiceGroupItem) => {
         setEditingGroup(group);
         setIsDrawerOpen(true);
-    };
+    }, []);
 
-    const handleDeleteGroup = (group: ServiceGroupItem) => {
-        setGroups((prev) => prev.filter((g) => g.id !== group.id));
-        toast.success(`Service Group "${group.name}" deleted successfully`);
-    };
+    const handleDeleteGroup = useCallback(
+        (group: ServiceGroupItem) => {
+            setGroups((prev) => prev.filter((g) => g.id !== group.id));
+            toast.success(
+                t("groups.messages.deleted", {
+                    name: t(`groups.groupOptions.${group.name}`, { defaultValue: group.name }),
+                })
+            );
+        },
+        [t]
+    );
 
     const handleDrawerSubmit = (dto: CreateServiceGroupDto, id?: string) => {
         const statusValue: 'active' | 'inactive' =
@@ -160,7 +171,6 @@ export const ServiceGroupsTab: React.FC = () => {
                 : 'active';
 
         if (id) {
-            // Edit mode
             setGroups((prev) =>
                 prev.map((item) => {
                     if (item.id === id) {
@@ -181,9 +191,8 @@ export const ServiceGroupsTab: React.FC = () => {
                     return item;
                 })
             );
-            toast.success("Service Group updated successfully");
+            toast.success(t("groups.messages.updated"));
         } else {
-            // Create mode
             const newGroupNumber = groups.length + 1;
             const initialServices = dto.service_ids || [];
             const newGroup: ServiceGroupItem = {
@@ -201,7 +210,7 @@ export const ServiceGroupsTab: React.FC = () => {
                 service_ids: initialServices,
             };
             setGroups((prev) => [newGroup, ...prev]);
-            toast.success("Service Group created successfully");
+            toast.success(t("groups.messages.created"));
         }
 
         setIsDrawerOpen(false);
@@ -231,16 +240,16 @@ export const ServiceGroupsTab: React.FC = () => {
             },
             {
                 accessorKey: "groupCode",
-                header: "Group Code",
+                header: t("groups.groupCode"),
                 cell: (info) => (
-                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]" dir="ltr">
                         {info.getValue() as string}
                     </span>
                 ),
             },
             {
                 accessorKey: "name",
-                header: "Group Name",
+                header: t("groups.groupName"),
                 cell: ({ row }) => {
                     const item = row.original;
                     return (
@@ -249,7 +258,7 @@ export const ServiceGroupsTab: React.FC = () => {
                                 {renderGroupIcon(item.group_icon)}
                             </span>
                             <span className="font-medium text-[#0D0D0D]">
-                                {item.name}
+                                {t(`groups.groupOptions.${item.name}`, { defaultValue: item.name })}
                             </span>
                         </div>
                     );
@@ -257,54 +266,57 @@ export const ServiceGroupsTab: React.FC = () => {
             },
             {
                 accessorKey: "servicesCount",
-                header: "Linked Services",
+                header: t("groups.linkedServices"),
                 cell: (info) => (
-                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
-                        {info.getValue() as number} Services
+                    <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold font-mono bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
+                        {t("common.servicesCountBadge", { count: info.getValue() as number })}
                     </span>
                 ),
             },
             {
                 accessorKey: "description",
-                header: "Description",
-                cell: (info) => (
-                    <span className="text-[#6E6862] max-w-xs truncate block">
-                        {(info.getValue() as string) || "—"}
-                    </span>
-                ),
+                header: t("groups.description"),
+                cell: (info) => {
+                    const desc = info.getValue() as string;
+                    return (
+                        <span className="text-[#6E6862] max-w-xs truncate block">
+                            {desc ? t(`groups.groupDescriptions.${desc}`, { defaultValue: desc }) : "—"}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: "createdAt",
-                header: "Create Date",
+                header: t("services.createDate"),
                 cell: (info) => (
-                    <span className="text-[#6E6862]">{info.getValue() as string}</span>
+                    <span className="font-mono text-[#6E6862]" dir="ltr">{info.getValue() as string}</span>
                 ),
             },
             {
                 accessorKey: "status",
-                header: "Status",
+                header: t("common.status"),
                 cell: ({ row }) => {
                     const isGroupActive = row.original.status === 'active';
                     return isGroupActive ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
-                            Active
+                            {t("common.active")}
                         </span>
                     ) : (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#595550]/10 text-[#595550] border border-[#595550]/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
-                            Inactive
+                            {t("common.inactive")}
                         </span>
                     );
                 },
             },
             {
                 id: "actions",
-                header: () => <div className="text-right">Actions</div>,
+                header: () => <div className="text-end">{t("common.actions")}</div>,
                 cell: ({ row }) => (
-                    <div className="text-right">
+                    <div className="text-end">
                         <TableRowActions
-                            recordName={row.original.name}
+                            recordName={t(`groups.groupOptions.${row.original.name}`, { defaultValue: row.original.name })}
                             onEdit={() => handleOpenEdit(row.original)}
                             onDelete={() => handleDeleteGroup(row.original)}
                         />
@@ -312,10 +324,9 @@ export const ServiceGroupsTab: React.FC = () => {
                 ),
             },
         ],
-        []
+        [t, handleOpenEdit, handleDeleteGroup]
     );
 
-    // Initial data for drawer if editing
     const drawerInitialData: (CreateServiceGroupDto & { id: string }) | null = editingGroup
         ? {
               id: editingGroup.id,
@@ -340,7 +351,7 @@ export const ServiceGroupsTab: React.FC = () => {
                 data={filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
                 count={filtered.length}
                 loading={false}
-                searchPlaceholder="Search Service Groups..."
+                searchPlaceholder={t("pages.serviceGroups.searchPlaceholder")}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={setPageIndex}
@@ -352,10 +363,9 @@ export const ServiceGroupsTab: React.FC = () => {
                 }}
                 onAddNew={handleOpenCreate}
                 title="Service Groups"
-                addNewLabel="New Service Group"
+                addNewLabel={t("pages.serviceGroups.addLabel")}
             />
 
-            {/* Create / Edit Drawer */}
             <ServiceGroupDrawer
                 isOpen={isDrawerOpen}
                 onClose={() => {

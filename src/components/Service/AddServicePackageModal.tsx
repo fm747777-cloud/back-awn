@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslation } from "react-i18next";
 import {
     servicePackageSchema,
     type ServicePackageFormValues,
@@ -14,6 +15,7 @@ import {
 } from "./serviceGroupTypes";
 import { Search, ChevronDown, Check, X } from "lucide-react";
 import { focusAndScrollToFirstError } from "../../utils/formValidation";
+import { translateError } from "../../i18n";
 
 interface AddServicePackageModalProps {
     isOpen: boolean;
@@ -31,6 +33,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
     onSubmit,
     initialData,
 }) => {
+    const { t } = useTranslation();
     const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
     const [groupSearchQuery, setGroupSearchQuery] = useState("");
     const [selectedGroupId, setSelectedGroupId] = useState(initialData?.service_group_id || "");
@@ -48,88 +51,84 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
         resolver: zodResolver(servicePackageSchema),
         mode: "onSubmit",
         defaultValues: {
-            group_type: initialData?.group_type || GroupType.EMPLOYEE,
+            group_type: initialData?.group_type || GroupType.BUSINESS,
             service_group_id: initialData?.service_group_id || "",
-            package_name: initialData?.name || initialData?.package_name || "",
-            unit_price: initialData?.price || initialData?.unit_price || 0,
+            package_name: initialData?.package_name || initialData?.name || "",
+            unit_price:
+                initialData?.unit_price !== undefined
+                    ? initialData.unit_price
+                    : initialData?.price !== undefined
+                      ? initialData.price
+                      : ("" as unknown as number),
+            status: initialData?.status || ServiceTagStatus.ACTIVE,
             description: initialData?.description || "",
-            status: initialData?.status === 'inactive' ? ServiceTagStatus.INACTIVE : ServiceTagStatus.ACTIVE,
         },
     });
 
+    const [prevOpenInit, setPrevOpenInit] = useState({ isOpen, initialData });
+    if (prevOpenInit.isOpen !== isOpen || prevOpenInit.initialData !== initialData) {
+        setPrevOpenInit({ isOpen, initialData });
+        if (isOpen && initialData) {
+            setSelectedGroupId(initialData.service_group_id || "grp-1");
+        } else if (isOpen && !initialData) {
+            setSelectedGroupId("");
+        }
+        setIsGroupDropdownOpen(false);
+        setGroupSearchQuery("");
+    }
+
     useEffect(() => {
         if (isOpen && initialData) {
+            const grpId = initialData.service_group_id || "grp-1";
             reset({
-                group_type: initialData.group_type || GroupType.EMPLOYEE,
-                service_group_id: initialData.service_group_id || "",
-                package_name: initialData.name || initialData.package_name || "",
-                unit_price: initialData.price || initialData.unit_price || 0,
+                group_type: initialData.group_type || GroupType.BUSINESS,
+                service_group_id: grpId,
+                package_name: initialData.package_name || initialData.name || "",
+                unit_price:
+                    initialData.unit_price !== undefined
+                        ? initialData.unit_price
+                        : initialData.price !== undefined
+                          ? initialData.price
+                          : 0,
+                status: initialData.status || ServiceTagStatus.ACTIVE,
                 description: initialData.description || "",
-                status: initialData.status === 'inactive' ? ServiceTagStatus.INACTIVE : ServiceTagStatus.ACTIVE,
             });
         } else if (isOpen && !initialData) {
             reset({
-                group_type: GroupType.EMPLOYEE,
+                group_type: GroupType.BUSINESS,
                 service_group_id: "",
                 package_name: "",
-                unit_price: 0,
-                description: "",
+                unit_price: "" as unknown as number,
                 status: ServiceTagStatus.ACTIVE,
+                description: "",
             });
         }
     }, [isOpen, initialData, reset]);
 
-    const selectedGroup = DEMO_SERVICE_GROUPS.find((g) => g.id === selectedGroupId);
-
-    // Adjust state during render when isOpen or initialData changes (per React docs)
-    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-    const [prevInitialData, setPrevInitialData] = useState(initialData);
-
-    if (prevIsOpen !== isOpen) {
-        setPrevIsOpen(isOpen);
-        setIsGroupDropdownOpen(false);
-        setGroupSearchQuery("");
-        if (!isOpen) {
-            setSelectedGroupId("");
-        } else if (initialData?.service_group_id) {
-            setSelectedGroupId(initialData.service_group_id);
-        }
-    }
-
-    if (prevInitialData !== initialData) {
-        setPrevInitialData(initialData);
-        setSelectedGroupId(initialData?.service_group_id || "");
-    }
-
-    // Handle click outside to close dropdown
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsGroupDropdownOpen(false);
             }
         };
-
         if (isGroupDropdownOpen) {
             document.addEventListener("mousedown", handleClickOutside);
-            setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 50);
+            setTimeout(() => searchInputRef.current?.focus(), 50);
         }
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isGroupDropdownOpen]);
 
-    // Filter service groups based on search query
-    const filteredGroups = DEMO_SERVICE_GROUPS.filter((g) => {
-        const query = groupSearchQuery.trim().toLowerCase();
-        if (!query) return true;
-        return (
-            g.name.toLowerCase().includes(query) ||
-            (g.groupCode && g.groupCode.toLowerCase().includes(query))
-        );
-    });
+    if (!isOpen) return null;
+
+    const selectedGroup: ServiceGroupOption | undefined = DEMO_SERVICE_GROUPS.find(
+        (g) => g.id === selectedGroupId
+    );
+
+    const filteredGroups = DEMO_SERVICE_GROUPS.filter(
+        (g) =>
+            g.name.toLowerCase().includes(groupSearchQuery.toLowerCase()) ||
+            g.groupCode.toLowerCase().includes(groupSearchQuery.toLowerCase())
+    );
 
     const handleSelectGroup = (group: ServiceGroupOption) => {
         setSelectedGroupId(group.id);
@@ -139,314 +138,328 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
         setGroupSearchQuery("");
     };
 
-    const handleFormSubmit = (data: ServicePackageFormValues) => {
-        // Backend DTO aligned strictly with the provided contract:
-        // package_name, unit_price, group_type, status, description
-        const backendPayload: CreateServicePackageDto = {
-            package_name: data.package_name.trim(),
-            unit_price: Number(data.unit_price),
-            group_type: data.group_type || GroupType.EMPLOYEE,
-            status: data.status || ServiceTagStatus.ACTIVE,
-            description: data.description?.trim() || undefined,
-        };
-
-        // Pass relationship field separately to keep backend contract pure
-        onSubmit(backendPayload, {
-            service_group_id: data.service_group_id,
-            group_name: selectedGroup?.name,
-        });
-
+    const handleCloseModal = () => {
         reset();
+        setIsGroupDropdownOpen(false);
+        setGroupSearchQuery("");
         onClose();
     };
 
-    const handleCancel = () => {
-        reset();
-        onClose();
+    const handleFormSubmit = (formValues: ServicePackageFormValues) => {
+        const dtoPayload: CreateServicePackageDto = {
+            package_name: formValues.package_name.trim(),
+            description: formValues.description?.trim() || undefined,
+            unit_price: Number(formValues.unit_price),
+            group_type: formValues.group_type,
+            status: formValues.status,
+        };
+
+        onSubmit(dtoPayload, {
+            service_group_id: formValues.service_group_id,
+            group_name: selectedGroup?.name,
+        });
+        handleCloseModal();
     };
 
     return (
-        <div
-            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${
-                isOpen ? "pointer-events-auto" : "pointer-events-none"
-            }`}
-        >
-            {/* Backdrop */}
-            <div
-                className={`fixed inset-0 bg-slate-900/20 backdrop-blur-xs transition-opacity duration-300 ${
-                    isOpen ? "opacity-100" : "opacity-0"
-                }`}
-                onClick={handleCancel}
-            />
-
-            {/* Slide-over Drawer */}
-            <div
-                className={`fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${
-                    isOpen ? "translate-x-0" : "translate-x-full"
-                }`}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D0D0D]/40 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl border border-[#E5E0D8] w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh] text-start">
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex justify-between items-start">
                     <div>
-                        <h2 className="text-base font-bold text-slate-800">
-                            {initialData ? "Edit Service Package" : "Add Service Package"}
+                        <h2 className="text-lg font-bold text-[#0D0D0D]">
+                            {initialData ? t("packages.editTitle") : t("packages.addTitle")}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                            Create and manage service packages including pricing, trial period, and grouping.
+                        <p className="text-xs text-[#6E6862] mt-1">
+                            {t("packages.subtitle")}
                         </p>
                     </div>
                     <button
                         type="button"
-                        onClick={handleCancel}
-                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-                        title="Close"
+                        onClick={handleCloseModal}
+                        aria-label={t("common.close")}
+                        className="text-[#8C847A] hover:text-[#0D0D0D] p-1 rounded-md hover:bg-[#EFECE6] transition focus:outline-none"
                     >
-                        <X size={16} />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Form Content */}
+                {/* Modal Body */}
                 <div className="p-6 overflow-y-auto flex-1">
+                    {/* Section Header */}
+                    <div className="flex items-center gap-2.5 mb-6 pb-3 border-b border-[#EFECE6]">
+                        <div className="w-2 h-2 rounded-full bg-[#2D3F2C]"></div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#2D3F2C]">
+                            {t("packages.detailsSection")}
+                        </h3>
+                    </div>
+
                     <form
-                        id="add-service-package-form"
-                        onSubmit={handleSubmit(handleFormSubmit, (formErrors) =>
-                            focusAndScrollToFirstError(formErrors, [
-                                "group_type",
-                                "service_group_id",
-                                "package_name",
-                                "unit_price",
-                                "status",
-                            ])
+                        id="service-package-form"
+                        noValidate
+                        onSubmit={handleSubmit(handleFormSubmit, (errs) =>
+                            focusAndScrollToFirstError(errs)
                         )}
                         className="space-y-5"
                     >
-                        {/* Section Header */}
-                        <div className="pb-1 border-b border-slate-100">
-                            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                                Service Package Details
-                            </h3>
-                        </div>
-
-                        {/* Two-column Layout on Desktop, One Column on Mobile */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* 1. Group Type * */}
+                        {/* Row 1: Group Type + Select Service Group */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Group Type */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                    Group Type <span className="text-red-500">*</span>
+                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
+                                    {t("packages.groupType")} <span className="text-[#B83232]">*</span>
                                 </label>
-                                <select
-                                    {...register("group_type")}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 cursor-pointer"
-                                >
-                                    <option value={GroupType.BUSINESS}>Business</option>
-                                    <option value={GroupType.EMPLOYEE}>Employee</option>
-                                    <option value={GroupType.ASSET}>Asset</option>
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        {...register("group_type")}
+                                        className={`w-full appearance-none border rounded-lg px-3.5 py-2.5 pe-9 text-sm outline-none transition bg-white text-[#0D0D0D] ${
+                                            errors.group_type
+                                                ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                                : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                        }`}
+                                    >
+                                        <option value={GroupType.BUSINESS}>{t("services.entityTypes.business")}</option>
+                                        <option value={GroupType.EMPLOYEE}>{t("services.entityTypes.employee")}</option>
+                                        <option value={GroupType.ASSET}>{t("services.entityTypes.asset")}</option>
+                                        <option value={GroupType.INDIVIDUAL}>{t("services.entityTypes.individual")}</option>
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 text-[#8C847A] absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                </div>
                                 {errors.group_type && (
-                                    <span className="text-[10px] text-red-500 mt-1 block">
-                                        {errors.group_type.message}
-                                    </span>
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.group_type.message)}
+                                    </p>
                                 )}
                             </div>
 
-                            {/* 2. Select Service Group * (Searchable Combobox) */}
-                            <div className="relative" ref={dropdownRef}>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                    Select Service Group <span className="text-red-500">*</span>
+                            {/* Searchable Select Service Group */}
+                            <div ref={dropdownRef} className="relative">
+                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
+                                    {t("packages.selectServiceGroup")} <span className="text-[#B83232]">*</span>
                                 </label>
-
+                                <input type="hidden" {...register("service_group_id")} />
                                 <button
                                     type="button"
-                                    name="service_group_id"
-                                    data-name="service_group_id"
                                     onClick={() => setIsGroupDropdownOpen((prev) => !prev)}
-                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs flex items-center justify-between cursor-pointer transition text-left focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                    className={`w-full flex items-center justify-between border rounded-lg px-3.5 py-2.5 text-sm text-start outline-none transition bg-white ${
                                         errors.service_group_id
-                                            ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
-                                            : "border-slate-200"
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                            : isGroupDropdownOpen
+                                              ? "border-[#2D3F2C] ring-2 ring-[#2D3F2C]/15"
+                                              : "border-[#D6CFC4] hover:border-[#8C847A]"
                                     }`}
                                 >
-                                    <span
-                                        className={`truncate ${
-                                            selectedGroup
-                                                ? "text-slate-800 font-medium"
-                                                : "text-slate-400"
-                                        }`}
-                                    >
-                                        {selectedGroup ? selectedGroup.name : "Search for Select Service Group"}
-                                    </span>
+                                    {selectedGroup ? (
+                                        <span className="flex items-center gap-2 truncate text-[#0D0D0D]">
+                                            <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-[#EFECE6] text-[#45413C] border border-[#E5E0D8]" dir="ltr">
+                                                {selectedGroup.groupCode}
+                                            </span>
+                                            <span className="truncate font-medium">
+                                                {selectedGroup.name}
+                                            </span>
+                                        </span>
+                                    ) : (
+                                        <span className="text-[#8C847A]">
+                                            {t("packages.searchServiceGroup")}
+                                        </span>
+                                    )}
                                     <ChevronDown
-                                        size={14}
-                                        className={`text-slate-400 ml-1 shrink-0 transition-transform ${
+                                        className={`w-4 h-4 text-[#8C847A] shrink-0 transition-transform ${
                                             isGroupDropdownOpen ? "rotate-180" : ""
                                         }`}
                                     />
                                 </button>
 
-                                {errors.service_group_id && (
-                                    <span className="text-[10px] text-red-500 mt-1 block">
-                                        {errors.service_group_id.message}
-                                    </span>
-                                )}
-
-                                {/* Dropdown menu */}
                                 {isGroupDropdownOpen && (
-                                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 p-2 animate-in fade-in-50 duration-150">
-                                        {/* Search Input inside Combobox */}
-                                        <div className="relative mb-2">
-                                            <Search
-                                                size={13}
-                                                className="absolute left-2.5 top-2.5 text-slate-400"
-                                            />
-                                            <input
-                                                ref={searchInputRef}
-                                                type="text"
-                                                value={groupSearchQuery}
-                                                onChange={(e) => setGroupSearchQuery(e.target.value)}
-                                                placeholder="Search for Select Service Group"
-                                                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                            />
+                                    <div className="absolute z-30 mt-1.5 w-full bg-white border border-[#D6CFC4] rounded-lg shadow-xl overflow-hidden">
+                                        <div className="p-2 border-b border-[#EFECE6] bg-[#FAF8F5]">
+                                            <div className="relative">
+                                                <Search className="w-3.5 h-3.5 text-[#8C847A] absolute start-2.5 top-1/2 -translate-y-1/2" />
+                                                <input
+                                                    ref={searchInputRef}
+                                                    type="text"
+                                                    value={groupSearchQuery}
+                                                    onChange={(e) =>
+                                                        setGroupSearchQuery(e.target.value)
+                                                    }
+                                                    placeholder={t("packages.searchServiceGroup")}
+                                                    className="w-full ps-8 pe-3 py-1.5 text-xs bg-white border border-[#D6CFC4] rounded-md outline-none focus:border-[#2D3F2C]"
+                                                />
+                                            </div>
                                         </div>
-
-                                        {/* Options List */}
-                                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                                        <div className="max-h-48 overflow-y-auto divide-y divide-[#EFECE6]">
                                             {filteredGroups.length > 0 ? (
                                                 filteredGroups.map((group) => {
-                                                    const isSelected = selectedGroupId === group.id;
+                                                    const isSelected =
+                                                        group.id === selectedGroupId;
                                                     return (
                                                         <button
                                                             key={group.id}
                                                             type="button"
-                                                            onClick={() => handleSelectGroup(group)}
-                                                            className={`w-full text-left px-2.5 py-1.5 rounded-md text-xs transition flex items-center justify-between cursor-pointer ${
+                                                            onClick={() =>
+                                                                handleSelectGroup(group)
+                                                            }
+                                                            className={`w-full px-3.5 py-2.5 text-start text-xs flex items-center justify-between transition ${
                                                                 isSelected
-                                                                    ? "bg-[#2D3F2C]/10 text-[#2D3F2C] font-semibold"
-                                                                    : "text-slate-700 hover:bg-slate-50"
+                                                                    ? "bg-[#EAF3EC] text-[#2D3F2C] font-semibold"
+                                                                    : "hover:bg-[#FAF8F5] text-[#0D0D0D]"
                                                             }`}
                                                         >
-                                                            <div className="truncate pr-2">
-                                                                <div className="truncate font-medium">
+                                                            <div className="flex items-center gap-2 truncate">
+                                                                <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[#EFECE6] text-[#45413C]" dir="ltr">
+                                                                    {group.groupCode}
+                                                                </span>
+                                                                <span className="truncate">
                                                                     {group.name}
-                                                                </div>
-                                                                {group.groupCode && (
-                                                                    <div className="text-[10px] text-slate-400">
-                                                                        {group.groupCode}
-                                                                    </div>
-                                                                )}
+                                                                </span>
                                                             </div>
                                                             {isSelected && (
-                                                                <Check
-                                                                    size={14}
-                                                                    className="text-[#2D3F2C] shrink-0"
-                                                                />
+                                                                <Check className="w-4 h-4 text-[#2D3F2C] shrink-0" />
                                                             )}
                                                         </button>
                                                     );
                                                 })
                                             ) : (
-                                                <div className="py-3 text-center text-xs text-slate-400">
-                                                    No service groups found matching &quot;{groupSearchQuery}&quot;
+                                                <div className="px-3.5 py-4 text-center text-xs text-[#8C847A]">
+                                                    {t("packages.noGroupsMatch", { query: groupSearchQuery })}
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                 )}
-                            </div>
 
-                            {/* 3. Package Name * */}
+                                {errors.service_group_id && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.service_group_id.message)}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Row 2: Package Name + Unit Price */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Package Name */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                    Package Name <span className="text-red-500">*</span>
+                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
+                                    {t("packages.packageName")} <span className="text-[#B83232]">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Enter Package Name"
+                                    placeholder={t("packages.packageNamePlaceholder")}
                                     {...register("package_name")}
-                                    className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                    className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition text-[#0D0D0D] placeholder-[#8C847A] ${
                                         errors.package_name
-                                            ? "border-red-300"
-                                            : "border-slate-200"
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                            : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
                                     }`}
                                 />
                                 {errors.package_name && (
-                                    <span className="text-[10px] text-red-500 mt-1 block">
-                                        {errors.package_name.message}
-                                    </span>
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.package_name.message)}
+                                    </p>
                                 )}
                             </div>
 
-                            {/* 4. Unit Price * */}
+                            {/* Unit Price */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                    Unit Price <span className="text-red-500">*</span>
+                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
+                                    {t("packages.unitPrice")} <span className="text-[#B83232]">*</span>
                                 </label>
-                                <div className="relative">
+                                <div
+                                    className={`flex items-stretch border rounded-lg overflow-hidden transition bg-white ${
+                                        errors.unit_price
+                                            ? "border-[#B83232] bg-[#FCF2F2] focus-within:border-[#B83232] focus-within:ring-2 focus-within:ring-[#B83232]/15"
+                                            : "border-[#D6CFC4] focus-within:border-[#2D3F2C] focus-within:ring-2 focus-within:ring-[#2D3F2C]/15"
+                                    }`}
+                                >
+                                    <span className="px-3.5 py-2.5 bg-[#FAF8F5] border-e border-[#D6CFC4] text-xs font-semibold text-[#45413C] flex items-center select-none">
+                                        {t("common.sar")}
+                                    </span>
                                     <input
                                         type="number"
-                                        step="any"
+                                        dir="ltr"
                                         min="0"
+                                        step="0.01"
                                         placeholder="0.00"
-                                        onKeyDown={(e) => {
-                                            // Prevent negative signs from being typed
-                                            if (e.key === "-" || e.key === "e") {
-                                                e.preventDefault();
-                                            }
-                                        }}
                                         {...register("unit_price", { valueAsNumber: true })}
-                                        className={`w-full pl-3 pr-14 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
-                                            errors.unit_price
-                                                ? "border-red-300"
-                                                : "border-slate-200"
-                                        }`}
+                                        className="w-full px-3.5 py-2.5 text-sm outline-none bg-transparent text-[#0D0D0D] placeholder-[#8C847A] text-start"
                                     />
-                                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-500 bg-slate-200/70 px-1.5 py-0.5 rounded pointer-events-none">
-                                        SAR
-                                    </div>
                                 </div>
                                 {errors.unit_price && (
-                                    <span className="text-[10px] text-red-500 mt-1 block">
-                                        {errors.unit_price.message}
-                                    </span>
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.unit_price.message)}
+                                    </p>
                                 )}
                             </div>
+                        </div>
 
-                            {/* 5. Description (Spans full width on desktop) */}
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                    Description
+                        {/* Row 3: Status */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
+                                    {t("common.status")} <span className="text-[#B83232]">*</span>
                                 </label>
-                                <textarea
-                                    rows={3}
-                                    placeholder="Enter Description"
-                                    {...register("description")}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 resize-none text-slate-700"
-                                />
-                                {errors.description && (
-                                    <span className="text-[10px] text-red-500 mt-1 block">
-                                        {errors.description.message}
-                                    </span>
+                                <div className="relative">
+                                    <select
+                                        {...register("status")}
+                                        className={`w-full appearance-none border rounded-lg px-3.5 py-2.5 pe-9 text-sm outline-none transition bg-white text-[#0D0D0D] ${
+                                            errors.status
+                                                ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                                : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                        }`}
+                                    >
+                                        <option value={ServiceTagStatus.ACTIVE}>{t("common.active")}</option>
+                                        <option value={ServiceTagStatus.INACTIVE}>{t("common.inactive")}</option>
+                                        <option value={ServiceTagStatus.INITIATED}>{t("common.initiated")}</option>
+                                        <option value={ServiceTagStatus.REJECTED}>{t("common.rejected")}</option>
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 text-[#8C847A] absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                </div>
+                                {errors.status && (
+                                    <p className="text-[#B83232] text-xs mt-1">
+                                        {translateError(t, errors.status.message)}
+                                    </p>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Row 4: Description */}
+                        <div>
+                            <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
+                                {t("packages.description")}
+                            </label>
+                            <textarea
+                                rows={3}
+                                placeholder={t("packages.descriptionPlaceholder")}
+                                {...register("description")}
+                                className="w-full border border-[#D6CFC4] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15 transition resize-none bg-white text-[#0D0D0D] placeholder-[#8C847A]"
+                            ></textarea>
+                            {errors.description && (
+                                <p className="text-[#B83232] text-xs mt-1">
+                                    {translateError(t, errors.description.message)}
+                                </p>
+                            )}
                         </div>
                     </form>
                 </div>
 
-                {/* Footer Actions */}
-                <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+                {/* Modal Footer */}
+                <div className="px-6 py-4 border-t border-[#E5E0D8] flex justify-end gap-3 bg-[#FAF8F5]">
                     <button
                         type="button"
-                        onClick={handleCancel}
-                        className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+                        onClick={handleCloseModal}
+                        disabled={isSubmitting}
+                        className="px-5 py-2 bg-white border border-[#D6CFC4] text-[#45413C] text-xs font-medium rounded-lg hover:bg-[#F5F2EC] transition"
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </button>
                     <button
                         type="submit"
-                        form="add-service-package-form"
+                        form="service-package-form"
                         disabled={isSubmitting}
-                        className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                        className="px-5 py-2 bg-[#2D3F2C] text-[#FAF8F5] text-xs font-medium rounded-lg hover:bg-[#1F2C1E] transition shadow-xs disabled:opacity-50"
                     >
-                        Submit
+                        {isSubmitting ? t("common.submitting") : t("common.submit")}
                     </button>
                 </div>
             </div>

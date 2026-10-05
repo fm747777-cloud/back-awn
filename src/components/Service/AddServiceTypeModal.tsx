@@ -2,9 +2,11 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { serviceApi } from "../../api/api";
 import { serviceTypeSchema, type ServiceTypeFormValues } from "../../schemas/serviceSchema";
 import { focusAndScrollToFirstError } from "../../utils/formValidation";
+import { translateError } from "../../i18n";
 
 export enum ServiceTypeStatus {
     ACTIVE = 'active',
@@ -24,13 +26,13 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
     onClose,
     initialData,
 }) => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
-    // جلب التصنيفات لاختيار التصنيف المرتبط بنوع الخدمة
     const { data: categoriesData, isLoading: isLoadingCategories } = useQuery({
         queryKey: ["serviceCategoriesDropdown"],
         queryFn: () => serviceApi.getServiceCategories({ page: 1, limit: 100 }),
-        enabled: isOpen, // جلب البيانات فقط عند فتح المودال
+        enabled: isOpen,
     });
 
     const {
@@ -44,8 +46,8 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
         defaultValues: {
             name: initialData?.name || "",
             description: initialData?.description || "",
-            serviceCategory_id: initialData?.serviceCategory?.id || initialData?.serviceCategory_id || "",
             status: initialData?.status || ServiceTypeStatus.ACTIVE,
+            serviceCategory_id: initialData?.serviceCategory?.id || initialData?.serviceCategory_id || "",
         },
     });
 
@@ -54,18 +56,23 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
             reset({
                 name: initialData.name || "",
                 description: initialData.description || "",
-                serviceCategory_id: initialData.serviceCategory?.id || initialData.serviceCategory_id || "",
                 status: initialData.status || ServiceTypeStatus.ACTIVE,
+                serviceCategory_id: initialData.serviceCategory?.id || initialData.serviceCategory_id || "",
             });
         } else if (isOpen && !initialData) {
             reset({
                 name: "",
                 description: "",
-                serviceCategory_id: "",
                 status: ServiceTypeStatus.ACTIVE,
+                serviceCategory_id: "",
             });
         }
     }, [isOpen, initialData, reset]);
+
+    const handleCloseModal = () => {
+        reset({ name: "", description: "", status: ServiceTypeStatus.ACTIVE, serviceCategory_id: "" });
+        onClose();
+    };
 
     const mutation = useMutation({
         mutationFn: (data: ServiceTypeFormValues) =>
@@ -75,8 +82,10 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["serviceTypes"] });
-            reset();
-            onClose();
+            handleCloseModal();
+        },
+        onError: (error) => {
+            console.error("Failed to save service type:", error);
         },
     });
 
@@ -84,140 +93,148 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({
         mutation.mutate(data);
     };
 
-    const categories = categoriesData?.data || [];
+    if (!isOpen) return null;
+
+    const categoriesList = categoriesData?.data || [];
 
     return (
-        <div
-            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${isOpen ? "pointer-events-auto" : "pointer-events-none"
-                }`}
-        >
-            {/* Overlay Background */}
-            <div
-                className={`fixed inset-0 bg-slate-900/20 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"
-                    }`}
-                onClick={onClose}
-            />
-
-            {/* Drawer Panel */}
-            <div
-                className={`fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
-            >
-                <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
-                    <h2 className="text-lg font-semibold text-slate-800">
-                        {initialData ? "Edit Service Type" : "Add New Service Type"}
-                    </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D0D0D]/40 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl border border-[#E5E0D8] w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] text-start">
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex justify-between items-start">
+                    <div>
+                        <h2 className="text-lg font-bold text-[#0D0D0D]">
+                            {initialData ? t("types.editTitle") : t("types.addTitle")}
+                        </h2>
+                        <p className="text-xs text-[#6E6862] mt-1">
+                            {t("types.subtitle")}
+                        </p>
+                    </div>
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                        onClick={handleCloseModal}
+                        disabled={mutation.isPending}
+                        aria-label={t("common.close")}
+                        className="text-[#8C847A] hover:text-[#0D0D0D] text-xl font-bold leading-none focus:outline-none p-1 rounded-md hover:bg-[#EFECE6]"
                     >
-                        ✕
+                        ×
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                    <p className="text-xs text-slate-500">
-                        Create a new service type and link it to a service category.
-                    </p>
-
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto flex-1">
                     <form
-                        id="add-type-form"
-                        onSubmit={handleSubmit(onSubmit, (formErrors) =>
-                            focusAndScrollToFirstError(formErrors, ["name", "serviceCategory_id"])
-                        )}
+                        id="service-type-form"
+                        noValidate
+                        onSubmit={handleSubmit(onSubmit, (errs) => focusAndScrollToFirstError(errs))}
                         className="space-y-4"
                     >
+                        {/* Type Name */}
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Type Name <span className="text-red-500">*</span>
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("types.typeName")} <span className="text-[#B83232]">*</span>
                             </label>
                             <input
                                 type="text"
-                                placeholder="Enter type name"
+                                placeholder={t("types.typeNamePlaceholder")}
                                 {...register("name")}
-                                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition ${
                                     errors.name
-                                        ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
-                                        : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                        ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                        : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
                                 }`}
                             />
                             {errors.name && (
-                                <span className="text-[10px] text-red-500 mt-1 block">
-                                    {errors.name.message}
-                                </span>
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.name.message)}</p>
                             )}
                         </div>
 
+                        {/* Service Category Dropdown */}
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Service Category
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("types.serviceCategory")}
                             </label>
                             <select
                                 {...register("serviceCategory_id")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
                                 disabled={isLoadingCategories}
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition bg-white ${
+                                    errors.serviceCategory_id
+                                        ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                        : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                }`}
                             >
                                 <option value="">
-                                    {isLoadingCategories ? "Loading categories..." : "Select Service Category"}
+                                    {isLoadingCategories ? t("types.loadingCategories") : t("types.selectCategory")}
                                 </option>
-                                {categories.map((category: any) => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
+                                {categoriesList.map((cat: any) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
                                     </option>
                                 ))}
                             </select>
                             {errors.serviceCategory_id && (
-                                <span className="text-[10px] text-red-500 mt-1 block">
-                                    {errors.serviceCategory_id.message}
-                                </span>
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.serviceCategory_id.message)}</p>
                             )}
                         </div>
 
+                        {/* Status */}
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Description
-                            </label>
-                            <textarea
-                                rows={4}
-                                placeholder="Enter description"
-                                {...register("description")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] resize-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Status <span className="text-red-500">*</span>
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("common.status")} <span className="text-[#B83232]">*</span>
                             </label>
                             <select
                                 {...register("status")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition bg-white ${
+                                    errors.status
+                                        ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                        : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                }`}
                             >
-                                <option value={ServiceTypeStatus.ACTIVE}>Active</option>
-                                <option value={ServiceTypeStatus.INITIATED}>Initiated</option>
-                                <option value={ServiceTypeStatus.INACTIVE}>Inactive</option>
-                                <option value={ServiceTypeStatus.REJECTED}>Rejected</option>
+                                <option value={ServiceTypeStatus.ACTIVE}>{t("common.active")}</option>
+                                <option value={ServiceTypeStatus.INACTIVE}>{t("common.inactive")}</option>
+                                <option value={ServiceTypeStatus.INITIATED}>{t("common.initiated")}</option>
+                                <option value={ServiceTypeStatus.REJECTED}>{t("common.rejected")}</option>
                             </select>
+                            {errors.status && (
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.status.message)}</p>
+                            )}
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("types.description")}
+                            </label>
+                            <textarea
+                                rows={3}
+                                placeholder={t("types.descriptionPlaceholder")}
+                                {...register("description")}
+                                className="w-full border border-[#D6CFC4] rounded-lg p-2.5 text-sm outline-none focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15 transition resize-none bg-white"
+                            ></textarea>
+                            {errors.description && (
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.description.message)}</p>
+                            )}
                         </div>
                     </form>
                 </div>
 
-                <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+                {/* Modal Footer */}
+                <div className="px-6 py-4 border-t border-[#E5E0D8] flex justify-end gap-3 bg-[#FAF8F5]">
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
+                        onClick={handleCloseModal}
+                        disabled={mutation.isPending}
+                        className="px-6 py-2 bg-white border border-[#D6CFC4] text-[#45413C] text-sm font-medium rounded-lg hover:bg-[#F5F2EC] transition"
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </button>
                     <button
                         type="submit"
-                        form="add-type-form"
+                        form="service-type-form"
                         disabled={mutation.isPending}
-                        className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        className="px-6 py-2 bg-[#2D3F2C] text-[#FAF8F5] text-sm font-medium rounded-lg hover:bg-[#1F2C1E] transition disabled:opacity-50"
                     >
-                        {mutation.isPending ? "Submitting..." : "Save Type"}
+                        {mutation.isPending ? t("common.submitting") : t("types.saveBtn")}
                     </button>
                 </div>
             </div>

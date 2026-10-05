@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
 import { DataTable } from "../DataTable";
 
 export interface AuditTrailItem {
@@ -57,6 +58,7 @@ const defaultAudit: AuditTrailItem[] = [
 ];
 
 export const ServiceAuditTrailTab: React.FC = () => {
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -75,7 +77,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
         () => [
             {
                 accessorKey: "timestamp",
-                header: "Timestamp",
+                header: t("audit.timestamp"),
                 cell: (info) => (
                     <span className="font-mono text-xs text-[#2D3F2C] font-semibold">
                         {info.getValue() as string}
@@ -84,41 +86,47 @@ export const ServiceAuditTrailTab: React.FC = () => {
             },
             {
                 accessorKey: "action",
-                header: "Action",
-                cell: (info) => (
-                    <span className="font-semibold text-[#0D0D0D]">
-                        {info.getValue() as string}
-                    </span>
-                ),
+                header: t("audit.action"),
+                cell: (info) => {
+                    const raw = info.getValue() as string;
+                    return (
+                        <span className="font-semibold text-[#0D0D0D]">
+                            {t(`audit.actions.${raw}`, { defaultValue: raw })}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: "entityType",
-                header: "Module / Entity",
-                cell: (info) => (
-                    <span className="px-2 py-0.5 rounded text-xs bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] font-medium">
-                        {info.getValue() as string}
-                    </span>
-                ),
+                header: t("audit.moduleEntity"),
+                cell: (info) => {
+                    const raw = info.getValue() as string;
+                    return (
+                        <span className="px-2 py-0.5 rounded text-xs bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] font-medium">
+                            {t(`audit.entities.${raw}`, { defaultValue: raw })}
+                        </span>
+                    );
+                },
             },
             {
                 accessorKey: "entityName",
-                header: "Target Record",
+                header: t("audit.targetRecord"),
                 cell: (info) => (
-                    <span className="font-medium text-[#0D0D0D] dir-rtl inline-block text-right">
+                    <span className="font-medium text-[#0D0D0D] inline-block text-start">
                         {info.getValue() as string}
                     </span>
                 ),
             },
             {
                 accessorKey: "performedBy",
-                header: "Performed By",
+                header: t("audit.performedBy"),
                 cell: (info) => (
                     <span className="text-[#0D0D0D] font-medium">{info.getValue() as string}</span>
                 ),
             },
             {
                 accessorKey: "ipAddress",
-                header: "IP Address",
+                header: t("audit.ipAddress"),
                 cell: (info) => (
                     <span className="font-mono text-xs text-[#6E6862]">
                         {info.getValue() as string}
@@ -127,16 +135,16 @@ export const ServiceAuditTrailTab: React.FC = () => {
             },
             {
                 accessorKey: "status",
-                header: "Status",
+                header: t("common.status"),
                 cell: () => (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
-                        Success
+                        {t("common.success")}
                     </span>
                 ),
             },
         ],
-        []
+        [t]
     );
 
     return (
@@ -146,7 +154,7 @@ export const ServiceAuditTrailTab: React.FC = () => {
                 data={filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
                 count={filtered.length}
                 loading={false}
-                searchPlaceholder="Search Audit Trail..."
+                searchPlaceholder={t("pages.auditTrail.searchPlaceholder")}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={setPageIndex}

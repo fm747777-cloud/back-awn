@@ -1,76 +1,134 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Languages, ChevronDown, LogOut, User, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Globe, ChevronDown, LogOut, User, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSidebarStore } from '../store/useSidebarStore';
 import { ActionItemsModal, type ModuleOption } from './ActionItemsModal';
 
 export const Navbar = () => {
     const navigate = useNavigate();
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [actionItemsModalOpen, setActionItemsModalOpen] = useState(false);
-
-    const [selectedModule, setSelectedModule] = useState('Electronic Document Management System');
+    const [selectedModuleKey, setSelectedModuleKey] = useState<string>('edms');
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const { user, logout } = useAuthStore();
     const { collapsed, toggleSidebar } = useSidebarStore();
 
+    const isAr = i18n.language?.startsWith('ar');
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+        if (dropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [dropdownOpen]);
+
     const handleSelectModule = (item: ModuleOption) => {
-        setSelectedModule(item.label);
+        setSelectedModuleKey(item.id);
         setActionItemsModalOpen(false);
         navigate(item.path);
     };
 
-    const toggleLanguage = () => {
-        const nextLang = i18n.language?.startsWith('ar') ? 'en' : 'ar';
-        i18n.changeLanguage(nextLang);
+    const setLanguage = (lang: 'en' | 'ar') => {
+        if ((lang === 'ar' && !isAr) || (lang === 'en' && isAr)) {
+            i18n.changeLanguage(lang);
+        }
     };
+
+    const selectedModuleLabel =
+        selectedModuleKey === 'edms'
+            ? t('nav.edmsModule')
+            : t(`nav.modules.${selectedModuleKey}`, { defaultValue: selectedModuleKey.toUpperCase() });
 
     return (
         <>
             <header className="h-16 bg-white border-b border-[#E5E0D8] px-6 flex items-center justify-between sticky top-0 z-20 select-none">
-                {/* Left: Sidebar Toggle Button + Module Tag */}
-                <div className="flex items-center gap-4">
+                {/* Start: Sidebar Toggle Button + Module Tag */}
+                <div className="flex items-center gap-3.5">
                     <button
+                        type="button"
                         onClick={toggleSidebar}
                         className="p-2 rounded-lg text-[#595550] hover:bg-[#F8F6F2] hover:text-[#0D0D0D] transition cursor-pointer"
-                        title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+                        title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+                        aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
                     >
-                        {collapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+                        {collapsed ? (
+                            <PanelLeft size={18} className="rtl:rotate-180" />
+                        ) : (
+                            <PanelLeftClose size={18} className="rtl:rotate-180" />
+                        )}
                     </button>
 
                     <button
+                        type="button"
                         onClick={() => setActionItemsModalOpen(true)}
                         className="bg-[#F8F6F2] hover:bg-[#EFECE6] border border-[#E5E0D8] px-3.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium text-[#2D3F2C] transition cursor-pointer active:scale-98 shadow-2xs"
                     >
-                        <span className="w-2 h-2 rounded-full bg-[#2D3F2C]"></span>
-                        <span className="tracking-tight">{selectedModule}</span>
+                        <span className="w-2 h-2 rounded-full bg-[#2D3F2C] shrink-0"></span>
+                        <span className="tracking-tight truncate max-w-[220px] sm:max-w-none">
+                            {selectedModuleLabel}
+                        </span>
                     </button>
                 </div>
 
-                {/* Right: Actions & User Profile */}
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={toggleLanguage}
-                        className="flex items-center gap-1.5 px-2.5 py-1 text-[#595550] hover:text-[#0D0D0D] hover:bg-[#F8F6F2] rounded-lg transition cursor-pointer"
-                        title={i18n.language?.startsWith('ar') ? 'Switch to English' : 'التحويل للعربية'}
+                {/* End: Enterprise Language Switcher & User Profile */}
+                <div className="flex items-center gap-3.5">
+                    <div
+                        dir="ltr"
+                        role="group"
+                        aria-label={isAr ? t('nav.switchLanguageToEn') : t('nav.switchLanguageToAr')}
+                        className="inline-flex items-center bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg p-0.5 shadow-2xs"
                     >
-                        <Languages size={17} />
-                        <span className="text-xs font-semibold uppercase tracking-wider">
-                            {i18n.language?.startsWith('ar') ? 'EN' : 'عربي'}
+                        <span className="ps-2 pe-1 text-[#857E74] flex items-center pointer-events-none">
+                            <Globe size={13} />
                         </span>
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => setLanguage('en')}
+                            title={t('nav.switchLanguageToEn')}
+                            aria-pressed={!isAr}
+                            className={`px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all cursor-pointer leading-none ${
+                                !isAr
+                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                            }`}
+                        >
+                            EN
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setLanguage('ar')}
+                            title={t('nav.switchLanguageToAr')}
+                            aria-pressed={isAr}
+                            className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer leading-none ${
+                                isAr
+                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                            }`}
+                        >
+                            عربي
+                        </button>
+                    </div>
 
                     <div className="h-5 w-[1px] bg-[#E5E0D8]" />
 
-                    <div className="relative">
+                    <div className="relative" ref={dropdownRef}>
                         <button
+                            type="button"
                             onClick={() => setDropdownOpen(!dropdownOpen)}
-                            className="flex items-center gap-3 hover:bg-[#F8F6F2] p-1.5 rounded-xl transition cursor-pointer"
+                            className="flex items-center gap-2.5 hover:bg-[#F8F6F2] p-1.5 rounded-xl transition cursor-pointer"
                         >
-                            <span className="text-xs text-[#6E6862] font-medium hidden sm:inline">Welcome</span>
+                            <span className="text-xs text-[#6E6862] font-medium hidden sm:inline">
+                                {t('common.welcome')}
+                            </span>
                             <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] border border-[#BFAB93]/30 text-[#FAF8F5] flex items-center justify-center font-bold text-xs shadow-xs">
                                 {user?.fullName ? user.fullName.substring(0, 3).toUpperCase() : 'AWN'}
                             </div>
@@ -78,33 +136,44 @@ export const Navbar = () => {
                         </button>
 
                         {dropdownOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-[#E5E0D8] rounded-xl shadow-lg py-1 z-30 font-sans animate-in fade-in zoom-in-95 duration-100">
-                                <div className="px-4 py-2.5 border-b border-[#F0ECE4]">
+                            <div className="absolute end-0 mt-2 w-48 bg-white border border-[#E5E0D8] rounded-xl shadow-lg py-1 z-30 font-sans animate-in fade-in zoom-in-95 duration-100">
+                                <div className="px-4 py-2.5 border-b border-[#F0ECE4] text-start">
                                     <p className="text-xs font-semibold text-[#0D0D0D]">
-                                        {user?.fullName || 'Admin User'}
+                                        {user?.fullName || t('common.adminUser')}
                                     </p>
                                     <p className="text-[10px] text-[#6E6862] capitalize mt-0.5">
-                                        {user?.type || 'Super Admin'}
+                                        {user?.type === 'admin' || user?.type === 'Administrator' || user?.type === 'System Admin'
+                                            ? t('common.systemAdmin')
+                                            : user?.type === 'Admin User'
+                                            ? t('common.adminUser')
+                                            : user?.type === 'Super Admin' || !user?.type
+                                            ? t('common.superAdmin')
+                                            : user.type}
                                     </p>
                                 </div>
 
                                 <button
-                                    onClick={() => setDropdownOpen(false)}
-                                    className="w-full text-left px-4 py-2 text-xs text-[#595550] hover:bg-[#F8F6F2] hover:text-[#0D0D0D] flex items-center gap-2 cursor-pointer transition-colors"
+                                    type="button"
+                                    onClick={() => {
+                                        setDropdownOpen(false);
+                                        navigate('/settings');
+                                    }}
+                                    className="w-full text-start px-4 py-2 text-xs text-[#595550] hover:bg-[#F8F6F2] hover:text-[#0D0D0D] flex items-center gap-2 cursor-pointer transition-colors"
                                 >
-                                    <User size={14} />
-                                    <span>My Profile</span>
+                                    <User size={14} className="shrink-0" />
+                                    <span>{t('common.myProfile')}</span>
                                 </button>
 
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         setDropdownOpen(false);
                                         logout();
                                     }}
-                                    className="w-full text-left px-4 py-2 text-xs text-[#8C6046] hover:bg-[#8C6046]/10 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                                    className="w-full text-start px-4 py-2 text-xs text-[#8C6046] hover:bg-[#8C6046]/10 flex items-center gap-2 font-medium cursor-pointer transition-colors"
                                 >
-                                    <LogOut size={14} />
-                                    <span>Logout</span>
+                                    <LogOut size={14} className="shrink-0 rtl:rotate-180" />
+                                    <span>{t('common.logout')}</span>
                                 </button>
                             </div>
                         )}

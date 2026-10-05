@@ -18,12 +18,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
-            token: 'awn-jwt-token-active-session',
-            user: {
-                id: 'usr-1',
-                type: 'Admin',
-                fullName: 'Karim Wagdi',
-            },
+            token: null,
+            user: null,
 
             setAuth: ({ token, user }) => set({ token, user }),
 

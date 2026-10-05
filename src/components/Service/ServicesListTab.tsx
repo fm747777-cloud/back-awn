@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AddServiceModal } from './AddServiceModal';
 import { serviceApi } from '../../api/api';
@@ -33,6 +34,7 @@ export type ServiceItem = {
 };
 
 export const ServicesListTab = () => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [searchValue, setSearchValue] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
@@ -40,7 +42,6 @@ export const ServicesListTab = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<any>(null);
 
-    // React Query لجلب البيانات تلقائياً عند تغيير الصفحة أو البحث
     const { data, isLoading } = useQuery({
         queryKey: ['services', pageIndex, pageSize, searchValue],
         queryFn: () =>
@@ -52,15 +53,26 @@ export const ServicesListTab = () => {
     });
 
     const servicesList = data?.data || [];
-    const totalCount = data?.total || 0;
+    const totalCount = data?.count ?? 0;
 
-    const handleDeleteService = async (service: ServiceItem) => {
-        await serviceApi.deleteService(service.id);
-        queryClient.invalidateQueries({ queryKey: ['services'] });
-        toast.success(`Service "${service.title}" deleted successfully`);
-    };
+    const handleDeleteService = useCallback(
+        async (service: ServiceItem) => {
+            try {
+                await serviceApi.deleteService(service.id);
+                queryClient.invalidateQueries({ queryKey: ['services'] });
+                toast.success(t('services.messages.deleted', { name: service.title }));
+            } catch (error: any) {
+                const message = error?.response?.data?.message;
+                toast.error(
+                    Array.isArray(message)
+                        ? message[0]
+                        : message || t('services.messages.deleteFailed')
+                );
+            }
+        },
+        [queryClient, t]
+    );
 
-    // تعريف أعمدة TanStack Table
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
@@ -84,96 +96,154 @@ export const ServicesListTab = () => {
             },
             {
                 accessorKey: 'code',
-                header: 'Service Code',
-                cell: (info: any) => <span className="font-semibold font-mono text-xs text-[#2D3F2C]">{info.getValue()}</span>,
+                header: t('services.serviceCode'),
+                cell: (info: any) => (
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]" dir="ltr">
+                        {info.getValue()}
+                    </span>
+                ),
             },
             {
                 accessorKey: 'title',
-                header: 'Service Title',
+                header: t('services.serviceTitle'),
                 cell: (info: any) => (
-                    <span className="font-medium text-[#0D0D0D] dir-rtl inline-block text-right">
+                    <span className="font-medium text-[#0D0D0D] inline-block text-start">
                         {info.getValue()}
                     </span>
                 ),
             },
             {
                 accessorKey: 'relatedTo',
-                header: 'Service Related To',
+                header: t('services.relatedTo'),
+                cell: (info: any) => {
+                    const val = String(info.getValue() || '');
+                    if (!val) return '—';
+                    return t(`services.entityTypes.${val.toLowerCase()}`, { defaultValue: val });
+                },
             },
             {
                 accessorKey: 'category',
-                header: 'Category',
+                header: t('services.category'),
             },
             {
                 accessorKey: 'type',
-                header: 'Type',
+                header: t('services.type'),
             },
             {
                 accessorKey: 'tags',
-                header: 'Tags',
+                header: t('services.tags'),
             },
             {
                 accessorKey: 'processingTime',
-                header: 'Processing Time',
-                cell: (info: any) => <span className="text-center block text-[#595550]">{info.getValue()}</span>,
+                header: t('services.processingTime'),
+                cell: (info: any) => (
+                    <span className="text-center font-mono block text-[#595550]">
+                        {info.getValue()}
+                    </span>
+                ),
             },
             {
                 accessorKey: 'frequency',
-                header: 'Frequency',
+                header: t('services.frequency'),
+                cell: (info: any) => {
+                    const val = String(info.getValue() || '');
+                    if (!val) return '—';
+                    return t(`services.${val.toLowerCase()}`, { defaultValue: val });
+                },
             },
             {
                 accessorKey: 'fee',
-                header: 'Service Fee',
+                header: t('services.serviceFee'),
+                cell: (info: any) => <span className="font-mono">{info.getValue()}</span>,
             },
             {
                 accessorKey: 'delegationRequired',
-                header: 'Delegation Required',
+                header: t('services.delegationRequired'),
+                cell: (info: any) => {
+                    const val = info.getValue();
+                    if (val === 'Yes') return t('common.yes');
+                    if (val === 'No') return t('common.no');
+                    return val;
+                },
             },
             {
                 accessorKey: 'validity',
-                header: 'Service Validity / Frequency',
+                header: t('services.validity'),
+                cell: (info: any) => {
+                    const val = info.getValue();
+                    if (val === 'Recurring' || val === 'recurring') return t('services.recurring');
+                    if (val === 'One Time' || val === 'oneTime' || val === 'one_time') return t('services.oneTime');
+                    return val;
+                },
             },
             {
                 accessorKey: 'sadadAvailable',
-                header: 'Sadad Payment Available',
+                header: t('services.sadadAvailable'),
+                cell: (info: any) => {
+                    const val = info.getValue();
+                    if (val === 'Yes') return t('common.yes');
+                    if (val === 'No') return t('common.no');
+                    return val;
+                },
             },
             {
                 accessorKey: 'portal',
-                header: 'Service Portal',
+                header: t('services.servicePortal'),
             },
             {
                 accessorKey: 'createDate',
-                header: 'Create Date',
+                header: t('services.createDate'),
+                cell: (info: any) => <span className="font-mono text-[#6E6862]" dir="ltr">{info.getValue()}</span>,
             },
             {
                 accessorKey: 'createdBy',
-                header: 'Created By',
+                header: t('services.createdBy'),
                 cell: (info: any) => {
                     const rawVal = info.getValue();
-                    const user = typeof rawVal === 'object' && rawVal !== null ? rawVal : { name: rawVal || 'N/A' };
+                    const user =
+                        typeof rawVal === 'object' && rawVal !== null
+                            ? rawVal
+                            : { name: rawVal || 'N/A' };
+                    const displayName = user?.name || user?.fullName || 'N/A';
+                    const localizedCreator =
+                        displayName === 'N/A'
+                            ? t('common.notAvailable')
+                            : displayName === 'System Admin'
+                              ? t('common.systemAdmin')
+                              : displayName === 'Admin User'
+                                ? t('common.adminUser')
+                                : displayName;
                     return (
                         <div className="flex flex-col">
-                            <span className="font-medium text-[#0D0D0D]">{user?.name || user?.fullName || 'N/A'}</span>
-                            {user?.email && <span className="text-[10px] text-[#857E74]">{user.email}</span>}
+                            <span className="font-medium text-[#0D0D0D]">
+                                {localizedCreator}
+                            </span>
+                            {user?.email && (
+                                <span className="text-[10px] text-[#857E74]" dir="ltr">{user.email}</span>
+                            )}
                         </div>
                     );
                 },
             },
             {
                 accessorKey: 'status',
-                header: 'Status',
-                cell: (info: any) => (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]"></span>
-                        {info.getValue()}
-                    </span>
-                ),
+                header: t('common.status'),
+                cell: (info: any) => {
+                    const rawStatus = String(info.getValue() || 'Active');
+                    const isInactive = rawStatus.toLowerCase() === 'inactive';
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]"></span>
+                            {isInactive ? t('common.inactive') : t('common.active')}
+                        </span>
+                    );
+                },
             },
             {
                 id: 'actions',
-                header: () => <div className="text-right">Actions</div>,
+                header: () => <div className="text-end">{t('common.actions')}</div>,
                 cell: ({ row }: any) => (
-                    <div className="text-right">
+                    <div className="text-end">
                         <TableRowActions
                             recordName={row.original.title}
                             onEdit={() => {
@@ -186,18 +256,17 @@ export const ServicesListTab = () => {
                 ),
             },
         ],
-        []
+        [t, handleDeleteService]
     );
 
     return (
         <div className="space-y-4">
-            {/* TanStack Table Integration */}
             <DataTable
                 columns={columns}
                 data={servicesList}
                 count={totalCount}
                 loading={isLoading}
-                searchPlaceholder="Search Services..."
+                searchPlaceholder={t('pages.services.searchPlaceholder')}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={(newPageIndex) => setPageIndex(newPageIndex)}
@@ -205,14 +274,14 @@ export const ServicesListTab = () => {
                 searchValue={searchValue}
                 onSearchChange={(val) => {
                     setSearchValue(val);
-                    setPageIndex(0); // إعادة ضبط الصفحة إلى 0 عند إجراء بحث جديد
+                    setPageIndex(0);
                 }}
                 onAddNew={() => {
                     setEditingService(null);
                     setIsModalOpen(true);
                 }}
                 title="Services"
-                addNewLabel="Add Service"
+                addNewLabel={t('pages.services.addLabel')}
             />
 
             <AddServiceModal

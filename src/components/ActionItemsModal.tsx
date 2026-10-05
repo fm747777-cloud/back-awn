@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, LayoutGrid } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface ModuleOption {
     id: string;
@@ -26,6 +27,8 @@ interface ActionItemsModalProps {
 }
 
 export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({ isOpen, onClose, onSelectModule }) => {
+    const { t } = useTranslation();
+
     if (!isOpen) return null;
 
     return (
@@ -34,16 +37,18 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({ isOpen, onCl
                 {/* Modal Header */}
                 <div className="flex items-center gap-3 mb-6 pb-3 border-b border-[#E5E0D8]">
                     <button
+                        type="button"
                         onClick={onClose}
+                        title={t('common.close')}
                         className="w-8 h-8 rounded-lg bg-[#F8F6F2] hover:bg-[#EFECE6] flex items-center justify-center text-[#2D3F2C] transition cursor-pointer"
                     >
-                        <ChevronLeft size={18} />
+                        <ChevronLeft size={18} className="rtl:rotate-180" />
                     </button>
-                    <div>
+                    <div className="text-start">
                         <h3 className="text-lg font-bold text-[#0D0D0D]">
-                            AWN Modules & Operations
+                            {t('nav.modulesModalTitle')}
                         </h3>
-                        <p className="text-xs text-[#6E6862]">Select a platform subsystem to navigate</p>
+                        <p className="text-xs text-[#6E6862]">{t('nav.modulesModalSubtitle')}</p>
                     </div>
                 </div>
 
@@ -52,17 +57,20 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({ isOpen, onCl
                     {MODULE_OPTIONS.map((item) => (
                         <button
                             key={item.id}
+                            type="button"
                             onClick={() => onSelectModule(item)}
-                            className="flex items-center gap-3.5 p-3.5 rounded-xl bg-[#FAF8F5] hover:bg-white border border-[#E5E0D8] hover:border-[#BFAB93] transition-all text-left group cursor-pointer shadow-2xs hover:shadow-xs"
+                            className="flex items-center gap-3.5 p-3.5 rounded-xl bg-[#FAF8F5] hover:bg-white border border-[#E5E0D8] hover:border-[#BFAB93] transition-all text-start group cursor-pointer shadow-2xs hover:shadow-xs"
                         >
-                            <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] group-hover:border-[#BFAB93] flex items-center justify-center text-[#2D3F2C] group-hover:scale-105 transition-transform shadow-2xs">
+                            <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] group-hover:border-[#BFAB93] flex items-center justify-center text-[#2D3F2C] group-hover:scale-105 transition-transform shadow-2xs shrink-0">
                                 <LayoutGrid size={18} />
                             </div>
-                            <div>
-                                <span className="font-bold text-xs text-[#0D0D0D] block tracking-wide">
-                                    {item.label}
+                            <div className="min-w-0">
+                                <span className="font-bold text-xs text-[#0D0D0D] block tracking-wide truncate">
+                                    {t(`nav.modules.${item.id}`, { defaultValue: item.label })}
                                 </span>
-                                <span className="text-[10px] text-[#6E6862]">Administrative Module</span>
+                                <span className="text-[10px] text-[#6E6862]">
+                                    {t('nav.administrativeModule')}
+                                </span>
                             </div>
                         </button>
                     ))}

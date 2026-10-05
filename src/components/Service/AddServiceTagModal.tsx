@@ -2,9 +2,11 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { serviceApi } from "../../api/api";
 import { serviceTagSchema, type ServiceTagFormValues } from "../../schemas/serviceSchema";
 import { focusAndScrollToFirstError } from "../../utils/formValidation";
+import { translateError } from "../../i18n";
 
 export enum ServiceTagStatus {
     ACTIVE = 'active',
@@ -24,6 +26,7 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
     onClose,
     initialData,
 }) => {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
     const {
@@ -57,6 +60,11 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
         }
     }, [isOpen, initialData, reset]);
 
+    const handleCloseModal = () => {
+        reset({ name: "", description: "", status: ServiceTagStatus.ACTIVE });
+        onClose();
+    };
+
     const mutation = useMutation({
         mutationFn: (data: ServiceTagFormValues) =>
             serviceApi.createServiceTag({
@@ -65,8 +73,10 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
-            reset();
-            onClose();
+            handleCloseModal();
+        },
+        onError: (error) => {
+            console.error("Failed to save service tag:", error);
         },
     });
 
@@ -74,113 +84,118 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
         mutation.mutate(data);
     };
 
-    return (
-        <div
-            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${isOpen ? "pointer-events-auto" : "pointer-events-none"
-                }`}
-        >
-            {/* Overlay Background */}
-            <div
-                className={`fixed inset-0 bg-slate-900/20 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"
-                    }`}
-                onClick={onClose}
-            />
+    if (!isOpen) return null;
 
-            {/* Drawer Panel */}
-            <div
-                className={`fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
-            >
-                <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
-                    <h2 className="text-lg font-semibold text-slate-800">
-                        {initialData ? "Edit Service Tag" : "Add New Service Tag"}
-                    </h2>
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D0D0D]/40 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl border border-[#E5E0D8] w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] text-start">
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex justify-between items-start">
+                    <div>
+                        <h2 className="text-lg font-bold text-[#0D0D0D]">
+                            {initialData ? t("tags.editTitle") : t("tags.addTitle")}
+                        </h2>
+                        <p className="text-xs text-[#6E6862] mt-1">
+                            {t("tags.subtitle")}
+                        </p>
+                    </div>
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                        onClick={handleCloseModal}
+                        disabled={mutation.isPending}
+                        aria-label={t("common.close")}
+                        className="text-[#8C847A] hover:text-[#0D0D0D] text-xl font-bold leading-none focus:outline-none p-1 rounded-md hover:bg-[#EFECE6]"
                     >
-                        ✕
+                        ×
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                    <p className="text-xs text-slate-500">
-                        Create a new service tag to categorize services efficiently across the platform.
-                    </p>
-
+                {/* Modal Body */}
+                <div className="p-6 overflow-y-auto flex-1">
                     <form
-                        id="add-tag-form"
-                        onSubmit={handleSubmit(onSubmit, (formErrors) =>
-                            focusAndScrollToFirstError(formErrors, ["name"])
-                        )}
+                        id="service-tag-form"
+                        noValidate
+                        onSubmit={handleSubmit(onSubmit, (errs) => focusAndScrollToFirstError(errs))}
                         className="space-y-4"
                     >
+                        {/* Tag Name */}
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Tag Name <span className="text-red-500">*</span>
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("tags.tagName")} <span className="text-[#B83232]">*</span>
                             </label>
                             <input
                                 type="text"
-                                placeholder="Enter tag name"
+                                placeholder={t("tags.tagNamePlaceholder")}
                                 {...register("name")}
-                                className={`w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition ${
                                     errors.name
-                                        ? "border-red-400 focus:border-red-500 focus:ring-red-400/20"
-                                        : "border-slate-200 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                        ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                        : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
                                 }`}
                             />
                             {errors.name && (
-                                <span className="text-[10px] text-red-500 mt-1 block">
-                                    {errors.name.message}
-                                </span>
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.name.message)}</p>
                             )}
                         </div>
 
+                        {/* Status */}
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Description
-                            </label>
-                            <textarea
-                                rows={4}
-                                placeholder="Enter description"
-                                {...register("description")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] resize-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                Status <span className="text-red-500">*</span>
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("common.status")} <span className="text-[#B83232]">*</span>
                             </label>
                             <select
                                 {...register("status")}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition bg-white ${
+                                    errors.status
+                                        ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
+                                        : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
+                                }`}
                             >
-                                <option value={ServiceTagStatus.ACTIVE}>Active</option>
-                                <option value={ServiceTagStatus.INITIATED}>Initiated</option>
-                                <option value={ServiceTagStatus.INACTIVE}>Inactive</option>
-                                <option value={ServiceTagStatus.REJECTED}>Rejected</option>
+                                <option value={ServiceTagStatus.ACTIVE}>{t("common.active")}</option>
+                                <option value={ServiceTagStatus.INACTIVE}>{t("common.inactive")}</option>
+                                <option value={ServiceTagStatus.INITIATED}>{t("common.initiated")}</option>
+                                <option value={ServiceTagStatus.REJECTED}>{t("common.rejected")}</option>
                             </select>
+                            {errors.status && (
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.status.message)}</p>
+                            )}
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="block text-sm font-medium text-[#0D0D0D] mb-1">
+                                {t("tags.description")}
+                            </label>
+                            <textarea
+                                rows={3}
+                                placeholder={t("tags.descriptionPlaceholder")}
+                                {...register("description")}
+                                className="w-full border border-[#D6CFC4] rounded-lg p-2.5 text-sm outline-none focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15 transition resize-none bg-white"
+                            ></textarea>
+                            {errors.description && (
+                                <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.description.message)}</p>
+                            )}
                         </div>
                     </form>
                 </div>
 
-                <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+                {/* Modal Footer */}
+                <div className="px-6 py-4 border-t border-[#E5E0D8] flex justify-end gap-3 bg-[#FAF8F5]">
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
+                        onClick={handleCloseModal}
+                        disabled={mutation.isPending}
+                        className="px-6 py-2 bg-white border border-[#D6CFC4] text-[#45413C] text-sm font-medium rounded-lg hover:bg-[#F5F2EC] transition"
                     >
-                        Cancel
+                        {t("common.cancel")}
                     </button>
                     <button
                         type="submit"
-                        form="add-tag-form"
+                        form="service-tag-form"
                         disabled={mutation.isPending}
-                        className="px-6 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                        className="px-6 py-2 bg-[#2D3F2C] text-[#FAF8F5] text-sm font-medium rounded-lg hover:bg-[#1F2C1E] transition disabled:opacity-50"
                     >
-                        {mutation.isPending ? "Submitting..." : "Save Tag"}
+                        {mutation.isPending ? t("common.submitting") : t("tags.saveBtn")}
                     </button>
                 </div>
             </div>

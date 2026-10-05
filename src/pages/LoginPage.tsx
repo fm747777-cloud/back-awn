@@ -1,222 +1,230 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { User, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Globe } from 'lucide-react';
+
 import { loginSchema, type LoginFormData } from '../schemas/authSchema';
 import { authApi } from '../api/api';
 import { useAuthStore } from '../store/useAuthStore';
-import { focusAndScrollToFirstError } from '../utils/formValidation';
+import { translateError } from '../i18n';
 
 export const LoginPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
-  const setAuth = useAuthStore((state) => state.setAuth);
+    const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
+    const setAuth = useAuthStore((state) => state.setAuth);
+    const [isLoading, setIsLoading] = useState(false);
+    const isAr = i18n.language?.startsWith('ar');
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    mode: 'onSubmit',
-    defaultValues: {
-      email: 'karim.wagdi@awn.sa',
-      password: 'password123',
-    },
-  });
+    const setLanguage = (lang: 'en' | 'ar') => {
+        if ((lang === 'ar' && !isAr) || (lang === 'en' && isAr)) {
+            i18n.changeLanguage(lang);
+        }
+    };
 
-  const loginMutation = useMutation({
-    mutationFn: authApi.login,
-    onSuccess: (data) => {
-      setAuth({
-        token: data.access_token,
-        user: data?.user,
-      });
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    });
 
-      toast.success(`مرحباً بك ${data?.user?.fullName || 'user name'}`);
-      navigate(from, { replace: true });
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || 'حدث خطأ في تسجيل الدخول';
-      toast.error(message);
-    },
-  });
+    const onSubmit = async (data: LoginFormData) => {
+        try {
+            setIsLoading(true);
+            const response = await authApi.login(data);
+            const token = response?.access_token;
 
-  const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
-  };
+            if (!token) {
+                throw new Error('Authentication token missing from response');
+            }
 
-  return (
-    <div className="min-h-screen w-full flex bg-[#F8F6F2] font-sans text-[#0D0D0D] dir-ltr" dir="ltr">
-      {/* Left: Poster & Slogan Section */}
-      <div className="hidden lg:flex lg:w-[55%] bg-[#0D0D0D] relative overflow-hidden flex-col justify-between p-12 text-[#FAF8F5] select-none border-r border-[#1C1A17]">
-        {/* Subtle geometric pattern background */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none flex items-center justify-center">
-          <div className="w-[640px] h-[640px] rounded-full border-[40px] border-[#2D3F2C] -translate-x-24 -translate-y-16"></div>
-          <div className="absolute top-12 right-16 w-48 h-48 rounded-full border-[16px] border-[#BFAB93]/30"></div>
-          <div className="absolute bottom-16 left-12 w-32 h-32 rounded-full border-[8px] border-[#6A7358]/30"></div>
-        </div>
+            const emailPrefix = data.email.split('@')[0];
+            const userProfile = response?.user || {
+                id: data.email,
+                type: 'admin',
+                fullName: emailPrefix,
+            };
+            setAuth({ token, user: userProfile });
+            toast.success(t('login.welcomeBack', { name: userProfile.fullName }));
+            navigate('/service');
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string | string[] } } };
+            const errorMessage =
+                err.response?.data?.message ||
+                t('login.loginFailed');
+            toast.error(Array.isArray(errorMessage) ? errorMessage[0] : errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        {/* Top badge */}
-        <div className="relative z-10 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] border border-[#BFAB93]/40 flex items-center justify-center shadow-xs">
-            <span className="text-sm font-black text-[#BFAB93]">ع</span>
-          </div>
-          <span className="text-xs font-semibold tracking-[0.2em] text-[#BFAB93] uppercase">
-            AWN ADMINISTRATIVE PLATFORM
-          </span>
-        </div>
-
-        {/* Center Headline */}
-        <div className="relative z-10 max-w-xl pl-4 space-y-4">
-          <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-[1.25] text-[#FAF8F5]">
-            GOVERNMENT &
-            <br />
-            ENTERPRISE SERVICES
-            <br />
-            OPERATIONS WITH <span className="text-[#BFAB93]">AWN</span>
-          </h1>
-          <p className="text-sm text-[#9C958C] font-normal leading-relaxed max-w-md">
-            Unifying digital workflows, service governance, and administrative operations in one sovereign platform.
-          </p>
-        </div>
-
-        {/* Bottom footer quote */}
-        <div className="relative z-10 text-xs text-[#6E6862] flex items-center justify-between border-t border-white/10 pt-4">
-          <span>Enterprise Edition v2.6</span>
-          <span className="font-medium text-[#BFAB93]">Kingdom of Saudi Arabia</span>
-        </div>
-      </div>
-
-      {/* Right: Form Section */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-between p-8 sm:p-12 md:p-16 bg-[#F8F6F2]">
-        {/* Top Header - Logo */}
-        <div className="flex justify-end pt-2">
-          <div className="flex items-center gap-2.5">
-            <div className="text-right">
-              <div className="text-2xl font-bold tracking-tight text-[#0D0D0D] flex items-center justify-end">
-                <span>عـون</span>
-              </div>
-              <div className="text-[10px] font-bold tracking-[0.25em] text-[#6A7358] uppercase">
-                AWN
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] border border-[#BFAB93]/40 flex items-center justify-center">
-              <span className="text-xs font-black text-[#BFAB93]">ع</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center - Form Content */}
-        <div className="max-w-md w-full mx-auto my-auto py-8">
-          <div className="mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#0D0D0D] tracking-tight">
-              Sign In to AWN
-            </h2>
-            <p className="text-[#6E6862] text-xs mt-1.5 font-normal">
-              Enter your corporate credentials to access administrative services.
-            </p>
-          </div>
-
-          <form
-            onSubmit={handleSubmit(onSubmit, (formErrors) =>
-              focusAndScrollToFirstError(formErrors, ['email', 'password'])
-            )}
-            className="space-y-5"
-          >
-            {/* Email Field */}
-            <div>
-              <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                Email Address <span className="text-rose-500 font-bold">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#857E74]">
-                  <User size={16} />
+    return (
+        <div className="min-h-screen flex flex-col justify-between bg-[#FAF8F5] text-[#0D0D0D] text-start">
+            {/* Top Subtle Brand Bar */}
+            <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[#E5E0D8] bg-white/80 backdrop-blur-xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] flex items-center justify-center text-[#FAF8F5] font-bold text-lg shadow-xs">
+                        ع
+                    </div>
+                    <div>
+                        <span className="font-bold text-base tracking-wide text-[#0D0D0D]">
+                            {t('common.awn')}
+                        </span>
+                        <span className="mx-2 text-[#D6CFC4]">|</span>
+                        <span className="text-xs text-[#6E6862] font-medium">
+                            {t('common.platformTitle')}
+                        </span>
+                    </div>
                 </div>
-                <input
-                  {...register('email')}
-                  type="email"
-                  placeholder="karim.wagdi@awn.sa"
-                  className={`w-full bg-white border rounded-lg pl-10 pr-4 py-2.5 text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-2 transition shadow-2xs ${
-                    errors.email
-                      ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/15'
-                      : 'border-[#DCD6CD] focus:border-[#2D3F2C] focus:ring-[#2D3F2C]/15'
-                  }`}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-rose-600 text-xs mt-1.5 font-medium">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-xs font-semibold text-[#0D0D0D]">
-                  Password <span className="text-rose-500 font-bold">*</span>
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-[#2D3F2C] hover:text-[#0D0D0D] hover:underline"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#857E74]">
-                  <Lock size={16} />
+                <div className="flex items-center gap-4">
+                    <div className="hidden sm:block text-xs text-[#8C847A] font-medium">
+                        {t('common.awnArabic')} — {t('nav.edmsModule')}
+                    </div>
+                    <div
+                        role="group"
+                        aria-label={isAr ? t('nav.switchLanguageToEn') : t('nav.switchLanguageToAr')}
+                        dir="ltr"
+                        className="inline-flex items-center p-0.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] shadow-2xs select-none"
+                    >
+                        <span className="flex items-center justify-center ps-2 pe-1 text-[#6E6862]">
+                            <Globe size={13} strokeWidth={2} />
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setLanguage('en')}
+                            aria-pressed={!isAr}
+                            className={`px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all cursor-pointer leading-none ${
+                                !isAr
+                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
+                            }`}
+                        >
+                            EN
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setLanguage('ar')}
+                            aria-pressed={isAr}
+                            className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer leading-none ${
+                                isAr
+                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
+                            }`}
+                        >
+                            عربي
+                        </button>
+                    </div>
                 </div>
-                <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••••••"
-                  className="w-full bg-white border border-[#DCD6CD] focus:border-[#2D3F2C] rounded-lg pl-10 pr-10 py-2.5 text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/15 transition shadow-2xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#857E74] hover:text-[#0D0D0D] transition"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-rose-600 text-xs mt-1.5 font-medium">{errors.password.message}</p>
-              )}
-            </div>
+            </header>
 
-            {/* Submit Button */}
-            <div className="flex justify-end pt-3">
-              <button
-                type="submit"
-                disabled={loginMutation.isPending}
-                className="w-full bg-[#2D3F2C] hover:bg-[#233222] active:bg-[#1C271B] disabled:opacity-70 text-[#FAF8F5] font-semibold px-6 py-2.5 rounded-lg text-xs transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {loginMutation.isPending ? (
-                  <>
-                    <Loader2 size={15} className="animate-spin" />
-                    <span>Signing In...</span>
-                  </>
-                ) : (
-                  <span>Sign In</span>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+            {/* Main Centered Login Card */}
+            <main className="flex-1 flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-white border border-[#E5E0D8] rounded-2xl shadow-lg overflow-hidden">
+                    {/* Card Top Olive Accent Header */}
+                    <div className="bg-[#2D3F2C] px-8 py-7 text-[#FAF8F5]">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#3E553D] text-[#C2A46D] text-[11px] font-semibold uppercase tracking-wider mb-3">
+                            {t('common.awnEnterprise')}
+                        </div>
+                        <h1 className="text-2xl font-bold text-[#FAF8F5]">
+                            {t('login.signInTitle')}
+                        </h1>
+                        <p className="text-xs text-[#D6CFC4] mt-1.5 leading-relaxed">
+                            {t('login.signInSubtitle')}
+                        </p>
+                    </div>
 
-        {/* Bottom Footer - Copyright */}
-        <div className="text-center pb-2">
-          <p className="text-[11px] font-medium text-[#6E6862]">
-            © 2026 AWN Administrative Platform. All Rights Reserved.
-          </p>
+                    {/* Form Body */}
+                    <div className="p-8">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                            {/* Email Field */}
+                            <div>
+                                <label className="block text-xs font-semibold text-[#45413C] uppercase tracking-wider mb-2">
+                                    {t('login.emailLabel')}
+                                </label>
+                                <div className="relative">
+                                    <Mail className="w-4 h-4 text-[#8C847A] absolute start-3.5 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="email"
+                                        dir="ltr"
+                                        placeholder="admin@awn.sa"
+                                        {...register('email')}
+                                        className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${
+                                            errors.email
+                                                ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
+                                                : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
+                                        }`}
+                                    />
+                                </div>
+                                {errors.email && (
+                                    <p className="text-[#B83232] text-xs mt-1.5">
+                                        {translateError(t, errors.email.message)}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Password Field */}
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-xs font-semibold text-[#45413C] uppercase tracking-wider">
+                                        {t('login.passwordLabel')}
+                                    </label>
+                                    <button
+                                        type="button"
+                                        className="text-xs text-[#2D3F2C] hover:underline font-medium"
+                                    >
+                                        {t('login.forgotPassword')}
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <Lock className="w-4 h-4 text-[#8C847A] absolute start-3.5 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="password"
+                                        dir="ltr"
+                                        placeholder="••••••••"
+                                        {...register('password')}
+                                        className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${
+                                            errors.password
+                                                ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
+                                                : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
+                                        }`}
+                                    />
+                                </div>
+                                {errors.password && (
+                                    <p className="text-[#B83232] text-xs mt-1.5">
+                                        {translateError(t, errors.password.message)}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Submit Button */}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full py-2.5 px-4 bg-[#2D3F2C] hover:bg-[#1F2C1E] text-[#FAF8F5] font-semibold text-sm rounded-lg shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                            >
+                                <span>{isLoading ? t('login.signingIn') : t('login.signInBtn')}</span>
+                                {!isLoading && <ArrowRight className="w-4 h-4 rtl:rotate-180" />}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+
+            {/* Footer */}
+            <footer className="w-full px-8 py-4 border-t border-[#E5E0D8] text-center sm:flex sm:items-center sm:justify-between text-xs text-[#8C847A]">
+                <span>{t('login.copyright')}</span>
+                <span className="mt-1 sm:mt-0 block">
+                    {t('login.edition')} • {t('login.country')}
+                </span>
+            </footer>
         </div>
-      </div>
-    </div>
-  );
+    );
 };

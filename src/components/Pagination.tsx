@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 type PaginationProps = {
     table: any;
     count: number;
@@ -6,6 +8,8 @@ type PaginationProps = {
 };
 
 const Pagination = ({ table, pageIndex, loading }: PaginationProps) => {
+    const { t } = useTranslation();
+
     return (
         <div className="flex items-center gap-2 text-xs select-none">
             <button
@@ -18,10 +22,10 @@ const Pagination = ({ table, pageIndex, loading }: PaginationProps) => {
                 disabled={!table.getCanPreviousPage() || loading}
                 className="px-3 py-1.5 rounded-lg bg-white border border-[#DCD6CD] hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#2D3F2C] disabled:opacity-40 disabled:hover:border-[#DCD6CD] disabled:hover:bg-white disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
             >
-                Previous
+                {t('common.previous')}
             </button>
 
-            <span className="px-3 py-1.5 bg-[#2D3F2C] text-[#FAF8F5] rounded-lg font-semibold min-w-8 text-center shadow-2xs">
+            <span className="px-3 py-1.5 bg-[#2D3F2C] text-[#FAF8F5] rounded-lg font-mono font-semibold min-w-8 text-center shadow-2xs">
                 {pageIndex + 1}
             </span>
 
@@ -35,7 +39,7 @@ const Pagination = ({ table, pageIndex, loading }: PaginationProps) => {
                 disabled={!table.getCanNextPage() || loading}
                 className="px-3 py-1.5 rounded-lg bg-white border border-[#DCD6CD] hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#2D3F2C] disabled:opacity-40 disabled:hover:border-[#DCD6CD] disabled:hover:bg-white disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
             >
-                Next
+                {t('common.next')}
             </button>
         </div>
     );

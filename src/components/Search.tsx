@@ -1,5 +1,6 @@
 import { Search as SearchIcon, Download, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type SearchProps = {
     searchValue: string;
@@ -17,82 +18,22 @@ type SearchProps = {
     addNewLabel?: string;
 };
 
-const PAGE_CONFIGS: Record<string, { title: string; description: string; addLabel: string }> = {
-    'Services': {
-        title: 'Services',
-        description: 'Manage and monitor government and enterprise administrative services.',
-        addLabel: 'Add Service',
-    },
-    'Add New Service': {
-        title: 'Services',
-        description: 'Manage and monitor government and enterprise administrative services.',
-        addLabel: 'Add Service',
-    },
-    'Service Groups': {
-        title: 'Service Groups',
-        description: 'Organize services into operational and functional business clusters.',
-        addLabel: 'New Service Group',
-    },
-    'New Service Group': {
-        title: 'Service Groups',
-        description: 'Organize services into operational and functional business clusters.',
-        addLabel: 'New Service Group',
-    },
-    'Service Packages': {
-        title: 'Service Packages',
-        description: 'Manage bundled service packages and customer subscription offerings.',
-        addLabel: 'Add Package',
-    },
-    'Service Types': {
-        title: 'Service Types',
-        description: 'Define service classifications, execution rules, and workflow types.',
-        addLabel: 'Add Service Type',
-    },
-    'Add Service Type': {
-        title: 'Service Types',
-        description: 'Define service classifications, execution rules, and workflow types.',
-        addLabel: 'Add Service Type',
-    },
-    'Service Categories': {
-        title: 'Service Categories',
-        description: 'Structure service taxonomy and categorical groupings.',
-        addLabel: 'Add Category',
-    },
-    'Add Service Category': {
-        title: 'Service Categories',
-        description: 'Structure service taxonomy and categorical groupings.',
-        addLabel: 'Add Category',
-    },
-    'Service Tags': {
-        title: 'Service Tags',
-        description: 'Manage discovery tags, metadata badges, and search identifiers.',
-        addLabel: 'Add Service Tag',
-    },
-    'Add Service Tag': {
-        title: 'Service Tags',
-        description: 'Manage discovery tags, metadata badges, and search identifiers.',
-        addLabel: 'Add Service Tag',
-    },
-    'Service Portals': {
-        title: 'Service Portals',
-        description: 'Configure external government integrations and administrative portals.',
-        addLabel: 'Add Service Portal',
-    },
-    'Add Service Portal': {
-        title: 'Service Portals',
-        description: 'Configure external government integrations and administrative portals.',
-        addLabel: 'Add Service Portal',
-    },
-    'Services Audit Trail': {
-        title: 'Audit Trail',
-        description: 'Track operational logs, system modifications, and administrative activities.',
-        addLabel: '',
-    },
-    'Audit Trail': {
-        title: 'Audit Trail',
-        description: 'Track operational logs, system modifications, and administrative activities.',
-        addLabel: '',
-    },
+const PAGE_KEY_MAP: Record<string, string> = {
+    'Services': 'services',
+    'Add New Service': 'services',
+    'Service Groups': 'serviceGroups',
+    'New Service Group': 'serviceGroups',
+    'Service Packages': 'servicePackages',
+    'Service Types': 'serviceTypes',
+    'Add Service Type': 'serviceTypes',
+    'Service Categories': 'serviceCategories',
+    'Add Service Category': 'serviceCategories',
+    'Service Tags': 'serviceTags',
+    'Add Service Tag': 'serviceTags',
+    'Service Portals': 'servicePortals',
+    'Add Service Portal': 'servicePortals',
+    'Services Audit Trail': 'auditTrail',
+    'Audit Trail': 'auditTrail',
 };
 
 const Search = ({
@@ -100,7 +41,7 @@ const Search = ({
     title,
     description,
     onSearchChange,
-    searchPlaceholder = 'Search records...',
+    searchPlaceholder,
     delay = 400,
     pageSize,
     onPageSizeChange,
@@ -108,6 +49,7 @@ const Search = ({
     onExport,
     addNewLabel,
 }: SearchProps) => {
+    const { t } = useTranslation();
     const [query, setQuery] = useState(searchValue);
     const [prevSearchValue, setPrevSearchValue] = useState(searchValue);
     const [pageSizeInput, setPageSizeInput] = useState(String(pageSize));
@@ -133,16 +75,25 @@ const Search = ({
         return () => clearTimeout(handler);
     }, [query, delay, onSearchChange, searchValue]);
 
-    const pageCfg = PAGE_CONFIGS[title];
-    const displayTitle = pageCfg?.title || title.replace(/^(Add |New |Add New )/i, '').trim();
-    const displayDesc = description || pageCfg?.description || 'Manage, organize, and monitor records within this administrative module.';
-    const addBtnText = addNewLabel || pageCfg?.addLabel || (title.startsWith('Add') || title.startsWith('New') ? title : `Add ${displayTitle}`);
+    const pageKey = PAGE_KEY_MAP[title];
+    const displayTitle = pageKey
+        ? t(`pages.${pageKey}.title`)
+        : title.replace(/^(Add |New |Add New )/i, '').trim();
+    const displayDesc =
+        description ||
+        (pageKey ? t(`pages.${pageKey}.description`) : t('pages.defaultDescription'));
+    const addBtnText = pageKey
+        ? t(`pages.${pageKey}.addLabel`)
+        : addNewLabel || (title.startsWith('Add') || title.startsWith('New') ? title : `${t('common.add')} ${displayTitle}`);
+    const resolvedPlaceholder = pageKey
+        ? t(`pages.${pageKey}.searchPlaceholder`)
+        : searchPlaceholder || t('common.search');
 
     return (
         <div className="space-y-5 mb-5 select-none">
             {/* 1. Page Header System */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
-                <div>
+                <div className="text-start">
                     <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
                         {displayTitle}
                     </h1>
@@ -159,7 +110,7 @@ const Search = ({
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#DCD6CD] hover:border-[#BFAB93] text-[#2D3F2C] hover:bg-[#F8F6F2] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs active:scale-98"
                     >
                         <Download size={14} className="text-[#6A7358]" />
-                        <span>Export</span>
+                        <span>{t('common.export')}</span>
                     </button>
 
                     {onAddNew && (
@@ -179,21 +130,21 @@ const Search = ({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-[#E5E0D8] rounded-xl p-3 shadow-2xs">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#857E74] pointer-events-none">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-[#857E74] pointer-events-none">
                         <SearchIcon size={15} />
                     </span>
                     <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder={searchPlaceholder}
-                        className="w-full pl-9 pr-3.5 py-2 bg-[#FAF8F5]/80 hover:bg-[#FAF8F5] focus:bg-white border border-[#E5E0D8] focus:border-[#2D3F2C] rounded-lg text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/15 transition"
+                        placeholder={resolvedPlaceholder}
+                        className="w-full ps-9 pe-3.5 py-2 bg-[#FAF8F5]/80 hover:bg-[#FAF8F5] focus:bg-white border border-[#E5E0D8] focus:border-[#2D3F2C] rounded-lg text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/15 transition"
                     />
                 </div>
 
                 {/* Show Page Size Controls */}
                 <div className="flex items-center gap-2 text-xs text-[#6E6862] shrink-0 self-end sm:self-center">
-                    <span>Show</span>
+                    <span>{t('pagination.show')}</span>
                     <div className="relative inline-flex items-center bg-white border border-[#DCD6CD] hover:border-[#BFAB93] focus-within:border-[#2D3F2C] focus-within:ring-1 focus-within:ring-[#2D3F2C]/20 rounded-lg shadow-2xs transition">
                         <input
                             type="number"
@@ -222,8 +173,8 @@ const Search = ({
                                     setPageSizeInput(String(pageSize));
                                 }
                             }}
-                            aria-label="Show entries per page"
-                            className="w-11 pl-2.5 pr-1 py-1.5 text-xs text-[#0D0D0D] font-medium text-center focus:outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            aria-label={t('pagination.showEntriesAria')}
+                            className="w-11 ps-2.5 pe-1 py-1.5 text-xs text-[#0D0D0D] font-mono font-medium text-center focus:outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                         <select
                             value={pageSize}
@@ -234,8 +185,8 @@ const Search = ({
                                     onPageSizeChange?.(val);
                                 }
                             }}
-                            aria-label="Choose entries per page"
-                            className="bg-transparent border-l border-[#E5E0D8] pl-1 pr-1.5 py-1.5 text-xs text-[#595550] hover:text-[#0D0D0D] focus:outline-none cursor-pointer"
+                            aria-label={t('pagination.chooseEntriesAria')}
+                            className="bg-transparent border-s border-[#E5E0D8] ps-1 pe-1.5 py-1.5 text-xs font-mono text-[#595550] hover:text-[#0D0D0D] focus:outline-none cursor-pointer"
                         >
                             {![10, 25, 50, 100].includes(pageSize) && (
                                 <option value={pageSize}>{pageSize}</option>
@@ -246,7 +197,7 @@ const Search = ({
                             <option value={100}>100</option>
                         </select>
                     </div>
-                    <span>entries</span>
+                    <span>{t('pagination.entries')}</span>
                 </div>
             </div>
         </div>
