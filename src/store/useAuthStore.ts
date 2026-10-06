@@ -15,15 +15,18 @@ interface AuthState {
     logout: () => void;
 }
 
+const DEMO_DEFAULT_TOKEN = 'demo-jwt-token';
+const DEMO_DEFAULT_USER: UserProfile = {
+    id: 'demo-admin-1',
+    type: 'Super Admin',
+    fullName: 'Karim Wagdi',
+};
+
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
-            token: 'demo-awn-session-token',
-            user: {
-                id: 'usr-admin-1',
-                type: 'admin',
-                fullName: 'Karim Wagdi',
-            },
+            token: DEMO_DEFAULT_TOKEN,
+            user: DEMO_DEFAULT_USER,
 
             setAuth: ({ token, user }) => set({ token, user }),
 
