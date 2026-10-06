@@ -18,8 +18,12 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
-            token: null,
-            user: null,
+            token: 'demo-awn-session-token',
+            user: {
+                id: 'usr-admin-1',
+                type: 'admin',
+                fullName: 'Karim Wagdi',
+            },
 
             setAuth: ({ token, user }) => set({ token, user }),
 

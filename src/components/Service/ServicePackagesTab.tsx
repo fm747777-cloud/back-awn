@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { DataTable } from "../DataTable";
-import { TableRowActions } from "../TableRowActions";
 import { AddServicePackageModal } from "./AddServicePackageModal";
 import type { CreateServicePackageDto } from "../../schemas/serviceSchema";
 
@@ -63,7 +62,6 @@ export const ServicePackagesTab: React.FC = () => {
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingPackage, setEditingPackage] = useState<ServicePackageItem | null>(null);
 
     const filtered = useMemo(() => {
         if (!searchTerm) return packages;
@@ -76,30 +74,7 @@ export const ServicePackagesTab: React.FC = () => {
         );
     }, [packages, searchTerm, t]);
 
-    const handleCreateOrUpdatePackage = (dto: CreateServicePackageDto) => {
-        if (editingPackage) {
-            setPackages((prev) =>
-                prev.map((item) =>
-                    item.id === editingPackage.id
-                        ? {
-                              ...item,
-                              name: dto.package_name,
-                              price: dto.unit_price,
-                              status: (dto.status?.toLowerCase() as 'active' | 'inactive') || item.status,
-                          }
-                        : item
-                )
-            );
-            toast.success(
-                t("packages.messages.updated", {
-                    name: t(`packages.packageOptions.${dto.package_name}`, { defaultValue: dto.package_name }),
-                })
-            );
-            setEditingPackage(null);
-            setIsModalOpen(false);
-            return;
-        }
-
+    const handleCreatePackage = (dto: CreateServicePackageDto) => {
         const nextCodeNum = packages.length + 1;
         const newPackage: ServicePackageItem = {
             id: `pkg-${Date.now()}`,
@@ -119,18 +94,6 @@ export const ServicePackagesTab: React.FC = () => {
         );
         setIsModalOpen(false);
     };
-
-    const handleDeletePackage = useCallback(
-        (pkg: ServicePackageItem) => {
-            setPackages((prev) => prev.filter((p) => p.id !== pkg.id));
-            toast.success(
-                t("packages.messages.deleted", {
-                    name: t(`packages.packageOptions.${pkg.name}`, { defaultValue: pkg.name }),
-                })
-            );
-        },
-        [t]
-    );
 
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
@@ -213,24 +176,8 @@ export const ServicePackagesTab: React.FC = () => {
                     );
                 },
             },
-            {
-                id: "actions",
-                header: () => <div className="text-end">{t("common.actions")}</div>,
-                cell: ({ row }) => (
-                    <div className="text-end">
-                        <TableRowActions
-                            recordName={t(`packages.packageOptions.${row.original.name}`, { defaultValue: row.original.name })}
-                            onEdit={() => {
-                                setEditingPackage(row.original);
-                                setIsModalOpen(true);
-                            }}
-                            onDelete={() => handleDeletePackage(row.original)}
-                        />
-                    </div>
-                ),
-            },
         ],
-        [t, handleDeletePackage]
+        [t]
     );
 
     return (
@@ -247,22 +194,15 @@ export const ServicePackagesTab: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
                 onSearchChange={setSearchTerm}
-                onAddNew={() => {
-                    setEditingPackage(null);
-                    setIsModalOpen(true);
-                }}
+                onAddNew={() => setIsModalOpen(true)}
                 title="Service Packages"
                 addNewLabel={t("pages.servicePackages.addLabel")}
             />
 
             <AddServicePackageModal
                 isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setEditingPackage(null);
-                }}
-                onSubmit={handleCreateOrUpdatePackage}
-                initialData={editingPackage}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={handleCreatePackage}
             />
         </div>
     );

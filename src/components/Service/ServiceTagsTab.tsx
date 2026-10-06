@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { MoreHorizontal } from "lucide-react";
 import { serviceApi } from "../../api/api";
 import { AddServiceTagModal, ServiceTagStatus } from "./AddServiceTagModal";
 import { DataTable } from "../DataTable";
-import { TableRowActions } from "../TableRowActions";
 
 export interface ServiceTagItem {
     id: string;
@@ -19,7 +18,6 @@ export interface ServiceTagItem {
 
 export const ServiceTagsTab: React.FC = () => {
     const { t } = useTranslation();
-    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -43,15 +41,6 @@ export const ServiceTagsTab: React.FC = () => {
         setSearchTerm(value);
         setPageIndex(0);
     };
-
-    const handleDeleteTag = useCallback(
-        async (tag: ServiceTagItem) => {
-            await serviceApi.deleteServiceTag(tag.id);
-            queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
-            toast.success(t("tags.messages.deleted", { name: tag.name }));
-        },
-        [queryClient, t]
-    );
 
     const renderStatusBadge = useCallback(
         (status: ServiceTagStatus) => {
@@ -173,19 +162,20 @@ export const ServiceTagsTab: React.FC = () => {
                 header: () => <div className="text-end">{t("common.actions")}</div>,
                 cell: ({ row }) => (
                     <div className="text-end">
-                        <TableRowActions
-                            recordName={row.original.name}
-                            onEdit={() => {
+                        <button
+                            onClick={() => {
                                 setEditingTag(row.original);
                                 setIsModalOpen(true);
                             }}
-                            onDelete={() => handleDeleteTag(row.original)}
-                        />
+                            className="p-1 rounded hover:bg-[#F8F6F2] text-[#857E74] hover:text-[#0D0D0D] transition cursor-pointer"
+                        >
+                            <MoreHorizontal className="w-4 h-4" />
+                        </button>
                     </div>
                 ),
             },
         ],
-        [t, renderStatusBadge, handleDeleteTag]
+        [t, renderStatusBadge]
     );
 
     return (

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Globe, ChevronDown, LogOut, User, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
@@ -8,16 +8,30 @@ import { ActionItemsModal, type ModuleOption } from './ActionItemsModal';
 
 export const Navbar = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { t, i18n } = useTranslation();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [actionItemsModalOpen, setActionItemsModalOpen] = useState(false);
-    const [selectedModuleKey, setSelectedModuleKey] = useState<string>('edms');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const { user, logout } = useAuthStore();
     const { collapsed, toggleSidebar } = useSidebarStore();
 
     const isAr = i18n.language?.startsWith('ar');
+
+    // Derive active module key directly from location.pathname
+    const selectedModuleKey = (() => {
+        if (location.pathname.startsWith('/ticketing')) return 'ticketing';
+        if (location.pathname.startsWith('/service')) return 'service';
+        if (location.pathname.startsWith('/ums')) return 'ums';
+        if (location.pathname.startsWith('/crm')) return 'crm';
+        if (location.pathname.startsWith('/edms')) return 'edms';
+        if (location.pathname.startsWith('/request')) return 'request';
+        if (location.pathname.startsWith('/workflow')) return 'workflow';
+        if (location.pathname.startsWith('/customer')) return 'customer';
+        if (location.pathname.startsWith('/asset')) return 'asset';
+        return 'edms';
+    })();
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -32,7 +46,6 @@ export const Navbar = () => {
     }, [dropdownOpen]);
 
     const handleSelectModule = (item: ModuleOption) => {
-        setSelectedModuleKey(item.id);
         setActionItemsModalOpen(false);
         navigate(item.path);
     };

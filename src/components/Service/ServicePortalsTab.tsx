@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
+import { MoreHorizontal } from "lucide-react";
 import { serviceApi } from "../../api/api";
 import { DataTable } from "../DataTable";
-import { TableRowActions } from "../TableRowActions";
 import { AddServicePortalModal } from "./AddServicePortalModal";
 
 export interface ServiceTagItem {
@@ -22,7 +21,6 @@ export interface ServiceTagItem {
 
 export const ServicePortalsTab: React.FC = () => {
     const { t } = useTranslation();
-    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -46,16 +44,6 @@ export const ServicePortalsTab: React.FC = () => {
         setSearchTerm(value);
         setPageIndex(0);
     };
-
-    const handleDeletePortal = useCallback(
-        async (portal: any) => {
-            await serviceApi.deleteServicePortal(portal.id);
-            queryClient.invalidateQueries({ queryKey: ["servicePortals"] });
-            queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
-            toast.success(t("portals.messages.deleted", { name: portal.name }));
-        },
-        [queryClient, t]
-    );
 
     const renderStatusBadge = useCallback(() => {
         return (
@@ -149,19 +137,20 @@ export const ServicePortalsTab: React.FC = () => {
                 header: () => <div className="text-end">{t("common.actions")}</div>,
                 cell: ({ row }: any) => (
                     <div className="text-end">
-                        <TableRowActions
-                            recordName={row.original.name}
-                            onEdit={() => {
+                        <button
+                            onClick={() => {
                                 setEditingPortal(row.original);
                                 setIsModalOpen(true);
                             }}
-                            onDelete={() => handleDeletePortal(row.original)}
-                        />
+                            className="p-1 rounded hover:bg-[#F8F6F2] text-[#857E74] hover:text-[#0D0D0D] transition cursor-pointer"
+                        >
+                            <MoreHorizontal className="w-4 h-4" />
+                        </button>
                     </div>
                 ),
             },
         ],
-        [t, renderStatusBadge, handleDeletePortal]
+        [t, renderStatusBadge]
     );
 
     return (

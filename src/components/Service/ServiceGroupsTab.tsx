@@ -10,10 +10,10 @@ import {
     ShieldCheck,
     Layers,
     FileText,
+    MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable } from "../DataTable";
-import { TableRowActions } from "../TableRowActions";
 import { ServiceGroupDrawer } from "./ServiceGroupDrawer";
 import {
     GroupType,
@@ -151,18 +151,6 @@ export const ServiceGroupsTab: React.FC = () => {
         setEditingGroup(group);
         setIsDrawerOpen(true);
     }, []);
-
-    const handleDeleteGroup = useCallback(
-        (group: ServiceGroupItem) => {
-            setGroups((prev) => prev.filter((g) => g.id !== group.id));
-            toast.success(
-                t("groups.messages.deleted", {
-                    name: t(`groups.groupOptions.${group.name}`, { defaultValue: group.name }),
-                })
-            );
-        },
-        [t]
-    );
 
     const handleDrawerSubmit = (dto: CreateServiceGroupDto, id?: string) => {
         const statusValue: 'active' | 'inactive' =
@@ -315,16 +303,17 @@ export const ServiceGroupsTab: React.FC = () => {
                 header: () => <div className="text-end">{t("common.actions")}</div>,
                 cell: ({ row }) => (
                     <div className="text-end">
-                        <TableRowActions
-                            recordName={t(`groups.groupOptions.${row.original.name}`, { defaultValue: row.original.name })}
-                            onEdit={() => handleOpenEdit(row.original)}
-                            onDelete={() => handleDeleteGroup(row.original)}
-                        />
+                        <button
+                            onClick={() => handleOpenEdit(row.original)}
+                            className="p-1 rounded hover:bg-[#F8F6F2] text-[#857E74] hover:text-[#0D0D0D] transition cursor-pointer"
+                        >
+                            <MoreHorizontal className="w-4 h-4" />
+                        </button>
                     </div>
                 ),
             },
         ],
-        [t, handleOpenEdit, handleDeleteGroup]
+        [t, handleOpenEdit]
     );
 
     const drawerInitialData: (CreateServiceGroupDto & { id: string }) | null = editingGroup

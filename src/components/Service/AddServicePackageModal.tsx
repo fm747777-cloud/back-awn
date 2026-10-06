@@ -24,19 +24,17 @@ interface AddServicePackageModalProps {
         data: CreateServicePackageDto,
         meta?: { service_group_id: string; group_name?: string }
     ) => void;
-    initialData?: any;
 }
 
 export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
     isOpen,
     onClose,
     onSubmit,
-    initialData,
 }) => {
     const { t } = useTranslation();
     const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
     const [groupSearchQuery, setGroupSearchQuery] = useState("");
-    const [selectedGroupId, setSelectedGroupId] = useState(initialData?.service_group_id || "");
+    const [selectedGroupId, setSelectedGroupId] = useState("");
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,59 +49,24 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
         resolver: zodResolver(servicePackageSchema),
         mode: "onSubmit",
         defaultValues: {
-            group_type: initialData?.group_type || GroupType.BUSINESS,
-            service_group_id: initialData?.service_group_id || "",
-            package_name: initialData?.package_name || initialData?.name || "",
-            unit_price:
-                initialData?.unit_price !== undefined
-                    ? initialData.unit_price
-                    : initialData?.price !== undefined
-                      ? initialData.price
-                      : ("" as unknown as number),
-            status: initialData?.status || ServiceTagStatus.ACTIVE,
-            description: initialData?.description || "",
+            group_type: GroupType.BUSINESS,
+            service_group_id: "",
+            package_name: "",
+            unit_price: "" as unknown as number,
+            status: ServiceTagStatus.ACTIVE,
+            description: "",
         },
     });
 
-    const [prevOpenInit, setPrevOpenInit] = useState({ isOpen, initialData });
-    if (prevOpenInit.isOpen !== isOpen || prevOpenInit.initialData !== initialData) {
-        setPrevOpenInit({ isOpen, initialData });
-        if (isOpen && initialData) {
-            setSelectedGroupId(initialData.service_group_id || "grp-1");
-        } else if (isOpen && !initialData) {
+    const [prevOpen, setPrevOpen] = useState(isOpen);
+    if (prevOpen !== isOpen) {
+        setPrevOpen(isOpen);
+        if (isOpen) {
             setSelectedGroupId("");
+            setIsGroupDropdownOpen(false);
+            setGroupSearchQuery("");
         }
-        setIsGroupDropdownOpen(false);
-        setGroupSearchQuery("");
     }
-
-    useEffect(() => {
-        if (isOpen && initialData) {
-            const grpId = initialData.service_group_id || "grp-1";
-            reset({
-                group_type: initialData.group_type || GroupType.BUSINESS,
-                service_group_id: grpId,
-                package_name: initialData.package_name || initialData.name || "",
-                unit_price:
-                    initialData.unit_price !== undefined
-                        ? initialData.unit_price
-                        : initialData.price !== undefined
-                          ? initialData.price
-                          : 0,
-                status: initialData.status || ServiceTagStatus.ACTIVE,
-                description: initialData.description || "",
-            });
-        } else if (isOpen && !initialData) {
-            reset({
-                group_type: GroupType.BUSINESS,
-                service_group_id: "",
-                package_name: "",
-                unit_price: "" as unknown as number,
-                status: ServiceTagStatus.ACTIVE,
-                description: "",
-            });
-        }
-    }, [isOpen, initialData, reset]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -168,7 +131,7 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({
                 <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex justify-between items-start">
                     <div>
                         <h2 className="text-lg font-bold text-[#0D0D0D]">
-                            {initialData ? t("packages.editTitle") : t("packages.addTitle")}
+                            {t("packages.addTitle")}
                         </h2>
                         <p className="text-xs text-[#6E6862] mt-1">
                             {t("packages.subtitle")}

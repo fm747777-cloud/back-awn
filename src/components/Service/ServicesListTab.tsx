@@ -1,12 +1,11 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { MoreHorizontal } from 'lucide-react';
 import { AddServiceModal } from './AddServiceModal';
 import { serviceApi } from '../../api/api';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../DataTable';
-import { TableRowActions } from '../TableRowActions';
 
 export type CreatedByUser = {
     name: string;
@@ -35,7 +34,6 @@ export type ServiceItem = {
 
 export const ServicesListTab = () => {
     const { t } = useTranslation();
-    const queryClient = useQueryClient();
     const [searchValue, setSearchValue] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -54,24 +52,6 @@ export const ServicesListTab = () => {
 
     const servicesList = data?.data || [];
     const totalCount = data?.count ?? 0;
-
-    const handleDeleteService = useCallback(
-        async (service: ServiceItem) => {
-            try {
-                await serviceApi.deleteService(service.id);
-                queryClient.invalidateQueries({ queryKey: ['services'] });
-                toast.success(t('services.messages.deleted', { name: service.title }));
-            } catch (error: any) {
-                const message = error?.response?.data?.message;
-                toast.error(
-                    Array.isArray(message)
-                        ? message[0]
-                        : message || t('services.messages.deleteFailed')
-                );
-            }
-        },
-        [queryClient, t]
-    );
 
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
@@ -241,22 +221,20 @@ export const ServicesListTab = () => {
             },
             {
                 id: 'actions',
-                header: () => <div className="text-end">{t('common.actions')}</div>,
                 cell: ({ row }: any) => (
-                    <div className="text-end">
-                        <TableRowActions
-                            recordName={row.original.title}
-                            onEdit={() => {
-                                setEditingService(row.original);
-                                setIsModalOpen(true);
-                            }}
-                            onDelete={() => handleDeleteService(row.original)}
-                        />
-                    </div>
+                    <button
+                        onClick={() => {
+                            setEditingService(row.original);
+                            setIsModalOpen(true);
+                        }}
+                        className="p-1 rounded hover:bg-[#F8F6F2] text-[#857E74] hover:text-[#0D0D0D] transition cursor-pointer"
+                    >
+                        <MoreHorizontal className="w-4 h-4" />
+                    </button>
                 ),
             },
         ],
-        [t, handleDeleteService]
+        [t]
     );
 
     return (

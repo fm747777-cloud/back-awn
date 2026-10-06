@@ -70,6 +70,9 @@
     "serviceTags": "وسوم الخدمات",
     "servicePortals": "منصات تقديم الخدمات",
     "auditTrail": "سجل العمليات",
+    "tickets": "التذاكر",
+    "ticketTypes": "أنواع التذاكر",
+    "cannedReplies": "الردود الجاهزة",
     "accountSettings": "إعدادات الحساب",
     "expandSidebar": "توسيع القائمة الجانبية",
     "collapseSidebar": "طي القائمة الجانبية",
@@ -100,6 +103,12 @@
   },
   "pages": {
     "defaultDescription": "إدارة وتنظيم ومتابعة السجلات التشغيلية ضمن هذه الوحدة الإدارية.",
+    "tickets": {
+      "title": "التذاكر",
+      "description": "إدارة ومتابعة ومعالجة طلبات وبلاغات الدعم للعملاء والمنشآت.",
+      "addLabel": "تذكرة جديدة",
+      "searchPlaceholder": "البحث في التذاكر بالرقم، الموضوع، العميل، أو المنشأة..."
+    },
     "services": {
       "title": "الخدمات",
       "description": "إدارة ومتابعة الخدمات الحكومية والتجارية وإجراءات تنفيذها.",
@@ -635,5 +644,98 @@
       "srv-9": "تحديث بيانات ترخيص الاستثمار",
       "srv-10": "حجز اسم تجاري باللغة الإنجليزية"
     }
+  },
+  "ticketing": {
+    "dashboardTitle": "لوحة تحكم الدعم الفني والبلاغات",
+    "dashboardDesc": "نظرة تشغيلية شاملة على حركة التذاكر، وتوزيع أعباء العمل، ومعدلات الإنجاز للعملاء والمنشآت.",
+    "ticketsTitle": "التذاكر",
+    "ticketsDesc": "إدارة ومتابعة طلبات الدعم وبلاغات العملاء والجهات.",
+    "ticketTypesTitle": "أنواع التذاكر",
+    "ticketTypesDesc": "تعريف تصنيفات ومستويات تذاكر الدعم الفني.",
+    "cannedRepliesTitle": "الردود الجاهزة",
+    "cannedRepliesDesc": "قوالب الردود السريعة المعتمدة لفرق الدعم والمساندة.",
+    "auditTrailTitle": "سجل العمليات والتدقيق",
+    "auditTrailDesc": "سجل الحركات والتغييرات التي تمت على تذاكر الدعم والبيانات الأساسية.",
+    "shellStatus": "تم تأسيس بنية الوحدة بنجاح",
+    "kpis": {
+      "openTickets": "التذاكر المفتوحة",
+      "openTicketsDesc": "تذاكر نشطة قيد المعالجة والإجراء",
+      "closedTickets": "التذاكر المغلقة",
+      "closedTicketsDesc": "تذاكر تم حلها وإغلاقها بنجاح",
+      "reopenedTickets": "التذاكر المعاد فتحها",
+      "reopenedTicketsDesc": "تذاكر أعيد فتحها بعد المراجعة"
+    },
+    "sections": {
+      "monthlyStatus": "التذاكر الشهرية حسب الحالة",
+      "byClient": "التذاكر حسب العميل",
+      "byCompany": "التذاكر حسب المنشأة",
+      "perResource": "التذاكر المسندة لكل موظف",
+      "assignedVsUnassigned": "مقارنة التذاكر المسندة وغير المسندة"
+    },
+    "labels": {
+      "open": "مفتوحة",
+      "closed": "مغلقة",
+      "reopened": "معاد فتحها",
+      "assigned": "مسندة",
+      "unassigned": "غير مسندة",
+      "resource": "الموظف المسؤول",
+      "ticketsCount": "عدد التذاكر",
+      "share": "النسبة",
+      "totalTickets": "إجمالي التذاكر",
+      "percentage": "النسبة المئوية",
+      "allMonths": "آخر 6 أشهر",
+      "tickets": "تذاكر",
+      "client": "العميل",
+      "company": "المنشأة"
+    },
+    "filters": {
+      "showFilters": "عرض التصفية",
+      "hideFilters": "إخفاء التصفية",
+      "resetFilters": "إعادة تعيين",
+      "status": "الحالة",
+      "allStatuses": "جميع الحالات",
+      "priority": "الأولوية",
+      "allPriorities": "جميع الأولويات",
+      "ticketType": "نوع التذكرة",
+      "allTypes": "جميع الأنواع",
+      "company": "المنشأة",
+      "allCompanies": "جميع المنشآت",
+      "assignedTo": "الموظف المسند إليه",
+      "allResources": "جميع الموظفين"
+    },
+    "priorities": {
+      "high": "عالية",
+      "medium": "متوسطة",
+      "low": "منخفضة"
+    },
+    "replyStatuses": {
+      "replied": "تم الرد",
+      "waitingCustomer": "بانتظار العميل",
+      "pendingAgent": "بانتظار رد الموظف"
+    },
+    "columns": {
+      "ticketId": "رقم التذكرة",
+      "subject": "الموضوع",
+      "ticketType": "نوع التذكرة",
+      "customer": "العميل",
+      "company": "المنشأة",
+      "assignedTo": "المسند إليه",
+      "assignedBy": "المسند بواسطة",
+      "replyStatus": "حالة الرد",
+      "status": "الحالة",
+      "closedDate": "تاريخ الإغلاق",
+      "priority": "الأولوية",
+      "createdDate": "تاريخ الإنشاء",
+      "actions": "الإجراءات"
+    },
+    "actions": {
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "viewPrompt": "عرض تفاصيل التذكرة {{id}}",
+      "editPrompt": "تعديل التذكرة {{id}}",
+      "deletePrompt": "تم تحديد إجراء حذف التذكرة {{id}}"
+    },
+    "newTicketModalPrompt": "بدء نموذج إنشاء تذكرة جديدة"
   }
 }

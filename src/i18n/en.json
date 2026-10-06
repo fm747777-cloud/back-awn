@@ -70,6 +70,9 @@
     "serviceTags": "Service Tags",
     "servicePortals": "Service Portals",
     "auditTrail": "Audit Trail",
+    "tickets": "Tickets",
+    "ticketTypes": "Ticket Types",
+    "cannedReplies": "Canned Replies",
     "accountSettings": "Account Settings",
     "expandSidebar": "Expand Sidebar",
     "collapseSidebar": "Collapse Sidebar",
@@ -100,6 +103,12 @@
   },
   "pages": {
     "defaultDescription": "Manage, organize, and monitor records within this administrative module.",
+    "tickets": {
+      "title": "Tickets",
+      "description": "Manage, monitor, and resolve customer and enterprise support tickets.",
+      "addLabel": "New Ticket",
+      "searchPlaceholder": "Search tickets by ID, subject, customer, or company..."
+    },
     "services": {
       "title": "Services",
       "description": "Manage and monitor government and enterprise administrative services.",
@@ -635,5 +644,98 @@
       "srv-9": "Update Investment License Details",
       "srv-10": "Reserve Trade Name in English"
     }
+  },
+  "ticketing": {
+    "dashboardTitle": "Ticketing Dashboard",
+    "dashboardDesc": "Operational overview of support tickets, team workload distribution, and client resolutions.",
+    "ticketsTitle": "Tickets",
+    "ticketsDesc": "Manage and track customer and organizational support tickets.",
+    "ticketTypesTitle": "Ticket Types",
+    "ticketTypesDesc": "Define ticket classifications, categories, and priority tiers.",
+    "cannedRepliesTitle": "Canned Replies",
+    "cannedRepliesDesc": "Manage standard approved response templates for support agents.",
+    "auditTrailTitle": "Audit Trail",
+    "auditTrailDesc": "Historical log of actions, events, and changes recorded in the ticketing module.",
+    "shellStatus": "Module foundation initialized",
+    "kpis": {
+      "openTickets": "Open Tickets",
+      "openTicketsDesc": "Active tickets pending action or in progress",
+      "closedTickets": "Closed Tickets",
+      "closedTicketsDesc": "Successfully resolved and completed tickets",
+      "reopenedTickets": "Reopened Tickets",
+      "reopenedTicketsDesc": "Tickets reopened after initial resolution"
+    },
+    "sections": {
+      "monthlyStatus": "Monthly Tickets By Status",
+      "byClient": "Tickets By Client",
+      "byCompany": "Tickets By Company",
+      "perResource": "Tickets Assigned Per Resource",
+      "assignedVsUnassigned": "Tickets Assigned vs Unassigned"
+    },
+    "labels": {
+      "open": "Open",
+      "closed": "Closed",
+      "reopened": "Reopened",
+      "assigned": "Assigned",
+      "unassigned": "Unassigned",
+      "resource": "Support Specialist",
+      "ticketsCount": "Tickets Count",
+      "share": "Share",
+      "totalTickets": "Total Tickets",
+      "percentage": "Percentage",
+      "allMonths": "Last 6 Months",
+      "tickets": "Tickets",
+      "client": "Client",
+      "company": "Company"
+    },
+    "filters": {
+      "showFilters": "Show Filters",
+      "hideFilters": "Hide Filters",
+      "resetFilters": "Reset Filters",
+      "status": "Status",
+      "allStatuses": "All Statuses",
+      "priority": "Priority",
+      "allPriorities": "All Priorities",
+      "ticketType": "Ticket Type",
+      "allTypes": "All Ticket Types",
+      "company": "Company",
+      "allCompanies": "All Companies",
+      "assignedTo": "Assigned To",
+      "allResources": "All Assigned Resources"
+    },
+    "priorities": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "replyStatuses": {
+      "replied": "Replied",
+      "waitingCustomer": "Waiting for Customer",
+      "pendingAgent": "Pending Agent Reply"
+    },
+    "columns": {
+      "ticketId": "Ticket ID",
+      "subject": "Subject",
+      "ticketType": "Ticket Type",
+      "customer": "Customer",
+      "company": "Company",
+      "assignedTo": "Assigned To",
+      "assignedBy": "Assigned By",
+      "replyStatus": "Reply Status",
+      "status": "Status",
+      "closedDate": "Closed Date",
+      "priority": "Priority",
+      "createdDate": "Created Date",
+      "actions": "Actions"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "viewPrompt": "Viewing ticket {{id}}",
+      "editPrompt": "Editing ticket {{id}}",
+      "deletePrompt": "Delete action selected for ticket {{id}}"
+    },
+    "newTicketModalPrompt": "Create New Ticket form initialized"
   }
 }

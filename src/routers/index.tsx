@@ -10,6 +10,14 @@ const LoginPage = () => import('../pages/LoginPage').then((m) => ({ Component: m
 const SettingsPage = () => import('../pages/SettingsPage').then((m) => ({ Component: m.SettingsPage }));
 const PlaceholderModulePage = () => import('../pages/PlaceholderModulePage').then((m) => ({ Component: m.PlaceholderModulePage }));
 
+// Ticketing Module
+const TicketingPage = () => import('../pages/TicketingPage').then((m) => ({ Component: m.TicketingPage }));
+const TicketingDashboardPage = () => import('../pages/ticketing/TicketingDashboardPage').then((m) => ({ Component: m.TicketingDashboardPage }));
+const TicketsPage = () => import('../pages/ticketing/TicketsPage').then((m) => ({ Component: m.TicketsPage }));
+const TicketTypesPage = () => import('../pages/ticketing/TicketTypesPage').then((m) => ({ Component: m.TicketTypesPage }));
+const CannedRepliesPage = () => import('../pages/ticketing/CannedRepliesPage').then((m) => ({ Component: m.CannedRepliesPage }));
+const TicketingAuditTrailPage = () => import('../pages/ticketing/TicketingAuditTrailPage').then((m) => ({ Component: m.TicketingAuditTrailPage }));
+
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
 const ServicesListTab = () => import('../components/Service/ServicesListTab').then((m) => ({ Component: m.ServicesListTab }));
@@ -92,7 +100,33 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/ticketing',
-                        lazy: PlaceholderModulePage,
+                        lazy: TicketingPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/ticketing/dashboard" replace />,
+                            },
+                            {
+                                path: 'dashboard',
+                                lazy: TicketingDashboardPage,
+                            },
+                            {
+                                path: 'tickets',
+                                lazy: TicketsPage,
+                            },
+                            {
+                                path: 'ticket-types',
+                                lazy: TicketTypesPage,
+                            },
+                            {
+                                path: 'canned-replies',
+                                lazy: CannedRepliesPage,
+                            },
+                            {
+                                path: 'audit-trail',
+                                lazy: TicketingAuditTrailPage,
+                            },
+                        ],
                     },
                     {
                         path: '/asset-management',

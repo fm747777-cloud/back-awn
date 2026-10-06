@@ -22,6 +22,9 @@ const ITEM_LABEL_KEYS: Record<string, string> = {
     'Service Tags': 'nav.serviceTags',
     'Service Portals': 'nav.servicePortals',
     'Audit Trail': 'nav.auditTrail',
+    Tickets: 'nav.tickets',
+    'Ticket Types': 'nav.ticketTypes',
+    'Canned Replies': 'nav.cannedReplies',
 };
 
 export const Sidebar = () => {
@@ -66,9 +69,15 @@ export const Sidebar = () => {
                             ? t(groupTitleKey)
                             : group.title;
 
+                        // Ensure Audit Trail group heading does not duplicate when it has a single item matching its label
+                        const isDuplicateTitle =
+                            group.items.length === 1 &&
+                            group.title?.trim().toLowerCase() === group.items[0]?.label?.trim().toLowerCase();
+                        const shouldShowGroupTitle = !collapsed && translatedGroupTitle && !isDuplicateTitle;
+
                         return (
                             <div key={idx} className="space-y-1">
-                                {!collapsed && translatedGroupTitle && (
+                                {shouldShowGroupTitle && (
                                     <p className="px-3 py-1 text-[10px] font-semibold text-[#6E6862] uppercase tracking-[0.16em] text-start">
                                         {translatedGroupTitle}
                                     </p>

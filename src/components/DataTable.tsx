@@ -23,6 +23,10 @@ type DataTableProps<TData> = {
     title: string;
     description?: string;
     addNewLabel?: string;
+    onToggleFilters?: () => void;
+    isFiltersOpen?: boolean;
+    hasActiveFilters?: boolean;
+    filtersContent?: React.ReactNode;
 };
 
 export const DataTable = <TData,>({
@@ -42,6 +46,10 @@ export const DataTable = <TData,>({
     title,
     description,
     addNewLabel,
+    onToggleFilters,
+    isFiltersOpen,
+    hasActiveFilters,
+    filtersContent,
 }: DataTableProps<TData>) => {
     const { t } = useTranslation();
 
@@ -110,7 +118,17 @@ export const DataTable = <TData,>({
                 title={title}
                 description={description}
                 addNewLabel={addNewLabel}
+                onToggleFilters={onToggleFilters}
+                isFiltersOpen={isFiltersOpen}
+                hasActiveFilters={hasActiveFilters}
             />
+
+            {/* Optional Collapsible Filter Panel */}
+            {isFiltersOpen && filtersContent && (
+                <div className="animate-in fade-in duration-150">
+                    {filtersContent}
+                </div>
+            )}
 
             {/* Table Area */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl overflow-hidden shadow-2xs">

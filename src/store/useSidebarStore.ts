@@ -9,7 +9,9 @@ import {
     Grid,
     Tag,
     Monitor,
-    History
+    History,
+    Ticket,
+    MessageSquareQuote
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -50,6 +52,29 @@ export const DEFAULT_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
+export const TICKETING_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Main',
+        items: [
+            { label: 'Dashboard', path: '/ticketing/dashboard', icon: LayoutDashboard },
+            { label: 'Tickets', path: '/ticketing/tickets', icon: Ticket },
+        ],
+    },
+    {
+        title: 'Masters',
+        items: [
+            { label: 'Ticket Types', path: '/ticketing/ticket-types', icon: Tag },
+            { label: 'Canned Replies', path: '/ticketing/canned-replies', icon: MessageSquareQuote },
+        ],
+    },
+    {
+        // Audit Trail group has no title so "Audit Trail" appears only once as the nav item
+        items: [
+            { label: 'Audit Trail', path: '/ticketing/audit-trail', icon: History },
+        ],
+    },
+];
+
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -58,9 +83,16 @@ interface SidebarState {
     setMenuGroups: (groups: MenuGroup[]) => void;
 }
 
+const getInitialMenuGroups = (): MenuGroup[] => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ticketing')) {
+        return TICKETING_SIDEBAR_GROUPS;
+    }
+    return DEFAULT_SIDEBAR_GROUPS;
+};
+
 export const useSidebarStore = create<SidebarState>((set) => ({
     collapsed: false,
-    menuGroups: DEFAULT_SIDEBAR_GROUPS,
+    menuGroups: getInitialMenuGroups(),
     toggleSidebar: () => set((state) => ({ collapsed: !state.collapsed })),
     setCollapsed: (collapsed) => set({ collapsed }),
     setMenuGroups: (menuGroups) => set({ menuGroups }),
