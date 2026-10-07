@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { DataTable } from "../DataTable";
 import { AddServicePackageModal } from "./AddServicePackageModal";
+import { serviceApi } from "../../api/api";
 import type { CreateServicePackageDto } from "../../schemas/serviceSchema";
 
 export interface ServicePackageItem {
@@ -13,86 +15,83 @@ export interface ServicePackageItem {
     servicesIncluded: number;
     billingCycle: string;
     price: number;
-    status: 'active' | 'inactive';
+    status: "active" | "inactive";
 }
-
-const defaultPackages: ServicePackageItem[] = [
-    {
-        id: "pkg-1",
-        packageCode: "PKG-001",
-        name: "Enterprise Corporate Bundle",
-        servicesIncluded: 18,
-        billingCycle: "Annual",
-        price: 24000,
-        status: "active",
-    },
-    {
-        id: "pkg-2",
-        packageCode: "PKG-002",
-        name: "SME Comprehensive Support",
-        servicesIncluded: 10,
-        billingCycle: "Annual",
-        price: 12000,
-        status: "active",
-    },
-    {
-        id: "pkg-3",
-        packageCode: "PKG-003",
-        name: "Workforce & Labor Package",
-        servicesIncluded: 8,
-        billingCycle: "Quarterly",
-        price: 4500,
-        status: "active",
-    },
-    {
-        id: "pkg-4",
-        packageCode: "PKG-004",
-        name: "Licensing & Permits Essentials",
-        servicesIncluded: 5,
-        billingCycle: "Monthly",
-        price: 1500,
-        status: "active",
-    },
-];
 
 export const ServicePackagesTab: React.FC = () => {
     const { t } = useTranslation();
-    const [packages, setPackages] = useState<ServicePackageItem[]>(defaultPackages);
+    const queryClient = useQueryClient();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const { data: packagesResponse, isLoading: isLoadingPackages, isError: isPackagesError, refetch } = useQuery({
+        queryKey: ["service-packages"],
+        queryFn: async () => {
+            const data = await serviceApi.getServicePackages({
+                search: searchTerm,
+                page: pageIndex + 1,
+                limit: pageSize,
+            })
+            return data?.data
+        }
+    });
+
+    const packages: ServicePackageItem[] = useMemo(() => {
+        const response = packagesResponse as any;
+        const data = Array.isArray(response) ? response : response?.data || response?.items || response?.results || [];
+        console.log('data', data);
+
+        return data.map((item: any) => ({
+            id: item.id,
+            packageCode: item.packageCode || item.package_code || item.code || "",
+            name: item.name || item.package_name || "",
+            servicesIncluded: item.serviceGroups?.length ?? 0,
+            billingCycle: item.billingCycle || item.billing_cycle || "Annual",
+            price: Number(item.price ?? item.unit_price ?? 0),
+            status: String(item.status || "active").toLowerCase() === "inactive" ? "inactive" : "active",
+        }));
+    }, [packagesResponse]);
+
     const filtered = useMemo(() => {
-        if (!searchTerm) return packages;
-        const term = searchTerm.toLowerCase();
-        return packages.filter(
-            (p) =>
-                p.name.toLowerCase().includes(term) ||
-                t(`packages.packageOptions.${p.name}`, { defaultValue: p.name }).toLowerCase().includes(term) ||
-                p.packageCode.toLowerCase().includes(term)
+        if (!searchTerm.trim()) return packages;
+
+        const term = searchTerm.toLowerCase().trim();
+
+        return packages.filter((p) =>
+            p.name.toLowerCase().includes(term) ||
+            t(`packages.packageOptions.${p.name}`, { defaultValue: p.name }).toLowerCase().includes(term) ||
+            p.packageCode.toLowerCase().includes(term)
         );
     }, [packages, searchTerm, t]);
 
-    const handleCreatePackage = (dto: CreateServicePackageDto) => {
-        const nextCodeNum = packages.length + 1;
-        const newPackage: ServicePackageItem = {
-            id: `pkg-${Date.now()}`,
-            packageCode: `PKG-00${nextCodeNum}`,
-            name: dto.package_name,
-            servicesIncluded: 0,
-            billingCycle: "Annual",
-            price: dto.unit_price,
-            status: (dto.status?.toLowerCase() as 'active' | 'inactive') || 'active',
-        };
+    const handleCreatePackage = async (dto: CreateServicePackageDto) => {
+        try {
 
-        setPackages((prev) => [newPackage, ...prev]);
-        toast.success(
-            t("packages.messages.created", {
-                name: t(`packages.packageOptions.${dto.package_name}`, { defaultValue: dto.package_name }),
-            })
-        );
-        setIsModalOpen(false);
+            await serviceApi.createServicePackage(dto);
+
+            await queryClient.invalidateQueries({ queryKey: ["service-packages"] });
+
+            toast.success(
+                t("packages.messages.created", {
+                    name: t(`packages.packageOptions.${dto.package_name}`, {
+                        defaultValue: dto.package_name,
+                    }),
+                })
+            );
+
+            setIsModalOpen(false);
+        } catch (error: any) {
+            const message = error?.response?.data?.message;
+
+            toast.error(
+                Array.isArray(message)
+                    ? message.join(", ")
+                    : message || t("common.somethingWentWrong", { defaultValue: "Something went wrong" })
+            );
+        }
     };
 
     const columns = useMemo<ColumnDef<any, any>[]>(
@@ -130,6 +129,7 @@ export const ServicePackagesTab: React.FC = () => {
                 header: t("packages.packageName"),
                 cell: (info) => {
                     const rawName = info.getValue() as string;
+
                     return (
                         <span className="font-medium text-[#0D0D0D]">
                             {t(`packages.packageOptions.${rawName}`, { defaultValue: rawName })}
@@ -151,6 +151,7 @@ export const ServicePackagesTab: React.FC = () => {
                 header: t("packages.billingCycle"),
                 cell: (info) => {
                     const val = String(info.getValue() || "");
+
                     return t(`services.${val.toLowerCase()}`, { defaultValue: val });
                 },
             },
@@ -167,7 +168,8 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "status",
                 header: t("common.status"),
                 cell: ({ row }) => {
-                    const isPkgActive = row.original.status !== "inactive";
+                    const isPkgActive = true;
+
                     return (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
@@ -186,18 +188,36 @@ export const ServicePackagesTab: React.FC = () => {
                 columns={columns}
                 data={filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
                 count={filtered.length}
-                loading={false}
+                loading={isLoadingPackages}
                 searchPlaceholder={t("pages.servicePackages.searchPlaceholder")}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={setPageIndex}
                 onPageSizeChange={setPageSize}
                 searchValue={searchTerm}
-                onSearchChange={setSearchTerm}
+                onSearchChange={(value) => {
+                    setSearchTerm(value);
+                    setPageIndex(0);
+                }}
                 onAddNew={() => setIsModalOpen(true)}
                 title="Service Packages"
                 addNewLabel={t("pages.servicePackages.addLabel")}
             />
+
+            {isPackagesError && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                    <span className="text-xs text-[#B83232]">
+                        {t("common.somethingWentWrong", { defaultValue: "Failed to load service packages" })}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className="text-xs font-medium text-[#2D3F2C] underline"
+                    >
+                        {t("common.retry", { defaultValue: "Retry" })}
+                    </button>
+                </div>
+            )}
 
             <AddServicePackageModal
                 isOpen={isModalOpen}

@@ -1,8 +1,7 @@
 export enum GroupType {
-    EMPLOYEE = 'EMPLOYEE',
-    BUSINESS = 'BUSINESS',
-    ASSET = 'ASSET',
-    INDIVIDUAL = 'INDIVIDUAL',
+    EMPLOYEE = 'employee',
+    BUSINESS = 'business',
+    ASSETS = 'assets',
 }
 
 export enum BoardingType {
@@ -13,10 +12,10 @@ export enum BoardingType {
 }
 
 export enum ServiceTagStatus {
-    ACTIVE = 'ACTIVE',
-    INACTIVE = 'INACTIVE',
-    INITIATED = 'INITIATED',
-    REJECTED = 'REJECTED',
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+    INITIATED = 'initiated',
+    REJECTED = 'rejected',
 }
 
 export interface ServiceOption {

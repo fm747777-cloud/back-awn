@@ -56,6 +56,8 @@ export const LoginPage = () => {
             toast.success(t('login.welcomeBack', { name: userProfile.fullName }));
             navigate('/service');
         } catch (error: unknown) {
+            console.log('error', error);
+
             const err = error as { response?: { data?: { message?: string | string[] } } };
             const errorMessage =
                 err.response?.data?.message ||
@@ -101,11 +103,10 @@ export const LoginPage = () => {
                             type="button"
                             onClick={() => setLanguage('en')}
                             aria-pressed={!isAr}
-                            className={`px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all cursor-pointer leading-none ${
-                                !isAr
-                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
-                                    : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
-                            }`}
+                            className={`px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all cursor-pointer leading-none ${!isAr
+                                ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
+                                }`}
                         >
                             EN
                         </button>
@@ -113,11 +114,10 @@ export const LoginPage = () => {
                             type="button"
                             onClick={() => setLanguage('ar')}
                             aria-pressed={isAr}
-                            className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer leading-none ${
-                                isAr
-                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
-                                    : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
-                            }`}
+                            className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer leading-none ${isAr
+                                ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
+                                }`}
                         >
                             عربي
                         </button>
@@ -156,11 +156,10 @@ export const LoginPage = () => {
                                         dir="ltr"
                                         placeholder="admin@awn.sa"
                                         {...register('email')}
-                                        className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${
-                                            errors.email
-                                                ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
-                                                : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
-                                        }`}
+                                        className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${errors.email
+                                            ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
+                                            : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
+                                            }`}
                                     />
                                 </div>
                                 {errors.email && (
@@ -190,11 +189,10 @@ export const LoginPage = () => {
                                         dir="ltr"
                                         placeholder="••••••••"
                                         {...register('password')}
-                                        className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${
-                                            errors.password
-                                                ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
-                                                : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
-                                        }`}
+                                        className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${errors.password
+                                            ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
+                                            : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
+                                            }`}
                                     />
                                 </div>
                                 {errors.password && (

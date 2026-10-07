@@ -120,6 +120,7 @@ export const serviceTagSchema = z.object({
 export type ServiceTagFormValues = z.infer<typeof serviceTagSchema>;
 
 export interface CreateServicePackageDto {
+    service_group_ids: string[]
     package_name: string;
     unit_price: number;
     group_type?: GroupType;
@@ -129,7 +130,7 @@ export interface CreateServicePackageDto {
 
 export const servicePackageSchema = z.object({
     group_type: z.nativeEnum(GroupType),
-    service_group_id: z.string().trim().min(1, 'Please select a service group'),
+    service_group_ids: z.array(z.string().uuid()).min(1, 'Please select at least one service group'),
     package_name: z.string().trim().min(1, 'Package Name is required'),
     unit_price: z.number().min(0, 'Unit price cannot be negative'),
     description: z.string().optional(),

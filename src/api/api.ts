@@ -625,16 +625,16 @@ export const serviceApi = {
             const search = (data?.search || '').toLowerCase().trim();
             const filtered = search
                 ? list.filter((item: any) => {
-                      const mapped = mapServiceItem(item);
-                      return (
-                          String(mapped.title || '').toLowerCase().includes(search) ||
-                          String(mapped.code || '').toLowerCase().includes(search) ||
-                          String(mapped.portal || '').toLowerCase().includes(search) ||
-                          String(mapped.category || '').toLowerCase().includes(search) ||
-                          String(mapped.type || '').toLowerCase().includes(search) ||
-                          String(mapped.tags || '').toLowerCase().includes(search)
-                      );
-                  })
+                    const mapped = mapServiceItem(item);
+                    return (
+                        String(mapped.title || '').toLowerCase().includes(search) ||
+                        String(mapped.code || '').toLowerCase().includes(search) ||
+                        String(mapped.portal || '').toLowerCase().includes(search) ||
+                        String(mapped.category || '').toLowerCase().includes(search) ||
+                        String(mapped.type || '').toLowerCase().includes(search) ||
+                        String(mapped.tags || '').toLowerCase().includes(search)
+                    );
+                })
                 : list;
 
             const page = Number(data?.page || 1);
@@ -695,12 +695,12 @@ export const serviceApi = {
                 serviceCategory: matchedCategory ? { id: matchedCategory.id, name: matchedCategory.name } : undefined,
                 serviceType: matchedType
                     ? {
-                          id: matchedType.id,
-                          name: matchedType.name,
-                          serviceCategory: matchedCategory
-                              ? { id: matchedCategory.id, name: matchedCategory.name }
-                              : matchedType.serviceCategory,
-                      }
+                        id: matchedType.id,
+                        name: matchedType.name,
+                        serviceCategory: matchedCategory
+                            ? { id: matchedCategory.id, name: matchedCategory.name }
+                            : matchedType.serviceCategory,
+                    }
                     : undefined,
                 serviceTag: matchedTag ? { id: matchedTag.id, name: matchedTag.name } : undefined,
                 servicePayment: {
@@ -754,12 +754,12 @@ export const serviceApi = {
                         : item.serviceCategory,
                     serviceType: matchedType
                         ? {
-                              id: matchedType.id,
-                              name: matchedType.name,
-                              serviceCategory: matchedCategory
-                                  ? { id: matchedCategory.id, name: matchedCategory.name }
-                                  : matchedType.serviceCategory,
-                          }
+                            id: matchedType.id,
+                            name: matchedType.name,
+                            serviceCategory: matchedCategory
+                                ? { id: matchedCategory.id, name: matchedCategory.name }
+                                : matchedType.serviceCategory,
+                        }
                         : item.serviceType,
                     serviceTag: matchedTag ? { id: matchedTag.id, name: matchedTag.name } : item.serviceTag,
                     servicePayment: {
@@ -1142,5 +1142,118 @@ export const serviceApi = {
         const updated = list.filter((t: any) => t.id !== id);
         setLocal('types', updated);
         return { success: true };
+    },
+
+    getServiceGroup: async (data: any = {}) => {
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service-group', { params: data });
+                return response.data;
+            } catch {
+                // Fallback
+            }
+        }
+
+        const list = getLocal('types', initialTypes);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    item.name.toLowerCase().includes(search) ||
+                    item.typeCode.toLowerCase().includes(search) ||
+                    (item.serviceCategory?.name && item.serviceCategory.name.toLowerCase().includes(search))
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || 10);
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
+        return {
+            data: paged,
+            count: filtered.length,
+            total: filtered.length,
+        };
+    },
+
+    createServiceGroup: async (data: any) => {
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service-group', data);
+                return response.data;
+            } catch {
+                // Fallback
+            }
+        }
+
+        const list = getLocal('types', initialTypes);
+        const categories = getLocal('categories', initialCategories);
+        const cat = categories.find((c) => c.id === data.serviceCategory_id);
+
+        const existingIdx = data.id ? list.findIndex((t: any) => t.id === data.id) : -1;
+        if (existingIdx >= 0) {
+            const updatedType = {
+                ...list[existingIdx],
+                name: data.name ?? list[existingIdx].name,
+                serviceCategory: cat ? { id: cat.id, name: cat.name } : list[existingIdx].serviceCategory,
+                description: data.description ?? list[existingIdx].description,
+                status: data.status ?? list[existingIdx].status,
+            };
+            const updated = [...list];
+            updated[existingIdx] = updatedType;
+            setLocal('types', updated);
+            return updatedType;
+        }
+
+        const newType = {
+            id: `typ-${Date.now()}`,
+            typeCode: `TYP-${String(list.length + 1).padStart(3, '0')}`,
+            name: data.name,
+            serviceCategory: cat ? { id: cat.id, name: cat.name } : undefined,
+            description: data.description || '',
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Karim Wagdi',
+            status: data.status || 'active',
+        };
+        const updated = [newType, ...list];
+        setLocal('types', updated);
+        return newType;
+    },
+
+    deleteServiceGroup: async (id: string) => {
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-group/${id}`);
+            } catch {
+                // Fallback
+            }
+        }
+        const list = getLocal('types', initialTypes);
+        const updated = list.filter((t: any) => t.id !== id);
+        setLocal('types', updated);
+        return { success: true };
+    },
+
+    getServicePackages: async (data: any = {}) => {
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service-package', { params: data });
+                return response.data;
+            } catch {
+                // Fallback
+            }
+        }
+    },
+
+    createServicePackage: async (data: any) => {
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service-package', data);
+                return response.data;
+            } catch {
+                // Fallback
+            }
+        }
     },
 };
