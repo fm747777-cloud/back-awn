@@ -1,6 +1,18 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    Legend,
+} from 'recharts';
 import {
     ClipboardList,
     UserCheck,
@@ -10,80 +22,329 @@ import {
     CheckSquare,
     Building2,
     Layers,
-    Users,
+    PieChart as PieChartIcon,
     AlertTriangle,
-    ArrowRight,
+    Users,
     Activity,
+    Award,
+    Calendar,
 } from 'lucide-react';
-import {
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-} from 'recharts';
-import {
-    loadRequests,
-    loadOperationalTasks,
-    REQUEST_COMPANIES,
-    REQUEST_SERVICE_GROUPS,
-    REQUEST_RESOURCES,
-    type ServiceRequestRecord,
-    type OperationalTaskRecord,
-    type RequestPriority,
-    type RequestAssignmentStatus,
-    type RequestExecutionStatus,
-} from './requestMockData';
 
-const ASSIGNMENT_COLORS: Record<RequestAssignmentStatus, string> = {
-    Assigned: '#2D3F2C',
-    Unassigned: '#B87D14',
-    Completed: '#265938',
-    Rejected: '#A23B2A',
-};
+interface BusinessVolumeRecord {
+    id: string;
+    nameEn: string;
+    nameAr: string;
+    shortEn: string;
+    shortAr: string;
+    requestsCount: number;
+    color: string;
+}
 
-const PRIORITY_COLORS: Record<RequestPriority, string> = {
-    Low: '#6A7358',
-    Medium: '#BFAB93',
-    High: '#B87D14',
-    Critical: '#A23B2A',
-};
+interface ServiceGroupVolumeRecord {
+    id: string;
+    nameEn: string;
+    nameAr: string;
+    shortEn: string;
+    shortAr: string;
+    requestsCount: number;
+    color: string;
+}
 
-const EXECUTION_COLORS: Record<RequestExecutionStatus, string> = {
-    Initiated: '#857E74',
-    'In Progress': '#2D3F2C',
-    'Under Review': '#B87D14',
-    Completed: '#265938',
-    Rejected: '#A23B2A',
-};
+interface ResourceAssignmentRecord {
+    id: string;
+    nameEn: string;
+    nameAr: string;
+    shortEn: string;
+    shortAr: string;
+    roleEn: string;
+    roleAr: string;
+    assignedCount: number;
+    completedCount: number;
+}
 
-const BUSINESS_BAR_COLORS = ['#2D3F2C', '#3F5E4D', '#6A7358', '#8C6046', '#BFAB93', '#595550'];
+interface OperationalUnitPerformanceRecord {
+    id: string;
+    unitEn: string;
+    unitAr: string;
+    shortEn: string;
+    shortAr: string;
+    completedRequests: number;
+    activeTasks: number;
+    slaCompliance: number;
+    avgTurnaroundDays: number;
+}
+
+const REQUEST_DASHBOARD_TOTAL = 148;
+const REQUEST_DASHBOARD_ASSIGNED = 52;
+const REQUEST_DASHBOARD_UNASSIGNED = 14;
+const REQUEST_DASHBOARD_COMPLETED = 71;
+const REQUEST_DASHBOARD_REJECTED = 11;
+const REQUEST_DASHBOARD_ACTIVE_TASKS = 64;
+
+const DEMO_BUSINESS_VOLUME: BusinessVolumeRecord[] = [
+    {
+        id: 'biz-wataniya',
+        nameEn: 'Al-Wataniya Logistics',
+        nameAr: 'الشركة الوطنية للخدمات اللوجستية',
+        shortEn: 'Al-Wataniya',
+        shortAr: 'الوطنية اللوجستية',
+        requestsCount: 36,
+        color: '#2D3F2C',
+    },
+    {
+        id: 'biz-riyadh-tech',
+        nameEn: 'Riyadh Tech Solutions',
+        nameAr: 'حلول الرياض التقنية',
+        shortEn: 'Riyadh Tech',
+        shortAr: 'حلول الرياض',
+        requestsCount: 29,
+        color: '#265938',
+    },
+    {
+        id: 'biz-saudi-gulf',
+        nameEn: 'Saudi Gulf Enterprises',
+        nameAr: 'مشاريع الخليج السعودية',
+        shortEn: 'Saudi Gulf',
+        shortAr: 'مشاريع الخليج',
+        requestsCount: 26,
+        color: '#6A7358',
+    },
+    {
+        id: 'biz-najd',
+        nameEn: 'Najd Construction Co.',
+        nameAr: 'شركة نجد للإنشاءات',
+        shortEn: 'Najd Const.',
+        shortAr: 'نجد للإنشاءات',
+        requestsCount: 23,
+        color: '#8C6046',
+    },
+    {
+        id: 'biz-alfaisal',
+        nameEn: 'Al-Faisal Medical Group',
+        nameAr: 'مجموعة الفيصل الطبية',
+        shortEn: 'Al-Faisal Med',
+        shortAr: 'مجموعة الفيصل',
+        requestsCount: 19,
+        color: '#857E74',
+    },
+    {
+        id: 'biz-red-sea',
+        nameEn: 'Red Sea Industrial Services',
+        nameAr: 'خدمات البحر الأحمر الصناعية',
+        shortEn: 'Red Sea Ind.',
+        shortAr: 'البحر الأحمر',
+        requestsCount: 15,
+        color: '#BFAB93',
+    },
+];
+
+const DEMO_SERVICE_GROUPS: ServiceGroupVolumeRecord[] = [
+    {
+        id: 'sg-gro',
+        nameEn: 'Government Relations & GRO',
+        nameAr: 'العلاقات الحكومية والتعقيب',
+        shortEn: 'Gov Relations',
+        shortAr: 'العلاقات الحكومية',
+        requestsCount: 38,
+        color: '#2D3F2C',
+    },
+    {
+        id: 'sg-hr',
+        nameEn: 'HR & Personnel Services',
+        nameAr: 'خدمات الموارد البشرية وشؤون الموظفين',
+        shortEn: 'HR Services',
+        shortAr: 'الموارد البشرية',
+        requestsCount: 31,
+        color: '#265938',
+    },
+    {
+        id: 'sg-visa',
+        nameEn: 'Visa & Residency Services',
+        nameAr: 'خدمات التأشيرات والإقامات',
+        shortEn: 'Visa & Iqama',
+        shortAr: 'التأشيرات والإقامات',
+        requestsCount: 27,
+        color: '#6A7358',
+    },
+    {
+        id: 'sg-legal',
+        nameEn: 'Legal & Corporate Compliance',
+        nameAr: 'الشؤون القانونية والامتثال المؤسسي',
+        shortEn: 'Legal & Comp.',
+        shortAr: 'الشؤون القانونية',
+        requestsCount: 21,
+        color: '#8C6046',
+    },
+    {
+        id: 'sg-finance',
+        nameEn: 'Financial & Payroll Operations',
+        nameAr: 'العمليات المالية والرواتب',
+        shortEn: 'Finance & Pay',
+        shortAr: 'المالية والرواتب',
+        requestsCount: 18,
+        color: '#857E74',
+    },
+    {
+        id: 'sg-facility',
+        nameEn: 'Facility & Fleet Operations',
+        nameAr: 'إدارة المرافق والأسطول',
+        shortEn: 'Facility & Fleet',
+        shortAr: 'المرافق والأسطول',
+        requestsCount: 13,
+        color: '#BFAB93',
+    },
+];
+
+const DEMO_RESOURCE_ASSIGNMENTS: ResourceAssignmentRecord[] = [
+    {
+        id: 'res-fahad',
+        nameEn: 'Fahad Al-Otaibi',
+        nameAr: 'فهد العتيبي',
+        shortEn: 'F. Al-Otaibi',
+        shortAr: 'فهد العتيبي',
+        roleEn: 'Senior GRO Specialist',
+        roleAr: 'أخصائي أول علاقات حكومية',
+        assignedCount: 11,
+        completedCount: 16,
+    },
+    {
+        id: 'res-sara',
+        nameEn: 'Sara Al-Qahtani',
+        nameAr: 'سارة القحطاني',
+        shortEn: 'S. Al-Qahtani',
+        shortAr: 'سارة القحطاني',
+        roleEn: 'HR Operations Lead',
+        roleAr: 'قائد عمليات الموارد البشرية',
+        assignedCount: 10,
+        completedCount: 15,
+    },
+    {
+        id: 'res-abdullah',
+        nameEn: 'Abdullah Al-Shehri',
+        nameAr: 'عبدالله الشهري',
+        shortEn: 'A. Al-Shehri',
+        shortAr: 'عبدالله الشهري',
+        roleEn: 'Compliance & Legal Officer',
+        roleAr: 'مسؤول الامتثال والشؤون القانونية',
+        assignedCount: 9,
+        completedCount: 13,
+    },
+    {
+        id: 'res-noura',
+        nameEn: 'Noura Al-Dosari',
+        nameAr: 'نورة الدوسري',
+        shortEn: 'N. Al-Dosari',
+        shortAr: 'نورة الدوسري',
+        roleEn: 'Visa & Residency Specialist',
+        roleAr: 'أخصائية التأشيرات والإقامات',
+        assignedCount: 8,
+        completedCount: 11,
+    },
+    {
+        id: 'res-khalid',
+        nameEn: 'Khalid Al-Harbi',
+        nameAr: 'خالد الحربي',
+        shortEn: 'K. Al-Harbi',
+        shortAr: 'خالد الحربي',
+        roleEn: 'Corporate Services Coordinator',
+        roleAr: 'منسق الخدمات المؤسسية',
+        assignedCount: 8,
+        completedCount: 9,
+    },
+    {
+        id: 'res-maha',
+        nameEn: 'Maha Al-Ghamdi',
+        nameAr: 'مها الغامدي',
+        shortEn: 'M. Al-Ghamdi',
+        shortAr: 'مها الغامدي',
+        roleEn: 'Financial Operations Analyst',
+        roleAr: 'محللة العمليات المالية',
+        assignedCount: 6,
+        completedCount: 7,
+    },
+];
+
+const DEMO_TEAM_PERFORMANCE: OperationalUnitPerformanceRecord[] = [
+    {
+        id: 'unit-gro',
+        unitEn: 'Government Relations Unit',
+        unitAr: 'وحدة العلاقات الحكومية',
+        shortEn: 'Gov Relations',
+        shortAr: 'العلاقات الحكومية',
+        completedRequests: 24,
+        activeTasks: 18,
+        slaCompliance: 94,
+        avgTurnaroundDays: 1.6,
+    },
+    {
+        id: 'unit-hr',
+        unitEn: 'HR & Onboarding Unit',
+        unitAr: 'وحدة الموارد البشرية والتعيين',
+        shortEn: 'HR & Onboarding',
+        shortAr: 'الموارد البشرية',
+        completedRequests: 19,
+        activeTasks: 15,
+        slaCompliance: 92,
+        avgTurnaroundDays: 1.8,
+    },
+    {
+        id: 'unit-visa',
+        unitEn: 'Visa & Residency Unit',
+        unitAr: 'وحدة التأشيرات والإقامات',
+        shortEn: 'Visa & Residency',
+        shortAr: 'التأشيرات والإقامات',
+        completedRequests: 14,
+        activeTasks: 13,
+        slaCompliance: 89,
+        avgTurnaroundDays: 2.3,
+    },
+    {
+        id: 'unit-legal',
+        unitEn: 'Legal & Licensing Unit',
+        unitAr: 'وحدة التراخيص والشؤون القانونية',
+        shortEn: 'Legal & Licensing',
+        shortAr: 'التراخيص والقانونية',
+        completedRequests: 8,
+        activeTasks: 10,
+        slaCompliance: 91,
+        avgTurnaroundDays: 2.1,
+    },
+    {
+        id: 'unit-finance',
+        unitEn: 'Finance & Admin Unit',
+        unitAr: 'وحدة العمليات المالية والإدارية',
+        shortEn: 'Finance & Admin',
+        shortAr: 'المالية والإدارية',
+        completedRequests: 6,
+        activeTasks: 8,
+        slaCompliance: 96,
+        avgTurnaroundDays: 1.4,
+    },
+];
 
 function useChartContainerWidth(defaultWidth = 520) {
+    const safeDefault =
+        Number.isFinite(defaultWidth) && defaultWidth > 0 ? defaultWidth : 520;
     const ref = useRef<HTMLDivElement | null>(null);
-    const [width, setWidth] = useState<number>(defaultWidth);
+    const [width, setWidth] = useState<number>(safeDefault);
 
     useEffect(() => {
         const el = ref.current;
         if (!el) return;
 
-        const update = () => {
-            const measured = Math.floor(el.getBoundingClientRect().width);
-            if (measured > 0) {
-                setWidth(measured);
+        const updateWidth = () => {
+            const rawWidth = el.getBoundingClientRect().width;
+            const nextWidth = Math.round(rawWidth);
+            if (Number.isFinite(nextWidth) && nextWidth > 0) {
+                setWidth(nextWidth);
             }
         };
 
-        update();
-        const rafId = window.requestAnimationFrame(update);
+        updateWidth();
+        const rafId = window.requestAnimationFrame(updateWidth);
 
         if (typeof ResizeObserver !== 'undefined') {
-            const observer = new ResizeObserver(() => update());
+            const observer = new ResizeObserver(() => updateWidth());
             observer.observe(el);
             return () => {
                 window.cancelAnimationFrame(rafId);
@@ -94,207 +355,290 @@ function useChartContainerWidth(defaultWidth = 520) {
         return () => window.cancelAnimationFrame(rafId);
     }, []);
 
-    return [ref, width] as const;
+    const safeWidth = Number.isFinite(width) && width > 0 ? width : safeDefault;
+    return [ref, safeWidth] as const;
 }
 
 export const RequestDashboardPage: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const navigate = useNavigate();
-    const isAr = Boolean(i18n.language?.startsWith('ar'));
-
-    const [requests, setRequests] = useState<ServiceRequestRecord[]>(() => loadRequests());
-    const [tasks, setTasks] = useState<OperationalTaskRecord[]>(() => loadOperationalTasks());
+    const isAr = i18n.language?.startsWith('ar');
 
     const [businessChartRef, businessChartWidth] = useChartContainerWidth(520);
-    const [groupChartRef, groupChartWidth] = useChartContainerWidth(520);
-    const [assignmentPieRef, assignmentPieWidth] = useChartContainerWidth(230);
-    const [priorityPieRef, priorityPieWidth] = useChartContainerWidth(230);
+    const [serviceGroupChartRef, serviceGroupChartWidth] = useChartContainerWidth(520);
+    const [priorityChartRef, priorityChartWidth] = useChartContainerWidth(520);
     const [resourceChartRef, resourceChartWidth] = useChartContainerWidth(520);
     const [executionChartRef, executionChartWidth] = useChartContainerWidth(520);
+    const [teamPerfChartRef, teamPerfChartWidth] = useChartContainerWidth(880);
 
-    useEffect(() => {
-        const refresh = () => {
-            setRequests(loadRequests());
-            setTasks(loadOperationalTasks());
-        };
-        refresh();
-        window.addEventListener('storage', refresh);
-        window.addEventListener('focus', refresh);
-        return () => {
-            window.removeEventListener('storage', refresh);
-            window.removeEventListener('focus', refresh);
-        };
-    }, []);
+    const safePct = (count: number, total = REQUEST_DASHBOARD_TOTAL): string => {
+        if (!Number.isFinite(count) || !Number.isFinite(total) || total <= 0) {
+            return '0.0';
+        }
+        return ((count / total) * 100).toFixed(1);
+    };
 
-    // --- KPI Metrics ---
-    const kpis = useMemo(() => {
-        const total = requests.length;
-        const assigned = requests.filter((r) => r.assignmentStatus === 'Assigned').length;
-        const unassigned = requests.filter((r) => r.assignmentStatus === 'Unassigned').length;
-        const completed = requests.filter((r) => r.assignmentStatus === 'Completed').length;
-        const rejected = requests.filter((r) => r.assignmentStatus === 'Rejected').length;
-        const activeTasks = tasks.filter(
-            (tsk) => tsk.status === 'Pending' || tsk.status === 'In Progress' || tsk.status === 'Blocked'
-        ).length;
+    const currentMonthYearLabel = useMemo(() => {
+        try {
+            return new Intl.DateTimeFormat(isAr ? 'ar-SA-u-ca-gregory' : 'en-US', {
+                month: 'long',
+                year: 'numeric',
+            }).format(new Date());
+        } catch {
+            return new Date().toISOString().slice(0, 7);
+        }
+    }, [isAr]);
 
-        return { total, assigned, unassigned, completed, rejected, activeTasks };
-    }, [requests, tasks]);
+    // --- KPI Cards ---
+    const kpiCards = useMemo(
+        () => [
+            {
+                key: 'totalRequests',
+                title: t('request.dashboard.kpis.totalRequests'),
+                desc: t('request.dashboard.kpis.totalRequestsDesc'),
+                count: REQUEST_DASHBOARD_TOTAL,
+                percent: '100%',
+                icon: ClipboardList,
+                accentClass: 'bg-[#2D3F2C]/10 border-[#2D3F2C]/20 text-[#2D3F2C]',
+                badgeClass: 'bg-[#2D3F2C]/10 text-[#2D3F2C]',
+            },
+            {
+                key: 'assigned',
+                title: t('request.dashboard.kpis.assigned'),
+                desc: t('request.dashboard.kpis.assignedDesc'),
+                count: REQUEST_DASHBOARD_ASSIGNED,
+                percent: `${safePct(REQUEST_DASHBOARD_ASSIGNED)}%`,
+                icon: UserCheck,
+                accentClass: 'bg-[#265938]/10 border-[#265938]/20 text-[#265938]',
+                badgeClass: 'bg-[#265938]/10 text-[#265938]',
+            },
+            {
+                key: 'unassigned',
+                title: t('request.dashboard.kpis.unassigned'),
+                desc: t('request.dashboard.kpis.unassignedDesc'),
+                count: REQUEST_DASHBOARD_UNASSIGNED,
+                percent: `${safePct(REQUEST_DASHBOARD_UNASSIGNED)}%`,
+                icon: UserX,
+                accentClass: 'bg-[#BFAB93]/25 border-[#BFAB93]/40 text-[#595550]',
+                badgeClass: 'bg-[#FAF8F5] text-[#595550] border border-[#E5E0D8]',
+            },
+            {
+                key: 'completed',
+                title: t('request.dashboard.kpis.completed'),
+                desc: t('request.dashboard.kpis.completedDesc'),
+                count: REQUEST_DASHBOARD_COMPLETED,
+                percent: `${safePct(REQUEST_DASHBOARD_COMPLETED)}%`,
+                icon: CheckCircle2,
+                accentClass: 'bg-[#6A7358]/15 border-[#6A7358]/25 text-[#2D3F2C]',
+                badgeClass: 'bg-[#6A7358]/15 text-[#2D3F2C]',
+            },
+            {
+                key: 'rejected',
+                title: t('request.dashboard.kpis.rejected'),
+                desc: t('request.dashboard.kpis.rejectedDesc'),
+                count: REQUEST_DASHBOARD_REJECTED,
+                percent: `${safePct(REQUEST_DASHBOARD_REJECTED)}%`,
+                icon: XCircle,
+                accentClass: 'bg-[#8C6046]/10 border-[#8C6046]/20 text-[#8C6046]',
+                badgeClass: 'bg-[#8C6046]/10 text-[#8C6046]',
+            },
+            {
+                key: 'activeOperationalTasks',
+                title: t('request.dashboard.kpis.activeOperationalTasks'),
+                desc: t('request.dashboard.kpis.activeOperationalTasksDesc'),
+                count: REQUEST_DASHBOARD_ACTIVE_TASKS,
+                percent: `${safePct(REQUEST_DASHBOARD_ACTIVE_TASKS)}%`,
+                icon: CheckSquare,
+                accentClass: 'bg-[#857E74]/15 border-[#857E74]/30 text-[#595550]',
+                badgeClass: 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]',
+            },
+        ],
+        [t]
+    );
 
-    // --- 1. Requests Volume Per Business ---
+    // --- Section 1: Requests Volume Per Business ---
     const businessVolumeData = useMemo(() => {
-        const total = requests.length;
-        return REQUEST_COMPANIES.map((comp, idx) => {
-            const count = requests.filter((r) => r.companyId === comp.id).length;
-            const fullName = isAr ? comp.nameAr : comp.nameEn;
-            const shortName = isAr
-                ? comp.nameAr.replace('شركة ', '').replace('مجموعة ', '').replace('مؤسسة ', '').split(' ').slice(0, 2).join(' ')
-                : comp.nameEn.split(' ').slice(0, 2).join(' ');
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            return {
-                id: comp.id,
-                name: shortName,
-                fullName,
-                count,
-                percentage,
-                color: BUSINESS_BAR_COLORS[idx % BUSINESS_BAR_COLORS.length],
-            };
-        });
-    }, [requests, isAr]);
+        return DEMO_BUSINESS_VOLUME.map((item) => ({
+            id: item.id,
+            name: isAr ? item.shortAr : item.shortEn,
+            fullName: isAr ? item.nameAr : item.nameEn,
+            count: item.requestsCount,
+            percent: safePct(item.requestsCount),
+            color: item.color,
+        }));
+    }, [isAr]);
 
-    // --- 2. Requests By Service Groups ---
+    // --- Section 2: Requests By Service Groups ---
     const serviceGroupData = useMemo(() => {
-        const total = requests.length;
-        return REQUEST_SERVICE_GROUPS.map((grp) => {
-            const count = requests.filter((r) => r.serviceGroupId === grp.id).length;
-            const fullName = isAr ? grp.nameAr : grp.nameEn;
-            const shortName = isAr
-                ? grp.nameAr.split(' ').slice(0, 2).join(' ')
-                : grp.nameEn.split(' ').slice(0, 2).join(' ');
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            return {
-                id: grp.id,
-                code: grp.code,
-                name: shortName,
-                fullName,
-                count,
-                percentage,
-                color: grp.color,
-            };
-        });
-    }, [requests, isAr]);
+        return DEMO_SERVICE_GROUPS.map((item) => ({
+            id: item.id,
+            name: isAr ? item.shortAr : item.shortEn,
+            fullName: isAr ? item.nameAr : item.nameEn,
+            count: item.requestsCount,
+            percent: safePct(item.requestsCount),
+            color: item.color,
+        }));
+    }, [isAr]);
 
-    // --- 3. Requests Assignment Distribution ---
-    const assignmentData = useMemo(() => {
-        const statuses: RequestAssignmentStatus[] = [
-            'Assigned',
-            'Unassigned',
-            'Completed',
-            'Rejected',
-        ];
-        const total = requests.length;
-        return statuses.map((status) => {
-            const count = requests.filter((r) => r.assignmentStatus === status).length;
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            const labelKeyMap: Record<RequestAssignmentStatus, string> = {
-                Assigned: 'request.assignmentStatuses.assigned',
-                Unassigned: 'request.assignmentStatuses.unassigned',
-                Completed: 'request.assignmentStatuses.completed',
-                Rejected: 'request.assignmentStatuses.rejected',
-            };
-            return {
-                key: status,
-                name: t(labelKeyMap[status]),
-                count,
-                percentage,
-                color: ASSIGNMENT_COLORS[status],
-            };
-        });
-    }, [requests, t]);
+    // --- Section 3: Requests Assignment ---
+    const assignmentData = useMemo(
+        () => [
+            {
+                key: 'completed',
+                name: t('request.dashboard.assignmentStatuses.completed'),
+                count: REQUEST_DASHBOARD_COMPLETED,
+                percent: safePct(REQUEST_DASHBOARD_COMPLETED),
+                color: '#2D3F2C',
+            },
+            {
+                key: 'assigned',
+                name: t('request.dashboard.assignmentStatuses.assigned'),
+                count: REQUEST_DASHBOARD_ASSIGNED,
+                percent: safePct(REQUEST_DASHBOARD_ASSIGNED),
+                color: '#265938',
+            },
+            {
+                key: 'unassigned',
+                name: t('request.dashboard.assignmentStatuses.unassigned'),
+                count: REQUEST_DASHBOARD_UNASSIGNED,
+                percent: safePct(REQUEST_DASHBOARD_UNASSIGNED),
+                color: '#BFAB93',
+            },
+            {
+                key: 'rejected',
+                name: t('request.dashboard.assignmentStatuses.rejected'),
+                count: REQUEST_DASHBOARD_REJECTED,
+                percent: safePct(REQUEST_DASHBOARD_REJECTED),
+                color: '#8C6046',
+            },
+        ],
+        [t]
+    );
 
-    // --- 4. Requests By Priority ---
-    const priorityData = useMemo(() => {
-        const priorities: RequestPriority[] = ['Low', 'Medium', 'High', 'Critical'];
-        const total = requests.length;
-        return priorities.map((priority) => {
-            const count = requests.filter((r) => r.priority === priority).length;
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            const labelKeyMap: Record<RequestPriority, string> = {
-                Low: 'request.priorities.low',
-                Medium: 'request.priorities.medium',
-                High: 'request.priorities.high',
-                Critical: 'request.priorities.critical',
-            };
-            return {
-                key: priority,
-                name: t(labelKeyMap[priority]),
-                count,
-                percentage,
-                color: PRIORITY_COLORS[priority],
-            };
-        });
-    }, [requests, t]);
+    // --- Section 4: Requests By Priority ---
+    const priorityData = useMemo(
+        () => [
+            {
+                key: 'low',
+                name: t('request.dashboard.priorities.low'),
+                count: 34,
+                percent: safePct(34),
+                color: '#857E74',
+            },
+            {
+                key: 'medium',
+                name: t('request.dashboard.priorities.medium'),
+                count: 58,
+                percent: safePct(58),
+                color: '#6A7358',
+            },
+            {
+                key: 'high',
+                name: t('request.dashboard.priorities.high'),
+                count: 39,
+                percent: safePct(39),
+                color: '#2D3F2C',
+            },
+            {
+                key: 'critical',
+                name: t('request.dashboard.priorities.critical'),
+                count: 17,
+                percent: safePct(17),
+                color: '#8C6046',
+            },
+        ],
+        [t]
+    );
 
-    // --- 5. Requests Assignment By Resource ---
-    const resourceData = useMemo(() => {
-        return REQUEST_RESOURCES.map((res, idx) => {
-            const assignedReqs = requests.filter((r) => r.assignedToId === res.id);
-            const count = assignedReqs.length;
-            const completedCount = assignedReqs.filter(
-                (r) => r.assignmentStatus === 'Completed' || r.executionStatus === 'Completed'
-            ).length;
-            const activeCount = assignedReqs.filter(
-                (r) => r.assignmentStatus === 'Assigned' && r.executionStatus !== 'Completed'
-            ).length;
-            const fullName = isAr ? res.nameAr : res.nameEn;
-            const shortName = fullName.split(' ')[0];
+    // --- Section 5: Requests Assignment By Resource ---
+    const resourceAssignmentData = useMemo(() => {
+        return DEMO_RESOURCE_ASSIGNMENTS.map((res) => {
+            const total = res.assignedCount + res.completedCount;
             return {
                 id: res.id,
-                name: shortName,
-                fullName,
+                name: isAr ? res.shortAr : res.shortEn,
+                fullName: isAr ? res.nameAr : res.nameEn,
                 role: isAr ? res.roleAr : res.roleEn,
-                count,
-                completedCount,
-                activeCount,
-                color: BUSINESS_BAR_COLORS[idx % BUSINESS_BAR_COLORS.length],
+                assigned: res.assignedCount,
+                completed: res.completedCount,
+                total,
+                percent: safePct(total, REQUEST_DASHBOARD_ASSIGNED + REQUEST_DASHBOARD_COMPLETED),
             };
         });
-    }, [requests, isAr]);
+    }, [isAr]);
 
-    // --- 6. Execution Status Overview ---
-    const executionData = useMemo(() => {
-        const statuses: RequestExecutionStatus[] = [
-            'Initiated',
-            'In Progress',
-            'Under Review',
-            'Completed',
-            'Rejected',
-        ];
-        const total = requests.length;
-        const labelKeyMap: Record<RequestExecutionStatus, string> = {
-            Initiated: 'request.executionStatuses.initiated',
-            'In Progress': 'request.executionStatuses.inProgress',
-            'Under Review': 'request.executionStatuses.underReview',
-            Completed: 'request.executionStatuses.completed',
-            Rejected: 'request.executionStatuses.rejected',
-        };
-        return statuses.map((st) => {
-            const count = requests.filter((r) => r.executionStatus === st).length;
-            const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-            return {
-                key: st,
-                name: t(labelKeyMap[st]),
-                count,
-                percentage,
-                color: EXECUTION_COLORS[st],
-            };
-        });
-    }, [requests, t]);
+    // --- Section 6: Execution Status of Requests ---
+    const executionStatusData = useMemo(
+        () => [
+            {
+                key: 'completedWithinSla',
+                name: t('request.dashboard.executionStatuses.completedWithinSla'),
+                count: 64,
+                percent: safePct(64),
+                color: '#2D3F2C',
+            },
+            {
+                key: 'inExecutionOnTrack',
+                name: t('request.dashboard.executionStatuses.inExecutionOnTrack'),
+                count: 38,
+                percent: safePct(38),
+                color: '#265938',
+            },
+            {
+                key: 'pendingExternalApproval',
+                name: t('request.dashboard.executionStatuses.pendingExternalApproval'),
+                count: 14,
+                percent: safePct(14),
+                color: '#6A7358',
+            },
+            {
+                key: 'awaitingAssignment',
+                name: t('request.dashboard.executionStatuses.awaitingAssignment'),
+                count: 14,
+                percent: safePct(14),
+                color: '#BFAB93',
+            },
+            {
+                key: 'rejectedReturned',
+                name: t('request.dashboard.executionStatuses.rejectedReturned'),
+                count: 11,
+                percent: safePct(11),
+                color: '#8C6046',
+            },
+            {
+                key: 'completedLate',
+                name: t('request.dashboard.executionStatuses.completedLate'),
+                count: 7,
+                percent: safePct(7),
+                color: '#857E74',
+            },
+        ],
+        [t]
+    );
+
+    // --- Section 7: Operations Team Performance ---
+    const teamPerformanceData = useMemo(() => {
+        return DEMO_TEAM_PERFORMANCE.map((unit) => ({
+            id: unit.id,
+            name: isAr ? unit.shortAr : unit.shortEn,
+            fullName: isAr ? unit.unitAr : unit.unitEn,
+            completedRequests: unit.completedRequests,
+            activeTasks: unit.activeTasks,
+            slaCompliance: unit.slaCompliance,
+            avgTurnaroundDays: unit.avgTurnaroundDays,
+        }));
+    }, [isAr]);
+
+    const overallSlaRate = useMemo(() => {
+        if (DEMO_TEAM_PERFORMANCE.length === 0) return '0.0';
+        const sum = DEMO_TEAM_PERFORMANCE.reduce((acc, item) => acc + item.slaCompliance, 0);
+        return (sum / DEMO_TEAM_PERFORMANCE.length).toFixed(1);
+    }, []);
 
     return (
-        <div className="space-y-6">
-            {/* Page Header */}
+        <div className="space-y-6 text-start">
+            {/* Unified Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
-                <div className="text-start">
+                <div>
                     <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
                         {t('request.dashboard.title')}
                     </h1>
@@ -302,343 +646,565 @@ export const RequestDashboardPage: React.FC = () => {
                         {t('request.dashboard.description')}
                     </p>
                 </div>
-                <div className="flex items-center gap-2.5">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/request/requests')}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] text-xs font-semibold hover:bg-[#233122] transition cursor-pointer shadow-2xs"
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-medium text-[#2D3F2C] shadow-2xs">
+                        <Calendar size={13} className="text-[#857E74]" />
+                        <span>{currentMonthYearLabel}</span>
+                    </span>
+                    <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono font-bold text-[#0D0D0D] shadow-2xs"
+                        dir="ltr"
                     >
-                        <span>{t('request.dashboard.viewAllRequests')}</span>
-                        <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/request/operational-tasks')}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#E5E0D8] text-[#2D3F2C] text-xs font-semibold hover:bg-[#FAF8F5] transition cursor-pointer shadow-2xs"
-                    >
-                        <span>{t('request.dashboard.operationalTasksBtn')}</span>
-                    </button>
+                        {t('request.dashboard.labels.requestsCount', {
+                            count: REQUEST_DASHBOARD_TOTAL,
+                        })}
+                    </span>
                 </div>
             </div>
 
-            {/* KPI Summary Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                {/* Total Requests */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex items-center justify-between">
-                    <div className="text-start">
-                        <p className="text-[11px] font-medium text-[#6E6862]">
-                            {t('request.dashboard.kpis.totalRequests')}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#0D0D0D] mt-1">
-                            {kpis.total}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center shrink-0">
-                        <ClipboardList className="w-5 h-5" />
-                    </div>
-                </div>
-
-                {/* Assigned */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex items-center justify-between">
-                    <div className="text-start">
-                        <p className="text-[11px] font-medium text-[#6E6862]">
-                            {t('request.assignmentStatuses.assigned')}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#2D3F2C] mt-1">
-                            {kpis.assigned}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center shrink-0">
-                        <UserCheck className="w-5 h-5" />
-                    </div>
-                </div>
-
-                {/* Unassigned */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex items-center justify-between">
-                    <div className="text-start">
-                        <p className="text-[11px] font-medium text-[#6E6862]">
-                            {t('request.assignmentStatuses.unassigned')}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#B87D14] mt-1">
-                            {kpis.unassigned}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#B87D14]/10 text-[#B87D14] flex items-center justify-center shrink-0">
-                        <UserX className="w-5 h-5" />
-                    </div>
-                </div>
-
-                {/* Completed */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex items-center justify-between">
-                    <div className="text-start">
-                        <p className="text-[11px] font-medium text-[#6E6862]">
-                            {t('request.assignmentStatuses.completed')}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#265938] mt-1">
-                            {kpis.completed}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#265938]/10 text-[#265938] flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-5 h-5" />
-                    </div>
-                </div>
-
-                {/* Rejected */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex items-center justify-between">
-                    <div className="text-start">
-                        <p className="text-[11px] font-medium text-[#6E6862]">
-                            {t('request.assignmentStatuses.rejected')}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#A23B2A] mt-1">
-                            {kpis.rejected}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#A23B2A]/10 text-[#A23B2A] flex items-center justify-center shrink-0">
-                        <XCircle className="w-5 h-5" />
-                    </div>
-                </div>
-
-                {/* Active Operational Tasks */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex items-center justify-between">
-                    <div className="text-start">
-                        <p className="text-[11px] font-medium text-[#6E6862]">
-                            {t('request.dashboard.kpis.activeTasks')}
-                        </p>
-                        <p className="text-2xl font-bold font-mono text-[#6A7358] mt-1">
-                            {kpis.activeTasks}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#6A7358]/15 text-[#6A7358] flex items-center justify-center shrink-0">
-                        <CheckSquare className="w-5 h-5" />
-                    </div>
-                </div>
+            {/* 6 Responsive KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                {kpiCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                        <div
+                            key={card.key}
+                            className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs hover:border-[#2D3F2C]/40 transition-colors"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div
+                                    className={`w-9 h-9 rounded-xl border flex items-center justify-center shadow-2xs ${card.accentClass}`}
+                                >
+                                    <Icon size={18} />
+                                </div>
+                                <span
+                                    className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md ${card.badgeClass}`}
+                                    dir="ltr"
+                                >
+                                    {card.percent}
+                                </span>
+                            </div>
+                            <div className="mt-3.5 text-start">
+                                <span
+                                    className="text-2xl font-bold font-mono tracking-tight text-[#0D0D0D] block"
+                                    dir="ltr"
+                                >
+                                    {card.count}
+                                </span>
+                                <h2 className="text-xs font-semibold text-[#0D0D0D] mt-1">
+                                    {card.title}
+                                </h2>
+                                <p className="text-[11px] text-[#6E6862] mt-0.5 line-clamp-1">
+                                    {card.desc}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
-            {/* Row 1: Requests Volume Per Business + Requests By Service Groups */}
+            {/* Row 1: Section 1 (Requests Volume Per Business) & Section 2 (Requests By Service Groups) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 1. Requests Volume Per Business */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden flex flex-col">
+                {/* Section 1: Requests Volume Per Business */}
+                <section
+                    aria-labelledby="req-section-volume-business"
+                    className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+                >
                     <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-[#2D3F2C]" />
-                            <h2 className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase">
-                                {t('request.dashboard.sections.volumePerBusiness')}
+                            <Building2 size={15} className="text-[#857E74] shrink-0" />
+                            <h2
+                                id="req-section-volume-business"
+                                className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                            >
+                                {t('request.dashboard.sections.requestsVolumePerBusiness')}
                             </h2>
                         </div>
-                        <span className="text-xs font-mono font-bold text-[#2D3F2C]">
-                            {t('common.total', { count: kpis.total })}
+                        <span
+                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            dir="ltr"
+                        >
+                            {t('request.dashboard.labels.businessesCount', {
+                                count: businessVolumeData.length,
+                            })}
                         </span>
                     </div>
 
-                    <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-                        <div ref={businessChartRef} className="h-56 w-full min-w-0" dir="ltr">
-                            <ResponsiveContainer
-                                width={businessChartWidth}
-                                height={224}
-                                initialDimension={{ width: 520, height: 224 }}
-                            >
-                                <BarChart
-                                    data={businessVolumeData}
-                                    margin={{ top: 10, right: 16, left: -16, bottom: 8 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFECE6" />
-                                    <XAxis
-                                        dataKey="name"
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
-                                        interval={0}
-                                    />
-                                    <YAxis
-                                        allowDecimals={false}
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: '#F8F6F2' }}
-                                        formatter={(val: any, _name: any, item: any) => [
-                                            val,
-                                            item?.payload?.fullName || t('request.dashboard.labels.requests'),
-                                        ]}
-                                        contentStyle={{
-                                            backgroundColor: '#0D0D0D',
-                                            borderColor: '#2D3F2C',
-                                            borderRadius: '8px',
-                                            color: '#FAF8F5',
-                                            fontSize: '12px',
-                                        }}
-                                    />
-                                    <Bar
-                                        dataKey="count"
-                                        radius={[4, 4, 0, 0]}
-                                        barSize={32}
-                                        isAnimationActive={false}
-                                    >
-                                        {businessVolumeData.map((entry) => (
-                                            <Cell key={entry.id} fill={entry.color} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-[#F0ECE4]">
-                            {businessVolumeData.map((item) => (
+                    <div className="p-6">
+                        {businessVolumeData.length === 0 ? (
+                            <p className="text-xs text-[#857E74] text-center py-8">
+                                {t('request.dashboard.labels.noData')}
+                            </p>
+                        ) : (
+                            <>
                                 <div
-                                    key={item.id}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]/80 text-xs"
+                                    ref={businessChartRef}
+                                    className="h-60 min-h-[240px] w-full min-w-0"
+                                    style={{ width: '100%', height: 240, minHeight: 240 }}
+                                    dir="ltr"
                                 >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <span
-                                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                                            style={{ backgroundColor: item.color }}
-                                        />
-                                        <span className="font-medium text-[#0D0D0D] truncate">
-                                            {item.fullName}
-                                        </span>
-                                    </div>
-                                    <span className="font-mono font-bold text-[#2D3F2C] shrink-0 ms-2">
-                                        {item.count} ({item.percentage}%)
-                                    </span>
+                                    <ResponsiveContainer
+                                        width={businessChartWidth}
+                                        height={240}
+                                        initialDimension={{
+                                            width: businessChartWidth,
+                                            height: 240,
+                                        }}
+                                    >
+                                        <BarChart
+                                            width={businessChartWidth}
+                                            height={240}
+                                            data={businessVolumeData}
+                                            margin={{
+                                                top: 10,
+                                                right: 15,
+                                                left: -15,
+                                                bottom: 30,
+                                            }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                vertical={false}
+                                                stroke="#EFECE6"
+                                            />
+                                            <XAxis
+                                                dataKey="name"
+                                                angle={-20}
+                                                textAnchor="end"
+                                                interval={0}
+                                                tick={{ fill: '#6E6862', fontSize: 10 }}
+                                                height={44}
+                                            />
+                                            <YAxis
+                                                allowDecimals={false}
+                                                tick={{ fill: '#6E6862', fontSize: 11 }}
+                                            />
+                                            <Tooltip
+                                                cursor={{ fill: '#F8F6F2' }}
+                                                formatter={(value: number | string | undefined) => [
+                                                    `${value ?? 0} ${t('request.dashboard.labels.requests')}`,
+                                                    t('request.dashboard.sections.requestsVolumePerBusiness'),
+                                                ]}
+                                                contentStyle={{
+                                                    backgroundColor: '#0D0D0D',
+                                                    borderColor: '#2D3F2C',
+                                                    borderRadius: '8px',
+                                                    color: '#FAF8F5',
+                                                    fontSize: '12px',
+                                                }}
+                                            />
+                                            <Bar
+                                                dataKey="count"
+                                                fill="#2D3F2C"
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={26}
+                                                isAnimationActive={false}
+                                            >
+                                                {businessVolumeData.map((entry) => (
+                                                    <Cell
+                                                        key={entry.id}
+                                                        fill={entry.color}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
 
-                {/* 2. Requests By Service Groups */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden flex flex-col">
+                                <div className="mt-4 pt-4 border-t border-[#EFECE6] space-y-2 text-start">
+                                    {businessVolumeData.map((biz) => (
+                                        <div
+                                            key={biz.id}
+                                            className="flex items-center justify-between text-xs gap-3"
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span
+                                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                    style={{ backgroundColor: biz.color }}
+                                                />
+                                                <span className="text-[#0D0D0D] font-medium truncate">
+                                                    {biz.fullName}
+                                                </span>
+                                            </div>
+                                            <div
+                                                className="flex items-center gap-3 shrink-0"
+                                                dir="ltr"
+                                            >
+                                                <span className="text-[11px] font-mono text-[#6E6862] w-11 text-end">
+                                                    {biz.percent}%
+                                                </span>
+                                                <div className="w-24 bg-[#FAF8F5] rounded-full h-1.5 overflow-hidden border border-[#E5E0D8]">
+                                                    <div
+                                                        className="h-full rounded-full"
+                                                        style={{
+                                                            width: `${biz.percent}%`,
+                                                            backgroundColor: biz.color,
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="font-mono font-bold text-[#0D0D0D] w-6 text-end">
+                                                    {biz.count}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </section>
+
+                {/* Section 2: Requests By Service Groups */}
+                <section
+                    aria-labelledby="req-section-service-groups"
+                    className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+                >
                     <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Layers className="w-4 h-4 text-[#6A7358]" />
-                            <h2 className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase">
-                                {t('request.dashboard.sections.byServiceGroups')}
+                            <Layers size={15} className="text-[#857E74] shrink-0" />
+                            <h2
+                                id="req-section-service-groups"
+                                className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                            >
+                                {t('request.dashboard.sections.requestsByServiceGroups')}
                             </h2>
                         </div>
-                        <span className="text-xs font-mono font-bold text-[#6A7358]">
-                            {REQUEST_SERVICE_GROUPS.length} {t('request.dashboard.labels.groups')}
+                        <span
+                            className="text-xs font-mono font-bold text-[#265938]"
+                            dir="ltr"
+                        >
+                            {t('request.dashboard.labels.serviceGroupsCount', {
+                                count: serviceGroupData.length,
+                            })}
                         </span>
                     </div>
 
-                    <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-                        <div ref={groupChartRef} className="h-56 w-full min-w-0" dir="ltr">
-                            <ResponsiveContainer
-                                width={groupChartWidth}
-                                height={224}
-                                initialDimension={{ width: 520, height: 224 }}
-                            >
-                                <BarChart
-                                    data={serviceGroupData}
-                                    margin={{ top: 10, right: 16, left: -16, bottom: 8 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFECE6" />
-                                    <XAxis
-                                        dataKey="name"
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
-                                        interval={0}
-                                    />
-                                    <YAxis
-                                        allowDecimals={false}
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: '#F8F6F2' }}
-                                        formatter={(val: any, _name: any, item: any) => [
-                                            val,
-                                            item?.payload?.fullName || t('request.dashboard.labels.requests'),
-                                        ]}
-                                        contentStyle={{
-                                            backgroundColor: '#0D0D0D',
-                                            borderColor: '#6A7358',
-                                            borderRadius: '8px',
-                                            color: '#FAF8F5',
-                                            fontSize: '12px',
-                                        }}
-                                    />
-                                    <Bar
-                                        dataKey="count"
-                                        radius={[4, 4, 0, 0]}
-                                        barSize={32}
-                                        isAnimationActive={false}
-                                    >
-                                        {serviceGroupData.map((entry) => (
-                                            <Cell key={entry.id} fill={entry.color} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="space-y-2 pt-2 border-t border-[#F0ECE4]">
-                            {serviceGroupData.map((grp) => (
+                    <div className="p-6">
+                        {serviceGroupData.length === 0 ? (
+                            <p className="text-xs text-[#857E74] text-center py-8">
+                                {t('request.dashboard.labels.noData')}
+                            </p>
+                        ) : (
+                            <>
                                 <div
-                                    key={grp.id}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]/80 text-xs"
+                                    ref={serviceGroupChartRef}
+                                    className="h-60 min-h-[240px] w-full min-w-0"
+                                    style={{ width: '100%', height: 240, minHeight: 240 }}
+                                    dir="ltr"
                                 >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <span
-                                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                                            style={{ backgroundColor: grp.color }}
-                                        />
-                                        <span className="font-mono text-[11px] text-[#6E6862]" dir="ltr">
-                                            {grp.code}
-                                        </span>
-                                        <span className="font-medium text-[#0D0D0D] truncate">
-                                            {grp.fullName}
-                                        </span>
-                                    </div>
-                                    <span className="font-mono font-bold text-[#0D0D0D] shrink-0 ms-2">
-                                        {grp.count} ({grp.percentage}%)
-                                    </span>
+                                    <ResponsiveContainer
+                                        width={serviceGroupChartWidth}
+                                        height={240}
+                                        initialDimension={{
+                                            width: serviceGroupChartWidth,
+                                            height: 240,
+                                        }}
+                                    >
+                                        <BarChart
+                                            width={serviceGroupChartWidth}
+                                            height={240}
+                                            data={serviceGroupData}
+                                            margin={{
+                                                top: 10,
+                                                right: 15,
+                                                left: -15,
+                                                bottom: 30,
+                                            }}
+                                        >
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                vertical={false}
+                                                stroke="#EFECE6"
+                                            />
+                                            <XAxis
+                                                dataKey="name"
+                                                angle={-20}
+                                                textAnchor="end"
+                                                interval={0}
+                                                tick={{ fill: '#6E6862', fontSize: 10 }}
+                                                height={44}
+                                            />
+                                            <YAxis
+                                                allowDecimals={false}
+                                                tick={{ fill: '#6E6862', fontSize: 11 }}
+                                            />
+                                            <Tooltip
+                                                cursor={{ fill: '#F8F6F2' }}
+                                                formatter={(value: number | string | undefined) => [
+                                                    `${value ?? 0} ${t('request.dashboard.labels.requests')}`,
+                                                    t('request.dashboard.sections.requestsByServiceGroups'),
+                                                ]}
+                                                contentStyle={{
+                                                    backgroundColor: '#0D0D0D',
+                                                    borderColor: '#265938',
+                                                    borderRadius: '8px',
+                                                    color: '#FAF8F5',
+                                                    fontSize: '12px',
+                                                }}
+                                            />
+                                            <Bar
+                                                dataKey="count"
+                                                fill="#265938"
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={26}
+                                                isAnimationActive={false}
+                                            >
+                                                {serviceGroupData.map((entry) => (
+                                                    <Cell
+                                                        key={entry.id}
+                                                        fill={entry.color}
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
-                            ))}
-                        </div>
+
+                                <div className="mt-4 pt-4 border-t border-[#EFECE6] space-y-2 text-start">
+                                    {serviceGroupData.map((sg) => (
+                                        <div
+                                            key={sg.id}
+                                            className="flex items-center justify-between text-xs gap-3"
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span
+                                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                    style={{ backgroundColor: sg.color }}
+                                                />
+                                                <span className="text-[#0D0D0D] font-medium truncate">
+                                                    {sg.fullName}
+                                                </span>
+                                            </div>
+                                            <div
+                                                className="flex items-center gap-3 shrink-0"
+                                                dir="ltr"
+                                            >
+                                                <span className="text-[11px] font-mono text-[#6E6862] w-11 text-end">
+                                                    {sg.percent}%
+                                                </span>
+                                                <div className="w-24 bg-[#FAF8F5] rounded-full h-1.5 overflow-hidden border border-[#E5E0D8]">
+                                                    <div
+                                                        className="h-full rounded-full"
+                                                        style={{
+                                                            width: `${sg.percent}%`,
+                                                            backgroundColor: sg.color,
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="font-mono font-bold text-[#0D0D0D] w-6 text-end">
+                                                    {sg.count}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
-                </div>
+                </section>
             </div>
 
-            {/* Row 2: Requests Assignment + Requests By Priority */}
+            {/* Row 2: Section 3 (Requests Assignment) & Section 4 (Requests By Priority) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 3. Requests Assignment */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
+                {/* Section 3: Requests Assignment */}
+                <section
+                    aria-labelledby="req-section-assignment"
+                    className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+                >
                     <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <UserCheck className="w-4 h-4 text-[#2D3F2C]" />
-                            <h2 className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase">
+                            <PieChartIcon size={15} className="text-[#857E74] shrink-0" />
+                            <h2
+                                id="req-section-assignment"
+                                className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                            >
                                 {t('request.dashboard.sections.requestsAssignment')}
                             </h2>
                         </div>
-                        <span className="text-xs font-mono font-bold text-[#2D3F2C]">
-                            {t('common.total', { count: kpis.total })}
+                        <span
+                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            dir="ltr"
+                        >
+                            {t('request.dashboard.labels.requestsCount', {
+                                count: REQUEST_DASHBOARD_TOTAL,
+                            })}
                         </span>
                     </div>
 
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    <div className="p-6">
+                        <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
+                            {/* Explicit Dimension Donut Chart */}
+                            <div
+                                className="h-56 w-56 min-h-[224px] min-w-[224px] relative shrink-0"
+                                style={{ width: 224, height: 224 }}
+                                dir="ltr"
+                            >
+                                <ResponsiveContainer
+                                    width={224}
+                                    height={224}
+                                    initialDimension={{ width: 224, height: 224 }}
+                                >
+                                    <PieChart width={224} height={224}>
+                                        <Pie
+                                            data={assignmentData}
+                                            innerRadius={58}
+                                            outerRadius={86}
+                                            paddingAngle={4}
+                                            dataKey="count"
+                                            nameKey="name"
+                                            isAnimationActive={false}
+                                        >
+                                            {assignmentData.map((entry) => (
+                                                <Cell key={entry.key} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#0D0D0D',
+                                                borderColor: '#2D3F2C',
+                                                borderRadius: '8px',
+                                                color: '#FAF8F5',
+                                                fontSize: '12px',
+                                            }}
+                                            formatter={(
+                                                value: number | string | undefined,
+                                                name: string | undefined
+                                            ) => [
+                                                `${value ?? 0} (${safePct(Number(value ?? 0))}%)`,
+                                                name ?? '',
+                                            ]}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span
+                                        className="text-xl font-bold font-mono text-[#0D0D0D]"
+                                        dir="ltr"
+                                    >
+                                        {REQUEST_DASHBOARD_TOTAL}
+                                    </span>
+                                    <span className="text-[10px] uppercase font-semibold text-[#6E6862] tracking-wider">
+                                        {t('request.dashboard.labels.requests')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Assignment Breakdown Cards */}
+                            <div className="w-full sm:w-auto flex-1 space-y-2.5">
+                                {assignmentData.map((item) => (
+                                    <div
+                                        key={item.key}
+                                        className="p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-start"
+                                    >
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                    style={{ backgroundColor: item.color }}
+                                                />
+                                                <span className="text-xs font-bold text-[#0D0D0D]">
+                                                    {item.name}
+                                                </span>
+                                            </div>
+                                            <span
+                                                className="text-xs font-mono font-bold text-[#2D3F2C]"
+                                                dir="ltr"
+                                            >
+                                                {item.percent}%
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div
+                                                className="flex-1 bg-white rounded-full h-1.5 overflow-hidden border border-[#E5E0D8]"
+                                                dir="ltr"
+                                            >
+                                                <div
+                                                    className="h-full rounded-full"
+                                                    style={{
+                                                        width: `${item.percent}%`,
+                                                        backgroundColor: item.color,
+                                                    }}
+                                                />
+                                            </div>
+                                            <span
+                                                className="text-sm font-bold font-mono text-[#0D0D0D] w-7 text-end"
+                                                dir="ltr"
+                                            >
+                                                {item.count}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Section 4: Requests By Priority */}
+                <section
+                    aria-labelledby="req-section-priority"
+                    className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+                >
+                    <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <AlertTriangle size={15} className="text-[#8C6046] shrink-0" />
+                            <h2
+                                id="req-section-priority"
+                                className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                            >
+                                {t('request.dashboard.sections.requestsByPriority')}
+                            </h2>
+                        </div>
+                        <span
+                            className="text-xs font-mono font-bold text-[#8C6046]"
+                            dir="ltr"
+                        >
+                            {t('request.dashboard.labels.requestsCount', {
+                                count: REQUEST_DASHBOARD_TOTAL,
+                            })}
+                        </span>
+                    </div>
+
+                    <div className="p-6">
                         <div
-                            ref={assignmentPieRef}
-                            className="md:col-span-5 h-56 w-full flex items-center justify-center relative"
+                            ref={priorityChartRef}
+                            className="h-56 min-h-[224px] w-full min-w-0"
+                            style={{ width: '100%', height: 224, minHeight: 224 }}
                             dir="ltr"
                         >
                             <ResponsiveContainer
-                                width={assignmentPieWidth}
+                                width={priorityChartWidth}
                                 height={224}
-                                initialDimension={{ width: 224, height: 224 }}
+                                initialDimension={{
+                                    width: priorityChartWidth,
+                                    height: 224,
+                                }}
                             >
-                                <PieChart>
-                                    <Pie
-                                        data={assignmentData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={52}
-                                        outerRadius={80}
-                                        paddingAngle={3}
-                                        dataKey="count"
-                                        nameKey="name"
-                                        isAnimationActive={false}
-                                    >
-                                        {assignmentData.map((entry) => (
-                                            <Cell key={entry.key} fill={entry.color} />
-                                        ))}
-                                    </Pie>
+                                <BarChart
+                                    width={priorityChartWidth}
+                                    height={224}
+                                    data={priorityData}
+                                    margin={{ top: 10, right: 20, left: -15, bottom: 10 }}
+                                >
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={false}
+                                        stroke="#EFECE6"
+                                    />
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fill: '#6E6862', fontSize: 11 }}
+                                    />
+                                    <YAxis
+                                        allowDecimals={false}
+                                        tick={{ fill: '#6E6862', fontSize: 11 }}
+                                    />
                                     <Tooltip
-                                        formatter={(val: any, name: any) => [val, name]}
+                                        cursor={{ fill: '#F8F6F2' }}
+                                        formatter={(value: number | string | undefined) => [
+                                            `${value ?? 0} (${safePct(Number(value ?? 0))}%)`,
+                                            t('request.dashboard.sections.requestsByPriority'),
+                                        ]}
                                         contentStyle={{
                                             backgroundColor: '#0D0D0D',
                                             borderColor: '#2D3F2C',
@@ -647,172 +1213,130 @@ export const RequestDashboardPage: React.FC = () => {
                                             fontSize: '12px',
                                         }}
                                     />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-2xl font-bold font-mono text-[#0D0D0D]">
-                                    {kpis.total}
-                                </span>
-                                <span className="text-[10px] font-medium text-[#6E6862] uppercase tracking-wider">
-                                    {t('request.dashboard.labels.requests')}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="md:col-span-7 space-y-2.5">
-                            {assignmentData.map((item) => (
-                                <div
-                                    key={item.key}
-                                    className="p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between"
-                                >
-                                    <div className="flex items-center gap-2.5">
-                                        <span
-                                            className="w-3 h-3 rounded-sm shrink-0"
-                                            style={{ backgroundColor: item.color }}
-                                        />
-                                        <span className="text-xs font-semibold text-[#0D0D0D]">
-                                            {item.name}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xs font-mono font-bold text-[#0D0D0D]">
-                                            {item.count}
-                                        </span>
-                                        <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[#595550]">
-                                            {item.percentage}%
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. Requests By Priority */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                    <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-[#B87D14]" />
-                            <h2 className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase">
-                                {t('request.dashboard.sections.byPriority')}
-                            </h2>
-                        </div>
-                        <span className="text-xs font-mono font-bold text-[#8C6046]">
-                            4 {t('request.dashboard.labels.priorityTiers')}
-                        </span>
-                    </div>
-
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                        <div
-                            ref={priorityPieRef}
-                            className="md:col-span-5 h-56 w-full flex items-center justify-center relative"
-                            dir="ltr"
-                        >
-                            <ResponsiveContainer
-                                width={priorityPieWidth}
-                                height={224}
-                                initialDimension={{ width: 224, height: 224 }}
-                            >
-                                <PieChart>
-                                    <Pie
-                                        data={priorityData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={52}
-                                        outerRadius={80}
-                                        paddingAngle={3}
+                                    <Bar
                                         dataKey="count"
-                                        nameKey="name"
+                                        radius={[4, 4, 0, 0]}
+                                        barSize={34}
                                         isAnimationActive={false}
                                     >
                                         {priorityData.map((entry) => (
                                             <Cell key={entry.key} fill={entry.color} />
                                         ))}
-                                    </Pie>
-                                    <Tooltip
-                                        formatter={(val: any, name: any) => [val, name]}
-                                        contentStyle={{
-                                            backgroundColor: '#0D0D0D',
-                                            borderColor: '#8C6046',
-                                            borderRadius: '8px',
-                                            color: '#FAF8F5',
-                                            fontSize: '12px',
-                                        }}
-                                    />
-                                </PieChart>
+                                    </Bar>
+                                </BarChart>
                             </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-2xl font-bold font-mono text-[#0D0D0D]">
-                                    {kpis.total}
-                                </span>
-                                <span className="text-[10px] font-medium text-[#6E6862] uppercase tracking-wider">
-                                    {t('request.dashboard.labels.requests')}
-                                </span>
-                            </div>
                         </div>
 
-                        <div className="md:col-span-7 space-y-2.5">
-                            {priorityData.map((item) => (
+                        <div className="mt-4 pt-4 border-t border-[#EFECE6] grid grid-cols-1 sm:grid-cols-2 gap-3 text-start">
+                            {priorityData.map((prio) => (
                                 <div
-                                    key={item.key}
-                                    className="p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between"
+                                    key={prio.key}
+                                    className="p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]"
                                 >
-                                    <div className="flex items-center gap-2.5">
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                style={{ backgroundColor: prio.color }}
+                                            />
+                                            <span className="text-xs font-bold text-[#0D0D0D]">
+                                                {prio.name}
+                                            </span>
+                                        </div>
                                         <span
-                                            className="w-3 h-3 rounded-sm shrink-0"
-                                            style={{ backgroundColor: item.color }}
-                                        />
-                                        <span className="text-xs font-semibold text-[#0D0D0D]">
-                                            {item.name}
+                                            className="text-xs font-mono font-bold text-[#595550]"
+                                            dir="ltr"
+                                        >
+                                            {prio.percent}%
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xs font-mono font-bold text-[#0D0D0D]">
-                                            {item.count}
-                                        </span>
-                                        <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[#595550]">
-                                            {item.percentage}%
+                                    <div className="flex items-center justify-between gap-2.5">
+                                        <div
+                                            className="flex-1 bg-white rounded-full h-1.5 overflow-hidden border border-[#E5E0D8]"
+                                            dir="ltr"
+                                        >
+                                            <div
+                                                className="h-full rounded-full"
+                                                style={{
+                                                    width: `${prio.percent}%`,
+                                                    backgroundColor: prio.color,
+                                                }}
+                                            />
+                                        </div>
+                                        <span
+                                            className="text-sm font-bold font-mono text-[#0D0D0D] w-6 text-end"
+                                            dir="ltr"
+                                        >
+                                            {prio.count}
                                         </span>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
 
-            {/* Row 3: Requests Assignment By Resource + Execution Status Distribution */}
+            {/* Row 3: Section 5 (Requests Assignment By Resource) & Section 6 (Execution Status of Requests) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 5. Requests Assignment By Resource */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden flex flex-col">
+                {/* Section 5: Requests Assignment By Resource */}
+                <section
+                    aria-labelledby="req-section-by-resource"
+                    className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+                >
                     <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4 text-[#2D3F2C]" />
-                            <h2 className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase">
-                                {t('request.dashboard.sections.assignmentByResource')}
+                            <Users size={15} className="text-[#857E74] shrink-0" />
+                            <h2
+                                id="req-section-by-resource"
+                                className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                            >
+                                {t('request.dashboard.sections.requestsAssignmentByResource')}
                             </h2>
                         </div>
-                        <span className="text-xs font-mono font-bold text-[#2D3F2C]">
-                            {REQUEST_RESOURCES.length} {t('request.dashboard.labels.specialists')}
+                        <span
+                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            dir="ltr"
+                        >
+                            {t('request.dashboard.labels.specialistsCount', {
+                                count: resourceAssignmentData.length,
+                            })}
                         </span>
                     </div>
 
-                    <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-                        <div ref={resourceChartRef} className="h-56 w-full min-w-0" dir="ltr">
+                    <div className="p-6">
+                        <div
+                            ref={resourceChartRef}
+                            className="h-60 min-h-[240px] w-full min-w-0"
+                            style={{ width: '100%', height: 240, minHeight: 240 }}
+                            dir="ltr"
+                        >
                             <ResponsiveContainer
                                 width={resourceChartWidth}
-                                height={224}
-                                initialDimension={{ width: 520, height: 224 }}
+                                height={240}
+                                initialDimension={{
+                                    width: resourceChartWidth,
+                                    height: 240,
+                                }}
                             >
                                 <BarChart
-                                    data={resourceData}
-                                    margin={{ top: 10, right: 16, left: -16, bottom: 8 }}
+                                    width={resourceChartWidth}
+                                    height={240}
+                                    data={resourceAssignmentData}
+                                    margin={{ top: 10, right: 15, left: -15, bottom: 25 }}
                                 >
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFECE6" />
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={false}
+                                        stroke="#EFECE6"
+                                    />
                                     <XAxis
                                         dataKey="name"
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
+                                        angle={-18}
+                                        textAnchor="end"
                                         interval={0}
+                                        tick={{ fill: '#6E6862', fontSize: 10 }}
+                                        height={42}
                                     />
                                     <YAxis
                                         allowDecimals={false}
@@ -820,9 +1344,141 @@ export const RequestDashboardPage: React.FC = () => {
                                     />
                                     <Tooltip
                                         cursor={{ fill: '#F8F6F2' }}
-                                        formatter={(val: any, _name: any, item: any) => [
-                                            val,
-                                            item?.payload?.fullName || t('request.dashboard.labels.assigned'),
+                                        contentStyle={{
+                                            backgroundColor: '#0D0D0D',
+                                            borderColor: '#2D3F2C',
+                                            borderRadius: '8px',
+                                            color: '#FAF8F5',
+                                            fontSize: '12px',
+                                        }}
+                                    />
+                                    <Legend
+                                        wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }}
+                                    />
+                                    <Bar
+                                        dataKey="assigned"
+                                        name={t('request.dashboard.labels.activeAssigned')}
+                                        stackId="resource"
+                                        fill="#265938"
+                                        radius={[0, 0, 0, 0]}
+                                        barSize={24}
+                                        isAnimationActive={false}
+                                    />
+                                    <Bar
+                                        dataKey="completed"
+                                        name={t('request.dashboard.labels.completedRequests')}
+                                        stackId="resource"
+                                        fill="#2D3F2C"
+                                        radius={[4, 4, 0, 0]}
+                                        barSize={24}
+                                        isAnimationActive={false}
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-[#EFECE6] space-y-2.5 text-start">
+                            {resourceAssignmentData.map((res) => (
+                                <div
+                                    key={res.id}
+                                    className="flex items-center justify-between text-xs gap-3"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-[#0D0D0D] truncate">
+                                            {res.fullName}
+                                        </p>
+                                        <p className="text-[11px] text-[#6E6862] truncate">
+                                            {res.role}
+                                        </p>
+                                    </div>
+                                    <div
+                                        className="flex items-center gap-2 shrink-0"
+                                        dir="ltr"
+                                    >
+                                        <span className="px-2 py-0.5 rounded-md bg-[#265938]/10 text-[#265938] font-mono font-bold text-[11px]">
+                                            {res.assigned} {t('request.dashboard.kpis.assigned')}
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-md bg-[#2D3F2C]/10 text-[#2D3F2C] font-mono font-bold text-[11px]">
+                                            {res.completed} {t('request.dashboard.kpis.completed')}
+                                        </span>
+                                        <span className="font-mono font-bold text-[#0D0D0D] w-7 text-end">
+                                            {res.total}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Section 6: Execution Status of Requests */}
+                <section
+                    aria-labelledby="req-section-execution-status"
+                    className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+                >
+                    <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Activity size={15} className="text-[#857E74] shrink-0" />
+                            <h2
+                                id="req-section-execution-status"
+                                className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                            >
+                                {t('request.dashboard.sections.executionStatusOfRequests')}
+                            </h2>
+                        </div>
+                        <span
+                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            dir="ltr"
+                        >
+                            {t('request.dashboard.labels.requestsCount', {
+                                count: REQUEST_DASHBOARD_TOTAL,
+                            })}
+                        </span>
+                    </div>
+
+                    <div className="p-6">
+                        <div
+                            ref={executionChartRef}
+                            className="h-60 min-h-[240px] w-full min-w-0"
+                            style={{ width: '100%', height: 240, minHeight: 240 }}
+                            dir="ltr"
+                        >
+                            <ResponsiveContainer
+                                width={executionChartWidth}
+                                height={240}
+                                initialDimension={{
+                                    width: executionChartWidth,
+                                    height: 240,
+                                }}
+                            >
+                                <BarChart
+                                    width={executionChartWidth}
+                                    height={240}
+                                    data={executionStatusData}
+                                    margin={{ top: 10, right: 15, left: -15, bottom: 35 }}
+                                >
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={false}
+                                        stroke="#EFECE6"
+                                    />
+                                    <XAxis
+                                        dataKey="name"
+                                        angle={-20}
+                                        textAnchor="end"
+                                        interval={0}
+                                        tick={{ fill: '#6E6862', fontSize: 10 }}
+                                        height={48}
+                                    />
+                                    <YAxis
+                                        allowDecimals={false}
+                                        tick={{ fill: '#6E6862', fontSize: 11 }}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: '#F8F6F2' }}
+                                        formatter={(value: number | string | undefined) => [
+                                            `${value ?? 0} (${safePct(Number(value ?? 0))}%)`,
+                                            t('request.dashboard.sections.executionStatusOfRequests'),
                                         ]}
                                         contentStyle={{
                                             backgroundColor: '#0D0D0D',
@@ -835,98 +1491,10 @@ export const RequestDashboardPage: React.FC = () => {
                                     <Bar
                                         dataKey="count"
                                         radius={[4, 4, 0, 0]}
-                                        barSize={32}
+                                        barSize={26}
                                         isAnimationActive={false}
                                     >
-                                        {resourceData.map((entry) => (
-                                            <Cell key={entry.id} fill={entry.color} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-[#F0ECE4]">
-                            {resourceData.map((res) => (
-                                <div
-                                    key={res.id}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]/80 text-xs"
-                                >
-                                    <div className="min-w-0 text-start">
-                                        <p className="font-semibold text-[#0D0D0D] truncate">
-                                            {res.fullName}
-                                        </p>
-                                        <p className="text-[10px] text-[#6E6862] truncate">
-                                            {res.role}
-                                        </p>
-                                    </div>
-                                    <div className="text-end shrink-0 ms-2">
-                                        <span className="font-mono font-bold text-[#2D3F2C] block">
-                                            {res.count} {t('request.dashboard.labels.requests')}
-                                        </span>
-                                        <span className="text-[10px] text-[#265938] font-medium">
-                                            {res.completedCount} {t('request.assignmentStatuses.completed')}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* 6. Execution Status Overview */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden flex flex-col">
-                    <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-[#265938]" />
-                            <h2 className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase">
-                                {t('request.dashboard.sections.executionOverview')}
-                            </h2>
-                        </div>
-                        <span className="text-xs font-mono font-bold text-[#265938]">
-                            {t('common.total', { count: kpis.total })}
-                        </span>
-                    </div>
-
-                    <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-                        <div ref={executionChartRef} className="h-56 w-full min-w-0" dir="ltr">
-                            <ResponsiveContainer
-                                width={executionChartWidth}
-                                height={224}
-                                initialDimension={{ width: 520, height: 224 }}
-                            >
-                                <BarChart
-                                    data={executionData}
-                                    margin={{ top: 10, right: 16, left: -16, bottom: 8 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFECE6" />
-                                    <XAxis
-                                        dataKey="name"
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
-                                        interval={0}
-                                    />
-                                    <YAxis
-                                        allowDecimals={false}
-                                        tick={{ fill: '#6E6862', fontSize: 11 }}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: '#F8F6F2' }}
-                                        formatter={(val: any, name: any) => [val, name]}
-                                        contentStyle={{
-                                            backgroundColor: '#0D0D0D',
-                                            borderColor: '#265938',
-                                            borderRadius: '8px',
-                                            color: '#FAF8F5',
-                                            fontSize: '12px',
-                                        }}
-                                    />
-                                    <Bar
-                                        dataKey="count"
-                                        radius={[4, 4, 0, 0]}
-                                        barSize={32}
-                                        isAnimationActive={false}
-                                    >
-                                        {executionData.map((entry) => (
+                                        {executionStatusData.map((entry) => (
                                             <Cell key={entry.key} fill={entry.color} />
                                         ))}
                                     </Bar>
@@ -934,30 +1502,227 @@ export const RequestDashboardPage: React.FC = () => {
                             </ResponsiveContainer>
                         </div>
 
-                        <div className="space-y-2 pt-2 border-t border-[#F0ECE4]">
-                            {executionData.map((st) => (
+                        <div className="mt-4 pt-4 border-t border-[#EFECE6] space-y-2.5 text-start">
+                            {executionStatusData.map((statusItem) => (
                                 <div
-                                    key={st.key}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]/80 text-xs"
+                                    key={statusItem.key}
+                                    className="flex items-center justify-between text-xs gap-3"
                                 >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
                                         <span
                                             className="w-2.5 h-2.5 rounded-full shrink-0"
-                                            style={{ backgroundColor: st.color }}
+                                            style={{ backgroundColor: statusItem.color }}
                                         />
-                                        <span className="font-medium text-[#0D0D0D]">
-                                            {st.name}
+                                        <span className="text-[#0D0D0D] font-medium truncate">
+                                            {statusItem.name}
                                         </span>
                                     </div>
-                                    <span className="font-mono font-bold text-[#0D0D0D]">
-                                        {st.count} ({st.percentage}%)
-                                    </span>
+                                    <div
+                                        className="flex items-center gap-3 shrink-0"
+                                        dir="ltr"
+                                    >
+                                        <span className="text-[11px] font-mono text-[#6E6862] w-11 text-end">
+                                            {statusItem.percent}%
+                                        </span>
+                                        <div className="w-24 bg-[#FAF8F5] rounded-full h-1.5 overflow-hidden border border-[#E5E0D8]">
+                                            <div
+                                                className="h-full rounded-full"
+                                                style={{
+                                                    width: `${statusItem.percent}%`,
+                                                    backgroundColor: statusItem.color,
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="font-mono font-bold text-[#0D0D0D] w-6 text-end">
+                                            {statusItem.count}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
+
+            {/* Row 4: Section 7 (Operations Team Performance) */}
+            <section
+                aria-labelledby="req-section-team-performance"
+                className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden"
+            >
+                <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-3.5 flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                        <Award size={15} className="text-[#8C6046] shrink-0" />
+                        <h2
+                            id="req-section-team-performance"
+                            className="text-xs font-semibold text-[#0D0D0D] tracking-wide uppercase"
+                        >
+                            {t('request.dashboard.sections.operationsTeamPerformance')}
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-3" dir="ltr">
+                        <span className="text-xs font-mono font-bold text-[#265938] bg-[#265938]/10 px-2.5 py-0.5 rounded-md">
+                            {t('request.dashboard.labels.overallSla', {
+                                rate: overallSlaRate,
+                            })}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-[#2D3F2C]">
+                            {t('request.dashboard.labels.unitsCount', {
+                                count: teamPerformanceData.length,
+                            })}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                    {/* Team Performance Multi-Series BarChart */}
+                    <div
+                        ref={teamPerfChartRef}
+                        className="h-64 min-h-[256px] w-full min-w-0"
+                        style={{ width: '100%', height: 256, minHeight: 256 }}
+                        dir="ltr"
+                    >
+                        <ResponsiveContainer
+                            width={teamPerfChartWidth}
+                            height={256}
+                            initialDimension={{
+                                width: teamPerfChartWidth,
+                                height: 256,
+                            }}
+                        >
+                            <BarChart
+                                width={teamPerfChartWidth}
+                                height={256}
+                                data={teamPerformanceData}
+                                margin={{ top: 10, right: 20, left: -10, bottom: 15 }}
+                            >
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    vertical={false}
+                                    stroke="#EFECE6"
+                                />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fill: '#6E6862', fontSize: 11 }}
+                                />
+                                <YAxis
+                                    allowDecimals={false}
+                                    tick={{ fill: '#6E6862', fontSize: 11 }}
+                                />
+                                <Tooltip
+                                    cursor={{ fill: '#F8F6F2' }}
+                                    contentStyle={{
+                                        backgroundColor: '#0D0D0D',
+                                        borderColor: '#2D3F2C',
+                                        borderRadius: '8px',
+                                        color: '#FAF8F5',
+                                        fontSize: '12px',
+                                    }}
+                                />
+                                <Legend
+                                    wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }}
+                                />
+                                <Bar
+                                    dataKey="completedRequests"
+                                    name={t('request.dashboard.labels.completedRequests')}
+                                    fill="#2D3F2C"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={24}
+                                    isAnimationActive={false}
+                                />
+                                <Bar
+                                    dataKey="activeTasks"
+                                    name={t('request.dashboard.labels.activeTasks')}
+                                    fill="#8C6046"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={24}
+                                    isAnimationActive={false}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Operations Team Performance Summary Table */}
+                    <div className="overflow-x-auto border border-[#E5E0D8] rounded-xl">
+                        <table className="w-full text-start border-collapse">
+                            <thead>
+                                <tr className="bg-[#FAF8F5] border-b border-[#EFECE6] text-[11px] font-semibold text-[#6E6862] uppercase tracking-wider">
+                                    <th className="py-3 px-4 text-start">
+                                        {t('request.dashboard.labels.operationalUnit')}
+                                    </th>
+                                    <th className="py-3 px-4 text-start">
+                                        {t('request.dashboard.labels.completedRequests')}
+                                    </th>
+                                    <th className="py-3 px-4 text-start">
+                                        {t('request.dashboard.labels.activeTasks')}
+                                    </th>
+                                    <th className="py-3 px-4 text-start">
+                                        {t('request.dashboard.labels.avgTurnaround')}
+                                    </th>
+                                    <th className="py-3 px-4 text-end">
+                                        {t('request.dashboard.labels.slaCompliance')}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#EFECE6] text-xs">
+                                {teamPerformanceData.map((unit) => (
+                                    <tr
+                                        key={unit.id}
+                                        className="hover:bg-[#FAF8F5]/70 transition-colors"
+                                    >
+                                        <td className="py-3 px-4 font-semibold text-[#0D0D0D]">
+                                            {unit.fullName}
+                                        </td>
+                                        <td className="py-3 px-4 whitespace-nowrap">
+                                            <span
+                                                className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 text-[#2D3F2C] font-mono font-bold text-[11px]"
+                                                dir="ltr"
+                                            >
+                                                {unit.completedRequests}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4 whitespace-nowrap">
+                                            <span
+                                                className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#8C6046]/10 text-[#8C6046] font-mono font-bold text-[11px]"
+                                                dir="ltr"
+                                            >
+                                                {unit.activeTasks}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4 whitespace-nowrap">
+                                            <span
+                                                className="font-mono font-semibold text-[#595550]"
+                                                dir="ltr"
+                                            >
+                                                {t('request.dashboard.labels.daysUnit', {
+                                                    days: unit.avgTurnaroundDays,
+                                                })}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4 whitespace-nowrap text-end">
+                                            <div
+                                                className="inline-flex items-center justify-end gap-2.5"
+                                                dir="ltr"
+                                            >
+                                                <div className="w-24 bg-[#FAF8F5] rounded-full h-1.5 overflow-hidden border border-[#E5E0D8] hidden sm:block">
+                                                    <div
+                                                        className="h-full rounded-full bg-[#265938]"
+                                                        style={{
+                                                            width: `${unit.slaCompliance}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="font-mono font-bold text-[#265938] w-10 text-end">
+                                                    {unit.slaCompliance}%
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </div>
     );
 };
