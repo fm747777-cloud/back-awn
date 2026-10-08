@@ -27,6 +27,14 @@ const EdmsDocumentTypesPage = () => import('../pages/edms/EdmsDocumentTypesPage'
 const EdmsDocumentTemplatesPage = () => import('../pages/edms/EdmsDocumentTemplatesPage').then((m) => ({ Component: m.EdmsDocumentTemplatesPage }));
 const EdmsAuditTrailPage = () => import('../pages/edms/EdmsAuditTrailPage').then((m) => ({ Component: m.EdmsAuditTrailPage }));
 
+// Request Module
+const RequestPage = () => import('../pages/RequestPage').then((m) => ({ Component: m.RequestPage }));
+const RequestDashboardPage = () => import('../pages/request/RequestDashboardPage').then((m) => ({ Component: m.RequestDashboardPage }));
+const RequestServicesPage = () => import('../pages/request/RequestServicesPage').then((m) => ({ Component: m.RequestServicesPage }));
+const RequestsPage = () => import('../pages/request/RequestsPage').then((m) => ({ Component: m.RequestsPage }));
+const OperationalTasksPage = () => import('../pages/request/OperationalTasksPage').then((m) => ({ Component: m.OperationalTasksPage }));
+const RequestAuditTrailPage = () => import('../pages/request/RequestAuditTrailPage').then((m) => ({ Component: m.RequestAuditTrailPage }));
+
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
 const ServicesListTab = () => import('../components/Service/ServicesListTab').then((m) => ({ Component: m.ServicesListTab }));
@@ -127,7 +135,33 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/request',
-                        lazy: PlaceholderModulePage,
+                        lazy: RequestPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/request/dashboard" replace />,
+                            },
+                            {
+                                path: 'dashboard',
+                                lazy: RequestDashboardPage,
+                            },
+                            {
+                                path: 'services',
+                                lazy: RequestServicesPage,
+                            },
+                            {
+                                path: 'requests',
+                                lazy: RequestsPage,
+                            },
+                            {
+                                path: 'operational-tasks',
+                                lazy: OperationalTasksPage,
+                            },
+                            {
+                                path: 'audit-trail',
+                                lazy: RequestAuditTrailPage,
+                            },
+                        ],
                     },
                     {
                         path: '/workflow',

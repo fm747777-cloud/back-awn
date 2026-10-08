@@ -11,7 +11,9 @@ import {
     Monitor,
     History,
     Ticket,
-    MessageSquareQuote
+    MessageSquareQuote,
+    ClipboardList,
+    CheckSquare
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -98,6 +100,23 @@ export const EDMS_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
+export const REQUEST_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Main',
+        items: [
+            { label: 'Dashboard', path: '/request/dashboard', icon: LayoutDashboard },
+            { label: 'Service', path: '/request/services', icon: Layers },
+            { label: 'Requests', path: '/request/requests', icon: ClipboardList },
+            { label: 'Operational Tasks', path: '/request/operational-tasks', icon: CheckSquare },
+        ],
+    },
+    {
+        items: [
+            { label: 'Audit Trail', path: '/request/audit-trail', icon: History },
+        ],
+    },
+];
+
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -113,6 +132,9 @@ const getInitialMenuGroups = (): MenuGroup[] => {
         }
         if (window.location.pathname.startsWith('/edms')) {
             return EDMS_SIDEBAR_GROUPS;
+        }
+        if (window.location.pathname.startsWith('/request')) {
+            return REQUEST_SIDEBAR_GROUPS;
         }
     }
     return DEFAULT_SIDEBAR_GROUPS;

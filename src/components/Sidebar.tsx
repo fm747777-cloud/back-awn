@@ -29,6 +29,9 @@ const ITEM_LABEL_KEYS: Record<string, string> = {
     'Document Categories': 'nav.documentCategories',
     'Document Types': 'nav.documentTypes',
     'Document Templates': 'nav.documentTemplates',
+    Service: 'nav.service',
+    Requests: 'nav.requests',
+    'Operational Tasks': 'nav.operationalTasks',
 };
 
 export const Sidebar = () => {

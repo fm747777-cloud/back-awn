@@ -77,6 +77,9 @@
     "documentCategories": "Document Categories",
     "documentTypes": "Document Types",
     "documentTemplates": "Document Templates",
+    "service": "Service",
+    "requests": "Requests",
+    "operationalTasks": "Operational Tasks",
     "accountSettings": "Account Settings",
     "expandSidebar": "Expand Sidebar",
     "collapseSidebar": "Collapse Sidebar",
@@ -1281,6 +1284,258 @@
         "Document": "Document",
         "Employee Template": "Employee Template",
         "Company Template": "Company Template"
+      }
+    }
+  },
+  "request": {
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "assign": "Assign / Reassign",
+      "assignNow": "Assign"
+    },
+    "entityScopes": {
+      "business": "Business",
+      "employee": "Employee",
+      "asset": "Asset"
+    },
+    "assignmentStatuses": {
+      "assigned": "Assigned",
+      "unassigned": "Unassigned",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "executionStatuses": {
+      "initiated": "Initiated",
+      "inProgress": "In Progress",
+      "underReview": "Under Review",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "taskStatuses": {
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "blocked": "Blocked",
+      "rejected": "Rejected"
+    },
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "paymentStatuses": {
+      "paid": "Paid",
+      "pending": "Pending Payment",
+      "exempt": "Exempt (No Fee)"
+    },
+    "filters": {
+      "company": "Business / Company",
+      "allCompanies": "All Businesses",
+      "serviceGroup": "Service Group",
+      "allServiceGroups": "All Service Groups",
+      "allScopes": "All Entity Types",
+      "allPortals": "All Portals",
+      "allStatuses": "All Statuses",
+      "allPriorities": "All Priorities",
+      "allResources": "All Resources"
+    },
+    "dashboard": {
+      "title": "Requests Dashboard",
+      "description": "Executive analytics of enterprise service requests, business volume, specialist workload, and operational execution.",
+      "viewAllRequests": "Manage Requests",
+      "operationalTasksBtn": "Operational Tasks",
+      "kpis": {
+        "totalRequests": "Total Requests",
+        "activeTasks": "Active Tasks"
+      },
+      "sections": {
+        "volumePerBusiness": "Requests Volume Per Business",
+        "byServiceGroups": "Requests By Service Groups",
+        "requestsAssignment": "Requests Assignment",
+        "byPriority": "Requests By Priority",
+        "assignmentByResource": "Requests Assignment By Resource",
+        "executionOverview": "Execution Status Overview"
+      },
+      "labels": {
+        "requests": "Requests",
+        "groups": "Groups",
+        "priorityTiers": "Priority Tiers",
+        "specialists": "Specialists",
+        "assigned": "Assigned"
+      }
+    },
+    "services": {
+      "title": "Requestable Services",
+      "description": "Catalog of enterprise and government services available for request initiation and fulfillment.",
+      "addNew": "Add Service",
+      "searchPlaceholder": "Search services by code, title, group, or portal...",
+      "initiateRequest": "Initiate Request",
+      "requestNowBtn": "Request",
+      "daysUnit": "Days",
+      "createSuccess": "Service created successfully.",
+      "updateSuccess": "Service updated successfully.",
+      "deleteSuccess": "Service deleted successfully.",
+      "exportSuccess": "Exported {{count}} services to CSV",
+      "columns": {
+        "code": "Service Code",
+        "title": "Service Title",
+        "serviceGroup": "Service Group",
+        "relatedTo": "Related To",
+        "portal": "Portal",
+        "processingTime": "SLA (Days)",
+        "fee": "Service Fee",
+        "status": "Status"
+      },
+      "drawer": {
+        "createTitle": "Add Requestable Service",
+        "editTitle": "Edit Requestable Service",
+        "viewTitle": "Service Details",
+        "subtitle": "Configure service details, SLA, and portal mapping.",
+        "titleEn": "Service Title (English)",
+        "titleAr": "Service Title (Arabic)",
+        "descriptionEn": "Description (English)",
+        "descriptionAr": "Description (Arabic)"
+      },
+      "validation": {
+        "titleEnRequired": "English service title is required.",
+        "titleArRequired": "Arabic service title is required."
+      },
+      "deleteModal": {
+        "title": "Delete Service",
+        "message": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+      }
+    },
+    "requests": {
+      "title": "Service Requests",
+      "description": "Track, assign, and execute service requests across corporate entities and government portals.",
+      "addNew": "New Request",
+      "searchPlaceholder": "Search requests by ID, service, business, requester, or specialist...",
+      "createSuccess": "Request {{id}} created successfully.",
+      "updateSuccess": "Request {{id}} updated successfully.",
+      "assignSuccess": "Assignment updated for request {{id}}.",
+      "deleteSuccess": "Request {{id}} deleted successfully.",
+      "exportSuccess": "Exported {{count}} requests to CSV",
+      "columns": {
+        "requestId": "Request ID",
+        "service": "Service",
+        "company": "Business / Company",
+        "serviceGroup": "Service Group",
+        "requester": "Requester",
+        "assignedTo": "Assigned Resource",
+        "assignmentStatus": "Assignment",
+        "executionStatus": "Execution Status",
+        "priority": "Priority",
+        "dueDate": "Due Date",
+        "createdDate": "Created Date"
+      },
+      "drawer": {
+        "createTitle": "Create Service Request",
+        "editTitle": "Edit Service Request",
+        "viewTitle": "Service Request Details",
+        "subtitle": "Submit and configure enterprise service request details.",
+        "requesterEn": "Requester / Applicant Name",
+        "requesterAr": "Requester Name (Arabic)",
+        "requesterPlaceholder": "Enter applicant or beneficiary name...",
+        "paymentStatus": "Payment Status",
+        "completedDate": "Completed Date",
+        "notes": "Execution Notes & Instructions"
+      },
+      "assignModal": {
+        "title": "Assign Specialist Resource",
+        "createTaskCheckbox": "Automatically create a linked Operational Task for this specialist"
+      },
+      "validation": {
+        "requesterRequired": "Requester name is required.",
+        "serviceRequired": "Please select a service."
+      },
+      "deleteModal": {
+        "title": "Delete Service Request",
+        "message": "Are you sure you want to delete request {{id}} ({{service}})? This action cannot be undone."
+      }
+    },
+    "operationalTasks": {
+      "title": "Operational Tasks",
+      "description": "Manage specialist execution tasks, portal submissions, and verification milestones linked to service requests.",
+      "addNew": "Add Task",
+      "searchPlaceholder": "Search tasks by code, title, request ID, business, or specialist...",
+      "markCompleted": "Mark Completed",
+      "createSuccess": "Operational task {{code}} created successfully.",
+      "updateSuccess": "Operational task {{code}} updated successfully.",
+      "completeSuccess": "Operational task {{code}} marked as Completed.",
+      "deleteSuccess": "Operational task {{code}} deleted successfully.",
+      "exportSuccess": "Exported {{count}} operational tasks to CSV",
+      "kpis": {
+        "total": "Total Tasks"
+      },
+      "columns": {
+        "taskCode": "Task Code",
+        "title": "Task Title",
+        "requestId": "Linked Request",
+        "company": "Business / Company",
+        "stage": "Execution Stage",
+        "assignedTo": "Assigned Resource",
+        "priority": "Priority",
+        "status": "Status",
+        "dueDate": "Due Date"
+      },
+      "drawer": {
+        "createTitle": "Create Operational Task",
+        "editTitle": "Edit Operational Task",
+        "viewTitle": "Operational Task Details",
+        "subtitle": "Assign and track operational execution steps for service fulfillment.",
+        "titleEn": "Task Title (English)",
+        "titleAr": "Task Title (Arabic)",
+        "titlePlaceholder": "e.g. Verify Chamber of Commerce Attestation...",
+        "estimatedHours": "Estimated Hours"
+      },
+      "validation": {
+        "titleRequired": "Task title is required."
+      },
+      "deleteModal": {
+        "title": "Delete Operational Task",
+        "message": "Are you sure you want to delete task {{code}} ({{title}})? This action cannot be undone."
+      }
+    },
+    "auditTrail": {
+      "title": "Requests Audit Trail",
+      "description": "Chronological audit log of all actions performed across Services, Requests, and Operational Tasks.",
+      "searchPlaceholder": "Search audit logs by ID, action, resource, data, or specialist...",
+      "exportSuccess": "Exported {{count}} audit records to CSV",
+      "columns": {
+        "actionPerformed": "Action Performed",
+        "resource": "Resource",
+        "resourceData": "Resource Data",
+        "performedBy": "Performed By",
+        "dateTime": "Date & Time"
+      },
+      "filters": {
+        "action": "Action",
+        "allActions": "All Actions",
+        "resource": "Resource",
+        "allResources": "All Resources",
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "actions": {
+        "CREATED": "Created",
+        "UPDATED": "Updated",
+        "ASSIGNED": "Assigned",
+        "COMPLETED": "Completed",
+        "REJECTED": "Rejected",
+        "DELETED": "Deleted"
+      },
+      "resources": {
+        "Request": "Request",
+        "Service": "Service",
+        "OperationalTask": "Operational Task"
+      },
+      "details": {
+        "viewDetails": "View Audit Details",
+        "title": "Audit Record Details",
+        "activityNotes": "Activity Notes"
       }
     }
   }

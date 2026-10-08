@@ -77,6 +77,9 @@
     "documentCategories": "تصنيفات الوثائق",
     "documentTypes": "أنواع الوثائق",
     "documentTemplates": "قوالب الوثائق",
+    "service": "الخدمات",
+    "requests": "الطلبات",
+    "operationalTasks": "المهام التشغيلية",
     "accountSettings": "إعدادات الحساب",
     "expandSidebar": "توسيع القائمة الجانبية",
     "collapseSidebar": "طي القائمة الجانبية",
@@ -1281,6 +1284,258 @@
         "Document": "وثيقة",
         "Employee Template": "قالب موظف",
         "Company Template": "قالب منشأة"
+      }
+    }
+  },
+  "request": {
+    "actions": {
+      "view": "عرض",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "assign": "إسناد / إعادة إسناد",
+      "assignNow": "إسناد"
+    },
+    "entityScopes": {
+      "business": "منشأة",
+      "employee": "موظف",
+      "asset": "أصل"
+    },
+    "assignmentStatuses": {
+      "assigned": "مسند",
+      "unassigned": "غير مسند",
+      "completed": "مكتمل",
+      "rejected": "مرفوض"
+    },
+    "executionStatuses": {
+      "initiated": "جديد",
+      "inProgress": "قيد التنفيذ",
+      "underReview": "قيد المراجعة",
+      "completed": "مكتمل",
+      "rejected": "مرفوض"
+    },
+    "taskStatuses": {
+      "pending": "قيد الانتظار",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "blocked": "متوقف",
+      "rejected": "مرفوض"
+    },
+    "priorities": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية",
+      "critical": "حرجة"
+    },
+    "paymentStatuses": {
+      "paid": "مدفوع",
+      "pending": "بانتظار السداد",
+      "exempt": "معفى (بدون رسوم)"
+    },
+    "filters": {
+      "company": "المنشأة / الشركة",
+      "allCompanies": "جميع المنشآت",
+      "serviceGroup": "مجموعة الخدمات",
+      "allServiceGroups": "جميع مجموعات الخدمات",
+      "allScopes": "جميع الكيانات",
+      "allPortals": "جميع المنصات",
+      "allStatuses": "جميع الحالات",
+      "allPriorities": "جميع الأولويات",
+      "allResources": "جميع المختصين"
+    },
+    "dashboard": {
+      "title": "لوحة معلومات الطلبات",
+      "description": "نظرة تحليلية شاملة لطلبات الخدمات، حجم العمليات حسب المنشأة، وتوزيع المهام على المختصين.",
+      "viewAllRequests": "إدارة الطلبات",
+      "operationalTasksBtn": "المهام التشغيلية",
+      "kpis": {
+        "totalRequests": "إجمالي الطلبات",
+        "activeTasks": "المهام النشطة"
+      },
+      "sections": {
+        "volumePerBusiness": "حجم الطلبات لكل منشأة",
+        "byServiceGroups": "الطلبات حسب مجموعات الخدمات",
+        "requestsAssignment": "توزيع إسناد الطلبات",
+        "byPriority": "الطلبات حسب الأولوية",
+        "assignmentByResource": "توزيع الطلبات حسب المختص",
+        "executionOverview": "نظرة عامة على حالة التنفيذ"
+      },
+      "labels": {
+        "requests": "طلبات",
+        "groups": "مجموعات",
+        "priorityTiers": "مستويات أولوية",
+        "specialists": "مختصين",
+        "assigned": "الطلبات المسندة"
+      }
+    },
+    "services": {
+      "title": "دليل خدمات الطلبات",
+      "description": "قائمة الخدمات الحكومية والإدارية المتاحة لتقديم الطلبات ومتابعة تنفيذها.",
+      "addNew": "إضافة خدمة",
+      "searchPlaceholder": "البحث في الخدمات حسب الرمز، العنوان، المجموعة، أو المنصة...",
+      "initiateRequest": "تقديم طلب خدمة",
+      "requestNowBtn": "طلب الخدمة",
+      "daysUnit": "أيام",
+      "createSuccess": "تم إنشاء الخدمة بنجاح.",
+      "updateSuccess": "تم تحديث الخدمة بنجاح.",
+      "deleteSuccess": "تم حذف الخدمة بنجاح.",
+      "exportSuccess": "تم تصدير {{count}} خدمة إلى ملف CSV",
+      "columns": {
+        "code": "رمز الخدمة",
+        "title": "عنوان الخدمة",
+        "serviceGroup": "مجموعة الخدمات",
+        "relatedTo": "مرتبطة بـ",
+        "portal": "المنصة الحكومية",
+        "processingTime": "مدة التنفيذ",
+        "fee": "رسوم الخدمة",
+        "status": "الحالة"
+      },
+      "drawer": {
+        "createTitle": "إضافة خدمة قابلة للطلب",
+        "editTitle": "تعديل بيانات الخدمة",
+        "viewTitle": "تفاصيل الخدمة",
+        "subtitle": "إعداد تفاصيل الخدمة ومدة التنفيذ والمنصة المرتبطة.",
+        "titleEn": "عنوان الخدمة (إنجليزي)",
+        "titleAr": "عنوان الخدمة (عربي)",
+        "descriptionEn": "الوصف (إنجليزي)",
+        "descriptionAr": "الوصف (عربي)"
+      },
+      "validation": {
+        "titleEnRequired": "عنوان الخدمة باللغة الإنجليزية مطلوب.",
+        "titleArRequired": "عنوان الخدمة باللغة العربية مطلوب."
+      },
+      "deleteModal": {
+        "title": "حذف الخدمة",
+        "message": "هل أنت متأكد من رغبتك في حذف الخدمة \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء."
+      }
+    },
+    "requests": {
+      "title": "طلبات الخدمات",
+      "description": "إدارة، إسناد، ومتابعة تنفيذ طلبات الخدمات عبر المنشآت والمنصات الحكومية.",
+      "addNew": "طلب جديد",
+      "searchPlaceholder": "البحث في الطلبات حسب الرقم، الخدمة، المنشأة، مقدم الطلب، أو المختص...",
+      "createSuccess": "تم إنشاء الطلب {{id}} بنجاح.",
+      "updateSuccess": "تم تحديث الطلب {{id}} بنجاح.",
+      "assignSuccess": "تم تحديث إسناد المختص للطلب {{id}} بنجاح.",
+      "deleteSuccess": "تم حذف الطلب {{id}} بنجاح.",
+      "exportSuccess": "تم تصدير {{count}} طلب إلى ملف CSV",
+      "columns": {
+        "requestId": "رقم الطلب",
+        "service": "الخدمة",
+        "company": "المنشأة / الشركة",
+        "serviceGroup": "مجموعة الخدمات",
+        "requester": "مقدم الطلب",
+        "assignedTo": "المختص المسند إليه",
+        "assignmentStatus": "حالة الإسناد",
+        "executionStatus": "حالة التنفيذ",
+        "priority": "الأولوية",
+        "dueDate": "تاريخ الاستحقاق",
+        "createdDate": "تاريخ الإنشاء"
+      },
+      "drawer": {
+        "createTitle": "إنشاء طلب خدمة جديد",
+        "editTitle": "تعديل طلب الخدمة",
+        "viewTitle": "تفاصيل طلب الخدمة",
+        "subtitle": "إدخال ومراجعة بيانات طلب الخدمة وحالة التنفيذ.",
+        "requesterEn": "اسم مقدم الطلب / المستفيد",
+        "requesterAr": "اسم مقدم الطلب (عربي)",
+        "requesterPlaceholder": "أدخل اسم مقدم الطلب أو المستفيد...",
+        "paymentStatus": "حالة السداد",
+        "completedDate": "تاريخ الإنجاز",
+        "notes": "ملاحظات وتعليمات التنفيذ"
+      },
+      "assignModal": {
+        "title": "إسناد الطلب إلى مختص",
+        "createTaskCheckbox": "إنشاء مهمة تشغيلية مرتبطة تلقائياً لهذا المختص"
+      },
+      "validation": {
+        "requesterRequired": "اسم مقدم الطلب مطلوب.",
+        "serviceRequired": "يرجى اختيار الخدمة."
+      },
+      "deleteModal": {
+        "title": "حذف طلب الخدمة",
+        "message": "هل أنت متأكد من رغبتك في حذف الطلب {{id}} ({{service}})؟ لا يمكن التراجع عن هذا الإجراء."
+      }
+    },
+    "operationalTasks": {
+      "title": "المهام التشغيلية",
+      "description": "متابعة وإنجاز المهام التشغيلية ومراحل التقديم عبر المنصات الحكومية المرتبطة بطلبات الخدمات.",
+      "addNew": "إضافة مهمة",
+      "searchPlaceholder": "البحث في المهام حسب الرمز، العنوان، رقم الطلب، المنشأة، أو المختص...",
+      "markCompleted": "اعتماد كـ مكتمل",
+      "createSuccess": "تم إنشاء المهمة التشغيلية {{code}} بنجاح.",
+      "updateSuccess": "تم تحديث المهمة التشغيلية {{code}} بنجاح.",
+      "completeSuccess": "تم اعتماد إتمام المهمة التشغيلية {{code}}.",
+      "deleteSuccess": "تم حذف المهمة التشغيلية {{code}} بنجاح.",
+      "exportSuccess": "تم تصدير {{count}} مهمة تشغيلية إلى ملف CSV",
+      "kpis": {
+        "total": "إجمالي المهام"
+      },
+      "columns": {
+        "taskCode": "رمز المهمة",
+        "title": "عنوان المهمة",
+        "requestId": "الطلب المرتبط",
+        "company": "المنشأة / الشركة",
+        "stage": "مرحلة التنفيذ",
+        "assignedTo": "المختص المسؤول",
+        "priority": "الأولوية",
+        "status": "الحالة",
+        "dueDate": "تاريخ الاستحقاق"
+      },
+      "drawer": {
+        "createTitle": "إضافة مهمة تشغيلية",
+        "editTitle": "تعديل المهمة التشغيلية",
+        "viewTitle": "تفاصيل المهمة التشغيلية",
+        "subtitle": "تحديد خطوات التنفيذ والمختص المسؤول عن إنجاز المهمة.",
+        "titleEn": "عنوان المهمة (إنجليزي)",
+        "titleAr": "عنوان المهمة (عربي)",
+        "titlePlaceholder": "مثال: التحقق من اشتراك الغرفة التجارية...",
+        "estimatedHours": "الساعات المقدرة"
+      },
+      "validation": {
+        "titleRequired": "عنوان المهمة مطلوب."
+      },
+      "deleteModal": {
+        "title": "حذف المهمة التشغيلية",
+        "message": "هل أنت متأكد من رغبتك في حذف المهمة {{code}} ({{title}})؟ لا يمكن التراجع عن هذا الإجراء."
+      }
+    },
+    "auditTrail": {
+      "title": "سجل عمليات الطلبات",
+      "description": "سجل زمني شامل لجميع العمليات المنفذة على الخدمات والطلبات والمهام التشغيلية.",
+      "searchPlaceholder": "البحث في سجل العمليات حسب المعرف، الإجراء، المورد، البيانات، أو المختص...",
+      "exportSuccess": "تم تصدير {{count}} سجل تدقيق إلى ملف CSV",
+      "columns": {
+        "actionPerformed": "الإجراء المنفذ",
+        "resource": "المورد",
+        "resourceData": "بيانات المورد",
+        "performedBy": "نفذ بواسطة",
+        "dateTime": "التاريخ والوقت"
+      },
+      "filters": {
+        "action": "الإجراء",
+        "allActions": "جميع الإجراءات",
+        "resource": "المورد",
+        "allResources": "جميع الموارد",
+        "startDate": "تاريخ البداية",
+        "endDate": "تاريخ النهاية"
+      },
+      "actions": {
+        "CREATED": "إنشاء",
+        "UPDATED": "تحديث",
+        "ASSIGNED": "إسناد",
+        "COMPLETED": "إتمام",
+        "REJECTED": "رفض",
+        "DELETED": "حذف"
+      },
+      "resources": {
+        "Request": "طلب خدمة",
+        "Service": "خدمة",
+        "OperationalTask": "مهمة تشغيلية"
+      },
+      "details": {
+        "viewDetails": "عرض تفاصيل السجل",
+        "title": "تفاصيل سجل التدقيق",
+        "activityNotes": "ملاحظات العملية"
       }
     }
   }
