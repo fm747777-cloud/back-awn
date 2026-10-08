@@ -75,6 +75,29 @@ export const TICKETING_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
+export const EDMS_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Main',
+        items: [
+            { label: 'Dashboard', path: '/edms/dashboard', icon: LayoutDashboard },
+            { label: 'Documents', path: '/edms/documents', icon: Layers },
+        ],
+    },
+    {
+        title: 'Masters',
+        items: [
+            { label: 'Document Categories', path: '/edms/document-categories', icon: Grid },
+            { label: 'Document Types', path: '/edms/document-types', icon: ListFilter },
+            { label: 'Document Templates', path: '/edms/document-templates', icon: FolderKanban },
+        ],
+    },
+    {
+        items: [
+            { label: 'Audit Trail', path: '/edms/audit-trail', icon: History },
+        ],
+    },
+];
+
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -84,8 +107,13 @@ interface SidebarState {
 }
 
 const getInitialMenuGroups = (): MenuGroup[] => {
-    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ticketing')) {
-        return TICKETING_SIDEBAR_GROUPS;
+    if (typeof window !== 'undefined') {
+        if (window.location.pathname.startsWith('/ticketing')) {
+            return TICKETING_SIDEBAR_GROUPS;
+        }
+        if (window.location.pathname.startsWith('/edms')) {
+            return EDMS_SIDEBAR_GROUPS;
+        }
     }
     return DEFAULT_SIDEBAR_GROUPS;
 };

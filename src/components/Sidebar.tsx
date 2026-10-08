@@ -25,6 +25,10 @@ const ITEM_LABEL_KEYS: Record<string, string> = {
     Tickets: 'nav.tickets',
     'Ticket Types': 'nav.ticketTypes',
     'Canned Replies': 'nav.cannedReplies',
+    Documents: 'nav.documents',
+    'Document Categories': 'nav.documentCategories',
+    'Document Types': 'nav.documentTypes',
+    'Document Templates': 'nav.documentTemplates',
 };
 
 export const Sidebar = () => {
@@ -85,7 +89,7 @@ export const Sidebar = () => {
                                 {group.items.map((item) => {
                                     const Icon = item.icon;
                                     const labelKey = ITEM_LABEL_KEYS[item.label];
-                                    const translatedLabel = labelKey ? t(labelKey) : item.label;
+                                    const translatedLabel = labelKey ? t(labelKey, { defaultValue: item.label }) : item.label;
 
                                     return (
                                         <NavLink

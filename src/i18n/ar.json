@@ -73,6 +73,10 @@
     "tickets": "التذاكر",
     "ticketTypes": "أنواع التذاكر",
     "cannedReplies": "الردود الجاهزة",
+    "documents": "الوثائق",
+    "documentCategories": "تصنيفات الوثائق",
+    "documentTypes": "أنواع الوثائق",
+    "documentTemplates": "قوالب الوثائق",
     "accountSettings": "إعدادات الحساب",
     "expandSidebar": "توسيع القائمة الجانبية",
     "collapseSidebar": "طي القائمة الجانبية",
@@ -576,7 +580,14 @@
     "Invalid input: expected number, received NaN": "يرجى إدخال سعر صحيح للباقة",
     "Group Name is required": "يرجى إدخال اسم المجموعة",
     "Please enter a valid email address": "يرجى إدخال بريد إلكتروني صحيح",
-    "Password must be at least 6 characters": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل"
+    "Password must be at least 6 characters": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+    "Customer is required": "يرجى اختيار العميل",
+    "Company is required": "يرجى اختيار المنشأة",
+    "Priority is required": "يرجى تحديد مستوى الأولوية",
+    "Subject is required": "يرجى إدخال موضوع التذكرة",
+    "Message is required": "يرجى إدخال نص الرسالة أو تفاصيل الطلب",
+    "Unsupported file type. Allowed: Images, PDF, Word, Excel, Text": "صيغة الملف غير مدعومة. الصيغ المسموحة: الصور، PDF، وورد، إكسل، والملفات النصية",
+    "Attachment exceeds the 10MB size limit": "حجم المرفق يتجاوز الحد الأقصى المسموح به (10 ميجابايت)"
   },
   "presets": {
     "inputDocuments": {
@@ -736,6 +747,541 @@
       "editPrompt": "تعديل التذكرة {{id}}",
       "deletePrompt": "تم تحديد إجراء حذف التذكرة {{id}}"
     },
-    "newTicketModalPrompt": "بدء نموذج إنشاء تذكرة جديدة"
+    "newTicketModalPrompt": "بدء نموذج إنشاء تذكرة جديدة",
+    "statuses": {
+      "new": "جديدة",
+      "open": "مفتوحة",
+      "inProgress": "قيد المعالجة",
+      "solved": "تم الحل",
+      "closed": "مغلقة"
+    },
+    "dashboard": {
+      "kpis": {
+        "totalTickets": "إجمالي التذاكر",
+        "totalTicketsDesc": "جميع تذاكر الدعم المسجلة للمنشآت والعملاء",
+        "newTicketsDesc": "تذاكر جديدة بانتظار الفرز والتوجيه",
+        "inProgressTicketsDesc": "تذاكر جاري العمل عليها من قِبل المختصين",
+        "solvedTicketsDesc": "تذاكر تمت معالجتها والتحقق من حلها"
+      },
+      "sections": {
+        "byStatus": "التذاكر حسب الحالة",
+        "byPriority": "التذاكر حسب الأولوية",
+        "byType": "التذاكر حسب النوع"
+      }
+    },
+    "tickets": {
+      "createSuccess": "تم إنشاء التذكرة {{id}} بنجاح",
+      "updateSuccess": "تم تحديث التذكرة {{id}} بنجاح",
+      "deleteSuccess": "تم حذف التذكرة {{id}} بنجاح",
+      "exportSuccess": "تم تصدير {{count}} تذكرة إلى ملف CSV"
+    },
+    "deleteModal": {
+      "title": "حذف التذكرة",
+      "message": "هل أنت متأكد من رغبتك في حذف التذكرة {{id}} ({{subject}}) نهائياً؟ لا يمكن التراجع عن هذا الإجراء.",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد الحذف"
+    },
+    "form": {
+      "createTitle": "إنشاء تذكرة جديدة",
+      "createSubtitle": "تسجيل طلب دعم فني أو إداري جديد لصالح العميل والمنشأة.",
+      "editTitle": "تعديل التذكرة",
+      "editSubtitle": "تحديث البيانات أو تغيير الحالة للتذكرة {{id}}",
+      "viewTitle": "تفاصيل التذكرة",
+      "viewSubtitle": "استعراض السجل الكامل للتذكرة {{id}}",
+      "close": "إغلاق",
+      "cancel": "إلغاء",
+      "saveCreate": "إنشاء التذكرة",
+      "saveEdit": "حفظ التغييرات",
+      "customer": "العميل",
+      "customerPlaceholder": "اختر العميل...",
+      "searchCustomer": "ابحث باسم العميل...",
+      "noCustomerFound": "لا يوجد عميل مطابق للبحث",
+      "company": "المنشأة",
+      "companyPlaceholder": "اختر المنشأة...",
+      "searchCompany": "ابحث باسم المنشأة...",
+      "noCompanyFound": "لا توجد منشأة مطابقة للبحث",
+      "ticketType": "نوع التذكرة",
+      "ticketTypePlaceholder": "اختر نوع التذكرة...",
+      "noTicketType": "غير محدد",
+      "priority": "الأولوية",
+      "priorityPlaceholder": "اختر مستوى الأولوية...",
+      "status": "حالة التذكرة",
+      "subject": "موضوع التذكرة",
+      "subjectPlaceholder": "أدخل عنواناً واضحاً ومختصراً لطلب الدعم أو المشكلة...",
+      "insertCannedReply": "إدراج رد جاهز",
+      "cannedReplyPlaceholder": "اختر قالب رد جاهز لإدراجه في الرسالة...",
+      "cannedReplyHint": "عند اختيار قالب رد جاهز يتم إدراج نصه في حقل الرسالة أدناه دون مسح أي نص مكتوب مسبقاً.",
+      "message": "نص الرسالة / التفاصيل",
+      "messagePlaceholder": "اشرح تفاصيل الطلب أو المشكلة أو الإجراء المطلوب...",
+      "attachment": "المرفقات",
+      "noAttachment": "لا يوجد ملف مرفق",
+      "replaceAttachment": "استبدال الملف",
+      "removeAttachment": "إزالة المرفق",
+      "dragDropTitle": "اسحب وأفلت الملف هنا، أو",
+      "chooseFile": "استعرض الملفات",
+      "attachmentHint": "الصيغ المدعومة: الصور، PDF، وورد، إكسل، CSV، TXT (بحد أقصى 10 ميجابايت)"
+    },
+    "ticketTypes": {
+      "searchPlaceholder": "ابحث في أنواع التذاكر بالمعرف أو الاسم أو المنشئ...",
+      "addLabel": "إضافة نوع تذكرة",
+      "createSuccess": "تم إنشاء نوع التذكرة بنجاح",
+      "updateSuccess": "تم تحديث نوع التذكرة بنجاح",
+      "deleteSuccess": "تم حذف نوع التذكرة بنجاح",
+      "columns": {
+        "id": "المعرف",
+        "name": "اسم نوع التذكرة",
+        "description": "الوصف",
+        "ticketsCount": "عدد التذاكر",
+        "createdBy": "أنشئ بواسطة",
+        "createdAt": "تاريخ الإنشاء"
+      },
+      "drawer": {
+        "createTitle": "إضافة نوع تذكرة جديد",
+        "createSubtitle": "تعريف تصنيف تذاكر ثنائي اللغة لتوجيه طلبات الدعم.",
+        "editTitle": "تعديل نوع التذكرة",
+        "editSubtitle": "تحديث اسم التصنيف والوصف الخاص به.",
+        "viewTitle": "تفاصيل نوع التذكرة",
+        "viewSubtitle": "استعراض بيانات نوع التذكرة وعدد التذاكر المرتبطة به.",
+        "name": "اسم نوع التذكرة (بالإنجليزي)",
+        "namePlaceholder": "مثال: Technical Support",
+        "nameAr": "الاسم بالعربي",
+        "nameArPlaceholder": "مثال: الدعم الفني",
+        "description": "الوصف (بالإنجليزي)",
+        "descriptionPlaceholder": "وصف مختصر بالإنجليزية للتذاكر المشمولة ضمن هذا النوع...",
+        "descriptionAr": "الوصف بالعربي",
+        "descriptionArPlaceholder": "وصف مختصر لطلبات الدعم المشمولة ضمن هذا النوع..."
+      },
+      "validation": {
+        "nameRequired": "يرجى إدخال اسم نوع التذكرة باللغة الإنجليزية",
+        "nameArRequired": "يرجى إدخال اسم نوع التذكرة باللغة العربية"
+      },
+      "deleteModal": {
+        "title": "حذف نوع التذكرة",
+        "message": "هل أنت متأكد من رغبتك في حذف نوع التذكرة \"{{name}}\"؟ ستحتفظ التذاكر السابقة بتصنيفها المسجل."
+      }
+    },
+    "cannedReplies": {
+      "searchPlaceholder": "ابحث في الردود الجاهزة بالعنوان أو محتوى الرد...",
+      "addLabel": "إضافة رد جاهز",
+      "createSuccess": "تم إنشاء الرد الجاهز بنجاح",
+      "updateSuccess": "تم تحديث الرد الجاهز بنجاح",
+      "deleteSuccess": "تم حذف الرد الجاهز بنجاح",
+      "columns": {
+        "id": "المعرف",
+        "title": "عنوان الرد",
+        "reply": "نص الرد",
+        "createdBy": "أنشئ بواسطة",
+        "createdAt": "تاريخ الإنشاء"
+      },
+      "drawer": {
+        "createTitle": "إضافة رد جاهز جديد",
+        "createSubtitle": "إنشاء قالب رد موحد ثنائي اللغة لاستخدامه في الرد على التذاكر.",
+        "editTitle": "تعديل الرد الجاهز",
+        "editSubtitle": "تحديث عنوان القالب ونص الرد باللغتين العربية والإنجليزية.",
+        "viewTitle": "تفاصيل الرد الجاهز",
+        "viewSubtitle": "استعراض النص الكامل لقالب الرد الجاهز.",
+        "title": "عنوان الرد (بالإنجليزي)",
+        "titlePlaceholder": "مثال: Muqeem API Gateway Verification",
+        "titleAr": "العنوان بالعربي",
+        "titleArPlaceholder": "مثال: تأكيد فحص ربط بوابة مقيم الإلكترونية",
+        "reply": "نص الرد (بالإنجليزي)",
+        "replyPlaceholder": "أدخل نص الرد المعتمد باللغة الإنجليزية...",
+        "replyAr": "نص الرد بالعربي",
+        "replyArPlaceholder": "أدخل نص الرد المعتمد باللغة العربية..."
+      },
+      "validation": {
+        "titleRequired": "يرجى إدخال عنوان الرد باللغة الإنجليزية",
+        "titleArRequired": "يرجى إدخال عنوان الرد باللغة العربية",
+        "replyRequired": "يرجى إدخال نص الرد باللغة الإنجليزية",
+        "replyArRequired": "يرجى إدخال نص الرد باللغة العربية"
+      },
+      "deleteModal": {
+        "title": "حذف الرد الجاهز",
+        "message": "هل أنت متأكد من رغبتك في حذف قالب الرد الجاهز \"{{title}}\"؟"
+      }
+    },
+    "auditActions": {
+      "created": "إنشاء",
+      "updated": "تحديث",
+      "deleted": "حذف"
+    },
+    "auditTrail": {
+      "searchPlaceholder": "ابحث في سجل التدقيق بالمعرف أو الإجراء أو المورد أو البيانات أو المستخدم...",
+      "columns": {
+        "actionPerformed": "الإجراء المنفذ",
+        "resource": "المورد",
+        "resourceData": "بيانات المورد",
+        "performedBy": "نفذ بواسطة",
+        "dateTime": "التاريخ والوقت"
+      },
+      "filters": {
+        "action": "الإجراء",
+        "allActions": "جميع الإجراءات",
+        "resource": "المورد",
+        "allResources": "جميع الموارد"
+      },
+      "resources": {
+        "ticket": "تذكرة",
+        "ticketType": "نوع تذكرة",
+        "cannedReply": "رد جاهز"
+      },
+      "details": {
+        "viewDetails": "عرض تفاصيل السجل",
+        "title": "تفاصيل سجل التدقيق",
+        "subtitle": "البيانات الكاملة للعملية المسجلة في وحدة التذاكر.",
+        "auditId": "معرف السجل",
+        "additionalNotes": "ملاحظات العملية"
+      }
+    }
+  },
+  "edms": {
+    "dashboardTitle": "لوحة تحكم إدارة الوثائق",
+    "dashboardDesc": "نظرة شاملة على الوثائق المؤسسية، ومتابعة تواريخ الانتهاء، والتصنيفات، ووثائق المنشآت.",
+    "dashboard": {
+      "title": "لوحة تحكم إدارة الوثائق",
+      "description": "نظرة شاملة على الوثائق المؤسسية، ومتابعة تواريخ الانتهاء، والتصنيفات، ووثائق المنشآت.",
+      "sections": {
+        "documentsExpiring": "وثائق قاربت على الانتهاء",
+        "documentsByCategory": "الوثائق حسب التصنيف",
+        "documentsByType": "الوثائق حسب النوع",
+        "companyWiseDocuments": "الوثائق حسب المنشأة",
+        "companyWiseBusinessDocuments": "وثائق الأعمال حسب المنشأة"
+      },
+      "labels": {
+        "documentCode": "رمز الوثيقة",
+        "documentTitle": "عنوان الوثيقة",
+        "category": "التصنيف",
+        "type": "نوع الوثيقة",
+        "company": "المنشأة",
+        "expiryDate": "تاريخ الانتهاء",
+        "remaining": "المتبقي",
+        "daysRemaining": "{{count}} يوم",
+        "categoriesCount": "{{count}} تصنيفات",
+        "documents": "وثائق",
+        "typesCount": "{{count}} أنواع",
+        "totalDocuments": "إجمالي {{count}}",
+        "totalBusinessDocs": "{{count}} وثيقة منشأة",
+        "businessDocuments": "وثائق المنشأة"
+      }
+    },
+    "documents": {
+      "title": "الوثائق",
+      "description": "السجل المركزي لوثائق المنشآت والموظفين والأصول والملفات الرسمية.",
+      "searchPlaceholder": "البحث في الوثائق بالرمز، العنوان، الجهة، النوع، أو التصنيف...",
+      "exportSuccess": "تم تصدير {{count}} وثيقة إلى ملف CSV بنجاح",
+      "columns": {
+        "documentCode": "رمز الوثيقة",
+        "documentTitle": "عنوان الوثيقة",
+        "documentFor": "خاصة بـ",
+        "documentType": "نوع الوثيقة",
+        "documentCategory": "تصنيف الوثيقة",
+        "createdBy": "أنشئ بواسطة",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "filters": {
+        "companies": "المنشآت",
+        "companiesPlaceholder": "تصفية حسب المنشأة...",
+        "employees": "الموظفون",
+        "employeesPlaceholder": "تصفية حسب الموظف...",
+        "noOptionsMatch": "لا توجد خيارات مطابقة"
+      },
+      "actions": {
+        "view": "عرض",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "drawer": {
+        "viewTitle": "تفاصيل الوثيقة",
+        "editTitle": "تعديل الوثيقة",
+        "subtitle": "رمز الوثيقة: {{code}}",
+        "holderName": "اسم الجهة / صاحب الوثيقة",
+        "issueDate": "تاريخ الإصدار",
+        "expiryDate": "تاريخ الانتهاء",
+        "saveChanges": "حفظ التعديلات",
+        "titleRequired": "عنوان الوثيقة مطلوب."
+      },
+      "form": {
+        "viewTitle": "تفاصيل الوثيقة",
+        "editTitle": "تعديل الوثيقة",
+        "viewSubtitle": "عرض البيانات الأساسية للوثيقة {{code}}",
+        "editSubtitle": "تحديث بيانات الوثيقة {{code}}",
+        "documentCode": "رمز الوثيقة",
+        "documentTitle": "عنوان الوثيقة",
+        "documentTitlePlaceholder": "أدخل عنوان الوثيقة...",
+        "documentFor": "خاصة بـ",
+        "documentForPlaceholder": "أدخل اسم المنشأة أو الموظف أو الأصل...",
+        "documentType": "نوع الوثيقة",
+        "documentCategory": "تصنيف الوثيقة",
+        "createdBy": "أنشئ بواسطة",
+        "status": "الحالة",
+        "cancel": "إلغاء",
+        "submit": "حفظ التعديلات",
+        "errors": {
+          "documentTitleRequired": "عنوان الوثيقة مطلوب.",
+          "documentForRequired": "حقل الجهة الخاصة بها الوثيقة مطلوب.",
+          "documentTypeRequired": "نوع الوثيقة مطلوب."
+        }
+      },
+      "feedback": {
+        "editSuccess": "تم تحديث الوثيقة بنجاح.",
+        "deleteSuccess": "تم حذف الوثيقة بنجاح."
+      },
+      "deleteModal": {
+        "title": "حذف الوثيقة",
+        "message": "هل أنت متأكد من رغبتك في حذف الوثيقة {{code}} ({{title}})؟ لا يمكن التراجع عن هذا الإجراء.",
+        "cancel": "إلغاء",
+        "confirm": "حذف"
+      }
+    },
+    "documentCategories": {
+      "title": "تصنيفات الوثائق",
+      "description": "تعريف وإدارة التصنيفات الرئيسية للوثائق والمستندات المؤسسية.",
+      "addNew": "إضافة تصنيف",
+      "searchPlaceholder": "البحث في التصنيفات بالرمز، الاسم، أو الوصف...",
+      "exportSuccess": "تم تصدير {{count}} تصنيف وثائق إلى ملف CSV بنجاح",
+      "columns": {
+        "categoryCode": "رمز التصنيف",
+        "categoryName": "اسم التصنيف",
+        "description": "الوصف",
+        "createdBy": "أنشئ بواسطة",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "form": {
+        "createTitle": "إضافة تصنيف وثائق",
+        "editTitle": "تعديل تصنيف الوثائق",
+        "createSubtitle": "إنشاء تصنيف جديد لتنظيم الوثائق ضمن دليل النظام.",
+        "editSubtitle": "تحديث بيانات التصنيف {{code}}",
+        "categoryName": "اسم التصنيف",
+        "categoryNamePlaceholder": "أدخل اسم التصنيف (مثال: منشآت، موظفين، أصول)",
+        "description": "الوصف",
+        "descriptionPlaceholder": "أدخل وصفاً واضحاً للوثائق المندرجة تحت هذا التصنيف...",
+        "cancel": "إلغاء",
+        "submit": "حفظ التصنيف",
+        "errors": {
+          "categoryNameRequired": "اسم التصنيف مطلوب.",
+          "descriptionRequired": "الوصف مطلوب."
+        }
+      },
+      "feedback": {
+        "createSuccess": "تم إنشاء تصنيف الوثائق بنجاح.",
+        "editSuccess": "تم تحديث تصنيف الوثائق بنجاح.",
+        "deleteSuccess": "تم حذف تصنيف الوثائق بنجاح."
+      },
+      "deleteModal": {
+        "title": "حذف تصنيف الوثائق",
+        "message": "هل أنت متأكد من رغبتك في حذف التصنيف {{code}} ({{name}})؟ لا يمكن التراجع عن هذا الإجراء.",
+        "cancel": "إلغاء",
+        "confirm": "حذف"
+      }
+    },
+    "documentTypes": {
+      "title": "أنواع الوثائق",
+      "description": "إعداد أنواع الوثائق الرسمية وربطها بالتصنيفات المعتمدة في النظام.",
+      "addNew": "إضافة نوع وثيقة",
+      "searchPlaceholder": "البحث في أنواع الوثائق بالرمز، الاسم، التصنيف، أو الوصف...",
+      "exportSuccess": "تم تصدير {{count}} نوع وثيقة إلى ملف CSV بنجاح",
+      "columns": {
+        "typeCode": "رمز النوع",
+        "typeName": "اسم النوع",
+        "documentCategory": "تصنيف الوثيقة",
+        "description": "الوصف",
+        "createdBy": "أنشئ بواسطة",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "filters": {
+        "category": "تصنيف الوثيقة",
+        "allCategories": "جميع التصنيفات",
+        "clearFilters": "إعادة تعيين التصفية"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "form": {
+        "createTitle": "إضافة نوع وثيقة",
+        "editTitle": "تعديل نوع الوثيقة",
+        "createSubtitle": "تعريف نوع وثيقة جديد وتحديد التصنيف التابع له.",
+        "editSubtitle": "تحديث إعدادات نوع الوثيقة {{code}}",
+        "typeName": "اسم نوع الوثيقة",
+        "typeNamePlaceholder": "أدخل اسم نوع الوثيقة (مثال: السجل التجاري)",
+        "documentCategory": "تصنيف الوثيقة",
+        "documentCategoryPlaceholder": "اختر تصنيف الوثيقة...",
+        "searchCategoryPlaceholder": "البحث في التصنيفات...",
+        "noCategoryFound": "لا توجد تصنيفات مطابقة",
+        "description": "الوصف",
+        "descriptionPlaceholder": "أدخل وصفاً يوضح الغرض ونطاق الاستخدام لهذا النوع من الوثائق...",
+        "cancel": "إلغاء",
+        "submit": "حفظ نوع الوثيقة",
+        "errors": {
+          "typeNameRequired": "اسم نوع الوثيقة مطلوب.",
+          "documentCategoryRequired": "تصنيف الوثيقة مطلوب.",
+          "descriptionRequired": "الوصف مطلوب."
+        }
+      },
+      "feedback": {
+        "createSuccess": "تم إنشاء نوع الوثيقة بنجاح.",
+        "editSuccess": "تم تحديث نوع الوثيقة بنجاح.",
+        "deleteSuccess": "تم حذف نوع الوثيقة بنجاح."
+      },
+      "deleteModal": {
+        "title": "حذف نوع الوثيقة",
+        "message": "هل أنت متأكد من رغبتك في حذف نوع الوثيقة {{code}} ({{name}})؟ لا يمكن التراجع عن هذا الإجراء.",
+        "cancel": "إلغاء",
+        "confirm": "حذف"
+      }
+    },
+    "documentTemplates": {
+      "title": "قوالب الوثائق",
+      "description": "تصميم وإدارة القوالب المعتمدة للوثائق وهياكل النماذج الديناميكية.",
+      "addNew": "إضافة قالب",
+      "searchPlaceholder": "البحث في القوالب بالرمز، الاسم، الوسم، التصنيف، أو النوع...",
+      "exportSuccess": "تم تصدير {{count}} قالب وثيقة إلى ملف CSV بنجاح",
+      "columns": {
+        "templateCode": "رمز القالب",
+        "templateName": "اسم القالب",
+        "createDate": "تاريخ الإنشاء",
+        "documentTags": "وسوم الوثيقة",
+        "documentCategory": "تصنيف الوثيقة",
+        "documentType": "نوع الوثيقة",
+        "createdBy": "أنشئ بواسطة",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "form": {
+        "createTitle": "إنشاء قالب وثيقة",
+        "editTitle": "تعديل قالب الوثيقة",
+        "createSubtitle": "إعداد البيانات الأساسية للقالب وبناء حقول الوثيقة الديناميكية.",
+        "editSubtitle": "تعديل بيانات القالب {{code}} وعناصر النموذج الخاصة به",
+        "templateName": "اسم القالب",
+        "templateNamePlaceholder": "أدخل اسم القالب...",
+        "documentType": "نوع الوثيقة",
+        "documentTypePlaceholder": "اختر نوع الوثيقة...",
+        "documentCategory": "تصنيف الوثيقة",
+        "documentCategoryPlaceholder": "يتم تعبئته تلقائياً حسب نوع الوثيقة",
+        "tag": "الوسم",
+        "tagPlaceholder": "اختر الوسم أو المنصة المرتبطة...",
+        "cancel": "إلغاء",
+        "saveTemplate": "حفظ القالب",
+        "errors": {
+          "templateNameRequired": "اسم القالب مطلوب.",
+          "documentTypeRequired": "نوع الوثيقة مطلوب."
+        },
+        "builder": {
+          "title": "منشئ قوالب الوثائق",
+          "subtitle": "انقر أو اسحب العناصر لبناء هيكل حقول الوثيقة.",
+          "quickAddTitle": "إضافة العنصر المحدد إلى مساحة التصميم",
+          "availableElements": "عناصر النموذج المتاحة",
+          "canvasTitle": "مساحة تصميم هيكل القالب",
+          "elementsCount": "{{count}} عناصر",
+          "emptyCanvasTitle": "لم تتم إضافة أي عناصر بعد",
+          "emptyCanvasSubtitle": "انقر على أي عنصر من شريط الأدوات أعلاه أو قم بسحبه وإفلاته هنا لبناء القالب.",
+          "moveUp": "تحريك لأعلى",
+          "moveDown": "تحريك لأسفل",
+          "removeElement": "حذف العنصر",
+          "headingText": "نص العنوان الرئيسي",
+          "paragraphText": "نص الفقرة التوضيحية",
+          "fieldLabel": "تسمية الحقل",
+          "optionsLabel": "الخيارات المتاحة",
+          "addOption": "إضافة خيار",
+          "optionPlaceholder": "الخيار {{index}}",
+          "elements": {
+            "Text Field": "حقل نصي",
+            "Text Area": "منطقة نصية",
+            "Checkbox": "خانة اختيار",
+            "Date Field": "حقل تاريخ",
+            "Expiry Date": "تاريخ الانتهاء",
+            "File Upload": "مرفق ملف",
+            "Checkbox Group": "مجموعة خيارات",
+            "Number": "حقل رقمي",
+            "Header": "عنوان رئيسي",
+            "Paragraph": "فقرة نصية",
+            "Email": "بريد إلكتروني",
+            "Select": "قائمة منسدلة"
+          },
+          "defaults": {
+            "Text Field": "الرقم المرجعي للوثيقة",
+            "Text Area": "ملاحظات إضافية",
+            "Checkbox": "نسخة رسمية مطابقة للأصل",
+            "Date Field": "تاريخ الإصدار",
+            "Expiry Date": "تاريخ انتهاء الوثيقة",
+            "File Upload": "إرفاق نسخة الوثيقة (PDF / صورة)",
+            "Checkbox Group": "متطلبات الامتثال",
+            "Number": "الرقم التسلسلي",
+            "Header": "قسم بيانات الوثيقة الرسمية",
+            "Paragraph": "يرجى التأكد من مطابقة جميع البيانات المدخلة للشهادة الرسمية الصادرة من الجهة المختصة.",
+            "Email": "البريد الإلكتروني للمفوض",
+            "Select": "جهة الإصدار",
+            "option1": "الخيار الأول",
+            "option2": "الخيار الثاني"
+          }
+        }
+      },
+      "feedback": {
+        "createSuccess": "تم إنشاء قالب الوثيقة بنجاح.",
+        "editSuccess": "تم تحديث قالب الوثيقة بنجاح.",
+        "deleteSuccess": "تم حذف قالب الوثيقة بنجاح."
+      },
+      "deleteModal": {
+        "title": "حذف قالب الوثيقة",
+        "message": "هل أنت متأكد من رغبتك في حذف القالب {{code}} ({{name}})؟ لا يمكن التراجع عن هذا الإجراء.",
+        "cancel": "إلغاء",
+        "confirm": "حذف"
+      }
+    },
+    "auditTrail": {
+      "title": "سجل العمليات والتدقيق",
+      "description": "سجل زمني شامل لجميع العمليات والتعديلات التي تمت على أنواع وقوالب الوثائق.",
+      "searchPlaceholder": "البحث في سجل العمليات حسب الإجراء، المورد، البيانات، أو الموظف...",
+      "clearFilters": "إعادة تعيين التصفية",
+      "exportSuccess": "تم تصدير {{count}} سجل تدقيق إلى ملف CSV بنجاح",
+      "columns": {
+        "actionPerformed": "الإجراء المنفذ",
+        "resources": "المورد",
+        "resourceData": "بيانات المورد",
+        "performedBy": "نفذ بواسطة",
+        "dateAndTime": "التاريخ والوقت",
+        "actions": "الإجراءات"
+      },
+      "filters": {
+        "employee": "الموظف",
+        "employeePlaceholder": "جميع الموظفين",
+        "action": "الإجراء",
+        "actionPlaceholder": "جميع الإجراءات",
+        "resource": "المورد",
+        "resourcePlaceholder": "جميع الموارد",
+        "startDate": "تاريخ البداية",
+        "endDate": "تاريخ النهاية"
+      },
+      "details": {
+        "viewDetails": "عرض التفاصيل",
+        "title": "تفاصيل سجل التدقيق"
+      },
+      "actions": {
+        "Create": "إنشاء",
+        "Update": "تحديث",
+        "Re-Activated": "إعادة تفعيل",
+        "De-Activated": "إيقاف تفعيل",
+        "Delete": "حذف"
+      },
+      "resources": {
+        "Document Category": "تصنيف وثيقة",
+        "Document Type": "نوع وثيقة",
+        "Document Template": "قالب وثيقة",
+        "Document": "وثيقة",
+        "Employee Template": "قالب موظف",
+        "Company Template": "قالب منشأة"
+      }
+    }
   }
 }

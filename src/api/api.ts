@@ -319,6 +319,144 @@ const initialTags = [
     },
 ];
 
+const initialGroups = [
+    {
+        id: "grp-1",
+        groupCode: "GRP-001",
+        name: "Corporate & Commercial Services",
+        description: "Core commercial licenses, registrations and permits",
+        group_icon: "briefcase",
+        group_type: "business",
+        boarding_type: "OTHER",
+        services: [{ id: "srv-103" }, { id: "srv-104" }],
+        createdAt: "2026-01-05",
+        createdBy: "Karim Wagdi",
+        status: "active",
+    },
+    {
+        id: "grp-2",
+        groupCode: "GRP-002",
+        name: "Workforce & Labor Operations",
+        description: "Labor contracts, Iqama, visa allocations, and Qiwa operations",
+        group_icon: "users",
+        group_type: "employee",
+        boarding_type: "ONBOARDING",
+        services: [{ id: "srv-102" }, { id: "srv-105" }],
+        createdAt: "2026-01-08",
+        createdBy: "Admin User",
+        status: "active",
+    },
+    {
+        id: "grp-3",
+        groupCode: "GRP-003",
+        name: "Assets & Fleet Management",
+        description: "Vehicle registrations, asset permits, and logistical services",
+        group_icon: "truck",
+        group_type: "assets",
+        boarding_type: "OTHER",
+        services: [{ id: "srv-101" }],
+        createdAt: "2026-01-12",
+        createdBy: "Karim Wagdi",
+        status: "active",
+    },
+    {
+        id: "grp-4",
+        groupCode: "GRP-004",
+        name: "Financial & Tax Compliance",
+        description: "ZATCA, GOSI, wages protection, and bank clearances",
+        group_icon: "wallet",
+        group_type: "business",
+        boarding_type: "OTHER",
+        services: [{ id: "srv-104" }, { id: "srv-105" }],
+        createdAt: "2026-01-15",
+        createdBy: "System Admin",
+        status: "active",
+    },
+];
+
+const initialPackages = [
+    {
+        id: "pkg-1",
+        packageCode: "PKG-001",
+        name: "Enterprise Corporate Bundle",
+        package_name: "Enterprise Corporate Bundle",
+        group_type: "business",
+        serviceGroups: [{ id: "grp-1" }, { id: "grp-2" }, { id: "grp-4" }],
+        billingCycle: "annual",
+        billing_cycle: "annual",
+        price: 14500,
+        unit_price: 14500,
+        description: "Comprehensive corporate government compliance and workforce management bundle",
+        status: "active",
+        createdAt: "2026-01-05",
+        createdBy: "Karim Wagdi",
+    },
+    {
+        id: "pkg-2",
+        packageCode: "PKG-002",
+        name: "SME Comprehensive Support",
+        package_name: "SME Comprehensive Support",
+        group_type: "business",
+        serviceGroups: [{ id: "grp-1" }, { id: "grp-2" }],
+        billingCycle: "annual",
+        billing_cycle: "annual",
+        price: 7800,
+        unit_price: 7800,
+        description: "Essential commercial registration, licensing, and Qiwa operations for SMEs",
+        status: "active",
+        createdAt: "2026-01-10",
+        createdBy: "Admin User",
+    },
+    {
+        id: "pkg-3",
+        packageCode: "PKG-003",
+        name: "Workforce & Labor Package",
+        package_name: "Workforce & Labor Package",
+        group_type: "employee",
+        serviceGroups: [{ id: "grp-2" }],
+        billingCycle: "quarterly",
+        billing_cycle: "quarterly",
+        price: 3600,
+        unit_price: 3600,
+        description: "Dedicated employee onboarding, contract authentication, and GOSI compliance",
+        status: "active",
+        createdAt: "2026-01-14",
+        createdBy: "Karim Wagdi",
+    },
+    {
+        id: "pkg-4",
+        packageCode: "PKG-004",
+        name: "Licensing & Permits Essentials",
+        package_name: "Licensing & Permits Essentials",
+        group_type: "business",
+        serviceGroups: [{ id: "grp-1" }],
+        billingCycle: "annual",
+        billing_cycle: "annual",
+        price: 4200,
+        unit_price: 4200,
+        description: "Municipal, commercial, and regulatory license renewals",
+        status: "active",
+        createdAt: "2026-01-20",
+        createdBy: "System Admin",
+    },
+    {
+        id: "pkg-5",
+        packageCode: "PKG-005",
+        name: "Logistics & Fleet Standard Package",
+        package_name: "Logistics & Fleet Standard Package",
+        group_type: "assets",
+        serviceGroups: [{ id: "grp-3" }],
+        billingCycle: "monthly",
+        billing_cycle: "monthly",
+        price: 1850,
+        unit_price: 1850,
+        description: "Commercial fleet vehicle registration and transport permit management",
+        status: "active",
+        createdAt: "2026-01-25",
+        createdBy: "Karim Wagdi",
+    },
+];
+
 // Temporary flag to disable runtime backend API requests and use local demo/mock data.
 // Set USE_DEMO_MODE to false to re-enable live backend API requests immediately.
 export const USE_DEMO_MODE = true;
@@ -1148,22 +1286,30 @@ export const serviceApi = {
         if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
             try {
                 const response = await axiosClient.get('/service-group', { params: data });
-                return response.data;
+                if (response.data !== undefined) return response.data;
             } catch {
                 // Fallback
             }
         }
 
-        const list = getLocal('types', initialTypes);
+        const list = getLocal('groups', initialGroups);
         const search = (data?.search || '').toLowerCase().trim();
         const filtered = search
             ? list.filter(
-                (item) =>
-                    item.name.toLowerCase().includes(search) ||
-                    item.typeCode.toLowerCase().includes(search) ||
-                    (item.serviceCategory?.name && item.serviceCategory.name.toLowerCase().includes(search))
+                (item: any) =>
+                    String(item.name || '').toLowerCase().includes(search) ||
+                    String(item.groupCode || '').toLowerCase().includes(search) ||
+                    String(item.description || '').toLowerCase().includes(search)
             )
             : list;
+
+        if (!data?.page && !data?.limit) {
+            return {
+                data: filtered,
+                count: filtered.length,
+                total: filtered.length,
+            };
+        }
 
         const page = Number(data?.page || 1);
         const limit = Number(data?.limit || 10);
@@ -1181,44 +1327,69 @@ export const serviceApi = {
         if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
             try {
                 const response = await axiosClient.post('/service-group', data);
-                return response.data;
+                if (response.data !== undefined) return response.data;
             } catch {
                 // Fallback
             }
         }
 
-        const list = getLocal('types', initialTypes);
-        const categories = getLocal('categories', initialCategories);
-        const cat = categories.find((c) => c.id === data.serviceCategory_id);
+        const list = getLocal<any[]>('groups', initialGroups);
+        const allServices = getLocal<any[]>('services', initialServices);
+        const resolvedServices = Array.isArray(data.service_ids)
+            ? data.service_ids.map((sid: string) => {
+                const found = allServices.find((s: any) => String(s.id) === String(sid));
+                return found ? { id: found.id, name: found.service_title || found.name } : { id: sid };
+            })
+            : undefined;
 
-        const existingIdx = data.id ? list.findIndex((t: any) => t.id === data.id) : -1;
+        const existingIdx = data.id ? list.findIndex((g: any) => g.id === data.id) : -1;
         if (existingIdx >= 0) {
-            const updatedType = {
+            const updatedGroup = {
                 ...list[existingIdx],
                 name: data.name ?? list[existingIdx].name,
-                serviceCategory: cat ? { id: cat.id, name: cat.name } : list[existingIdx].serviceCategory,
                 description: data.description ?? list[existingIdx].description,
+                group_icon: data.group_icon ?? list[existingIdx].group_icon,
+                group_type: data.group_type ?? list[existingIdx].group_type,
+                boarding_type: data.boarding_type ?? list[existingIdx].boarding_type,
+                servicePackage_id: data.servicePackage_id ?? list[existingIdx].servicePackage_id,
+                services: resolvedServices ?? list[existingIdx].services ?? [],
                 status: data.status ?? list[existingIdx].status,
             };
             const updated = [...list];
-            updated[existingIdx] = updatedType;
-            setLocal('types', updated);
-            return updatedType;
+            updated[existingIdx] = updatedGroup;
+            setLocal('groups', updated);
+            return updatedGroup;
         }
 
-        const newType = {
-            id: `typ-${Date.now()}`,
-            typeCode: `TYP-${String(list.length + 1).padStart(3, '0')}`,
+        const newGroup = {
+            id: `grp-${Date.now()}`,
+            groupCode: `GRP-${String(list.length + 1).padStart(3, '0')}`,
             name: data.name,
-            serviceCategory: cat ? { id: cat.id, name: cat.name } : undefined,
             description: data.description || '',
+            group_icon: data.group_icon || 'briefcase',
+            group_type: data.group_type || 'business',
+            boarding_type: data.boarding_type || 'OTHER',
+            servicePackage_id: data.servicePackage_id,
+            services: resolvedServices || [],
             createdAt: new Date().toISOString().split('T')[0],
             createdBy: 'Karim Wagdi',
             status: data.status || 'active',
         };
-        const updated = [newType, ...list];
-        setLocal('types', updated);
-        return newType;
+        const updated = [newGroup, ...list];
+        setLocal('groups', updated);
+        return newGroup;
+    },
+
+    updateServiceGroup: async (id: string, data: any) => {
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.patch(`/service-group/${id}`, data);
+                if (response.data !== undefined) return response.data;
+            } catch {
+                // Fallback
+            }
+        }
+        return serviceApi.createServiceGroup({ ...data, id });
     },
 
     deleteServiceGroup: async (id: string) => {
@@ -1229,9 +1400,9 @@ export const serviceApi = {
                 // Fallback
             }
         }
-        const list = getLocal('types', initialTypes);
-        const updated = list.filter((t: any) => t.id !== id);
-        setLocal('types', updated);
+        const list = getLocal('groups', initialGroups);
+        const updated = list.filter((g: any) => g.id !== id);
+        setLocal('groups', updated);
         return { success: true };
     },
 
@@ -1239,21 +1410,67 @@ export const serviceApi = {
         if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
             try {
                 const response = await axiosClient.get('/service-package', { params: data });
-                return response.data;
+                if (response.data !== undefined) return response.data;
             } catch {
                 // Fallback
             }
         }
+
+        const list = getLocal('packages', initialPackages);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item: any) =>
+                    String(item.name || item.package_name || '').toLowerCase().includes(search) ||
+                    String(item.packageCode || '').toLowerCase().includes(search)
+            )
+            : list;
+
+        return {
+            data: filtered,
+            count: filtered.length,
+            total: filtered.length,
+        };
     },
 
     createServicePackage: async (data: any) => {
         if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
             try {
                 const response = await axiosClient.post('/service-package', data);
-                return response.data;
+                if (response.data !== undefined) return response.data;
             } catch {
                 // Fallback
             }
         }
+
+        const list = getLocal('packages', initialPackages);
+        const groups = getLocal('groups', initialGroups);
+        const linkedGroups = Array.isArray(data?.serviceGroup_ids)
+            ? data.serviceGroup_ids.map((gid: string) => {
+                const found = groups.find((g: any) => g.id === gid);
+                return found ? { id: found.id, name: found.name } : { id: gid };
+            })
+            : [];
+
+        const pkgName = data?.package_name || data?.name || 'New Service Package';
+        const newPackage = {
+            id: `pkg-${Date.now()}`,
+            packageCode: `PKG-${String(list.length + 1).padStart(3, '0')}`,
+            name: pkgName,
+            package_name: pkgName,
+            group_type: data?.group_type || 'business',
+            serviceGroups: linkedGroups,
+            billingCycle: data?.billing_cycle || data?.billingCycle || 'annual',
+            billing_cycle: data?.billing_cycle || data?.billingCycle || 'annual',
+            price: Number(data?.unit_price ?? data?.price ?? 0),
+            unit_price: Number(data?.unit_price ?? data?.price ?? 0),
+            description: data?.description || '',
+            status: data?.status || 'active',
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Karim Wagdi',
+        };
+        const updated = [newPackage, ...list];
+        setLocal('packages', updated);
+        return newPackage;
     },
 };

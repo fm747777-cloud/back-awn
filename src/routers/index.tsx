@@ -18,6 +18,15 @@ const TicketTypesPage = () => import('../pages/ticketing/TicketTypesPage').then(
 const CannedRepliesPage = () => import('../pages/ticketing/CannedRepliesPage').then((m) => ({ Component: m.CannedRepliesPage }));
 const TicketingAuditTrailPage = () => import('../pages/ticketing/TicketingAuditTrailPage').then((m) => ({ Component: m.TicketingAuditTrailPage }));
 
+// EDMS Module
+const EdmsPage = () => import('../pages/EdmsPage').then((m) => ({ Component: m.EdmsPage }));
+const EdmsDashboardPage = () => import('../pages/edms/EdmsDashboardPage').then((m) => ({ Component: m.EdmsDashboardPage }));
+const EdmsDocumentsPage = () => import('../pages/edms/EdmsDocumentsPage').then((m) => ({ Component: m.EdmsDocumentsPage }));
+const EdmsDocumentCategoriesPage = () => import('../pages/edms/EdmsDocumentCategoriesPage').then((m) => ({ Component: m.EdmsDocumentCategoriesPage }));
+const EdmsDocumentTypesPage = () => import('../pages/edms/EdmsDocumentTypesPage').then((m) => ({ Component: m.EdmsDocumentTypesPage }));
+const EdmsDocumentTemplatesPage = () => import('../pages/edms/EdmsDocumentTemplatesPage').then((m) => ({ Component: m.EdmsDocumentTemplatesPage }));
+const EdmsAuditTrailPage = () => import('../pages/edms/EdmsAuditTrailPage').then((m) => ({ Component: m.EdmsAuditTrailPage }));
+
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
 const ServicesListTab = () => import('../components/Service/ServicesListTab').then((m) => ({ Component: m.ServicesListTab }));
@@ -55,23 +64,23 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/documents',
-                        lazy: PlaceholderModulePage,
+                        element: <Navigate to="/edms/documents" replace />,
                     },
                     {
                         path: '/templates',
-                        lazy: PlaceholderModulePage,
+                        element: <Navigate to="/edms/document-templates" replace />,
                     },
                     {
                         path: '/categories',
-                        lazy: PlaceholderModulePage,
+                        element: <Navigate to="/edms/document-categories" replace />,
                     },
                     {
                         path: '/types',
-                        lazy: PlaceholderModulePage,
+                        element: <Navigate to="/edms/document-types" replace />,
                     },
                     {
                         path: '/audit-trail',
-                        lazy: PlaceholderModulePage,
+                        element: <Navigate to="/edms/audit-trail" replace />,
                     },
                     // Core AWN modules
                     {
@@ -84,7 +93,37 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/edms',
-                        lazy: PlaceholderModulePage,
+                        lazy: EdmsPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/edms/dashboard" replace />,
+                            },
+                            {
+                                path: 'dashboard',
+                                lazy: EdmsDashboardPage,
+                            },
+                            {
+                                path: 'documents',
+                                lazy: EdmsDocumentsPage,
+                            },
+                            {
+                                path: 'document-categories',
+                                lazy: EdmsDocumentCategoriesPage,
+                            },
+                            {
+                                path: 'document-types',
+                                lazy: EdmsDocumentTypesPage,
+                            },
+                            {
+                                path: 'document-templates',
+                                lazy: EdmsDocumentTemplatesPage,
+                            },
+                            {
+                                path: 'audit-trail',
+                                lazy: EdmsAuditTrailPage,
+                            },
+                        ],
                     },
                     {
                         path: '/request',

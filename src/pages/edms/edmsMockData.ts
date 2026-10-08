@@ -68,22 +68,36 @@ export const EDMS_CATEGORY_META: Record<
     employees: {
         key: 'employees',
         ar: 'موظفيين',
-        en: 'موظفيين',
+        en: 'Employees',
         color: '#2D3F2C',
     },
     establishments: {
         key: 'establishments',
         ar: 'منشأت',
-        en: 'منشأت',
+        en: 'Establishments',
         color: '#6A7358',
     },
     assets: {
         key: 'assets',
         ar: 'اصول',
-        en: 'اصول',
+        en: 'Assets',
         color: '#BFAB93',
     },
 };
+
+export function formatEdmsCategoryLabel(categoryValue: string, isAr: boolean): string {
+    const trimmed = (categoryValue || '').trim();
+    if (trimmed === 'منشأت' || trimmed === 'منشآت' || trimmed.toLowerCase() === 'establishments') {
+        return isAr ? 'منشأت' : 'Establishments';
+    }
+    if (trimmed === 'موظفيين' || trimmed === 'موظفين' || trimmed.toLowerCase() === 'employees') {
+        return isAr ? 'موظفيين' : 'Employees';
+    }
+    if (trimmed === 'اصول' || trimmed === 'أصول' || trimmed.toLowerCase() === 'assets') {
+        return isAr ? 'اصول' : 'Assets';
+    }
+    return categoryValue;
+}
 
 export const EDMS_DOCUMENT_TYPE_META: Record<
     EdmsDocumentTypeKey,
@@ -288,7 +302,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة عون للخدمات الإدارية',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'commercial_registration',
         typeEn: 'Commercial Registration',
         typeAr: 'السجل التجاري',
@@ -316,7 +330,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'طارق المنصور (شركة عون للخدمات الإدارية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'iqama',
         typeEn: 'Iqama',
         typeAr: 'الإقامة (هوية مقيم)',
@@ -347,7 +361,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة عون للخدمات الإدارية',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'gosi_subscription',
         typeEn: 'GOSI Subscription',
         typeAr: 'شهادة التأمينات الاجتماعية (GOSI)',
@@ -375,7 +389,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'عمر الفاروق (شركة الخليج للتوريدات الصناعية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'iqama',
         typeEn: 'Iqama',
         typeAr: 'الإقامة (هوية مقيم)',
@@ -406,7 +420,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة عون للخدمات الإدارية',
         categoryKey: 'assets',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
         typeKey: 'baladi_license',
         typeEn: 'Baladi License',
         typeAr: 'رخصة بلدي',
@@ -434,7 +448,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'فهد العتيبي (شركة عون للخدمات الإدارية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_contract',
         typeEn: 'Employee Contract',
         typeAr: 'عقد العمل',
@@ -465,7 +479,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'مجموعة الفيصلية القابضة',
         categoryKey: 'assets',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
         typeKey: 'baladi_license',
         typeEn: 'Baladi License',
         typeAr: 'رخصة بلدي',
@@ -493,7 +507,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'ريم القحطاني (شركة عون للخدمات الإدارية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_health_insurance',
         typeEn: 'Employee Health Insurance',
         typeAr: 'التأمين الطبي للموظفين',
@@ -524,7 +538,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'مجموعة الفيصلية القابضة',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'commercial_registration',
         typeEn: 'Commercial Registration',
         typeAr: 'السجل التجاري',
@@ -552,7 +566,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'طارق المنصور (شركة عون للخدمات الإدارية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'passport',
         typeEn: 'Passport',
         typeAr: 'جواز السفر',
@@ -583,7 +597,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'مجموعة الفيصلية القابضة',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'gosi_subscription',
         typeEn: 'GOSI Subscription',
         typeAr: 'شهادة التأمينات الاجتماعية (GOSI)',
@@ -611,7 +625,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'كريم السيد (مجموعة الفيصلية القابضة)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'iqama',
         typeEn: 'Iqama',
         typeAr: 'الإقامة (هوية مقيم)',
@@ -642,7 +656,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'سلمان الدوسري (مجموعة الفيصلية القابضة)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_contract',
         typeEn: 'Employee Contract',
         typeAr: 'عقد العمل',
@@ -673,7 +687,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'كريم السيد (مجموعة الفيصلية القابضة)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_health_insurance',
         typeEn: 'Employee Health Insurance',
         typeAr: 'التأمين الطبي للموظفين',
@@ -704,7 +718,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة نجد للحلول المتكاملة',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'commercial_registration',
         typeEn: 'Commercial Registration',
         typeAr: 'السجل التجاري',
@@ -732,7 +746,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة نجد للحلول المتكاملة',
         categoryKey: 'assets',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
         typeKey: 'baladi_license',
         typeEn: 'Baladi License',
         typeAr: 'رخصة بلدي',
@@ -760,7 +774,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'بلال خان (شركة نجد للحلول المتكاملة)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'iqama',
         typeEn: 'Iqama',
         typeAr: 'الإقامة (هوية مقيم)',
@@ -791,7 +805,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة نجد للحلول المتكاملة',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'business_health_insurance',
         typeEn: 'Business Health Insurance',
         typeAr: 'التأمين الطبي للمنشأة',
@@ -819,7 +833,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'مها الزهراني (شركة نجد للحلول المتكاملة)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_contract',
         typeEn: 'Employee Contract',
         typeAr: 'عقد العمل',
@@ -850,7 +864,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة الخليج للتوريدات الصناعية',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'commercial_registration',
         typeEn: 'Commercial Registration',
         typeAr: 'السجل التجاري',
@@ -878,7 +892,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة الخليج للتوريدات الصناعية',
         categoryKey: 'assets',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
         typeKey: 'baladi_license',
         typeEn: 'Baladi License',
         typeAr: 'رخصة بلدي',
@@ -906,7 +920,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'بلال خان (شركة نجد للحلول المتكاملة)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'passport',
         typeEn: 'Passport',
         typeAr: 'جواز السفر',
@@ -937,7 +951,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'عبدالله الحربي (شركة الخليج للتوريدات الصناعية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_contract',
         typeEn: 'Employee Contract',
         typeAr: 'عقد العمل',
@@ -968,7 +982,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'عمر الفاروق (شركة الخليج للتوريدات الصناعية)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'employee_health_insurance',
         typeEn: 'Employee Health Insurance',
         typeAr: 'التأمين الطبي للموظفين',
@@ -999,7 +1013,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'مؤسسة اليمامة للمقاولات',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'commercial_registration',
         typeEn: 'Commercial Registration',
         typeAr: 'السجل التجاري',
@@ -1027,7 +1041,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'محمود حسن (مؤسسة اليمامة للمقاولات)',
         categoryKey: 'employees',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
         typeKey: 'iqama',
         typeEn: 'Iqama',
         typeAr: 'الإقامة (هوية مقيم)',
@@ -1058,7 +1072,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'مؤسسة اليمامة للمقاولات',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'gosi_subscription',
         typeEn: 'GOSI Subscription',
         typeAr: 'شهادة التأمينات الاجتماعية (GOSI)',
@@ -1086,7 +1100,7 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         documentForAr: 'شركة طويق للخدمات اللوجستية',
         categoryKey: 'establishments',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
         typeKey: 'business_health_insurance',
         typeEn: 'Business Health Insurance',
         typeAr: 'التأمين الطبي للمنشأة',
@@ -1106,6 +1120,20 @@ export const EDMS_DEMO_DOCUMENTS: EdmsDemoDocument[] = [
         isExpiringSoon: false,
     },
 ];
+
+export function updateDemoDocument(updatedItem: EdmsDemoDocument): void {
+    const idx = EDMS_DEMO_DOCUMENTS.findIndex((item) => item.id === updatedItem.id);
+    if (idx !== -1) {
+        EDMS_DEMO_DOCUMENTS[idx] = updatedItem;
+    }
+}
+
+export function removeDemoDocument(id: string): void {
+    const idx = EDMS_DEMO_DOCUMENTS.findIndex((item) => item.id === id);
+    if (idx !== -1) {
+        EDMS_DEMO_DOCUMENTS.splice(idx, 1);
+    }
+}
 
 // ============================================================================
 // EDMS Document Templates Master Dataset (23 Templates)
@@ -1141,105 +1169,105 @@ export const EDMS_TEMPLATE_DOC_TYPE_OPTIONS: EdmsTemplateDocTypeOption[] = [
         labelEn: 'Employee Health Insurance',
         labelAr: 'التأمين الطبي للموظفين (Employee Health Insurance)',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
     },
     {
         value: 'Employee Contract',
         labelEn: 'Employee Contract',
         labelAr: 'عقد العمل (Employee Contract)',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
     },
     {
         value: 'Passport',
         labelEn: 'Passport',
         labelAr: 'جواز السفر (Passport)',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
     },
     {
         value: 'Iqama',
         labelEn: 'Iqama',
         labelAr: 'الإقامة (Iqama)',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
     },
     {
         value: 'Commercial Registration',
         labelEn: 'Commercial Registration',
         labelAr: 'السجل التجاري (Commercial Registration)',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
     },
     {
         value: 'Baladi License',
         labelEn: 'Baladi License',
         labelAr: 'رخصة بلدي (Baladi License)',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
     },
     {
         value: 'GOSI Subscription',
         labelEn: 'GOSI Subscription',
         labelAr: 'اشتراك التأمينات الاجتماعية (GOSI Subscription)',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
     },
     {
         value: 'Business Health Insurance',
         labelEn: 'Business Health Insurance',
         labelAr: 'التأمين الطبي للمنشأة (Business Health Insurance)',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
     },
     {
         value: 'Vehicle Registration',
         labelEn: 'Vehicle Registration',
         labelAr: 'رخصة سير المركبة - استمارة (Vehicle Registration)',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
     },
     {
         value: 'Vehicle Operation Card',
         labelEn: 'Vehicle Operation Card',
         labelAr: 'بطاقة تشغيل مركبة (Vehicle Operation Card)',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
     },
     {
         value: 'Vehicle Insurance',
         labelEn: 'Vehicle Insurance',
         labelAr: 'تأمين المركبة (Vehicle Insurance)',
         categoryAr: 'اصول',
-        categoryEn: 'اصول',
+        categoryEn: 'Assets',
     },
     {
         value: 'National Address',
         labelEn: 'National Address',
         labelAr: 'العنوان الوطني (National Address)',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
     },
     {
         value: 'Re entry Visa',
         labelEn: 'Re entry Visa',
         labelAr: 'تأشيرة خروج وعودة (Re entry Visa)',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
     },
     {
         value: 'Final Exit Visa',
         labelEn: 'Final Exit Visa',
         labelAr: 'تأشيرة خروج نهائي (Final Exit Visa)',
         categoryAr: 'موظفيين',
-        categoryEn: 'موظفيين',
+        categoryEn: 'Employees',
     },
     {
         value: 'Qiwa Subscription',
         labelEn: 'Qiwa Subscription',
         labelAr: 'اشتراك منصة قوى (Qiwa Subscription)',
         categoryAr: 'منشأت',
-        categoryEn: 'منشأت',
+        categoryEn: 'Establishments',
     },
 ];
 
@@ -2182,8 +2210,8 @@ export function getEdmsTemplateDocTypeOptions(): EdmsTemplateDocTypeOption[] {
         seen.add(baseOpt.value.toLowerCase());
         result.push({
             ...baseOpt,
-            categoryAr: resolvedCategory,
-            categoryEn: resolvedCategory,
+            categoryAr: formatEdmsCategoryLabel(resolvedCategory, true),
+            categoryEn: formatEdmsCategoryLabel(resolvedCategory, false),
         });
     }
 
@@ -2198,8 +2226,8 @@ export function getEdmsTemplateDocTypeOptions(): EdmsTemplateDocTypeOption[] {
                 value: dt.typeName,
                 labelEn: dt.typeName,
                 labelAr: dt.typeName,
-                categoryAr: resolvedCategory,
-                categoryEn: resolvedCategory,
+                categoryAr: formatEdmsCategoryLabel(resolvedCategory, true),
+                categoryEn: formatEdmsCategoryLabel(resolvedCategory, false),
             });
         }
     }
@@ -2225,6 +2253,13 @@ export const EDMS_AUDIT_ACTIONS: EdmsAuditAction[] = [
     'Re-Activated',
     'De-Activated',
     'Delete',
+];
+
+export const EDMS_AUDIT_RESOURCES: EdmsAuditResource[] = [
+    'Document Type',
+    'Document Template',
+    'Employee Template',
+    'Company Template',
 ];
 
 export interface EdmsAuditEmployeeOption {

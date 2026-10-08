@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { DataTable } from '../../components/DataTable';
 import {
     EDMS_DEMO_CATEGORIES,
+    formatEdmsCategoryLabel,
     prependDemoCategory,
     updateDemoCategory,
     removeDemoCategory,
@@ -378,6 +379,8 @@ export const EdmsDocumentCategoriesPage: React.FC = () => {
             (item) =>
                 item.categoryCode.toLowerCase().includes(q) ||
                 item.categoryName.toLowerCase().includes(q) ||
+                formatEdmsCategoryLabel(item.categoryName, false).toLowerCase().includes(q) ||
+                formatEdmsCategoryLabel(item.categoryName, true).toLowerCase().includes(q) ||
                 item.description.toLowerCase().includes(q) ||
                 item.createdByEn.toLowerCase().includes(q) ||
                 item.createdByAr.toLowerCase().includes(q) ||
@@ -482,7 +485,7 @@ export const EdmsDocumentCategoriesPage: React.FC = () => {
 
         const rows = filteredCategories.map((item) => [
             escapeCsv(item.categoryCode),
-            escapeCsv(item.categoryName),
+            escapeCsv(formatEdmsCategoryLabel(item.categoryName, isAr)),
             escapeCsv(item.description),
             escapeCsv(`${item.createdByInitials} / ${isAr ? item.createdByAr : item.createdByEn}`),
             escapeCsv(t('common.active')),
@@ -534,7 +537,7 @@ export const EdmsDocumentCategoriesPage: React.FC = () => {
                 header: t('edms.documentCategories.columns.categoryName'),
                 cell: ({ row }: { row: { original: EdmsDocumentCategory } }) => (
                     <span className="font-medium text-[#0D0D0D] dark:text-slate-100 inline-block text-start">
-                        {row.original.categoryName}
+                        {formatEdmsCategoryLabel(row.original.categoryName, isAr)}
                     </span>
                 ),
             },

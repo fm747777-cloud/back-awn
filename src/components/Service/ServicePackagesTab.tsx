@@ -34,8 +34,8 @@ export const ServicePackagesTab: React.FC = () => {
                 search: searchTerm,
                 page: pageIndex + 1,
                 limit: pageSize,
-            })
-            return data?.data
+            });
+            return data?.data ?? data ?? [];
         }
     });
 

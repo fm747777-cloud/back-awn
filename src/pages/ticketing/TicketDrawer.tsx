@@ -7,6 +7,7 @@ import {
     Upload,
     FileText,
     Trash2,
+    MessageSquareQuote,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { translateError } from '../../i18n';
@@ -15,10 +16,15 @@ import {
     TICKET_CUSTOMER_OPTIONS,
     TICKET_COMPANY_OPTIONS,
     TICKET_PRIORITY_OPTIONS,
+    TICKET_STATUS_OPTIONS,
     getActiveTicketTypeOptions,
+    loadCannedReplies,
+    normalizeTicketStatus,
     type TableTicket,
     type TicketAttachment,
     type TicketSelectOption,
+    type TicketLifecycleStatus,
+    type CannedReplyRecord,
 } from './ticketingMockData';
 
 export type TicketDrawerMode = 'create' | 'edit' | 'view';
@@ -28,6 +34,7 @@ export interface TicketFormSubmitData {
     companyValue: string;
     ticketTypeValue: string;
     priority: 'High' | 'Medium' | 'Low';
+    status?: TicketLifecycleStatus;
     subject: string;
     message: string;
     attachment: TicketAttachment | null;
@@ -124,14 +131,16 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const chooseFileBtnRef = useRef<HTMLButtonElement>(null);
 
-    // 7 Strictly Allowed Fields State
+    // Fields State
     const [customerValue, setCustomerValue] = useState<string>('');
     const [companyValue, setCompanyValue] = useState<string>('');
     const [ticketTypeValue, setTicketTypeValue] = useState<string>('');
     const [priority, setPriority] = useState<'' | 'High' | 'Medium' | 'Low'>('');
+    const [status, setStatus] = useState<TicketLifecycleStatus>('NEW');
     const [subject, setSubject] = useState<string>('');
     const [message, setMessage] = useState<string>('');
     const [attachment, setAttachment] = useState<TicketAttachment | null>(null);
+    const [selectedCannedReplyId, setSelectedCannedReplyId] = useState<string>('');
 
     // Searchable dropdown states
     const [isCustomerOpen, setIsCustomerOpen] = useState(false);
@@ -147,6 +156,7 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
     const [errors, setErrors] = useState<ValidationErrors>({});
 
     const activeTicketTypeOptions = getActiveTicketTypeOptions();
+    const availableCannedReplies: CannedReplyRecord[] = isOpen ? loadCannedReplies() : [];
 
     // Adjust state during render when drawer opens or mode/ticket changes (per React docs, matching ServiceGroupDrawer)
     const [prevSyncKey, setPrevSyncKey] = useState<string>('');
@@ -160,6 +170,7 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
         setIsCompanyOpen(false);
         setCompanySearch('');
         setIsDraggingOver(false);
+        setSelectedCannedReplyId('');
 
         if (isOpen && (mode === 'edit' || mode === 'view') && ticket) {
             setCustomerValue(
@@ -172,6 +183,7 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
                 resolveOptionValue(activeTicketTypeOptions, ticket.ticketType, ticket.ticketTypeEn)
             );
             setPriority(ticket.priority);
+            setStatus(normalizeTicketStatus(ticket));
             setSubject(
                 (isAr ? ticket.subject : ticket.subjectEn) ||
                     ticket.subject ||
@@ -190,6 +202,7 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
             setCompanyValue('');
             setTicketTypeValue('');
             setPriority('');
+            setStatus('NEW');
             setSubject('');
             setMessage('');
             setAttachment(null);
@@ -281,7 +294,8 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
             ];
         }
         return base;
-    }, [ticket, ticketTypeValue]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ticket, ticketTypeValue, isOpen]);
 
     const selectedCustomerOption = customerOptions.find((o) => o.value === customerValue);
     const selectedCompanyOption = companyOptions.find((o) => o.value === companyValue);
@@ -404,12 +418,55 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
                 companyValue,
                 ticketTypeValue,
                 priority: priority as 'High' | 'Medium' | 'Low',
+                status: isEdit ? status : 'NEW',
                 subject: subject.trim(),
                 message: message.trim(),
                 attachment,
             },
             ticket
         );
+    };
+
+    const getStatusLabel = (st: TicketLifecycleStatus): string => {
+        switch (st) {
+            case 'NEW':
+                return t('ticketing.statuses.new');
+            case 'OPEN':
+                return t('ticketing.statuses.open');
+            case 'IN PROGRESS':
+                return t('ticketing.statuses.inProgress');
+            case 'SOLVED':
+                return t('ticketing.statuses.solved');
+            case 'CLOSED':
+                return t('ticketing.statuses.closed');
+            default:
+                return st;
+        }
+    };
+
+    const handleInsertCannedReply = (replyId: string) => {
+        setSelectedCannedReplyId(replyId);
+        if (!replyId || isView) return;
+        const found = availableCannedReplies.find((r) => r.id === replyId);
+        if (!found) return;
+
+        const replyText = (isAr ? found.replyAr || found.reply : found.reply || found.replyAr).trim();
+        if (!replyText) return;
+
+        setMessage((prev) => {
+            const trimmed = prev.trim();
+            if (!trimmed) {
+                return replyText;
+            }
+            if (trimmed.includes(replyText)) {
+                return prev;
+            }
+            return `${trimmed}\n\n${replyText}`;
+        });
+
+        if (hasSubmitted && errors.message) {
+            setErrors((prev) => ({ ...prev, message: undefined }));
+        }
     };
 
     const handleFileSelect = (file: File | null | undefined) => {
@@ -878,6 +935,74 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
                             </span>
                         )}
                     </div>
+
+                    {/* Status Selector (Shown in Edit & View modes; Create defaults to NEW) */}
+                    {(isEdit || isView) && (
+                        <div>
+                            <label
+                                htmlFor="ticket-status-select"
+                                className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
+                            >
+                                {t('ticketing.form.status')}
+                            </label>
+                            {isView ? (
+                                <div className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 text-xs font-semibold text-[#0D0D0D] dark:text-slate-200">
+                                    {getStatusLabel(status)}
+                                </div>
+                            ) : (
+                                <select
+                                    id="ticket-status-select"
+                                    value={status}
+                                    onChange={(e) =>
+                                        setStatus(e.target.value as TicketLifecycleStatus)
+                                    }
+                                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-medium text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer transition"
+                                >
+                                    {TICKET_STATUS_OPTIONS.map((st) => (
+                                        <option key={st} value={st}>
+                                            {getStatusLabel(st)}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Optional Canned Reply Quick-Insert Selector (Create & Edit modes) */}
+                    {!isView && (
+                        <div className="p-3 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 space-y-1.5">
+                            <label
+                                htmlFor="ticket-canned-reply-select"
+                                className="flex items-center justify-between text-xs font-semibold text-[#2D3F2C] dark:text-emerald-300"
+                            >
+                                <span className="inline-flex items-center gap-1.5">
+                                    <MessageSquareQuote size={14} className="shrink-0" />
+                                    <span>{t('ticketing.form.insertCannedReply')}</span>
+                                </span>
+                                <span className="text-[11px] text-[#857E74] font-normal">
+                                    {t('common.optional')}
+                                </span>
+                            </label>
+                            <select
+                                id="ticket-canned-reply-select"
+                                value={selectedCannedReplyId}
+                                onChange={(e) => handleInsertCannedReply(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer transition"
+                            >
+                                <option value="">
+                                    {t('ticketing.form.cannedReplyPlaceholder')}
+                                </option>
+                                {availableCannedReplies.map((reply) => (
+                                    <option key={reply.id} value={reply.id}>
+                                        {isAr ? reply.titleAr || reply.title : reply.title || reply.titleAr}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[11px] text-[#6E6862] dark:text-slate-400">
+                                {t('ticketing.form.cannedReplyHint')}
+                            </p>
+                        </div>
+                    )}
 
                     {/* 6. Message * -> textarea */}
                     <div>

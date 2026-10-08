@@ -29,6 +29,7 @@ import { DataTable } from '../../components/DataTable';
 import {
     EDMS_DEMO_TEMPLATES,
     EDMS_TEMPLATE_TAG_OPTIONS,
+    formatEdmsCategoryLabel,
     getEdmsTemplateDocTypeOptions,
     prependDemoTemplate,
     updateDemoTemplate,
@@ -631,7 +632,11 @@ const TemplateDrawer: React.FC<TemplateDrawerProps> = ({
                                 name="documentCategory"
                                 type="text"
                                 readOnly
-                                value={documentCategory}
+                                value={
+                                    documentCategory
+                                        ? formatEdmsCategoryLabel(documentCategory, isAr)
+                                        : ''
+                                }
                                 placeholder={t(
                                     'edms.documentTemplates.form.documentCategoryPlaceholder'
                                 )}
@@ -1116,6 +1121,8 @@ export const EdmsDocumentTemplatesPage: React.FC = () => {
                 item.templateNameAr.toLowerCase().includes(q) ||
                 item.documentTag.toLowerCase().includes(q) ||
                 item.documentCategory.toLowerCase().includes(q) ||
+                formatEdmsCategoryLabel(item.documentCategory, false).toLowerCase().includes(q) ||
+                formatEdmsCategoryLabel(item.documentCategory, true).toLowerCase().includes(q) ||
                 item.documentType.toLowerCase().includes(q) ||
                 item.documentTypeAr.toLowerCase().includes(q) ||
                 item.createdByEn.toLowerCase().includes(q) ||
@@ -1249,7 +1256,7 @@ export const EdmsDocumentTemplatesPage: React.FC = () => {
             escapeCsv(isAr ? item.templateNameAr : item.templateName),
             escapeCsv(item.createDate),
             escapeCsv(item.documentTag || '—'),
-            escapeCsv(item.documentCategory),
+            escapeCsv(formatEdmsCategoryLabel(item.documentCategory, isAr)),
             escapeCsv(isAr ? item.documentTypeAr : item.documentType),
             escapeCsv(isAr ? item.createdByAr : item.createdByEn),
             escapeCsv(t('common.active')),
@@ -1337,7 +1344,7 @@ export const EdmsDocumentTemplatesPage: React.FC = () => {
                 header: t('edms.documentTemplates.columns.documentCategory'),
                 cell: ({ row }: { row: { original: EdmsDocumentTemplate } }) => (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#FAF8F5] dark:bg-slate-800 text-[#2D3F2C] dark:text-slate-200 border border-[#E5E0D8] dark:border-slate-700">
-                        {row.original.documentCategory}
+                        {formatEdmsCategoryLabel(row.original.documentCategory, isAr)}
                     </span>
                 ),
             },

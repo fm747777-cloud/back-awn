@@ -73,6 +73,10 @@
     "tickets": "Tickets",
     "ticketTypes": "Ticket Types",
     "cannedReplies": "Canned Replies",
+    "documents": "Documents",
+    "documentCategories": "Document Categories",
+    "documentTypes": "Document Types",
+    "documentTemplates": "Document Templates",
     "accountSettings": "Account Settings",
     "expandSidebar": "Expand Sidebar",
     "collapseSidebar": "Collapse Sidebar",
@@ -576,7 +580,14 @@
     "Invalid input: expected number, received NaN": "Please enter a valid unit price",
     "Group Name is required": "Group name is required",
     "Please enter a valid email address": "Please enter a valid email address",
-    "Password must be at least 6 characters": "Password must be at least 6 characters"
+    "Password must be at least 6 characters": "Password must be at least 6 characters",
+    "Customer is required": "Customer is required",
+    "Company is required": "Company is required",
+    "Priority is required": "Priority is required",
+    "Subject is required": "Subject is required",
+    "Message is required": "Message is required",
+    "Unsupported file type. Allowed: Images, PDF, Word, Excel, Text": "Unsupported file type. Allowed: Images, PDF, Word, Excel, Text",
+    "Attachment exceeds the 10MB size limit": "Attachment exceeds the 10MB size limit"
   },
   "presets": {
     "inputDocuments": {
@@ -736,6 +747,541 @@
       "editPrompt": "Editing ticket {{id}}",
       "deletePrompt": "Delete action selected for ticket {{id}}"
     },
-    "newTicketModalPrompt": "Create New Ticket form initialized"
+    "newTicketModalPrompt": "Create New Ticket form initialized",
+    "statuses": {
+      "new": "New",
+      "open": "Open",
+      "inProgress": "In Progress",
+      "solved": "Solved",
+      "closed": "Closed"
+    },
+    "dashboard": {
+      "kpis": {
+        "totalTickets": "Total Tickets",
+        "totalTicketsDesc": "All recorded support tickets across entities",
+        "newTicketsDesc": "Newly submitted tickets awaiting triage",
+        "inProgressTicketsDesc": "Tickets actively being processed by specialists",
+        "solvedTicketsDesc": "Resolved tickets verified by support team"
+      },
+      "sections": {
+        "byStatus": "Tickets By Status",
+        "byPriority": "Tickets By Priority",
+        "byType": "Tickets By Type"
+      }
+    },
+    "tickets": {
+      "createSuccess": "Ticket {{id}} created successfully",
+      "updateSuccess": "Ticket {{id}} updated successfully",
+      "deleteSuccess": "Ticket {{id}} deleted successfully",
+      "exportSuccess": "Exported {{count}} tickets to CSV"
+    },
+    "deleteModal": {
+      "title": "Delete Ticket",
+      "message": "Are you sure you want to permanently delete ticket {{id}} ({{subject}})? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete Ticket"
+    },
+    "form": {
+      "createTitle": "Create New Ticket",
+      "createSubtitle": "Submit a new support ticket for a client and enterprise.",
+      "editTitle": "Edit Ticket",
+      "editSubtitle": "Update details and status for ticket {{id}}",
+      "viewTitle": "Ticket Details",
+      "viewSubtitle": "Review complete record for ticket {{id}}",
+      "close": "Close",
+      "cancel": "Cancel",
+      "saveCreate": "Create Ticket",
+      "saveEdit": "Save Changes",
+      "customer": "Customer",
+      "customerPlaceholder": "Select a customer...",
+      "searchCustomer": "Search customer by name...",
+      "noCustomerFound": "No matching customer found",
+      "company": "Company",
+      "companyPlaceholder": "Select a company...",
+      "searchCompany": "Search company by name...",
+      "noCompanyFound": "No matching company found",
+      "ticketType": "Ticket Type",
+      "ticketTypePlaceholder": "Select ticket type...",
+      "noTicketType": "Not specified",
+      "priority": "Priority",
+      "priorityPlaceholder": "Select priority...",
+      "status": "Status",
+      "subject": "Subject",
+      "subjectPlaceholder": "Enter a clear summary of the request or issue...",
+      "insertCannedReply": "Insert Canned Reply",
+      "cannedReplyPlaceholder": "Choose a canned reply template to insert...",
+      "cannedReplyHint": "Selecting a template inserts its text into the message box below without overwriting existing text.",
+      "message": "Message",
+      "messagePlaceholder": "Describe the issue, required action, or response details...",
+      "attachment": "Attachment",
+      "noAttachment": "No attachment uploaded",
+      "replaceAttachment": "Replace File",
+      "removeAttachment": "Remove attachment",
+      "dragDropTitle": "Drag and drop a file here, or",
+      "chooseFile": "browse files",
+      "attachmentHint": "Supported: Images, PDF, Word, Excel, CSV, TXT (Max 10MB)"
+    },
+    "ticketTypes": {
+      "searchPlaceholder": "Search ticket types by ID, name, or creator...",
+      "addLabel": "Add Ticket Type",
+      "createSuccess": "Ticket type created successfully",
+      "updateSuccess": "Ticket type updated successfully",
+      "deleteSuccess": "Ticket type deleted successfully",
+      "columns": {
+        "id": "Type ID",
+        "name": "Ticket Type Name",
+        "description": "Description",
+        "ticketsCount": "Tickets Count",
+        "createdBy": "Created By",
+        "createdAt": "Created Date"
+      },
+      "drawer": {
+        "createTitle": "Add Ticket Type",
+        "createSubtitle": "Define a new bilingual ticket classification for support routing.",
+        "editTitle": "Edit Ticket Type",
+        "editSubtitle": "Update the classification name and description.",
+        "viewTitle": "Ticket Type Details",
+        "viewSubtitle": "View ticket type classification and linked tickets count.",
+        "name": "Ticket Type Name (English)",
+        "namePlaceholder": "e.g. Technical Support",
+        "nameAr": "Arabic Name",
+        "nameArPlaceholder": "مثال: الدعم الفني",
+        "description": "Description (English)",
+        "descriptionPlaceholder": "Brief description of tickets covered under this type...",
+        "descriptionAr": "Arabic Description",
+        "descriptionArPlaceholder": "وصف مختصر لطلبات الدعم المشمولة ضمن هذا النوع..."
+      },
+      "validation": {
+        "nameRequired": "Ticket type English name is required",
+        "nameArRequired": "Ticket type Arabic name is required"
+      },
+      "deleteModal": {
+        "title": "Delete Ticket Type",
+        "message": "Are you sure you want to delete the ticket type \"{{name}}\"? Existing tickets will keep their historical label."
+      }
+    },
+    "cannedReplies": {
+      "searchPlaceholder": "Search canned replies by title or content...",
+      "addLabel": "Add Canned Reply",
+      "createSuccess": "Canned reply created successfully",
+      "updateSuccess": "Canned reply updated successfully",
+      "deleteSuccess": "Canned reply deleted successfully",
+      "columns": {
+        "id": "Reply ID",
+        "title": "Title",
+        "reply": "Reply Content",
+        "createdBy": "Created By",
+        "createdAt": "Created Date"
+      },
+      "drawer": {
+        "createTitle": "Add Canned Reply",
+        "createSubtitle": "Create a reusable bilingual response template for support specialists.",
+        "editTitle": "Edit Canned Reply",
+        "editSubtitle": "Update the template title and bilingual response text.",
+        "viewTitle": "Canned Reply Details",
+        "viewSubtitle": "Review the full standardized reply template.",
+        "title": "Title (English)",
+        "titlePlaceholder": "e.g. Muqeem API Gateway Verification",
+        "titleAr": "Arabic Title",
+        "titleArPlaceholder": "مثال: تأكيد فحص ربط بوابة مقيم الإلكترونية",
+        "reply": "Reply Message (English)",
+        "replyPlaceholder": "Enter the standard English response text...",
+        "replyAr": "Arabic Reply Message",
+        "replyArPlaceholder": "أدخل نص الرد المعتمد باللغة العربية..."
+      },
+      "validation": {
+        "titleRequired": "English title is required",
+        "titleArRequired": "Arabic title is required",
+        "replyRequired": "English reply text is required",
+        "replyArRequired": "Arabic reply text is required"
+      },
+      "deleteModal": {
+        "title": "Delete Canned Reply",
+        "message": "Are you sure you want to delete the canned reply \"{{title}}\"?"
+      }
+    },
+    "auditActions": {
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted"
+    },
+    "auditTrail": {
+      "searchPlaceholder": "Search audit logs by ID, action, resource, data, or user...",
+      "columns": {
+        "actionPerformed": "Action Performed",
+        "resource": "Resource",
+        "resourceData": "Resource Data",
+        "performedBy": "Performed By",
+        "dateTime": "Date & Time"
+      },
+      "filters": {
+        "action": "Action",
+        "allActions": "All Actions",
+        "resource": "Resource",
+        "allResources": "All Resources"
+      },
+      "resources": {
+        "ticket": "Ticket",
+        "ticketType": "Ticket Type",
+        "cannedReply": "Canned Reply"
+      },
+      "details": {
+        "viewDetails": "View Audit Details",
+        "title": "Audit Record Details",
+        "subtitle": "Complete record of the ticketing system event.",
+        "auditId": "Audit ID",
+        "additionalNotes": "Activity Notes"
+      }
+    }
+  },
+  "edms": {
+    "dashboardTitle": "EDMS Dashboard",
+    "dashboardDesc": "Executive overview of enterprise documents, expiration tracking, categories, and company compliance.",
+    "dashboard": {
+      "title": "EDMS Dashboard",
+      "description": "Executive overview of enterprise documents, expiration tracking, categories, and company compliance.",
+      "sections": {
+        "documentsExpiring": "Documents Expiring",
+        "documentsByCategory": "Documents By Category",
+        "documentsByType": "Documents By Type",
+        "companyWiseDocuments": "Company Wise Documents",
+        "companyWiseBusinessDocuments": "Company Wise Business Documents"
+      },
+      "labels": {
+        "documentCode": "Document Code",
+        "documentTitle": "Document Title",
+        "category": "Category",
+        "type": "Document Type",
+        "company": "Company",
+        "expiryDate": "Expiry Date",
+        "remaining": "Remaining",
+        "daysRemaining": "{{count}} days",
+        "categoriesCount": "{{count}} Categories",
+        "documents": "Documents",
+        "typesCount": "{{count}} Types",
+        "totalDocuments": "{{count}} Total",
+        "totalBusinessDocs": "{{count}} Business Docs",
+        "businessDocuments": "Business Documents"
+      }
+    },
+    "documents": {
+      "title": "Documents",
+      "description": "Centralized repository of enterprise, establishment, employee, and asset documents.",
+      "searchPlaceholder": "Search documents by code, title, entity, type, or category...",
+      "exportSuccess": "Exported {{count}} documents to CSV",
+      "columns": {
+        "documentCode": "Document Code",
+        "documentTitle": "Document Title",
+        "documentFor": "Document For",
+        "documentType": "Document Type",
+        "documentCategory": "Document Category",
+        "createdBy": "Created By",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "filters": {
+        "companies": "Companies",
+        "companiesPlaceholder": "Filter by one or more companies...",
+        "employees": "Employees",
+        "employeesPlaceholder": "Filter by one or more employees...",
+        "noOptionsMatch": "No matching options found"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "drawer": {
+        "viewTitle": "Document Details",
+        "editTitle": "Edit Document",
+        "subtitle": "Document Code: {{code}}",
+        "holderName": "Holder / Entity Name",
+        "issueDate": "Issue Date",
+        "expiryDate": "Expiry Date",
+        "saveChanges": "Save Changes",
+        "titleRequired": "Document Title is required."
+      },
+      "form": {
+        "viewTitle": "Document Details",
+        "editTitle": "Edit Document",
+        "viewSubtitle": "Viewing metadata for document {{code}}",
+        "editSubtitle": "Update details for document {{code}}",
+        "documentCode": "Document Code",
+        "documentTitle": "Document Title",
+        "documentTitlePlaceholder": "Enter document title...",
+        "documentFor": "Document For",
+        "documentForPlaceholder": "Enter company, employee, or asset name...",
+        "documentType": "Document Type",
+        "documentCategory": "Document Category",
+        "createdBy": "Created By",
+        "status": "Status",
+        "cancel": "Cancel",
+        "submit": "Save Changes",
+        "errors": {
+          "documentTitleRequired": "Document Title is required.",
+          "documentForRequired": "Document For is required.",
+          "documentTypeRequired": "Document Type is required."
+        }
+      },
+      "feedback": {
+        "editSuccess": "Document updated successfully.",
+        "deleteSuccess": "Document deleted successfully."
+      },
+      "deleteModal": {
+        "title": "Delete Document",
+        "message": "Are you sure you want to delete document {{code}} ({{title}})? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      }
+    },
+    "documentCategories": {
+      "title": "Document Categories",
+      "description": "Define and manage high-level classifications for enterprise documents.",
+      "addNew": "Add Category",
+      "searchPlaceholder": "Search categories by code, name, or description...",
+      "exportSuccess": "Exported {{count}} document categories to CSV",
+      "columns": {
+        "categoryCode": "Category Code",
+        "categoryName": "Category Name",
+        "description": "Description",
+        "createdBy": "Created By",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "form": {
+        "createTitle": "Add Document Category",
+        "editTitle": "Edit Document Category",
+        "createSubtitle": "Create a new document classification for the EDMS catalog.",
+        "editSubtitle": "Update details for category {{code}}",
+        "categoryName": "Category Name",
+        "categoryNamePlaceholder": "Enter category name (e.g., Establishments, Employees)",
+        "description": "Description",
+        "descriptionPlaceholder": "Provide a clear description of the documents under this category...",
+        "cancel": "Cancel",
+        "submit": "Save Category",
+        "errors": {
+          "categoryNameRequired": "Category Name is required.",
+          "descriptionRequired": "Description is required."
+        }
+      },
+      "feedback": {
+        "createSuccess": "Document category created successfully.",
+        "editSuccess": "Document category updated successfully.",
+        "deleteSuccess": "Document category deleted successfully."
+      },
+      "deleteModal": {
+        "title": "Delete Document Category",
+        "message": "Are you sure you want to delete category {{code}} ({{name}})? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      }
+    },
+    "documentTypes": {
+      "title": "Document Types",
+      "description": "Configure official document types and link them to their respective categories.",
+      "addNew": "Add Document Type",
+      "searchPlaceholder": "Search document types by code, name, category, or description...",
+      "exportSuccess": "Exported {{count}} document types to CSV",
+      "columns": {
+        "typeCode": "Type Code",
+        "typeName": "Type Name",
+        "documentCategory": "Document Category",
+        "description": "Description",
+        "createdBy": "Created By",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "filters": {
+        "category": "Document Category",
+        "allCategories": "All Categories",
+        "clearFilters": "Clear Filters"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "form": {
+        "createTitle": "Add Document Type",
+        "editTitle": "Edit Document Type",
+        "createSubtitle": "Define a new document type and assign its category.",
+        "editSubtitle": "Update configuration for document type {{code}}",
+        "typeName": "Type Name",
+        "typeNamePlaceholder": "Enter document type name (e.g., Commercial Registration)",
+        "documentCategory": "Document Category",
+        "documentCategoryPlaceholder": "Select a document category...",
+        "searchCategoryPlaceholder": "Search categories...",
+        "noCategoryFound": "No matching categories found",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe the purpose and compliance scope of this document type...",
+        "cancel": "Cancel",
+        "submit": "Save Document Type",
+        "errors": {
+          "typeNameRequired": "Type Name is required.",
+          "documentCategoryRequired": "Document Category is required.",
+          "descriptionRequired": "Description is required."
+        }
+      },
+      "feedback": {
+        "createSuccess": "Document type created successfully.",
+        "editSuccess": "Document type updated successfully.",
+        "deleteSuccess": "Document type deleted successfully."
+      },
+      "deleteModal": {
+        "title": "Delete Document Type",
+        "message": "Are you sure you want to delete document type {{code}} ({{name}})? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      }
+    },
+    "documentTemplates": {
+      "title": "Document Templates",
+      "description": "Design and manage standardized document templates and dynamic form structures.",
+      "addNew": "Add Template",
+      "searchPlaceholder": "Search templates by code, name, tag, category, or type...",
+      "exportSuccess": "Exported {{count}} document templates to CSV",
+      "columns": {
+        "templateCode": "Template Code",
+        "templateName": "Template Name",
+        "createDate": "Create Date",
+        "documentTags": "Document Tags",
+        "documentCategory": "Document Category",
+        "documentType": "Document Type",
+        "createdBy": "Created By",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "form": {
+        "createTitle": "Create Document Template",
+        "editTitle": "Edit Document Template",
+        "createSubtitle": "Configure template metadata and build dynamic document fields.",
+        "editSubtitle": "Modify template {{code}} and its form elements",
+        "templateName": "Template Name",
+        "templateNamePlaceholder": "Enter template name...",
+        "documentType": "Document Type",
+        "documentTypePlaceholder": "Select document type...",
+        "documentCategory": "Document Category",
+        "documentCategoryPlaceholder": "Auto-populated from document type",
+        "tag": "Tag",
+        "tagPlaceholder": "Select portal/compliance tag...",
+        "cancel": "Cancel",
+        "saveTemplate": "Save Template",
+        "errors": {
+          "templateNameRequired": "Template Name is required.",
+          "documentTypeRequired": "Document Type is required."
+        },
+        "builder": {
+          "title": "Document Template Builder",
+          "subtitle": "Click or drag elements to assemble the document structure.",
+          "quickAddTitle": "Add selected element to canvas",
+          "availableElements": "Available Form Elements",
+          "canvasTitle": "Template Structure Canvas",
+          "elementsCount": "{{count}} Elements",
+          "emptyCanvasTitle": "No elements added yet",
+          "emptyCanvasSubtitle": "Click any element from the toolbar above or drag and drop it here to build your template.",
+          "moveUp": "Move Up",
+          "moveDown": "Move Down",
+          "removeElement": "Remove Element",
+          "headingText": "Heading Text",
+          "paragraphText": "Paragraph Text",
+          "fieldLabel": "Field Label",
+          "optionsLabel": "Selectable Options",
+          "addOption": "Add Option",
+          "optionPlaceholder": "Option {{index}}",
+          "elements": {
+            "Text Field": "Text Field",
+            "Text Area": "Text Area",
+            "Checkbox": "Checkbox",
+            "Date Field": "Date Field",
+            "Expiry Date": "Expiry Date",
+            "File Upload": "File Upload",
+            "Checkbox Group": "Checkbox Group",
+            "Number": "Number",
+            "Header": "Header",
+            "Paragraph": "Paragraph",
+            "Email": "Email",
+            "Select": "Select"
+          },
+          "defaults": {
+            "Text Field": "Document Reference Number",
+            "Text Area": "Additional Notes",
+            "Checkbox": "Verified Official Copy",
+            "Date Field": "Issue Date",
+            "Expiry Date": "Document Expiry Date",
+            "File Upload": "Upload Scanned Document (PDF / Image)",
+            "Checkbox Group": "Compliance Requirements",
+            "Number": "Serial Number",
+            "Header": "Official Document Section",
+            "Paragraph": "Please ensure all entered fields match the official government certificate.",
+            "Email": "Authorized Contact Email",
+            "Select": "Issuing Authority",
+            "option1": "Option 1",
+            "option2": "Option 2"
+          }
+        }
+      },
+      "feedback": {
+        "createSuccess": "Document template created successfully.",
+        "editSuccess": "Document template updated successfully.",
+        "deleteSuccess": "Document template deleted successfully."
+      },
+      "deleteModal": {
+        "title": "Delete Document Template",
+        "message": "Are you sure you want to delete template {{code}} ({{name}})? This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      }
+    },
+    "auditTrail": {
+      "title": "EDMS Audit Trail",
+      "description": "Chronological log of all administrative actions performed on document types and templates.",
+      "searchPlaceholder": "Search audit logs by action, resource, data, or employee...",
+      "clearFilters": "Clear Filters",
+      "exportSuccess": "Exported {{count}} audit records to CSV",
+      "columns": {
+        "actionPerformed": "Action Performed",
+        "resources": "Resources",
+        "resourceData": "Resource Data",
+        "performedBy": "Performed By",
+        "dateAndTime": "Date And Time",
+        "actions": "Actions"
+      },
+      "filters": {
+        "employee": "Employee",
+        "employeePlaceholder": "All Employees",
+        "action": "Action",
+        "actionPlaceholder": "All Actions",
+        "resource": "Resource",
+        "resourcePlaceholder": "All Resources",
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "details": {
+        "viewDetails": "View Details",
+        "title": "Audit Log Details"
+      },
+      "actions": {
+        "Create": "Create",
+        "Update": "Update",
+        "Re-Activated": "Re-Activated",
+        "De-Activated": "De-Activated",
+        "Delete": "Delete"
+      },
+      "resources": {
+        "Document Category": "Document Category",
+        "Document Type": "Document Type",
+        "Document Template": "Document Template",
+        "Document": "Document",
+        "Employee Template": "Employee Template",
+        "Company Template": "Company Template"
+      }
+    }
   }
 }

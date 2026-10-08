@@ -1,12 +1,13 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../components/DataTable';
 import {
     EDMS_DEMO_AUDIT_LOGS,
     EDMS_AUDIT_ACTIONS,
+    EDMS_AUDIT_RESOURCES,
     EDMS_AUDIT_EMPLOYEES,
     type EdmsAuditAction,
     type EdmsAuditResource,
@@ -24,19 +25,39 @@ export const EdmsAuditTrailPage: React.FC = () => {
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
-    // 4 Strictly Specified Optional Filters: Employee, Action, Start Date, End Date
+    // Filters: Employee, Action, Resource, Start Date, End Date
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
     const [selectedAction, setSelectedAction] = useState<string>('');
+    const [selectedResource, setSelectedResource] = useState<string>('');
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
 
+    // Detail Drawer State
+    const [viewingRecord, setViewingRecord] = useState<EdmsAuditRecord | null>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && viewingRecord) {
+                setViewingRecord(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [viewingRecord]);
+
     const hasActiveFilters = Boolean(
-        selectedEmployee || selectedAction || startDate || endDate || searchValue.trim()
+        selectedEmployee ||
+            selectedAction ||
+            selectedResource ||
+            startDate ||
+            endDate ||
+            searchValue.trim()
     );
 
     const handleClearFilters = useCallback(() => {
         setSelectedEmployee('');
         setSelectedAction('');
+        setSelectedResource('');
         setStartDate('');
         setEndDate('');
         setSearchValue('');
@@ -88,19 +109,34 @@ export const EdmsAuditTrailPage: React.FC = () => {
                 }
             }
 
-            // 3. Start Date Filter (inclusive YYYY-MM-DD comparison)
+            // 3. Resource Filter
+            if (selectedResource) {
+                if (record.resource !== selectedResource) {
+                    return false;
+                }
+            }
+
+            // 4. Start Date Filter (inclusive YYYY-MM-DD comparison)
             if (startDate && record.isoDate < startDate) {
                 return false;
             }
 
-            // 4. End Date Filter (inclusive YYYY-MM-DD comparison)
+            // 5. End Date Filter (inclusive YYYY-MM-DD comparison)
             if (endDate && record.isoDate > endDate) {
                 return false;
             }
 
             return true;
         });
-    }, [searchValue, selectedEmployee, selectedAction, startDate, endDate, t]);
+    }, [
+        searchValue,
+        selectedEmployee,
+        selectedAction,
+        selectedResource,
+        startDate,
+        endDate,
+        t,
+    ]);
 
     // Paginated slice
     const paginatedAuditLogs = useMemo(() => {
@@ -262,6 +298,23 @@ export const EdmsAuditTrailPage: React.FC = () => {
                     </span>
                 ),
             },
+            // 6. Actions (View Details)
+            {
+                id: 'actions',
+                header: t('edms.auditTrail.columns.actions'),
+                cell: ({ row }: { row: { original: EdmsAuditRecord } }) => (
+                    <button
+                        type="button"
+                        onClick={() => setViewingRecord(row.original)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 hover:bg-[#2D3F2C] hover:text-white hover:border-[#2D3F2C] text-xs font-medium text-[#0D0D0D] dark:text-slate-200 transition cursor-pointer"
+                        title={t('edms.auditTrail.details.viewDetails')}
+                        aria-label={t('edms.auditTrail.details.viewDetails')}
+                    >
+                        <Eye size={13} />
+                        <span>{t('edms.auditTrail.details.viewDetails')}</span>
+                    </button>
+                ),
+            },
         ],
         [isAr, renderActionBadge, t]
     );
@@ -308,7 +361,7 @@ export const EdmsAuditTrailPage: React.FC = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 {/* 1. Employee Filter */}
                 <div>
                     <label
@@ -361,7 +414,33 @@ export const EdmsAuditTrailPage: React.FC = () => {
                     </select>
                 </div>
 
-                {/* 3. Start Date Filter */}
+                {/* 3. Resource Filter */}
+                <div>
+                    <label
+                        htmlFor="edms-audit-filter-resource"
+                        className="block text-[11px] font-semibold text-[#595550] dark:text-slate-300 mb-1 text-start"
+                    >
+                        {t('edms.auditTrail.filters.resource')}
+                    </label>
+                    <select
+                        id="edms-audit-filter-resource"
+                        value={selectedResource}
+                        onChange={(e) => {
+                            setSelectedResource(e.target.value);
+                            setPageIndex(0);
+                        }}
+                        className="w-full px-2.5 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
+                    >
+                        <option value="">{t('edms.auditTrail.filters.resourcePlaceholder')}</option>
+                        {EDMS_AUDIT_RESOURCES.map((resKey) => (
+                            <option key={resKey} value={resKey}>
+                                {t(`edms.auditTrail.resources.${resKey}`)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* 4. Start Date Filter */}
                 <div>
                     <label
                         htmlFor="edms-audit-filter-start-date"
@@ -435,6 +514,120 @@ export const EdmsAuditTrailPage: React.FC = () => {
                 hasActiveFilters={hasActiveFilters}
                 filtersContent={filtersContent}
             />
+
+            {/* Audit Record Detail Drawer */}
+            <div
+                className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${
+                    viewingRecord
+                        ? 'pointer-events-auto opacity-100'
+                        : 'pointer-events-none opacity-0'
+                }`}
+                aria-hidden={!viewingRecord}
+            >
+                <div
+                    className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] transition-opacity"
+                    onClick={() => setViewingRecord(null)}
+                />
+                <div
+                    className={`fixed top-0 end-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col text-start ${
+                        viewingRecord
+                            ? 'translate-x-0'
+                            : 'ltr:translate-x-full rtl:-translate-x-full'
+                    }`}
+                >
+                    <div className="flex justify-between items-center px-6 py-4 border-b border-[#E5E0D8] dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+                        <div>
+                            <h2 className="text-lg font-bold text-[#0D0D0D] dark:text-slate-100">
+                                {t('edms.auditTrail.details.title')}
+                            </h2>
+                            <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-0.5 font-mono" dir="ltr">
+                                {viewingRecord?.id}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setViewingRecord(null)}
+                            className="w-8 h-8 flex items-center justify-center text-[#857E74] hover:text-[#0D0D0D] dark:hover:text-slate-200 rounded-lg hover:bg-[#F8F6F2] dark:hover:bg-slate-800 transition cursor-pointer"
+                            title={t('common.close')}
+                            aria-label={t('common.close')}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+
+                    {viewingRecord && (
+                        <div className="p-6 overflow-y-auto flex-1 space-y-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
+                                    <span className="block text-[11px] font-semibold text-[#6E6862] dark:text-slate-400 mb-1.5">
+                                        {t('edms.auditTrail.columns.actionPerformed')}
+                                    </span>
+                                    <div>{renderActionBadge(viewingRecord.actionPerformed)}</div>
+                                </div>
+
+                                <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
+                                    <span className="block text-[11px] font-semibold text-[#6E6862] dark:text-slate-400 mb-1.5">
+                                        {t('edms.auditTrail.columns.resources')}
+                                    </span>
+                                    <span className="inline-flex px-2.5 py-0.5 rounded-md text-xs font-medium bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300">
+                                        {t(`edms.auditTrail.resources.${viewingRecord.resource}`)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
+                                <span className="block text-[11px] font-semibold text-[#6E6862] dark:text-slate-400 mb-1.5">
+                                    {t('edms.auditTrail.columns.resourceData')}
+                                </span>
+                                <p className="text-sm font-semibold text-[#0D0D0D] dark:text-slate-100 break-words">
+                                    {viewingRecord.resourceData}
+                                </p>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
+                                <span className="block text-[11px] font-semibold text-[#6E6862] dark:text-slate-400 mb-2">
+                                    {t('edms.auditTrail.columns.performedBy')}
+                                </span>
+                                <div className="inline-flex items-center gap-2.5">
+                                    <span
+                                        className="w-7 h-7 rounded-full bg-[#2D3F2C]/10 dark:bg-slate-800 border border-[#2D3F2C]/20 dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300 font-mono text-xs font-bold flex items-center justify-center shrink-0"
+                                        dir="ltr"
+                                    >
+                                        {viewingRecord.performedByInitials}
+                                    </span>
+                                    <span className="text-xs font-semibold text-[#0D0D0D] dark:text-slate-100">
+                                        {isAr
+                                            ? viewingRecord.performedByAr
+                                            : viewingRecord.performedByEn}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
+                                <span className="block text-[11px] font-semibold text-[#6E6862] dark:text-slate-400 mb-1.5">
+                                    {t('edms.auditTrail.columns.dateAndTime')}
+                                </span>
+                                <span
+                                    className="font-mono text-xs font-medium text-[#0D0D0D] dark:text-slate-200"
+                                    dir="ltr"
+                                >
+                                    {viewingRecord.dateTimeDisplay}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="px-6 py-4 border-t border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-900 flex justify-end shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setViewingRecord(null)}
+                            className="px-5 py-2 text-xs font-semibold text-[#595550] dark:text-slate-300 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
+                        >
+                            {t('common.close')}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

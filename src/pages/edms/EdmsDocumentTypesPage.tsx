@@ -10,12 +10,14 @@ import {
     ChevronDown,
     Search as SearchIcon,
     Check,
+    RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DataTable } from '../../components/DataTable';
 import {
     EDMS_DEMO_DOCUMENT_TYPES,
     getEdmsCategories,
+    formatEdmsCategoryLabel,
     prependDemoDocumentType,
     updateDemoDocumentType,
     removeDemoDocumentType,
@@ -137,7 +139,8 @@ const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
     onClose,
     onSubmit,
 }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isAr = Boolean(i18n.language?.startsWith('ar'));
     const isEdit = Boolean(editingItem);
 
     const typeNameInputRef = useRef<HTMLInputElement>(null);
@@ -244,6 +247,8 @@ const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
         return categories.filter(
             (cat) =>
                 cat.categoryName.toLowerCase().includes(q) ||
+                formatEdmsCategoryLabel(cat.categoryName, false).toLowerCase().includes(q) ||
+                formatEdmsCategoryLabel(cat.categoryName, true).toLowerCase().includes(q) ||
                 cat.categoryCode.toLowerCase().includes(q) ||
                 cat.description.toLowerCase().includes(q)
         );
@@ -437,7 +442,12 @@ const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
                         >
                             {selectedCategoryObj ? (
                                 <span className="flex items-center gap-2 truncate font-medium text-[#0D0D0D] dark:text-slate-100">
-                                    <span>{selectedCategoryObj.categoryName}</span>
+                                    <span>
+                                        {formatEdmsCategoryLabel(
+                                            selectedCategoryObj.categoryName,
+                                            isAr
+                                        )}
+                                    </span>
                                     <span
                                         className="text-[10px] font-mono text-[#6E6862] dark:text-slate-400 px-1.5 py-0.5 rounded bg-[#F0ECE4] dark:bg-slate-700"
                                         dir="ltr"
@@ -514,7 +524,10 @@ const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
                                                     >
                                                         <div className="flex items-center gap-2 min-w-0">
                                                             <span className="truncate">
-                                                                {cat.categoryName}
+                                                                {formatEdmsCategoryLabel(
+                                                                    cat.categoryName,
+                                                                    isAr
+                                                                )}
                                                             </span>
                                                             <span
                                                                 className="text-[10px] font-mono text-[#6E6862] dark:text-slate-400 px-1.5 py-0.5 rounded bg-[#F0ECE4] dark:bg-slate-700 shrink-0"
@@ -613,6 +626,7 @@ export const EdmsDocumentTypesPage: React.FC = () => {
         ...EDMS_DEMO_DOCUMENT_TYPES,
     ]);
     const [searchValue, setSearchValue] = useState('');
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
@@ -624,19 +638,56 @@ export const EdmsDocumentTypesPage: React.FC = () => {
     // Read the live EDMS Document Categories dataset (reflects any additions/edits/deletions in Categories master)
     const liveCategories = getEdmsCategories();
 
+    const resolveRecordCategoryLabel = useCallback(
+        (record: EdmsDocumentTypeRecord) => {
+            const matchedCat =
+                liveCategories.find((cat) => cat.id === record.categoryId) ||
+                liveCategories.find((cat) => cat.categoryName === record.categoryName);
+            const rawName = matchedCat ? matchedCat.categoryName : record.categoryName;
+            return formatEdmsCategoryLabel(rawName, isAr);
+        },
+        [isAr, liveCategories]
+    );
+
+    const hasActiveFilters = Boolean(selectedCategoryId || searchValue.trim());
+
+    const handleClearFilters = useCallback(() => {
+        setSelectedCategoryId('');
+        setSearchValue('');
+        setPageIndex(0);
+    }, []);
+
     const filteredTypes = useMemo(() => {
         const q = searchValue.trim().toLowerCase();
-        if (!q) return documentTypes;
-        return documentTypes.filter(
-            (item) =>
+        return documentTypes.filter((item) => {
+            if (selectedCategoryId) {
+                const selectedCatObj = liveCategories.find((c) => c.id === selectedCategoryId);
+                const matchesCategory =
+                    item.categoryId === selectedCategoryId ||
+                    (selectedCatObj && item.categoryName === selectedCatObj.categoryName);
+                if (!matchesCategory) {
+                    return false;
+                }
+            }
+
+            if (!q) return true;
+
+            const categoryLabelEn = formatEdmsCategoryLabel(item.categoryName, false).toLowerCase();
+            const categoryLabelAr = formatEdmsCategoryLabel(item.categoryName, true).toLowerCase();
+
+            return (
                 item.typeCode.toLowerCase().includes(q) ||
                 item.typeName.toLowerCase().includes(q) ||
+                item.categoryName.toLowerCase().includes(q) ||
+                categoryLabelEn.includes(q) ||
+                categoryLabelAr.includes(q) ||
                 item.description.toLowerCase().includes(q) ||
                 item.createdByEn.toLowerCase().includes(q) ||
                 item.createdByAr.toLowerCase().includes(q) ||
                 item.createdByInitials.toLowerCase().includes(q)
-        );
-    }, [documentTypes, searchValue]);
+            );
+        });
+    }, [documentTypes, liveCategories, searchValue, selectedCategoryId]);
 
     const paginatedTypes = useMemo(() => {
         const start = pageIndex * pageSize;
@@ -735,6 +786,7 @@ export const EdmsDocumentTypesPage: React.FC = () => {
         const headers = [
             t('edms.documentTypes.columns.typeCode'),
             t('edms.documentTypes.columns.typeName'),
+            t('edms.documentTypes.columns.documentCategory'),
             t('edms.documentTypes.columns.description'),
             t('edms.documentTypes.columns.createdBy'),
             t('edms.documentTypes.columns.status'),
@@ -745,6 +797,7 @@ export const EdmsDocumentTypesPage: React.FC = () => {
         const rows = filteredTypes.map((item) => [
             escapeCsv(item.typeCode),
             escapeCsv(item.typeName),
+            escapeCsv(resolveRecordCategoryLabel(item)),
             escapeCsv(item.description),
             escapeCsv(`${item.createdByInitials} / ${isAr ? item.createdByAr : item.createdByEn}`),
             escapeCsv(t('common.active')),
@@ -768,7 +821,7 @@ export const EdmsDocumentTypesPage: React.FC = () => {
                 count: filteredTypes.length,
             })
         );
-    }, [filteredTypes, isAr, t]);
+    }, [filteredTypes, isAr, resolveRecordCategoryLabel, t]);
 
     // Columns in exact required order:
     // 1. Type Code
@@ -797,6 +850,15 @@ export const EdmsDocumentTypesPage: React.FC = () => {
                 cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
                     <span className="font-medium text-[#0D0D0D] dark:text-slate-100 inline-block text-start">
                         {row.original.typeName}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'categoryName',
+                header: t('edms.documentTypes.columns.documentCategory'),
+                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#FAF8F5] dark:bg-slate-800 text-[#2D3F2C] dark:text-emerald-300 border border-[#E5E0D8] dark:border-slate-700">
+                        {resolveRecordCategoryLabel(row.original)}
                     </span>
                 ),
             },
@@ -848,7 +910,47 @@ export const EdmsDocumentTypesPage: React.FC = () => {
                 ),
             },
         ],
-        [handleOpenDelete, handleOpenEdit, isAr, t]
+        [handleOpenDelete, handleOpenEdit, isAr, resolveRecordCategoryLabel, t]
+    );
+
+    const filtersContent = (
+        <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-wrap items-end justify-between gap-3 mb-1">
+            <div className="w-full sm:w-72">
+                <label
+                    htmlFor="edms-types-category-filter"
+                    className="block text-[11px] font-semibold text-[#595550] dark:text-slate-300 mb-1 text-start"
+                >
+                    {t('edms.documentTypes.filters.category')}
+                </label>
+                <select
+                    id="edms-types-category-filter"
+                    value={selectedCategoryId}
+                    onChange={(e) => {
+                        setSelectedCategoryId(e.target.value);
+                        setPageIndex(0);
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
+                >
+                    <option value="">{t('edms.documentTypes.filters.allCategories')}</option>
+                    {liveCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                            {formatEdmsCategoryLabel(cat.categoryName, isAr)} ({cat.categoryCode})
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {hasActiveFilters && (
+                <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#8C6046] border border-[#BFAB93]/60 bg-[#FAF8F5] hover:bg-[#F3EFE8] hover:text-[#0D0D0D] dark:bg-slate-800 dark:text-amber-300 dark:border-slate-700 transition cursor-pointer"
+                >
+                    <RotateCcw size={12} />
+                    <span>{t('edms.documentTypes.filters.clearFilters')}</span>
+                </button>
+            )}
+        </div>
     );
 
     return (
@@ -870,6 +972,9 @@ export const EdmsDocumentTypesPage: React.FC = () => {
                 onPageSizeChange={setPageSize}
                 onAddNew={handleOpenCreate}
                 onExport={handleExportCsv}
+                isFiltersOpen={true}
+                hasActiveFilters={hasActiveFilters}
+                filtersContent={filtersContent}
             />
 
             {/* Add / Edit Document Type Drawer */}
