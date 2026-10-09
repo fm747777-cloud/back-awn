@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
@@ -20,13 +20,15 @@ export const AddTicketTypeForm: React.FC<AddTicketTypeFormProps> = ({ isOpen, is
     const [description, setDescription] = useState("");
     const [errors, setErrors] = useState<{ name?: string }>({});
 
-    useEffect(() => {
+    const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+    if (prevIsOpen !== isOpen) {
+        setPrevIsOpen(isOpen);
         if (isOpen) {
             setName("");
             setDescription("");
             setErrors({});
         }
-    }, [isOpen]);
+    }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();

@@ -15,14 +15,7 @@ import {
     ClipboardList,
     CheckSquare,
     GitBranch,
-    Mail,
-    Users,
-    Briefcase,
-    Building2,
-    ShieldCheck,
-    UserCheck,
-    MapPin,
-    Puzzle,
+    Mail
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -177,32 +170,6 @@ export const ASSET_MANAGEMENT_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
-export const UMS_SIDEBAR_GROUPS: MenuGroup[] = [
-    {
-        title: 'Main',
-        items: [
-            { label: 'Dashboard', path: '/ums/dashboard', icon: LayoutDashboard },
-            { label: 'Employees', path: '/ums/employees', icon: Users },
-        ],
-    },
-    {
-        title: 'Masters',
-        items: [
-            { label: 'Designations', path: '/ums/designations', icon: Briefcase },
-            { label: 'Departments', path: '/ums/departments', icon: Building2 },
-            { label: 'Security Groups', path: '/ums/security-groups', icon: ShieldCheck },
-            { label: 'Roles', path: '/ums/roles', icon: UserCheck },
-            { label: 'Branches', path: '/ums/branches', icon: MapPin },
-            { label: 'Custom Addons', path: '/ums/custom-addons', icon: Puzzle },
-        ],
-    },
-    {
-        items: [
-            { label: 'Audit Trail', path: '/ums/audit-trail', icon: History },
-        ],
-    },
-];
-
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -215,9 +182,6 @@ export const getMenuGroupsForPath = (
     pathname: string,
     fallbackGroups: MenuGroup[] = DEFAULT_SIDEBAR_GROUPS
 ): MenuGroup[] => {
-    if (pathname.startsWith('/ums')) {
-        return UMS_SIDEBAR_GROUPS;
-    }
     if (pathname.startsWith('/ticketing')) {
         return TICKETING_SIDEBAR_GROUPS;
     }
@@ -237,6 +201,7 @@ export const getMenuGroupsForPath = (
         return DEFAULT_SIDEBAR_GROUPS;
     }
     if (
+        pathname.startsWith('/ums') ||
         pathname.startsWith('/crm') ||
         pathname.startsWith('/customer')
     ) {

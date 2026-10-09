@@ -21,26 +21,37 @@ interface CannedReplyFormProps {
 }
 
 export const CannedReplyForm = ({ isOpen, mode, reply, isLoading = false, onClose, onSubmit }: CannedReplyFormProps) => {
-    const [mounted, setMounted] = useState(false);
+    const [mounted, setMounted] = useState(isOpen);
     const [visible, setVisible] = useState(false);
-    const [subject, setSubject] = useState('');
-    const [message, setMessage] = useState('');
+    const [subject, setSubject] = useState(reply?.subject ?? '');
+    const [message, setMessage] = useState(reply?.message ?? '');
     const [errors, setErrors] = useState<{ subject?: string; message?: string }>({});
     const isView = mode === 'view';
 
-    useEffect(() => {
+    const [prevOpenState, setPrevOpenState] = useState({ isOpen, replyId: reply?.id, mode });
+    if (prevOpenState.isOpen !== isOpen || prevOpenState.replyId !== reply?.id || prevOpenState.mode !== mode) {
+        setPrevOpenState({ isOpen, replyId: reply?.id, mode });
         if (isOpen) {
             setMounted(true);
             setSubject(reply?.subject ?? '');
             setMessage(reply?.message ?? '');
             setErrors({});
+        }
+    }
+
+    useEffect(() => {
+        if (isOpen) {
             const frame = requestAnimationFrame(() => setVisible(true));
             return () => cancelAnimationFrame(frame);
+        } else {
+            const frame = requestAnimationFrame(() => setVisible(false));
+            const timeout = window.setTimeout(() => setMounted(false), 300);
+            return () => {
+                cancelAnimationFrame(frame);
+                window.clearTimeout(timeout);
+            };
         }
-        setVisible(false);
-        const timeout = window.setTimeout(() => setMounted(false), 300);
-        return () => window.clearTimeout(timeout);
-    }, [isOpen, reply, mode]);
+    }, [isOpen]);
 
     useEffect(() => {
         if (!mounted) return;

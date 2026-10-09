@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { X, ChevronDown, LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -207,14 +207,16 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
     const [hasSubmitted, setHasSubmitted] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => {
-        if (!isOpen) return;
-
-        setValues(getTaskFormValues(ticket));
-        setErrors({});
-        setHasSubmitted(false);
-        setIsSaving(false);
-    }, [isOpen, mode, ticket?.id]);
+    const [prevOpenState, setPrevOpenState] = useState({ isOpen, id: ticket?.id, mode });
+    if (prevOpenState.isOpen !== isOpen || prevOpenState.id !== ticket?.id || prevOpenState.mode !== mode) {
+        setPrevOpenState({ isOpen, id: ticket?.id, mode });
+        if (isOpen) {
+            setValues(getTaskFormValues(ticket));
+            setErrors({});
+            setHasSubmitted(false);
+            setIsSaving(false);
+        }
+    }
 
     const branchesQuery = useQuery({
         queryKey: ['task-drawer', 'company-branches'],

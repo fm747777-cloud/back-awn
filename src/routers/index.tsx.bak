@@ -55,21 +55,6 @@ const AssetCategoriesPage = () => import('../pages/asset-management/AssetCategor
 const AssetTagsPage = () => import('../pages/asset-management/AssetTagsPage').then((m) => ({ Component: m.AssetTagsPage }));
 const AssetAuditTrailPage = () => import('../pages/asset-management/AssetAuditTrailPage').then((m) => ({ Component: m.AssetAuditTrailPage }));
 
-// UMS Module (User Management System)
-const UmsPage = () => import('../pages/UmsPage').then((m) => ({ Component: m.UmsPage }));
-const UmsDashboardPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsDashboardPage }));
-const UmsEmployeesPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeesPage }));
-const UmsEmployeeNewPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeeNewPage }));
-const UmsEmployeeDetailsPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeeDetailsPage }));
-const UmsEmployeeImportPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeeImportPage }));
-const UmsDesignationsPage = () => import('../pages/ums/UmsDesignationsPage').then((m) => ({ Component: m.UmsDesignationsPage }));
-const UmsDepartmentsPage = () => import('../pages/ums/UmsDepartmentsPage').then((m) => ({ Component: m.UmsDepartmentsPage }));
-const UmsSecurityGroupsPage = () => import('../pages/ums/UmsSecurityGroupsPage').then((m) => ({ Component: m.UmsSecurityGroupsPage }));
-const UmsRolesPage = () => import('../pages/ums/UmsRolesPage').then((m) => ({ Component: m.UmsRolesPage }));
-const UmsBranchesPage = () => import('../pages/ums/UmsBranchesPage').then((m) => ({ Component: m.UmsBranchesPage }));
-const UmsCustomAddonsPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsCustomAddonsPage }));
-const UmsAuditTrailPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsAuditTrailPage }));
-
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
 const ServicesListTab = () => import('../components/Service/ServicesListTab').then((m) => ({ Component: m.ServicesListTab }));
@@ -128,65 +113,7 @@ export const router = createBrowserRouter([
                     // Core AWN modules
                     {
                         path: '/ums',
-                        lazy: UmsPage,
-                        children: [
-                            {
-                                index: true,
-                                element: <Navigate to="/ums/dashboard" replace />,
-                            },
-                            {
-                                path: 'dashboard',
-                                lazy: UmsDashboardPage,
-                            },
-                            {
-                                path: 'employees',
-                                lazy: UmsEmployeesPage,
-                            },
-                            {
-                                path: 'employees/new',
-                                lazy: UmsEmployeeNewPage,
-                            },
-                            {
-                                path: 'employees/import',
-                                lazy: UmsEmployeeImportPage,
-                            },
-                            {
-                                path: 'employees/:id',
-                                lazy: UmsEmployeeDetailsPage,
-                            },
-                            {
-                                path: 'employees/:id/edit',
-                                lazy: UmsEmployeeNewPage,
-                            },
-                            {
-                                path: 'designations',
-                                lazy: UmsDesignationsPage,
-                            },
-                            {
-                                path: 'departments',
-                                lazy: UmsDepartmentsPage,
-                            },
-                            {
-                                path: 'security-groups',
-                                lazy: UmsSecurityGroupsPage,
-                            },
-                            {
-                                path: 'roles',
-                                lazy: UmsRolesPage,
-                            },
-                            {
-                                path: 'branches',
-                                lazy: UmsBranchesPage,
-                            },
-                            {
-                                path: 'custom-addons',
-                                lazy: UmsCustomAddonsPage,
-                            },
-                            {
-                                path: 'audit-trail',
-                                lazy: UmsAuditTrailPage,
-                            },
-                        ],
+                        lazy: PlaceholderModulePage,
                     },
                     {
                         path: '/crm',

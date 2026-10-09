@@ -49,13 +49,6 @@ const ITEM_LABEL_KEYS: Record<string, string> = {
     Categories: 'nav.assetCategories',
     'Asset Tags': 'nav.assetTags',
     Tags: 'nav.assetTags',
-    Employees: 'nav.employees',
-    Designations: 'nav.designations',
-    Departments: 'nav.departments',
-    'Security Groups': 'nav.securityGroups',
-    Roles: 'nav.roles',
-    Branches: 'nav.branches',
-    'Custom Addons': 'nav.customAddons',
 };
 
 function isPathMatching(itemPath: string, currentPathname: string): boolean {
