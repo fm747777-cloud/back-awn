@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     History,
-    PackageCheck,
-    CheckSquare,
-    Activity,
-    Layers,
-    FolderTree,
-    Tag,
+    GitBranch,
+    FolderKanban,
+    ListFilter,
+    Mail,
     Search,
     X,
     RotateCcw,
@@ -23,121 +21,154 @@ import {
     ShieldCheck,
     FileText,
     RefreshCw,
+    LayoutDashboard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-    loadAssetAuditEvents,
-    loadAssets,
-    loadAssetApprovalTasks,
-    loadAssetStatuses,
-    loadAssetTypes,
-    loadAssetCategories,
-    loadAssetTags,
-    normalizeAssetAuditResource,
-    formatAssetDateToday,
-    ASSET_AUDIT_ACTIONS,
-    ASSET_AUDIT_RESOURCES,
-    ASSET_PAGE_SIZE_OPTIONS,
-    type AssetAuditEvent,
-    type AssetAuditAction,
-    type AssetAuditResource,
-} from './assetManagementMockData';
+    WORKFLOW_AUDIT_STORAGE_KEY,
+    INITIAL_WORKFLOW_AUDIT_EVENTS,
+    WORKFLOW_AUDIT_ACTIONS,
+    WORKFLOW_AUDIT_RESOURCES,
+    WORKFLOW_PAGE_SIZE_OPTIONS,
+    loadWorkflowAuditEvents,
+    normalizeWorkflowAuditEvent,
+    normalizeWorkflowAuditResource,
+    normalizeWorkflowAuditAction,
+    loadWorkflowRecords,
+    loadWorkflowMasters,
+    loadWorkflowStatusLevels,
+    loadWorkflowEmailTemplates,
+    formatWorkflowDateToday,
+    type WorkflowAuditEvent,
+    type WorkflowAuditAction,
+    type WorkflowAuditResource,
+} from './workflowMockData';
 
-type ResourceFilterValue = 'ALL' | 'MASTERS' | AssetAuditResource;
+type ResourceFilterValue = 'ALL' | 'GOVERNANCE' | WorkflowAuditResource;
 
-const ACTION_BADGE_STYLES: Record<AssetAuditAction, string> = {
+const ACTION_BADGE_STYLES: Record<WorkflowAuditAction, string> = {
     CREATED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
     UPDATED: 'bg-[#FAF8F5] text-[#2D3F2C] border-[#2D3F2C]/25',
+    ENABLED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
+    DISABLED: 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]',
     ACTIVATED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
     DEACTIVATED: 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]',
-    APPROVED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
-    REJECTED: 'bg-[#FFF7ED] text-[#B45309] border-[#FDE68A]',
     DELETED: 'bg-[#FDF2F2] text-[#A63A3A] border-[#A63A3A]/25',
 };
 
-const ACTION_DOT_STYLES: Record<AssetAuditAction, string> = {
+const ACTION_DOT_STYLES: Record<WorkflowAuditAction, string> = {
     CREATED: 'bg-[#265938]',
     UPDATED: 'bg-[#2D3F2C]',
+    ENABLED: 'bg-[#265938]',
+    DISABLED: 'bg-[#857E74]',
     ACTIVATED: 'bg-[#265938]',
     DEACTIVATED: 'bg-[#857E74]',
-    APPROVED: 'bg-[#265938]',
-    REJECTED: 'bg-[#D97706]',
     DELETED: 'bg-[#A63A3A]',
 };
 
-const RESOURCE_BADGE_STYLES: Record<string, string> = {
-    Asset: 'bg-[#FAF8F5] text-[#2D3F2C] border-[#2D3F2C]/20',
-    'Approval Task': 'bg-[#FFFBEB] text-[#8C6046] border-[#8C6046]/25',
-    'Asset Approval Task': 'bg-[#FFFBEB] text-[#8C6046] border-[#8C6046]/25',
-    'Asset Status': 'bg-[#EAF3EC]/70 text-[#265938] border-[#265938]/20',
-    'Asset Type': 'bg-[#FAF8F5] text-[#595550] border-[#E5E0D8]',
-    'Asset Category': 'bg-[#FDF7F2] text-[#8C6046] border-[#8C6046]/20',
-    'Asset Tag': 'bg-[#F8F6F2] text-[#6A7358] border-[#6A7358]/25',
-    'Asset Master': 'bg-[#FAF8F5] text-[#595550] border-[#E5E0D8]',
+const RESOURCE_BADGE_STYLES: Record<WorkflowAuditResource, string> = {
+    Workflow: 'bg-[#FAF8F5] text-[#2D3F2C] border-[#2D3F2C]/20',
+    'Workflow Master': 'bg-[#FDF7F2] text-[#8C6046] border-[#8C6046]/25',
+    'Status Level': 'bg-[#EAF3EC]/70 text-[#265938] border-[#265938]/20',
+    'Email Template': 'bg-[#F8F6F2] text-[#6A7358] border-[#6A7358]/25',
 };
 
-function isMasterResource(resource: AssetAuditResource): boolean {
-    const norm = normalizeAssetAuditResource(resource);
-    return (
-        norm === 'Asset Status' ||
-        norm === 'Asset Type' ||
-        norm === 'Asset Category' ||
-        norm === 'Asset Tag' ||
-        norm === 'Asset Master'
-    );
-}
-
-function getResourceRoute(resource: AssetAuditResource, recordId?: string): string {
-    const norm = normalizeAssetAuditResource(resource, recordId);
-    switch (norm) {
-        case 'Asset':
-            return '/asset-management/assets';
-        case 'Approval Task':
-            return '/asset-management/approval-tasks';
-        case 'Asset Status':
-            return '/asset-management/status';
-        case 'Asset Type':
-            return '/asset-management/types';
-        case 'Asset Category':
-            return '/asset-management/categories';
-        case 'Asset Tag':
-            return '/asset-management/tags';
-        default:
-            return '/asset-management/status';
+/**
+ * Safely loads workflow audit events from localStorage:
+ * - If key is missing -> initializes and returns default seed events via loadWorkflowAuditEvents()
+ * - If key is explicitly "[]" -> returns [] so empty-state UI is rendered cleanly
+ * - If key is malformed JSON or non-array -> falls back safely to default seed events without throwing
+ */
+function loadWorkflowAuditEventsSafe(): WorkflowAuditEvent[] {
+    if (typeof window === 'undefined') {
+        return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
+    }
+    try {
+        const raw = window.localStorage.getItem(WORKFLOW_AUDIT_STORAGE_KEY);
+        if (raw === null) {
+            return loadWorkflowAuditEvents();
+        }
+        const trimmed = raw.trim();
+        if (trimmed === '[]') {
+            return [];
+        }
+        const parsed = JSON.parse(trimmed);
+        if (!Array.isArray(parsed)) {
+            return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
+        }
+        const normalized = parsed
+            .map((item, idx) => normalizeWorkflowAuditEvent(item, idx))
+            .filter((item): item is WorkflowAuditEvent => item !== null);
+        return normalized;
+    } catch {
+        return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
     }
 }
 
-function doesResourceRecordExist(resource: AssetAuditResource, recordId: string): boolean {
-    const norm = normalizeAssetAuditResource(resource, recordId);
+function isGovernanceResource(resource: WorkflowAuditResource): boolean {
+    const norm = normalizeWorkflowAuditResource(resource);
+    return norm === 'Workflow Master' || norm === 'Status Level';
+}
+
+function getResourceRoute(resource: WorkflowAuditResource, recordId?: string): string {
+    const norm = normalizeWorkflowAuditResource(resource);
     switch (norm) {
-        case 'Asset':
-            return loadAssets().some((r) => r.id === recordId);
-        case 'Approval Task':
-            return loadAssetApprovalTasks().some((r) => r.id === recordId);
-        case 'Asset Status':
-            return loadAssetStatuses().some((r) => r.id === recordId);
-        case 'Asset Type':
-            return loadAssetTypes().some((r) => r.id === recordId);
-        case 'Asset Category':
-            return loadAssetCategories().some((r) => r.id === recordId);
-        case 'Asset Tag':
-            return loadAssetTags().some((r) => r.id === recordId);
+        case 'Workflow': {
+            if (recordId && recordId !== '—') {
+                const matched = loadWorkflowRecords().find(
+                    (w) => String(w.id) === String(recordId)
+                );
+                if (matched) {
+                    return `/workflow/workflows?tab=${matched.workflowType}&workflowId=${matched.id}`;
+                }
+                return `/workflow/workflows?workflowId=${encodeURIComponent(recordId)}`;
+            }
+            return '/workflow/workflows';
+        }
+        case 'Workflow Master':
+            return '/workflow/masters';
+        case 'Status Level':
+            return '/workflow/status-levels';
+        case 'Email Template':
+            return '/workflow/email-templates';
+        default:
+            return '/workflow/workflows';
+    }
+}
+
+function doesResourceRecordExist(resource: WorkflowAuditResource, recordId: string): boolean {
+    const norm = normalizeWorkflowAuditResource(resource);
+    switch (norm) {
+        case 'Workflow':
+            return loadWorkflowRecords().some((r) => String(r.id) === String(recordId));
+        case 'Workflow Master':
+            return loadWorkflowMasters().some(
+                (r) => r.code === recordId || String(r.id) === String(recordId)
+            );
+        case 'Status Level':
+            return loadWorkflowStatusLevels().some(
+                (r) => r.code === recordId || String(r.id) === String(recordId)
+            );
+        case 'Email Template':
+            return loadWorkflowEmailTemplates().some((r) => r.id === recordId);
         default:
             return false;
     }
 }
 
-export const AssetAuditTrailPage: React.FC = () => {
+export const WorkflowAuditTrailPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+    const isRtl = i18n.dir() === 'rtl' || Boolean(i18n.language?.startsWith('ar'));
 
-    const [events, setEvents] = useState<AssetAuditEvent[]>(() => loadAssetAuditEvents());
+    const [events, setEvents] = useState<WorkflowAuditEvent[]>(() =>
+        loadWorkflowAuditEventsSafe()
+    );
     const [refreshTick, setRefreshTick] = useState(0);
 
     // Search, Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
-    const [actionFilter, setActionFilter] = useState<'ALL' | AssetAuditAction>('ALL');
+    const [actionFilter, setActionFilter] = useState<'ALL' | WorkflowAuditAction>('ALL');
     const [resourceFilter, setResourceFilter] = useState<ResourceFilterValue>('ALL');
     const [performedByFilter, setPerformedByFilter] = useState<string>('ALL');
     const [startDate, setStartDate] = useState('');
@@ -146,22 +177,28 @@ export const AssetAuditTrailPage: React.FC = () => {
     const [pageSize, setPageSize] = useState<number>(10);
 
     // Selected Audit Event for Details Drawer
-    const [selectedEvent, setSelectedEvent] = useState<AssetAuditEvent | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<WorkflowAuditEvent | null>(null);
 
-    const refreshAuditEvents = useCallback((showToast = false) => {
-        const latest = loadAssetAuditEvents();
-        setEvents(latest);
-        setRefreshTick((prev) => prev + 1);
-        if (showToast) {
-            toast.success(
-                t('assetManagement.auditTrail.feedback.refreshed', { count: latest.length })
-            );
-        }
-    }, [t]);
+    const refreshAuditEvents = useCallback(
+        (showToast = false) => {
+            const latest = loadWorkflowAuditEventsSafe();
+            setEvents(latest);
+            setRefreshTick((prev) => prev + 1);
+            if (showToast) {
+                toast.success(
+                    t('workflow.auditTrail.feedback.refreshed', {
+                        count: latest.length,
+                        defaultValue: `Refreshed ${latest.length} workflow audit events.`,
+                    })
+                );
+            }
+        },
+        [t]
+    );
 
     useEffect(() => {
         const onWindowRefresh = () => {
-            setEvents(loadAssetAuditEvents());
+            setEvents(loadWorkflowAuditEventsSafe());
             setRefreshTick((prev) => prev + 1);
         };
         window.addEventListener('focus', onWindowRefresh);
@@ -182,37 +219,33 @@ export const AssetAuditTrailPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedEvent]);
 
-    // Localized label helpers
     const getActionLabel = useCallback(
-        (action: AssetAuditAction): string => {
-            return t(`assetManagement.auditTrail.actions.${action}`);
+        (action: WorkflowAuditAction): string => {
+            const norm = normalizeWorkflowAuditAction(action);
+            return t(`workflow.auditTrail.actions.${norm}`, { defaultValue: norm });
         },
         [t]
     );
 
     const getResourceLabel = useCallback(
-        (resource: AssetAuditResource): string => {
-            const norm = normalizeAssetAuditResource(resource);
-            return t(`assetManagement.auditTrail.resources.${norm}`);
+        (resource: WorkflowAuditResource): string => {
+            const norm = normalizeWorkflowAuditResource(resource);
+            return t(`workflow.auditTrail.resources.${norm}`, { defaultValue: norm });
         },
         [t]
     );
 
-    const renderResourceIcon = (resource: AssetAuditResource) => {
-        const norm = normalizeAssetAuditResource(resource);
+    const renderResourceIcon = (resource: WorkflowAuditResource) => {
+        const norm = normalizeWorkflowAuditResource(resource);
         switch (norm) {
-            case 'Asset':
-                return <PackageCheck size={12} className="shrink-0 text-[#2D3F2C]" />;
-            case 'Approval Task':
-                return <CheckSquare size={12} className="shrink-0 text-[#8C6046]" />;
-            case 'Asset Status':
-                return <Activity size={12} className="shrink-0 text-[#265938]" />;
-            case 'Asset Type':
-                return <Layers size={12} className="shrink-0 text-[#595550]" />;
-            case 'Asset Category':
-                return <FolderTree size={12} className="shrink-0 text-[#8C6046]" />;
-            case 'Asset Tag':
-                return <Tag size={12} className="shrink-0 text-[#6A7358]" />;
+            case 'Workflow':
+                return <GitBranch size={12} className="shrink-0 text-[#2D3F2C]" />;
+            case 'Workflow Master':
+                return <FolderKanban size={12} className="shrink-0 text-[#8C6046]" />;
+            case 'Status Level':
+                return <ListFilter size={12} className="shrink-0 text-[#265938]" />;
+            case 'Email Template':
+                return <Mail size={12} className="shrink-0 text-[#6A7358]" />;
             default:
                 return <FileText size={12} className="shrink-0 text-[#595550]" />;
         }
@@ -236,29 +269,30 @@ export const AssetAuditTrailPage: React.FC = () => {
     // KPI Summary Counts
     const kpis = useMemo(() => {
         const total = events.length;
-        const assets = events.filter(
-            (ev) => normalizeAssetAuditResource(ev.resource) === 'Asset'
+        const workflows = events.filter(
+            (ev) => normalizeWorkflowAuditResource(ev.resource) === 'Workflow'
         ).length;
-        const approvalTasks = events.filter(
-            (ev) => normalizeAssetAuditResource(ev.resource) === 'Approval Task'
+        const governance = events.filter((ev) => isGovernanceResource(ev.resource)).length;
+        const emailTemplates = events.filter(
+            (ev) => normalizeWorkflowAuditResource(ev.resource) === 'Email Template'
         ).length;
-        const masters = events.filter((ev) => isMasterResource(ev.resource)).length;
-        return { total, assets, approvalTasks, masters };
+        return { total, workflows, governance, emailTemplates };
     }, [events]);
 
     // Filtered Audit Events
     const filteredEvents = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
         return events.filter((ev) => {
-            const normResource = normalizeAssetAuditResource(ev.resource);
+            const normResource = normalizeWorkflowAuditResource(ev.resource);
+            const normAction = normalizeWorkflowAuditAction(ev.action);
 
-            if (actionFilter !== 'ALL' && ev.action !== actionFilter) {
+            if (actionFilter !== 'ALL' && normAction !== actionFilter) {
                 return false;
             }
             if (resourceFilter !== 'ALL') {
-                if (resourceFilter === 'MASTERS') {
-                    if (!isMasterResource(normResource)) return false;
-                } else if (normResource !== normalizeAssetAuditResource(resourceFilter)) {
+                if (resourceFilter === 'GOVERNANCE') {
+                    if (!isGovernanceResource(normResource)) return false;
+                } else if (normResource !== normalizeWorkflowAuditResource(resourceFilter)) {
                     return false;
                 }
             }
@@ -277,13 +311,13 @@ export const AssetAuditTrailPage: React.FC = () => {
 
             if (!q) return true;
 
-            const localizedAction = getActionLabel(ev.action).toLowerCase();
+            const localizedAction = getActionLabel(normAction).toLowerCase();
             const localizedResource = getResourceLabel(normResource).toLowerCase();
 
             return (
                 ev.id.toLowerCase().includes(q) ||
                 ev.recordId.toLowerCase().includes(q) ||
-                ev.action.toLowerCase().includes(q) ||
+                normAction.toLowerCase().includes(q) ||
                 localizedAction.includes(q) ||
                 normResource.toLowerCase().includes(q) ||
                 localizedResource.includes(q) ||
@@ -291,6 +325,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                 ev.resourceDataAr.toLowerCase().includes(q) ||
                 ev.performedBy.toLowerCase().includes(q) ||
                 ev.performedByAr.toLowerCase().includes(q) ||
+                ev.actorEmail.toLowerCase().includes(q) ||
                 ev.remarks.toLowerCase().includes(q) ||
                 ev.remarksAr.toLowerCase().includes(q) ||
                 ev.dateTime.toLowerCase().includes(q) ||
@@ -336,17 +371,16 @@ export const AssetAuditTrailPage: React.FC = () => {
         setCurrentPage(1);
     };
 
-    // Export CSV with UTF-8 BOM
     const handleExportCsv = () => {
         const headers = [
             'Audit ID',
-            t('assetManagement.auditTrail.table.actionPerformed'),
-            t('assetManagement.auditTrail.table.resource'),
+            t('workflow.auditTrail.table.actionPerformed'),
+            t('workflow.auditTrail.table.resource'),
             'Record ID',
-            t('assetManagement.auditTrail.table.resourceData'),
-            t('assetManagement.auditTrail.table.performedBy'),
-            t('assetManagement.auditTrail.table.dateTime'),
-            t('assetManagement.auditTrail.drawer.remarks'),
+            t('workflow.auditTrail.table.resourceData'),
+            t('workflow.auditTrail.table.performedBy'),
+            t('workflow.auditTrail.table.dateTime'),
+            t('workflow.auditTrail.drawer.remarks'),
         ];
 
         const rows = filteredEvents.map((ev) => [
@@ -371,23 +405,26 @@ export const AssetAuditTrailPage: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `awn-asset-audit-trail-${formatAssetDateToday()}.csv`);
+        link.setAttribute('download', `awn-workflow-audit-trail-${formatWorkflowDateToday()}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
         toast.success(
-            t('assetManagement.common.exportedCsv', { count: filteredEvents.length })
+            t('workflow.auditTrail.feedback.exportedCsv', {
+                count: filteredEvents.length,
+                defaultValue: `Exported ${filteredEvents.length} audit events to CSV.`,
+            })
         );
     };
 
     const handleOpenResourcePage = useCallback(
-        (ev: AssetAuditEvent) => {
+        (ev: WorkflowAuditEvent) => {
             const route = getResourceRoute(ev.resource, ev.recordId);
             const exists = doesResourceRecordExist(ev.resource, ev.recordId);
             if (!exists) {
-                toast.info(t('assetManagement.auditTrail.drawer.recordNotFoundNote'));
+                toast.info(t('workflow.auditTrail.drawer.recordNotFoundNote'));
             }
             navigate(route, { state: { highlightRecordId: ev.recordId } });
         },
@@ -398,81 +435,55 @@ export const AssetAuditTrailPage: React.FC = () => {
     const liveEntitySnapshot = useMemo(() => {
         if (!selectedEvent) return null;
         void refreshTick;
-        const normRes = normalizeAssetAuditResource(
-            selectedEvent.resource,
-            selectedEvent.recordId
-        );
+        const normRes = normalizeWorkflowAuditResource(selectedEvent.resource);
         const targetId = selectedEvent.recordId;
-        const localizeLifecycleStatus = (st: string) =>
-            st === 'Inactive'
-                ? t('assetManagement.common.inactive')
-                : t('assetManagement.common.active');
 
-        if (normRes === 'Asset') {
-            const found = loadAssets().find((a) => a.id === targetId);
+        if (normRes === 'Workflow') {
+            const found = loadWorkflowRecords().find((w) => String(w.id) === String(targetId));
             if (!found) return null;
             return {
-                status: localizeLifecycleStatus(found.status),
-                ownerOrCreator: isRtl
-                    ? `${found.assignedOwnerAr} (${found.customerNameAr})`
-                    : `${found.assignedOwnerEn} (${found.customerNameEn})`,
-                categoryOrWorkflow: isRtl
-                    ? `${found.categoryNameAr} · ${found.typeNameAr}`
-                    : `${found.categoryNameEn} · ${found.typeNameEn}`,
+                status: found.status,
+                ownerOrScope: found.source,
+                categoryOrDetail:
+                    found.workflowType === 'approval'
+                        ? t('workflow.workflows.tabs.approval')
+                        : t('workflow.workflows.tabs.communication'),
             };
         }
 
-        if (normRes === 'Approval Task') {
-            const found = loadAssetApprovalTasks().find((tsk) => tsk.id === targetId);
+        if (normRes === 'Workflow Master') {
+            const found = loadWorkflowMasters().find(
+                (m) => m.code === targetId || String(m.id) === String(targetId)
+            );
             if (!found) return null;
             return {
-                status: t(`assetManagement.approvalTasks.statuses.${found.status.toLowerCase()}`),
-                ownerOrCreator: isRtl ? found.assignedApproverAr : found.assignedApproverEn,
-                categoryOrWorkflow: isRtl
-                    ? `${found.workflowTitleAr} · ${found.stageNameAr}`
-                    : `${found.workflowTitleEn} · ${found.stageNameEn}`,
+                status: found.status,
+                ownerOrScope: found.moduleScope,
+                categoryOrDetail: isRtl ? found.nameAr : found.nameEn,
             };
         }
 
-        if (normRes === 'Asset Status') {
-            const found = loadAssetStatuses().find((s) => s.id === targetId);
+        if (normRes === 'Status Level') {
+            const found = loadWorkflowStatusLevels().find(
+                (s) => s.code === targetId || String(s.id) === String(targetId)
+            );
             if (!found) return null;
             return {
-                status: localizeLifecycleStatus(found.status),
-                ownerOrCreator: isRtl ? found.creatorNameAr : found.creatorNameEn,
-                categoryOrWorkflow: found.color,
+                status: found.status,
+                ownerOrScope: isRtl ? found.approverRoleAr : found.approverRoleEn,
+                categoryOrDetail: `${found.source} · Stage ${found.levelOrder}`,
             };
         }
 
-        if (normRes === 'Asset Type') {
-            const found = loadAssetTypes().find((tp) => tp.id === targetId);
+        if (normRes === 'Email Template') {
+            const found = loadWorkflowEmailTemplates().find((tpl) => tpl.id === targetId);
             if (!found) return null;
             return {
-                status: localizeLifecycleStatus(found.status),
-                ownerOrCreator: isRtl ? found.creatorNameAr : found.creatorNameEn,
-                categoryOrWorkflow: isRtl
-                    ? `${found.categoryNameAr} (${found.subTypeAr})`
-                    : `${found.categoryNameEn} (${found.subTypeEn})`,
-            };
-        }
-
-        if (normRes === 'Asset Category') {
-            const found = loadAssetCategories().find((cat) => cat.id === targetId);
-            if (!found) return null;
-            return {
-                status: localizeLifecycleStatus(found.status),
-                ownerOrCreator: isRtl ? found.creatorNameAr : found.creatorNameEn,
-                categoryOrWorkflow: isRtl ? found.nameAr : found.nameEn,
-            };
-        }
-
-        if (normRes === 'Asset Tag') {
-            const found = loadAssetTags().find((tg) => tg.id === targetId);
-            if (!found) return null;
-            return {
-                status: localizeLifecycleStatus(found.status),
-                ownerOrCreator: isRtl ? found.creatorNameAr : found.creatorNameEn,
-                categoryOrWorkflow: found.color,
+                status: found.status,
+                ownerOrScope: isRtl ? found.creatorNameAr : found.creatorNameEn,
+                categoryOrDetail: isRtl
+                    ? found.communicationWorkflowNameAr
+                    : found.communicationWorkflowNameEn,
             };
         }
 
@@ -489,44 +500,45 @@ export const AssetAuditTrailPage: React.FC = () => {
                 <div>
                     <div className="flex items-center gap-2.5">
                         <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                            {t('assetManagement.auditTrail.title')}
+                            {t('workflow.auditTrail.title')}
                         </h1>
                         <span
                             className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
-                            AST-AUD
+                            WFL-AUD
                         </span>
                     </div>
                     <p className="text-xs text-[#6E6862] mt-1 font-normal">
-                        {t('assetManagement.auditTrail.description')}
+                        {t('workflow.auditTrail.description')}
                     </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                     <button
                         type="button"
+                        data-testid="workflow-audit-refresh"
                         onClick={() => refreshAuditEvents(true)}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer shadow-2xs"
                     >
                         <RefreshCw size={13} className="text-[#857E74]" />
-                        <span>{t('assetManagement.auditTrail.actions.refreshLogs')}</span>
+                        <span>{t('workflow.auditTrail.actions.refreshLogs')}</span>
                     </button>
                     <button
                         type="button"
-                        onClick={() => navigate('/asset-management/approval-tasks')}
+                        onClick={() => navigate('/workflow/dashboard')}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer shadow-2xs"
                     >
-                        <CheckSquare size={14} className="text-[#857E74]" />
-                        <span>{t('assetManagement.auditTrail.actions.goToApprovalTasks')}</span>
+                        <LayoutDashboard size={14} className="text-[#857E74]" />
+                        <span>{t('workflow.auditTrail.actions.goToDashboard')}</span>
                     </button>
                     <button
                         type="button"
-                        onClick={() => navigate('/asset-management/assets')}
+                        onClick={() => navigate('/workflow/workflows')}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
                     >
-                        <PackageCheck size={14} />
-                        <span>{t('assetManagement.auditTrail.actions.goToAssets')}</span>
+                        <GitBranch size={14} />
+                        <span>{t('workflow.auditTrail.actions.goToWorkflows')}</span>
                     </button>
                 </div>
             </div>
@@ -547,7 +559,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                 >
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('assetManagement.auditTrail.kpis.totalEvents')}
+                            {t('workflow.auditTrail.kpis.totalEvents')}
                         </p>
                         <p
                             className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono tabular-nums"
@@ -564,28 +576,28 @@ export const AssetAuditTrailPage: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => {
-                        setResourceFilter((prev) => (prev === 'Asset' ? 'ALL' : 'Asset'));
+                        setResourceFilter((prev) => (prev === 'Workflow' ? 'ALL' : 'Workflow'));
                         setCurrentPage(1);
                     }}
                     className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'Asset'
+                        resourceFilter === 'Workflow'
                             ? 'border-[#265938] ring-1 ring-[#265938]/20'
                             : 'border-[#E5E0D8] hover:border-[#BFAB93]'
                     }`}
                 >
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('assetManagement.auditTrail.kpis.assetEvents')}
+                            {t('workflow.auditTrail.kpis.workflowEvents')}
                         </p>
                         <p
                             className="text-2xl font-bold text-[#265938] mt-1 font-mono tabular-nums"
                             dir="ltr"
                         >
-                            {kpis.assets}
+                            {kpis.workflows}
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 text-[#265938] flex items-center justify-center shrink-0">
-                        <PackageCheck className="w-5 h-5" />
+                        <GitBranch className="w-5 h-5" />
                     </div>
                 </button>
 
@@ -593,64 +605,66 @@ export const AssetAuditTrailPage: React.FC = () => {
                     type="button"
                     onClick={() => {
                         setResourceFilter((prev) =>
-                            prev === 'Approval Task' ? 'ALL' : 'Approval Task'
+                            prev === 'GOVERNANCE' ? 'ALL' : 'GOVERNANCE'
                         );
                         setCurrentPage(1);
                     }}
                     className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'Approval Task'
+                        resourceFilter === 'GOVERNANCE'
                             ? 'border-[#8C6046] ring-1 ring-[#8C6046]/25'
                             : 'border-[#E5E0D8] hover:border-[#BFAB93]'
                     }`}
                 >
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('assetManagement.auditTrail.kpis.approvalEvents')}
+                            {t('workflow.auditTrail.kpis.governanceEvents')}
                         </p>
                         <p
                             className="text-2xl font-bold text-[#8C6046] mt-1 font-mono tabular-nums"
                             dir="ltr"
                         >
-                            {kpis.approvalTasks}
+                            {kpis.governance}
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-lg bg-[#FFFBEB] border border-[#8C6046]/25 text-[#8C6046] flex items-center justify-center shrink-0">
-                        <CheckSquare className="w-5 h-5" />
+                        <FolderKanban className="w-5 h-5" />
                     </div>
                 </button>
 
                 <button
                     type="button"
                     onClick={() => {
-                        setResourceFilter((prev) => (prev === 'MASTERS' ? 'ALL' : 'MASTERS'));
+                        setResourceFilter((prev) =>
+                            prev === 'Email Template' ? 'ALL' : 'Email Template'
+                        );
                         setCurrentPage(1);
                     }}
                     className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'MASTERS'
+                        resourceFilter === 'Email Template'
                             ? 'border-[#2D3F2C] ring-1 ring-[#2D3F2C]/20'
                             : 'border-[#E5E0D8] hover:border-[#BFAB93]'
                     }`}
                 >
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('assetManagement.auditTrail.kpis.mastersEvents')}
+                            {t('workflow.auditTrail.kpis.templateEvents')}
                         </p>
                         <p
                             className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono tabular-nums"
                             dir="ltr"
                         >
-                            {kpis.masters}
+                            {kpis.emailTemplates}
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center shrink-0">
-                        <Layers className="w-5 h-5" />
+                        <Mail className="w-5 h-5" />
                     </div>
                 </button>
             </div>
 
             {/* Search, Quick Resource Tabs & Filters Card */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs space-y-3.5">
-                {/* Quick Resource Filter Pills for all 6 supported resources */}
+                {/* Quick Resource Filter Pills */}
                 <div className="flex flex-wrap items-center gap-1.5 pb-3 border-b border-[#F0ECE4]">
                     <button
                         type="button"
@@ -664,7 +678,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                 : 'bg-[#FAF8F5] text-[#595550] border-[#E5E0D8] hover:border-[#BFAB93]'
                         }`}
                     >
-                        <span>{t('assetManagement.auditTrail.filters.allResources')}</span>
+                        <span>{t('workflow.auditTrail.filters.allResources')}</span>
                         <span
                             className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
                                 resourceFilter === 'ALL'
@@ -677,16 +691,16 @@ export const AssetAuditTrailPage: React.FC = () => {
                         </span>
                     </button>
 
-                    {ASSET_AUDIT_RESOURCES.map((res) => {
+                    {WORKFLOW_AUDIT_RESOURCES.map((res) => {
                         const isActive =
                             resourceFilter !== 'ALL' &&
-                            resourceFilter !== 'MASTERS' &&
-                            normalizeAssetAuditResource(resourceFilter) ===
-                                normalizeAssetAuditResource(res);
+                            resourceFilter !== 'GOVERNANCE' &&
+                            normalizeWorkflowAuditResource(resourceFilter) ===
+                                normalizeWorkflowAuditResource(res);
                         const count = events.filter(
                             (ev) =>
-                                normalizeAssetAuditResource(ev.resource) ===
-                                normalizeAssetAuditResource(res)
+                                normalizeWorkflowAuditResource(ev.resource) ===
+                                normalizeWorkflowAuditResource(res)
                         ).length;
 
                         return (
@@ -729,14 +743,13 @@ export const AssetAuditTrailPage: React.FC = () => {
                         />
                         <input
                             type="text"
+                            data-testid="workflow-audit-search"
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
                                 setCurrentPage(1);
                             }}
-                            placeholder={t(
-                                'assetManagement.auditTrail.filters.searchPlaceholder'
-                            )}
+                            placeholder={t('workflow.auditTrail.filters.searchPlaceholder')}
                             className="w-full ps-9 pe-8 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:border-[#2D3F2C] transition-colors"
                         />
                         {searchQuery && (
@@ -757,18 +770,19 @@ export const AssetAuditTrailPage: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Action Filter */}
                         <select
-                            aria-label={t('assetManagement.auditTrail.filters.actionLabel')}
+                            aria-label={t('workflow.auditTrail.filters.actionLabel')}
+                            data-testid="workflow-audit-action-filter"
                             value={actionFilter}
                             onChange={(e) => {
-                                setActionFilter(e.target.value as 'ALL' | AssetAuditAction);
+                                setActionFilter(e.target.value as 'ALL' | WorkflowAuditAction);
                                 setCurrentPage(1);
                             }}
                             className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
                         >
                             <option value="ALL">
-                                {t('assetManagement.auditTrail.filters.allActions')}
+                                {t('workflow.auditTrail.filters.allActions')}
                             </option>
-                            {ASSET_AUDIT_ACTIONS.map((act) => (
+                            {WORKFLOW_AUDIT_ACTIONS.map((act) => (
                                 <option key={act} value={act}>
                                     {getActionLabel(act)}
                                 </option>
@@ -777,7 +791,8 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                         {/* Resource Filter */}
                         <select
-                            aria-label={t('assetManagement.auditTrail.filters.resourceLabel')}
+                            aria-label={t('workflow.auditTrail.filters.resourceLabel')}
+                            data-testid="workflow-audit-resource-filter"
                             value={resourceFilter}
                             onChange={(e) => {
                                 setResourceFilter(e.target.value as ResourceFilterValue);
@@ -786,12 +801,12 @@ export const AssetAuditTrailPage: React.FC = () => {
                             className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
                         >
                             <option value="ALL">
-                                {t('assetManagement.auditTrail.filters.allResources')}
+                                {t('workflow.auditTrail.filters.allResources')}
                             </option>
-                            <option value="MASTERS">
-                                {t('assetManagement.auditTrail.kpis.mastersEvents')}
+                            <option value="GOVERNANCE">
+                                {t('workflow.auditTrail.kpis.governanceEvents')}
                             </option>
-                            {ASSET_AUDIT_RESOURCES.map((res) => (
+                            {WORKFLOW_AUDIT_RESOURCES.map((res) => (
                                 <option key={res} value={res}>
                                     {getResourceLabel(res)}
                                 </option>
@@ -800,7 +815,7 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                         {/* Performed By Filter */}
                         <select
-                            aria-label={t('assetManagement.auditTrail.filters.performedByLabel')}
+                            aria-label={t('workflow.auditTrail.filters.performedByLabel')}
                             value={performedByFilter}
                             onChange={(e) => {
                                 setPerformedByFilter(e.target.value);
@@ -809,7 +824,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                             className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
                         >
                             <option value="ALL">
-                                {t('assetManagement.auditTrail.filters.allPerformers')}
+                                {t('workflow.auditTrail.filters.allPerformers')}
                             </option>
                             {performerOptions.map((perf) => (
                                 <option key={perf.nameEn} value={perf.nameEn}>
@@ -822,8 +837,8 @@ export const AssetAuditTrailPage: React.FC = () => {
                         <input
                             type="date"
                             dir="ltr"
-                            aria-label={t('assetManagement.auditTrail.filters.fromDate')}
-                            title={t('assetManagement.auditTrail.filters.fromDate')}
+                            aria-label={t('workflow.auditTrail.filters.fromDate')}
+                            title={t('workflow.auditTrail.filters.fromDate')}
                             value={startDate}
                             onChange={(e) => {
                                 setStartDate(e.target.value);
@@ -836,8 +851,8 @@ export const AssetAuditTrailPage: React.FC = () => {
                         <input
                             type="date"
                             dir="ltr"
-                            aria-label={t('assetManagement.auditTrail.filters.toDate')}
-                            title={t('assetManagement.auditTrail.filters.toDate')}
+                            aria-label={t('workflow.auditTrail.filters.toDate')}
+                            title={t('workflow.auditTrail.filters.toDate')}
                             value={endDate}
                             onChange={(e) => {
                                 setEndDate(e.target.value);
@@ -853,7 +868,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#F0ECE4] border border-[#E5E0D8] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                             >
                                 <RotateCcw size={13} />
-                                <span>{t('assetManagement.common.resetFilters')}</span>
+                                <span>{t('workflow.auditTrail.filters.resetFilters')}</span>
                             </button>
                         )}
 
@@ -863,35 +878,38 @@ export const AssetAuditTrailPage: React.FC = () => {
                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#F0ECE4] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer"
                         >
                             <Download size={13} className="text-[#857E74]" />
-                            <span>{t('assetManagement.common.exportCsv')}</span>
+                            <span>{t('workflow.auditTrail.actions.exportCsv')}</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Enterprise Audit Trail Table */}
+            {/* Enterprise Workflow Audit Trail Table */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-start border-collapse">
+                    <table
+                        className="w-full text-start border-collapse"
+                        data-testid="workflow-audit-table"
+                    >
                         <thead>
                             <tr className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[11px] font-semibold uppercase tracking-wider text-[#6E6862]">
                                 <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('assetManagement.auditTrail.table.actionPerformed')}
+                                    {t('workflow.auditTrail.table.actionPerformed')}
                                 </th>
                                 <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('assetManagement.auditTrail.table.resource')}
+                                    {t('workflow.auditTrail.table.resource')}
                                 </th>
                                 <th className="py-3 px-4 text-start min-w-[280px]">
-                                    {t('assetManagement.auditTrail.table.resourceData')}
+                                    {t('workflow.auditTrail.table.resourceData')}
                                 </th>
                                 <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('assetManagement.auditTrail.table.performedBy')}
+                                    {t('workflow.auditTrail.table.performedBy')}
                                 </th>
                                 <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('assetManagement.auditTrail.table.dateTime')}
+                                    {t('workflow.auditTrail.table.dateTime')}
                                 </th>
                                 <th className="py-3 px-4 text-end whitespace-nowrap">
-                                    {t('assetManagement.auditTrail.table.actions')}
+                                    {t('workflow.auditTrail.table.actions')}
                                 </th>
                             </tr>
                         </thead>
@@ -904,10 +922,10 @@ export const AssetAuditTrailPage: React.FC = () => {
                                                 <History size={18} />
                                             </div>
                                             <p className="text-sm font-semibold text-[#0D0D0D]">
-                                                {t('assetManagement.auditTrail.empty.title')}
+                                                {t('workflow.auditTrail.empty.title')}
                                             </p>
                                             <p className="text-xs text-[#6E6862]">
-                                                {t('assetManagement.auditTrail.empty.description')}
+                                                {t('workflow.auditTrail.empty.description')}
                                             </p>
                                             {hasActiveFilters && (
                                                 <button
@@ -917,7 +935,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                                 >
                                                     <RotateCcw size={12} />
                                                     <span>
-                                                        {t('assetManagement.common.resetFilters')}
+                                                        {t('workflow.auditTrail.filters.resetFilters')}
                                                     </span>
                                                 </button>
                                             )}
@@ -926,7 +944,8 @@ export const AssetAuditTrailPage: React.FC = () => {
                                 </tr>
                             ) : (
                                 paginatedEvents.map((ev) => {
-                                    const normResource = normalizeAssetAuditResource(ev.resource);
+                                    const normResource = normalizeWorkflowAuditResource(ev.resource);
+                                    const normAction = normalizeWorkflowAuditAction(ev.action);
                                     const primaryResourceData = isRtl
                                         ? ev.resourceDataAr || ev.resourceData
                                         : ev.resourceData;
@@ -938,11 +957,12 @@ export const AssetAuditTrailPage: React.FC = () => {
                                         : ev.remarks;
                                     const resourceBadgeClass =
                                         RESOURCE_BADGE_STYLES[normResource] ||
-                                        RESOURCE_BADGE_STYLES['Asset Master'];
+                                        RESOURCE_BADGE_STYLES.Workflow;
 
                                     return (
                                         <tr
                                             key={ev.id}
+                                            data-testid={`workflow-audit-row-${ev.id}`}
                                             onClick={() => setSelectedEvent(ev)}
                                             className="hover:bg-[#FAF8F5]/75 transition-colors cursor-pointer"
                                         >
@@ -950,12 +970,12 @@ export const AssetAuditTrailPage: React.FC = () => {
                                             <td className="py-3.5 px-4 whitespace-nowrap align-top">
                                                 <div className="flex flex-col items-start gap-1">
                                                     <span
-                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${ACTION_BADGE_STYLES[ev.action]}`}
+                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${ACTION_BADGE_STYLES[normAction]}`}
                                                     >
                                                         <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${ACTION_DOT_STYLES[ev.action]}`}
+                                                            className={`w-1.5 h-1.5 rounded-full ${ACTION_DOT_STYLES[normAction]}`}
                                                         />
-                                                        <span>{getActionLabel(ev.action)}</span>
+                                                        <span>{getActionLabel(normAction)}</span>
                                                     </span>
                                                     <span
                                                         className="text-[10px] font-mono text-[#857E74]"
@@ -1011,9 +1031,19 @@ export const AssetAuditTrailPage: React.FC = () => {
                                                     <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center text-[11px] font-semibold shrink-0">
                                                         {performerName.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <span className="font-medium text-[#0D0D0D]">
-                                                        {performerName}
-                                                    </span>
+                                                    <div>
+                                                        <span className="font-medium text-[#0D0D0D] block">
+                                                            {performerName}
+                                                        </span>
+                                                        {ev.actorEmail && (
+                                                            <span
+                                                                className="text-[10px] text-[#857E74] font-mono block"
+                                                                dir="ltr"
+                                                            >
+                                                                {ev.actorEmail}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
 
@@ -1036,25 +1066,30 @@ export const AssetAuditTrailPage: React.FC = () => {
                                                 <div className="inline-flex items-center justify-end gap-1">
                                                     <button
                                                         type="button"
+                                                        data-testid={`workflow-audit-view-${ev.id}`}
                                                         onClick={() => setSelectedEvent(ev)}
                                                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FAF8F5] hover:bg-[#2D3F2C] text-[#0D0D0D] hover:text-[#FAF8F5] border border-[#E5E0D8] hover:border-[#2D3F2C] text-[11px] font-medium transition-colors cursor-pointer"
                                                         title={t(
-                                                            'assetManagement.auditTrail.table.viewDetails'
+                                                            'workflow.auditTrail.table.viewDetails'
                                                         )}
                                                     >
                                                         <Eye size={13} />
                                                         <span>
                                                             {t(
-                                                                'assetManagement.auditTrail.table.viewDetails'
+                                                                'workflow.auditTrail.table.viewDetails'
                                                             )}
                                                         </span>
                                                     </button>
                                                     <button
                                                         type="button"
+                                                        data-testid={`workflow-audit-open-resource-${ev.id}`}
                                                         onClick={() => handleOpenResourcePage(ev)}
                                                         className="p-1.5 rounded-md text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E5E0D8] transition-colors cursor-pointer"
                                                         title={t(
-                                                            'assetManagement.auditTrail.actions.openResourcePage'
+                                                            'workflow.auditTrail.actions.openResourcePage'
+                                                        )}
+                                                        aria-label={t(
+                                                            'workflow.auditTrail.actions.openResourcePage'
                                                         )}
                                                     >
                                                         <ArrowUpRight size={14} />
@@ -1073,9 +1108,9 @@ export const AssetAuditTrailPage: React.FC = () => {
                 <div className="px-4 py-3 bg-[#FAF8F5] border-t border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#6E6862]">
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-1.5">
-                            <span>{t('assetManagement.common.rowsPerPage')}</span>
+                            <span>{t('workflow.auditTrail.pagination.rowsPerPage')}</span>
                             <select
-                                aria-label={t('assetManagement.common.rowsPerPage')}
+                                aria-label={t('workflow.auditTrail.pagination.rowsPerPage')}
                                 value={pageSize}
                                 onChange={(e) => {
                                     setPageSize(Number(e.target.value));
@@ -1083,7 +1118,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                 }}
                                 className="px-2 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
                             >
-                                {ASSET_PAGE_SIZE_OPTIONS.map((size) => (
+                                {WORKFLOW_PAGE_SIZE_OPTIONS.map((size) => (
                                     <option key={size} value={size}>
                                         {size}
                                     </option>
@@ -1092,7 +1127,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                         </div>
 
                         <span>
-                            {t('assetManagement.common.showingCount', {
+                            {t('workflow.auditTrail.pagination.showingCount', {
                                 from: showingFrom,
                                 to: showingTo,
                                 total: totalRecords,
@@ -1105,10 +1140,10 @@ export const AssetAuditTrailPage: React.FC = () => {
                             type="button"
                             disabled={safeCurrentPage <= 1}
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] hover:bg-[#F0ECE4] disabled:opacity-45 disabled: pointer-events-none transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] hover:bg-[#F0ECE4] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer"
                         >
                             {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-                            <span>{t('assetManagement.common.previous')}</span>
+                            <span>{t('workflow.auditTrail.pagination.previous')}</span>
                         </button>
 
                         <div className="flex items-center gap-1 px-1" dir="ltr">
@@ -1139,7 +1174,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] hover:bg-[#F0ECE4] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer"
                         >
-                            <span>{t('assetManagement.common.next')}</span>
+                            <span>{t('workflow.auditTrail.pagination.next')}</span>
                             {isRtl ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
                         </button>
                     </div>
@@ -1148,7 +1183,10 @@ export const AssetAuditTrailPage: React.FC = () => {
 
             {/* Right-Side Audit Event Details Drawer */}
             {selectedEvent && (
-                <div className="fixed inset-0 z-50 flex justify-end">
+                <div
+                    className="fixed inset-0 z-50 flex justify-end"
+                    data-testid="workflow-audit-drawer"
+                >
                     <div
                         className="fixed inset-0 bg-black/35 backdrop-blur-[1px] transition-opacity"
                         onClick={() => setSelectedEvent(null)}
@@ -1165,18 +1203,30 @@ export const AssetAuditTrailPage: React.FC = () => {
                                         {selectedEvent.id}
                                     </span>
                                     <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${ACTION_BADGE_STYLES[selectedEvent.action]}`}
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
+                                            ACTION_BADGE_STYLES[
+                                                normalizeWorkflowAuditAction(selectedEvent.action)
+                                            ]
+                                        }`}
                                     >
                                         <span
-                                            className={`w-1.5 h-1.5 rounded-full ${ACTION_DOT_STYLES[selectedEvent.action]}`}
+                                            className={`w-1.5 h-1.5 rounded-full ${
+                                                ACTION_DOT_STYLES[
+                                                    normalizeWorkflowAuditAction(
+                                                        selectedEvent.action
+                                                    )
+                                                ]
+                                            }`}
                                         />
                                         <span>{getActionLabel(selectedEvent.action)}</span>
                                     </span>
                                     <span
                                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
                                             RESOURCE_BADGE_STYLES[
-                                                normalizeAssetAuditResource(selectedEvent.resource)
-                                            ] || RESOURCE_BADGE_STYLES['Asset Master']
+                                                normalizeWorkflowAuditResource(
+                                                    selectedEvent.resource
+                                                )
+                                            ] || RESOURCE_BADGE_STYLES.Workflow
                                         }`}
                                     >
                                         {renderResourceIcon(selectedEvent.resource)}
@@ -1184,17 +1234,17 @@ export const AssetAuditTrailPage: React.FC = () => {
                                     </span>
                                 </div>
                                 <h2 className="text-base font-bold text-[#0D0D0D] mt-2">
-                                    {t('assetManagement.auditTrail.drawer.title')}
+                                    {t('workflow.auditTrail.drawer.title')}
                                 </h2>
                                 <p className="text-xs text-[#6E6862] mt-0.5">
-                                    {t('assetManagement.auditTrail.drawer.subtitle')}
+                                    {t('workflow.auditTrail.drawer.subtitle')}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setSelectedEvent(null)}
                                 className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#E5E0D8]/50 transition-colors cursor-pointer"
-                                aria-label={t('assetManagement.common.close')}
+                                aria-label={t('workflow.auditTrail.drawer.close')}
                             >
                                 <X size={18} />
                             </button>
@@ -1205,13 +1255,13 @@ export const AssetAuditTrailPage: React.FC = () => {
                             {/* Section 1: Event Metadata & Classification */}
                             <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-3">
                                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                    {t('assetManagement.auditTrail.drawer.sectionMetadata')}
+                                    {t('workflow.auditTrail.drawer.sectionMetadata')}
                                 </p>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                         <p className="text-[11px] text-[#6E6862]">
-                                            {t('assetManagement.auditTrail.drawer.auditId')}
+                                            {t('workflow.auditTrail.drawer.auditId')}
                                         </p>
                                         <p
                                             className="font-mono font-bold text-[#2D3F2C] mt-0.5"
@@ -1223,7 +1273,7 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                                     <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                         <p className="text-[11px] text-[#6E6862]">
-                                            {t('assetManagement.auditTrail.drawer.targetRecordId')}
+                                            {t('workflow.auditTrail.drawer.targetRecordId')}
                                         </p>
                                         <p
                                             className="font-mono font-bold text-[#0D0D0D] mt-0.5"
@@ -1235,14 +1285,26 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                                     <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                         <p className="text-[11px] text-[#6E6862]">
-                                            {t('assetManagement.auditTrail.drawer.actionPerformed')}
+                                            {t('workflow.auditTrail.drawer.actionPerformed')}
                                         </p>
                                         <div className="mt-1">
                                             <span
-                                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${ACTION_BADGE_STYLES[selectedEvent.action]}`}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
+                                                    ACTION_BADGE_STYLES[
+                                                        normalizeWorkflowAuditAction(
+                                                            selectedEvent.action
+                                                        )
+                                                    ]
+                                                }`}
                                             >
                                                 <span
-                                                    className={`w-1.5 h-1.5 rounded-full ${ACTION_DOT_STYLES[selectedEvent.action]}`}
+                                                    className={`w-1.5 h-1.5 rounded-full ${
+                                                        ACTION_DOT_STYLES[
+                                                            normalizeWorkflowAuditAction(
+                                                                selectedEvent.action
+                                                            )
+                                                        ]
+                                                    }`}
                                                 />
                                                 <span>{getActionLabel(selectedEvent.action)}</span>
                                             </span>
@@ -1251,16 +1313,16 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                                     <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                         <p className="text-[11px] text-[#6E6862]">
-                                            {t('assetManagement.auditTrail.drawer.resourceType')}
+                                            {t('workflow.auditTrail.drawer.resourceType')}
                                         </p>
                                         <div className="mt-1">
                                             <span
                                                 className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
                                                     RESOURCE_BADGE_STYLES[
-                                                        normalizeAssetAuditResource(
+                                                        normalizeWorkflowAuditResource(
                                                             selectedEvent.resource
                                                         )
-                                                    ] || RESOURCE_BADGE_STYLES['Asset Master']
+                                                    ] || RESOURCE_BADGE_STYLES.Workflow
                                                 }`}
                                             >
                                                 {renderResourceIcon(selectedEvent.resource)}
@@ -1273,7 +1335,7 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                                     <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                         <p className="text-[11px] text-[#6E6862]">
-                                            {t('assetManagement.auditTrail.drawer.performedBy')}
+                                            {t('workflow.auditTrail.drawer.performedBy')}
                                         </p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <User size={13} className="text-[#2D3F2C] shrink-0" />
@@ -1288,7 +1350,7 @@ export const AssetAuditTrailPage: React.FC = () => {
 
                                     <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                         <p className="text-[11px] text-[#6E6862]">
-                                            {t('assetManagement.auditTrail.drawer.dateTime')}
+                                            {t('workflow.auditTrail.drawer.dateTime')}
                                         </p>
                                         <div className="flex items-center gap-1.5 mt-1 font-mono font-semibold text-[#0D0D0D]">
                                             <Calendar size={12} className="text-[#8C6046]" />
@@ -1297,9 +1359,21 @@ export const AssetAuditTrailPage: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {(selectedEvent.previousStatus || selectedEvent.newStatus) && (
+                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3 flex items-center justify-between gap-2">
+                                        <span className="text-[11px] text-[#6E6862]">
+                                            {t('workflow.auditTrail.drawer.statusTransition')}
+                                        </span>
+                                        <span className="font-mono font-semibold text-xs text-[#0D0D0D]" dir="ltr">
+                                            {selectedEvent.previousStatus || '—'} →{' '}
+                                            {selectedEvent.newStatus || '—'}
+                                        </span>
+                                    </div>
+                                )}
+
                                 <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
                                     <p className="text-[11px] text-[#6E6862]">
-                                        {t('assetManagement.auditTrail.drawer.isoTimestamp')}
+                                        {t('workflow.auditTrail.drawer.isoTimestamp')}
                                     </p>
                                     <p
                                         className="font-mono text-[11px] text-[#595550] mt-0.5 break-all"
@@ -1313,12 +1387,12 @@ export const AssetAuditTrailPage: React.FC = () => {
                             {/* Section 2: Target Resource & Entity Data */}
                             <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-3">
                                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                    {t('assetManagement.auditTrail.drawer.sectionResource')}
+                                    {t('workflow.auditTrail.drawer.sectionResource')}
                                 </p>
 
                                 <div className="bg-white border border-[#E5E0D8] rounded-lg p-3.5 space-y-1">
                                     <p className="text-[11px] text-[#6E6862]">
-                                        {t('assetManagement.auditTrail.drawer.resourceDataPrimary')}
+                                        {t('workflow.auditTrail.drawer.resourceDataPrimary')}
                                     </p>
                                     <p className="text-sm font-bold text-[#0D0D0D] whitespace-pre-wrap break-words leading-relaxed">
                                         {isRtl
@@ -1333,7 +1407,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                         <div className="bg-white border border-[#E5E0D8] rounded-lg p-3.5 space-y-1">
                                             <p className="text-[11px] text-[#6E6862]">
                                                 {t(
-                                                    'assetManagement.auditTrail.drawer.resourceDataBilingual'
+                                                    'workflow.auditTrail.drawer.resourceDataBilingual'
                                                 )}
                                             </p>
                                             <p className="text-xs font-medium text-[#595550] whitespace-pre-wrap break-words">
@@ -1348,7 +1422,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                             {/* Section 3: Governance Remarks & Operation Summary */}
                             <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-2">
                                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                    {t('assetManagement.auditTrail.drawer.sectionRemarks')}
+                                    {t('workflow.auditTrail.drawer.sectionRemarks')}
                                 </p>
                                 <div className="bg-white border border-[#E5E0D8] rounded-lg p-3.5">
                                     <p className="text-xs text-[#0D0D0D] whitespace-pre-wrap break-words leading-relaxed">
@@ -1363,7 +1437,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                             <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                        {t('assetManagement.auditTrail.drawer.sectionLiveEntity')}
+                                        {t('workflow.auditTrail.drawer.sectionLiveEntity')}
                                     </p>
                                     <ShieldCheck size={14} className="text-[#265938]" />
                                 </div>
@@ -1372,7 +1446,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                         <div className="bg-white border border-[#E5E0D8] rounded-lg p-2.5">
                                             <p className="text-[10px] text-[#6E6862]">
-                                                {t('assetManagement.auditTrail.drawer.liveStatus')}
+                                                {t('workflow.auditTrail.drawer.liveStatus')}
                                             </p>
                                             <p className="font-semibold text-[#2D3F2C] mt-0.5">
                                                 {liveEntitySnapshot.status}
@@ -1380,28 +1454,27 @@ export const AssetAuditTrailPage: React.FC = () => {
                                         </div>
                                         <div className="bg-white border border-[#E5E0D8] rounded-lg p-2.5">
                                             <p className="text-[10px] text-[#6E6862]">
-                                                {t(
-                                                    'assetManagement.auditTrail.drawer.liveOwnerOrCreator'
-                                                )}
+                                                {t('workflow.auditTrail.drawer.liveScopeOrOwner')}
                                             </p>
                                             <p className="font-semibold text-[#0D0D0D] mt-0.5 truncate">
-                                                {liveEntitySnapshot.ownerOrCreator}
+                                                {liveEntitySnapshot.ownerOrScope}
                                             </p>
                                         </div>
                                         <div className="bg-white border border-[#E5E0D8] rounded-lg p-2.5">
                                             <p className="text-[10px] text-[#6E6862]">
-                                                {t(
-                                                    'assetManagement.auditTrail.drawer.liveCategoryOrWorkflow'
-                                                )}
+                                                {t('workflow.auditTrail.drawer.liveClassification')}
                                             </p>
                                             <p className="font-semibold text-[#0D0D0D] mt-0.5 truncate">
-                                                {liveEntitySnapshot.categoryOrWorkflow}
+                                                {liveEntitySnapshot.categoryOrDetail}
                                             </p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-xs text-[#6E6862] bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        {t('assetManagement.auditTrail.drawer.recordNotFoundNote')}
+                                    <p
+                                        className="text-xs text-[#6E6862] bg-white border border-[#E5E0D8] rounded-lg p-3"
+                                        data-testid="workflow-audit-historical-note"
+                                    >
+                                        {t('workflow.auditTrail.drawer.recordNotFoundNote')}
                                     </p>
                                 )}
                             </div>
@@ -1411,6 +1484,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                         <div className="px-6 py-4 bg-[#FAF8F5] border-t border-[#E5E0D8] flex flex-wrap items-center justify-between gap-2">
                             <button
                                 type="button"
+                                data-testid="workflow-audit-drawer-open-module"
                                 onClick={() => {
                                     const targetEv = selectedEvent;
                                     setSelectedEvent(null);
@@ -1419,7 +1493,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
                             >
                                 <span>
-                                    {t('assetManagement.auditTrail.drawer.openModule', {
+                                    {t('workflow.auditTrail.drawer.openModule', {
                                         resource: getResourceLabel(selectedEvent.resource),
                                     })}
                                 </span>
@@ -1431,7 +1505,7 @@ export const AssetAuditTrailPage: React.FC = () => {
                                 onClick={() => setSelectedEvent(null)}
                                 className="px-4 py-2 rounded-lg bg-white hover:bg-[#F0ECE4] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer"
                             >
-                                {t('assetManagement.common.close')}
+                                {t('workflow.auditTrail.drawer.close')}
                             </button>
                         </div>
                     </div>

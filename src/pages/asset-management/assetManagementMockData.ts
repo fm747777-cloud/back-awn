@@ -167,9 +167,33 @@ export const ASSET_AUDIT_RESOURCES: AssetAuditResource[] = [
     'Asset Tag',
 ];
 
-export function normalizeAssetAuditResource(raw: unknown): AssetAuditResource {
+export function normalizeAssetAuditAction(raw: unknown): AssetAuditAction {
+    const val = String(raw || '').trim().toUpperCase();
+    if (val === 'CREATED' || val === 'CREATE') return 'CREATED';
+    if (val === 'UPDATED' || val === 'UPDATE' || val === 'EDITED') return 'UPDATED';
+    if (val === 'ACTIVATED' || val === 'ACTIVATE' || val === 'ENABLED' || val === 'ENABLE') {
+        return 'ACTIVATED';
+    }
+    if (
+        val === 'DEACTIVATED' ||
+        val === 'DEACTIVATE' ||
+        val === 'DISABLED' ||
+        val === 'DISABLE'
+    ) {
+        return 'DEACTIVATED';
+    }
+    if (val === 'APPROVED' || val === 'APPROVE') return 'APPROVED';
+    if (val === 'REJECTED' || val === 'REJECT') return 'REJECTED';
+    if (val === 'DELETED' || val === 'DELETE' || val === 'REMOVED') return 'DELETED';
+    return 'UPDATED';
+}
+
+export function normalizeAssetAuditResource(
+    raw: unknown,
+    recordId?: unknown
+): AssetAuditResource {
     const val = String(raw || '').trim().toLowerCase();
-    if (val === 'asset') return 'Asset';
+    if (val === 'asset' || val === 'assets') return 'Asset';
     if (
         val === 'approval task' ||
         val === 'asset approval task' ||
@@ -178,13 +202,47 @@ export function normalizeAssetAuditResource(raw: unknown): AssetAuditResource {
     ) {
         return 'Approval Task';
     }
-    if (val === 'asset status' || val === 'status') return 'Asset Status';
+    if (val === 'asset status' || val === 'asset statuses' || val === 'status') {
+        return 'Asset Status';
+    }
     if (val === 'asset type' || val === 'asset types' || val === 'type') return 'Asset Type';
     if (val === 'asset category' || val === 'asset categories' || val === 'category') {
         return 'Asset Category';
     }
     if (val === 'asset tag' || val === 'asset tags' || val === 'tag') return 'Asset Tag';
+
+    const idStr = String(recordId || '').trim().toUpperCase();
+    if (idStr.startsWith('ASTID')) return 'Asset';
+    if (idStr.startsWith('ASTTSK')) return 'Approval Task';
+    if (idStr.startsWith('ASTTYP')) return 'Asset Type';
+    if (idStr.startsWith('ASTCAT')) return 'Asset Category';
+    if (idStr.startsWith('ASTTAG')) return 'Asset Tag';
+    if (idStr.startsWith('AST')) return 'Asset Status';
+
     return 'Asset Master';
+}
+
+export function getAssetResourceRoute(
+    resource: unknown,
+    recordId?: unknown
+): string {
+    const norm = normalizeAssetAuditResource(resource, recordId);
+    switch (norm) {
+        case 'Asset':
+            return '/asset-management/assets';
+        case 'Approval Task':
+            return '/asset-management/approval-tasks';
+        case 'Asset Status':
+            return '/asset-management/status';
+        case 'Asset Type':
+            return '/asset-management/types';
+        case 'Asset Category':
+            return '/asset-management/categories';
+        case 'Asset Tag':
+            return '/asset-management/tags';
+        default:
+            return '/asset-management/status';
+    }
 }
 
 // --- Versioned LocalStorage Keys ---
@@ -1831,22 +1889,22 @@ export function loadAssetApprovalTasks(): AssetApprovalTaskRecord[] {
         const matchedTag = tags.find((tg) => tg.id === assetId);
 
         const assetNameEn =
-            item.assetNameEn ||
             matchedAsset?.assetNameEn ||
             matchedType?.nameEn ||
             matchedCategory?.nameEn ||
             matchedStatus?.nameEn ||
             matchedTag?.nameEn ||
+            item.assetNameEn ||
             seedMatch?.assetNameEn ||
             'New Type Asset';
 
         const assetNameAr =
-            item.assetNameAr ||
             matchedAsset?.assetNameAr ||
             matchedType?.nameAr ||
             matchedCategory?.nameAr ||
             matchedStatus?.nameAr ||
             matchedTag?.nameAr ||
+            item.assetNameAr ||
             seedMatch?.assetNameAr ||
             assetNameEn;
 
@@ -2021,8 +2079,26 @@ export interface RecordAssetAuditInput {
     remarksAr?: string;
 }
 
-let lastAssetAuditSignature = '';
-let lastAssetAuditTimestampMs = 0;
+function resolveAuditIsoDate(
+    isoDate?: string,
+    timestamp?: string,
+    dateTime?: string
+): string {
+    const trimmedIso = String(isoDate || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedIso)) {
+        return trimmedIso;
+    }
+    const trimmedTs = String(timestamp || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmedTs)) {
+        return trimmedTs.slice(0, 10);
+    }
+    const trimmedDt = String(dateTime || '').trim();
+    const dmyMatch = trimmedDt.match(/^(\d{2})[./-](\d{2})[./-](\d{4})/);
+    if (dmyMatch) {
+        return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+    }
+    return '2026-09-15';
+}
 
 export function loadAssetAuditEvents(): AssetAuditEvent[] {
     const rawList = readFromStorage<Partial<AssetAuditEvent>>(
@@ -2030,30 +2106,38 @@ export function loadAssetAuditEvents(): AssetAuditEvent[] {
         INITIAL_ASSET_AUDIT_EVENTS
     );
 
-    // Ensure baseline historical seed events (ASTAUD-0992..ASTAUD-1002) are available
-    // even if localStorage was initialized in Phase 1/2/3 when only 2 seed records existed,
-    // while preserving 100% of user-generated events in their exact order.
+    // If localStorage was initialized in Phase 1/2/3 with the earlier 2-record seed (ASTAUD-1001/1002),
+    // merge any missing baseline historical seed events (ASTAUD-0992..ASTAUD-1002) once without
+    // overwriting user events or injecting seeds into custom non-seed test arrays.
     const existingIds = new Set(rawList.map((item) => item.id).filter(Boolean));
-    const missingSeeds = INITIAL_ASSET_AUDIT_EVENTS.filter((seed) => !existingIds.has(seed.id));
+    const hasBaselineMarker = rawList.some(
+        (item) =>
+            (item.id === 'ASTAUD-1002' && item.recordId === 'ASTID002') ||
+            (item.id === 'ASTAUD-1001' && item.recordId === 'AST001')
+    );
+    const missingSeeds = hasBaselineMarker
+        ? INITIAL_ASSET_AUDIT_EVENTS.filter((seed) => !existingIds.has(seed.id))
+        : [];
     const combinedList = missingSeeds.length > 0 ? [...rawList, ...missingSeeds] : rawList;
 
-    return combinedList.map((item, idx) => {
-        const id = item.id || `ASTAUD-${1000 + combinedList.length - idx}`;
+    const seenIds = new Set<string>();
+    const deduplicatedList: Partial<AssetAuditEvent>[] = [];
+    for (let i = 0; i < combinedList.length; i += 1) {
+        const item = combinedList[i];
+        const candidateId = item.id || `ASTAUD-${1000 + combinedList.length - i}`;
+        if (seenIds.has(candidateId)) continue;
+        seenIds.add(candidateId);
+        deduplicatedList.push({ ...item, id: candidateId });
+    }
+
+    return deduplicatedList.map((item, idx) => {
+        const id = item.id || `ASTAUD-${1000 + deduplicatedList.length - idx}`;
         const timestamp = item.timestamp || '2026-09-15T10:30:00.000Z';
-        const isoDate = item.isoDate || timestamp.slice(0, 10) || '2026-09-15';
         const dateTime = item.dateTime || '15.09.2026 10:30';
-        const action: AssetAuditAction =
-            item.action === 'CREATED' ||
-            item.action === 'UPDATED' ||
-            item.action === 'ACTIVATED' ||
-            item.action === 'DEACTIVATED' ||
-            item.action === 'APPROVED' ||
-            item.action === 'REJECTED' ||
-            item.action === 'DELETED'
-                ? item.action
-                : 'UPDATED';
-        const resource: AssetAuditResource = normalizeAssetAuditResource(item.resource);
+        const isoDate = resolveAuditIsoDate(item.isoDate, timestamp, dateTime);
+        const action: AssetAuditAction = normalizeAssetAuditAction(item.action);
         const recordId = item.recordId || 'AST001';
+        const resource: AssetAuditResource = normalizeAssetAuditResource(item.resource, recordId);
         const resourceData = item.resourceData || recordId;
         const resourceDataAr = item.resourceDataAr || resourceData;
         const performedBy = item.performedBy || 'Khalifah Alsharabi';
@@ -2083,14 +2167,9 @@ export function saveAssetAuditEvents(events: AssetAuditEvent[]): void {
     writeToStorage(ASSET_AUDIT_TRAIL_STORAGE_KEY, events);
 }
 
-export function recordAssetAuditEvent(input: RecordAssetAuditInput): AssetAuditEvent | null {
-    const nowMs = Date.now();
-    const signature = `${input.action}|${input.resource}|${input.recordId}|${input.resourceData}|${input.remarks}`;
-    if (signature === lastAssetAuditSignature && nowMs - lastAssetAuditTimestampMs < 80) {
-        return null;
-    }
-    lastAssetAuditSignature = signature;
-    lastAssetAuditTimestampMs = nowMs;
+export function recordAssetAuditEvent(input: RecordAssetAuditInput): AssetAuditEvent {
+    const normalizedAction = normalizeAssetAuditAction(input.action);
+    const normalizedResource = normalizeAssetAuditResource(input.resource, input.recordId);
 
     const existing = loadAssetAuditEvents();
     const { timestamp, isoDate, dateTime } = formatAssetDateTimeNow();
@@ -2111,8 +2190,8 @@ export function recordAssetAuditEvent(input: RecordAssetAuditInput): AssetAuditE
         timestamp,
         isoDate,
         dateTime,
-        action: input.action,
-        resource: input.resource,
+        action: normalizedAction,
+        resource: normalizedResource,
         recordId: input.recordId,
         resourceData: input.resourceData,
         resourceDataAr: input.resourceDataAr || input.resourceData,

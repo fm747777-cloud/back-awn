@@ -212,8 +212,18 @@ export const ServicesListTab = () => {
                     const rawStatus = String(info.getValue() || 'Active');
                     const isInactive = rawStatus.toLowerCase() === 'inactive';
                     return (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]"></span>
+                        <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                isInactive
+                                    ? 'bg-[#595550]/10 text-[#595550] border-[#595550]/20'
+                                    : 'bg-[#2D3F2C]/10 text-[#2D3F2C] border-[#2D3F2C]/20'
+                            }`}
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                    isInactive ? 'bg-[#857E74]' : 'bg-[#2D3F2C]'
+                                }`}
+                            />
                             {isInactive ? t('common.inactive') : t('common.active')}
                         </span>
                     );

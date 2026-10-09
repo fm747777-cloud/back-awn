@@ -1,11 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, ShieldCheck, Bell, Building2, UserCheck } from 'lucide-react';
+import { Settings, ShieldCheck, Bell, Building2, UserCheck, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
+import { useThemeStore } from '../store/useThemeStore';
 
 export const SettingsPage: React.FC = () => {
     const { t } = useTranslation();
     const user = useAuthStore((state) => state.user);
+    const { theme, setTheme } = useThemeStore();
 
     return (
         <div className="space-y-6 text-start">
@@ -70,9 +72,52 @@ export const SettingsPage: React.FC = () => {
                             </div>
                             <span className="text-xs font-semibold text-[#265938]">{t('settings.enabled')}</span>
                         </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
+                            <div className="flex items-center gap-2.5">
+                                {theme === 'dark' ? (
+                                    <Moon className="w-4 h-4 text-[#6A7358]" />
+                                ) : (
+                                    <Sun className="w-4 h-4 text-[#6A7358]" />
+                                )}
+                                <span className="text-xs font-medium text-[#45413C]">
+                                    {t('settings.themePreference', { defaultValue: 'Appearance Theme' })}
+                                </span>
+                            </div>
+                            <div className="inline-flex items-center gap-1 p-0.5 rounded-lg bg-white border border-[#E5E0D8]">
+                                <button
+                                    type="button"
+                                    data-testid="settings-theme-light"
+                                    aria-pressed={theme === 'light'}
+                                    onClick={() => setTheme('light')}
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                                        theme === 'light'
+                                            ? 'bg-[#2D3F2C] text-[#FAF8F5]'
+                                            : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                                    }`}
+                                >
+                                    <Sun size={12} />
+                                    <span>{t('nav.lightMode', { defaultValue: 'Light' })}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    data-testid="settings-theme-dark"
+                                    aria-pressed={theme === 'dark'}
+                                    onClick={() => setTheme('dark')}
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                                        theme === 'dark'
+                                            ? 'bg-[#2D3F2C] text-[#FAF8F5]'
+                                            : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                                    }`}
+                                >
+                                    <Moon size={12} />
+                                    <span>{t('nav.darkMode', { defaultValue: 'Dark' })}</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+

@@ -168,12 +168,18 @@ export const ServicePackagesTab: React.FC = () => {
                 accessorKey: "status",
                 header: t("common.status"),
                 cell: ({ row }) => {
-                    const isPkgActive = true;
+                    const isPkgActive =
+                        String(row.original?.status || "Active").toLowerCase() !== "inactive";
 
-                    return (
+                    return isPkgActive ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
-                            {isPkgActive ? t("common.active") : t("common.inactive")}
+                            {t("common.active")}
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#595550]/10 text-[#595550] border border-[#595550]/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
+                            {t("common.inactive")}
                         </span>
                     );
                 },

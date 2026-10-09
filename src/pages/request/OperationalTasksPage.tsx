@@ -76,7 +76,7 @@ export const OperationalTasksPage = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const isAr = i18n.language === 'ar';
+    const isAr = Boolean(i18n.language?.startsWith('ar'));
 
     // Data state
     const [tasks, setTasks] = useState<OperationalTaskRecord[]>(() => loadOperationalTasks());

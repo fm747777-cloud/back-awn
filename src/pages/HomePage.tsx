@@ -4,9 +4,10 @@ import { Layers, FileText, Globe, CheckCircle2, Clock, ArrowRight } from 'lucide
 import { useAuthStore } from '../store/useAuthStore';
 
 export const HomePage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
+    const isAr = Boolean(i18n.language?.startsWith('ar'));
 
     return (
         <div className="space-y-6 text-start">
@@ -17,7 +18,7 @@ export const HomePage = () => {
                         {t('common.platformTitle')}
                     </p>
                     <h1 className="text-2xl font-bold text-[#FAF8F5]">
-                        {t('common.welcome')}، {user?.fullName || t('common.systemAdmin')}
+                        {t('common.welcome')}{isAr ? '،' : ','} {user?.fullName || t('common.systemAdmin')}
                     </h1>
                     <p className="text-sm text-[#D6CFC4] mt-1">
                         {t('common.platformSubtitle')}
@@ -94,7 +95,7 @@ export const HomePage = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button
-                        onClick={() => navigate('/service')}
+                        onClick={() => navigate('/service/services')}
                         className="flex items-start gap-3.5 p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:border-[#2D3F2C] hover:bg-white transition text-start cursor-pointer group"
                     >
                         <div className="w-10 h-10 rounded-lg bg-[#2D3F2C] text-white flex items-center justify-center shrink-0">
@@ -111,7 +112,7 @@ export const HomePage = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate('/service')}
+                        onClick={() => navigate('/service/service-portals')}
                         className="flex items-start gap-3.5 p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:border-[#2D3F2C] hover:bg-white transition text-start cursor-pointer group"
                     >
                         <div className="w-10 h-10 rounded-lg bg-[#6A7358] text-white flex items-center justify-center shrink-0">
@@ -128,7 +129,7 @@ export const HomePage = () => {
                     </button>
 
                     <button
-                        onClick={() => navigate('/service')}
+                        onClick={() => navigate('/service/service-categories')}
                         className="flex items-start gap-3.5 p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:border-[#2D3F2C] hover:bg-white transition text-start cursor-pointer group"
                     >
                         <div className="w-10 h-10 rounded-lg bg-[#45413C] text-white flex items-center justify-center shrink-0">

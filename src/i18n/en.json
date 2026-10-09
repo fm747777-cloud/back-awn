@@ -12,6 +12,7 @@
     "addNew": "Add New",
     "add": "Add",
     "added": "Added",
+    "create": "Create",
     "status": "Status",
     "active": "Active",
     "inactive": "Inactive",
@@ -20,6 +21,8 @@
     "success": "Success",
     "warning": "Warning",
     "failed": "Failed",
+    "somethingWentWrong": "Something went wrong",
+    "retry": "Retry",
     "yes": "Yes",
     "no": "No",
     "actions": "Actions",
@@ -30,6 +33,7 @@
     "thisRecord": "this record",
     "confirmDeleteTitle": "Delete {{name}}?",
     "confirmDeleteMessage": "Are you sure you want to delete this record? This action cannot be undone.",
+    "confirmDeleteDesc": "Are you sure you want to delete this item? This action cannot be undone.",
     "welcome": "Welcome",
     "logout": "Sign Out",
     "myProfile": "My Profile",
@@ -42,6 +46,7 @@
     "submit": "Submit",
     "submitting": "Submitting...",
     "cancel": "Cancel",
+    "clear": "Clear",
     "clearAll": "Clear all",
     "resetFilters": "Reset Filters",
     "loading": "Loading...",
@@ -96,6 +101,10 @@
     "collapseSidebar": "Collapse Sidebar",
     "switchLanguageToAr": "Switch to Arabic (العربية)",
     "switchLanguageToEn": "Switch to English",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "switchToLightMode": "Switch to Light Mode",
+    "switchToDarkMode": "Switch to Dark Mode",
     "edmsModule": "Electronic Document Management System",
     "modulesModalTitle": "AWN Modules & Operations",
     "modulesModalSubtitle": "Select a platform subsystem to navigate",
@@ -389,7 +398,9 @@
     "messages": {
       "created": "Service Group created successfully",
       "updated": "Service Group updated successfully",
-      "deleted": "Service Group \"{{name}}\" deleted successfully"
+      "deleted": "Service Group \"{{name}}\" deleted successfully",
+      "createError": "Failed to create service group",
+      "updateError": "Failed to update service group"
     },
     "groupOptions": {
       "Corporate & Commercial Services": "Corporate & Commercial Services",
@@ -544,7 +555,11 @@
     "organization": "Organization",
     "organizationName": "AWN Holding Ltd.",
     "notificationAlerts": "Notification Alerts",
-    "enabled": "Enabled"
+    "enabled": "Enabled",
+    "appearance": "Appearance & Theme Preference",
+    "appearanceDescription": "Select Light or Dark mode across the AWN Enterprise Platform.",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode"
   },
   "placeholder": {
     "moduleSubtitle": "AWN Enterprise Administrative Module ({{module}})",
@@ -1516,6 +1531,7 @@
       "exportCsv": "Export CSV",
       "topFilter": {
         "title": "Select Business Owners & Companies",
+        "helper": "Choose owners and companies to filter relevant information. Selections are interconnected.",
         "helperText": "Choose owners and companies to filter relevant information. Selections are interconnected.",
         "businessOwners": "Business Owners",
         "selectBusinessOwners": "Select Business Owners",
@@ -1523,8 +1539,19 @@
         "selectCompanies": "Select Companies",
         "interconnectedBadge": "Interconnected Filter",
         "ownerContextUpdated": "Filtered by {{count}} selected owner(s)",
+        "clearSelection": "Clear Selections",
         "clearSelections": "Clear Selections",
         "noMatchingOptions": "No matching options found"
+      },
+      "summary": {
+        "allRequests": "All Requests",
+        "assigned": "Assigned",
+        "completed": "Completed",
+        "rejected": "Rejected",
+        "allRequestsSub": "Total registered service requests",
+        "assignedSub": "Assigned to account managers",
+        "completedSub": "Successfully fulfilled requests",
+        "rejectedSub": "Declined or returned requests"
       },
       "kpis": {
         "allRequests": "All Requests",
@@ -1535,6 +1562,46 @@
         "assignedSub": "Assigned to account managers",
         "completedSub": "Successfully fulfilled requests",
         "rejectedSub": "Declined or returned requests"
+      },
+      "createForm": {
+        "sectionTitle": "Create New Request",
+        "sectionSubtitle": "Select request type, customer, business, and service from active company packages.",
+        "title": "Create New Request",
+        "subtitle": "Select request type, customer, business, and service from active company packages.",
+        "noCompanySelected": "No Company Selected",
+        "crNotProvided": "CR-Not Provided",
+        "unifiedNotProvided": "Unified-Not Provided",
+        "crPrefix": "CR-",
+        "unifiedPrefix": "Unified-",
+        "requestTypeLabel": "Request type",
+        "types": {
+          "Business": "Business",
+          "Employee": "Employees",
+          "Employees": "Employees",
+          "Assets": "Assets",
+          "Other": "Other"
+        },
+        "customerDetailsTitle": "Customer Details",
+        "customerLabel": "Customer",
+        "selectCustomer": "Select Customer",
+        "businessLabel": "Business",
+        "selectBusiness": "Select Business",
+        "servicesLabel": "Services",
+        "selectService": "Select Service",
+        "packageBadge": "Package: {{package}}",
+        "priorityLabel": "Priority",
+        "dueDateLabel": "Due Date",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Enter request details, employee/asset references, or execution instructions...",
+        "cancel": "Cancel",
+        "submitRequest": "Submit Request",
+        "collapseForm": "Collapse Form",
+        "expandForm": "Expand Form",
+        "errors": {
+          "customerRequired": "Please select a Customer.",
+          "businessRequired": "Please select a Business.",
+          "serviceRequired": "Please select a Service."
+        }
       },
       "createSection": {
         "title": "Create New Request",
@@ -2343,6 +2410,96 @@
       "foundationReadyDesc": "Data models and routing for this section are provisioned and ready for module connection.",
       "goToDashboard": "Dashboard",
       "goToWorkflows": "View Workflows"
+    },
+    "auditTrail": {
+      "title": "Workflow Audit Trail",
+      "description": "Chronological governance and compliance log of all workflow configurations, master lookups, status levels, and email template updates.",
+      "kpis": {
+        "totalEvents": "Total Audit Events",
+        "workflowEvents": "Workflow Rules Events",
+        "governanceEvents": "Masters & Status Events",
+        "templateEvents": "Email Template Events"
+      },
+      "actions": {
+        "CREATED": "CREATED",
+        "UPDATED": "UPDATED",
+        "ENABLED": "ENABLED",
+        "DISABLED": "DISABLED",
+        "ACTIVATED": "ACTIVATED",
+        "DEACTIVATED": "DEACTIVATED",
+        "DELETED": "DELETED",
+        "refreshLogs": "Refresh",
+        "goToDashboard": "Dashboard",
+        "goToWorkflows": "Workflows",
+        "exportCsv": "Export CSV",
+        "openResourcePage": "Open Resource"
+      },
+      "resources": {
+        "Workflow": "Workflow",
+        "Workflow Master": "Workflow Master",
+        "Status Level": "Status Level",
+        "Email Template": "Email Template"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by ID, workflow title, resource, actor, or remarks...",
+        "actionLabel": "Action",
+        "allActions": "All Actions",
+        "resourceLabel": "Resource",
+        "allResources": "All Resources",
+        "performedByLabel": "Performed By",
+        "allPerformers": "All Performers",
+        "fromDate": "From Date",
+        "toDate": "To Date",
+        "resetFilters": "Reset Filters"
+      },
+      "table": {
+        "actionPerformed": "Action Performed",
+        "resource": "Resource",
+        "resourceData": "Resource Data",
+        "performedBy": "Performed By",
+        "dateTime": "Date & Time",
+        "actions": "Actions",
+        "viewDetails": "View Details"
+      },
+      "empty": {
+        "title": "No workflow audit events found",
+        "description": "No workflow governance records match your active search or filter criteria."
+      },
+      "pagination": {
+        "rowsPerPage": "Rows per page",
+        "showingCount": "Showing {{from}}–{{to}} out of {{total}} entries",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "drawer": {
+        "title": "Workflow Audit Event Details",
+        "subtitle": "Immutable compliance and governance snapshot",
+        "close": "Close",
+        "sectionMetadata": "Audit Event Metadata",
+        "auditId": "Audit Event ID",
+        "targetRecordId": "Target Record ID",
+        "actionPerformed": "Action Performed",
+        "resourceType": "Resource Type",
+        "performedBy": "Performed By",
+        "dateTime": "Date & Time",
+        "statusTransition": "Status Transition",
+        "isoTimestamp": "ISO 8601 Timestamp",
+        "sectionResource": "Target Resource & Entity Data",
+        "resourceDataPrimary": "Primary Resource Identifier",
+        "resourceDataBilingual": "Alternate Locale Identifier",
+        "sectionRemarks": "Governance Remarks & Operation Summary",
+        "remarks": "Remarks",
+        "sectionLiveEntity": "Live Entity Snapshot",
+        "liveStatus": "Current Status",
+        "liveScopeOrOwner": "Source / Scope",
+        "liveClassification": "Classification / Details",
+        "recordNotFoundNote": "The source record is no longer present in active storage (deleted or archived). This historical audit entry remains preserved for compliance.",
+        "openModule": "Open {{resource}} Module"
+      },
+      "feedback": {
+        "refreshed": "Refreshed {{count}} workflow audit events.",
+        "exportedCsv": "Exported {{count}} workflow audit events to CSV."
+      }
     }
   },
   "assetManagement": {
@@ -2369,7 +2526,13 @@
       "deactivate": "Deactivate",
       "delete": "Delete",
       "bilingualNames": "Bilingual Names",
-      "noDescription": "No description provided."
+      "noDescription": "No description provided.",
+      "previous": "Previous",
+      "next": "Next",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saveChanges": "Save Changes"
     },
     "status": {
       "title": "Asset Status",

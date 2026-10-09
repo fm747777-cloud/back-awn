@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { serviceApi } from "../../api/api";
 import { toast } from "sonner";
@@ -43,7 +43,7 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
     isOpen,
     onClose,
     initialData = null,
-    isEdit = false,
+    isEdit = Boolean(initialData?.id),
 }) => {
     const queryClient = useQueryClient();
 
@@ -347,74 +347,6 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
         ]);
 
     // =========================================================
-    // INITIAL DATA
-    // =========================================================
-
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
-        if (
-            isEdit &&
-            initialData
-        ) {
-            setName(
-                initialData.name || ""
-            );
-
-            setDescription(
-                initialData.description ||
-                ""
-            );
-
-            setGroupIcon(
-                initialData.group_icon ||
-                ""
-            );
-
-            setGroupType(
-                initialData.group_type ||
-                "employee"
-            );
-
-            setBoardingType(
-                initialData.boarding_type ||
-                "other"
-            );
-
-            setStatus(
-                initialData.status ||
-                "active"
-            );
-
-            setSelectedServiceIds(
-                Array.isArray(
-                    initialData.service_ids
-                )
-                    ? initialData.service_ids
-                    : Array.isArray(
-                        initialData
-                            .services
-                    )
-                        ? initialData.services.map(
-                            (
-                                service: ServiceItem
-                            ) =>
-                                service.id
-                        )
-                        : []
-            );
-        } else {
-            resetForm();
-        }
-    }, [
-        isOpen,
-        isEdit,
-        initialData,
-    ]);
-
-    // =========================================================
     // RESET
     // =========================================================
 
@@ -436,33 +368,33 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
     };
 
     // =========================================================
-    // ADD SERVICE
+    // INITIAL DATA
     // =========================================================
 
-    const handleAddService = (
-        serviceId: string
-    ) => {
-        if (!serviceId) {
-            return;
-        }
-
-        setSelectedServiceIds(
-            (prev) => {
-                if (
-                    prev.includes(
-                        serviceId
-                    )
-                ) {
-                    return prev;
-                }
-
-                return [
-                    ...prev,
-                    serviceId,
-                ];
+    const [prevSyncKey, setPrevSyncKey] = useState("");
+    const currentSyncKey = `${isOpen}-${isEdit}-${initialData?.id ?? "new"}`;
+    if (currentSyncKey !== prevSyncKey) {
+        setPrevSyncKey(currentSyncKey);
+        if (isOpen) {
+            if (isEdit && initialData) {
+                setName(initialData.name || "");
+                setDescription(initialData.description || "");
+                setGroupIcon(initialData.group_icon || "");
+                setGroupType(initialData.group_type || "employee");
+                setBoardingType(initialData.boarding_type || "other");
+                setStatus(initialData.status || "active");
+                setSelectedServiceIds(
+                    Array.isArray(initialData.service_ids)
+                        ? initialData.service_ids
+                        : Array.isArray(initialData.services)
+                            ? initialData.services.map((service: ServiceItem) => service.id)
+                            : []
+                );
+            } else {
+                resetForm();
             }
-        );
-    };
+        }
+    }
 
     // =========================================================
     // REMOVE SERVICE
@@ -524,21 +456,15 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                 ),
 
             onSuccess: () => {
-                queryClient.invalidateQueries(
-                    {
-                        queryKey: [
-                            "serviceGroups",
-                        ],
-                    }
-                );
-
-                queryClient.invalidateQueries(
-                    {
-                        queryKey: [
-                            "services",
-                        ],
-                    }
-                );
+                queryClient.invalidateQueries({
+                    queryKey: ["serviceGroups"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["service-groups"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["services"],
+                });
 
                 resetForm();
 
@@ -565,21 +491,15 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                 ),
 
             onSuccess: () => {
-                queryClient.invalidateQueries(
-                    {
-                        queryKey: [
-                            "serviceGroups",
-                        ],
-                    }
-                );
-
-                queryClient.invalidateQueries(
-                    {
-                        queryKey: [
-                            "services",
-                        ],
-                    }
-                );
+                queryClient.invalidateQueries({
+                    queryKey: ["serviceGroups"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["service-groups"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["services"],
+                });
 
                 resetForm();
 
@@ -601,13 +521,12 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                 ),
 
             onSuccess: () => {
-                queryClient.invalidateQueries(
-                    {
-                        queryKey: [
-                            "serviceGroups",
-                        ],
-                    }
-                );
+                queryClient.invalidateQueries({
+                    queryKey: ["serviceGroups"],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["service-groups"],
+                });
 
                 resetForm();
 

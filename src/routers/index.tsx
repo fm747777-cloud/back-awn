@@ -43,7 +43,7 @@ const WorkflowsPage = () => import('../pages/workflow/WorkflowsPage').then((m) =
 const WorkflowMastersPage = () => import('../pages/workflow/WorkflowMastersPage').then((m) => ({ Component: m.WorkflowMastersPage }));
 const WorkflowStatusLevelsPage = () => import('../pages/workflow/WorkflowStatusLevelsPage').then((m) => ({ Component: m.WorkflowStatusLevelsPage }));
 const WorkflowEmailTemplatesPage = () => import('../pages/workflow/WorkflowEmailTemplatesPage').then((m) => ({ Component: m.WorkflowEmailTemplatesPage }));
-const WorkflowAuditTrailPlaceholderPage = () => import('../pages/workflow/WorkflowPlaceholderPages').then((m) => ({ Component: m.WorkflowAuditTrailPlaceholderPage }));
+const WorkflowAuditTrailPage = () => import('../pages/workflow/WorkflowAuditTrailPage').then((m) => ({ Component: m.WorkflowAuditTrailPage }));
 
 // Asset Management Module
 const AssetManagementPage = () => import('../pages/AssetManagementPage').then((m) => ({ Component: m.AssetManagementPage }));
@@ -213,7 +213,7 @@ export const router = createBrowserRouter([
                             },
                             {
                                 path: 'audit-trail',
-                                lazy: WorkflowAuditTrailPlaceholderPage,
+                                lazy: WorkflowAuditTrailPage,
                             },
                         ],
                     },
@@ -343,10 +343,6 @@ export const router = createBrowserRouter([
     // 🚫 3. مسار 404
     {
         path: '*',
-        element: (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center font-bold text-xl text-slate-400">
-                404 - الصفحة غير موجودة
-            </div>
-        ),
+        element: <ErrorPage />,
     },
 ]);

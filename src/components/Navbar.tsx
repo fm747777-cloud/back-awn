@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Globe, ChevronDown, LogOut, User, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Globe, ChevronDown, LogOut, User, PanelLeftClose, PanelLeft, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSidebarStore } from '../store/useSidebarStore';
+import { useThemeStore } from '../store/useThemeStore';
 import { ActionItemsModal, type ModuleOption } from './ActionItemsModal';
 
 export const Navbar = () => {
@@ -16,8 +17,10 @@ export const Navbar = () => {
 
     const { user, logout } = useAuthStore();
     const { collapsed, toggleSidebar } = useSidebarStore();
+    const { theme, toggleTheme } = useThemeStore();
 
     const isAr = i18n.language?.startsWith('ar');
+    const isDark = theme === 'dark';
 
     // Derive active module key directly from location.pathname
     const selectedModuleKey = (() => {
@@ -63,13 +66,13 @@ export const Navbar = () => {
 
     return (
         <>
-            <header className="h-16 bg-white border-b border-[#E5E0D8] px-6 flex items-center justify-between sticky top-0 z-20 select-none">
+            <header className="h-16 bg-white dark:bg-[#161D1A] border-b border-[#E5E0D8] dark:border-[#2A3630] px-3 sm:px-6 gap-2 flex items-center justify-between sticky top-0 z-20 select-none min-w-0 transition-colors duration-150">
                 {/* Start: Sidebar Toggle Button + Module Tag */}
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-2 sm:gap-3.5 min-w-0 flex-1">
                     <button
                         type="button"
                         onClick={toggleSidebar}
-                        className="p-2 rounded-lg text-[#595550] hover:bg-[#F8F6F2] hover:text-[#0D0D0D] transition cursor-pointer"
+                        className="p-2 rounded-lg text-[#595550] hover:bg-[#F8F6F2] hover:text-[#0D0D0D] transition cursor-pointer shrink-0"
                         title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
                         aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
                     >
@@ -83,17 +86,51 @@ export const Navbar = () => {
                     <button
                         type="button"
                         onClick={() => setActionItemsModalOpen(true)}
-                        className="bg-[#F8F6F2] hover:bg-[#EFECE6] border border-[#E5E0D8] px-3.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium text-[#2D3F2C] transition cursor-pointer active:scale-98 shadow-2xs"
+                        className="bg-[#F8F6F2] hover:bg-[#EFECE6] border border-[#E5E0D8] px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium text-[#2D3F2C] transition cursor-pointer active:scale-98 shadow-2xs min-w-0 max-w-full"
                     >
-                        <span className="w-2 h-2 rounded-full bg-[#2D3F2C] shrink-0"></span>
-                        <span className="tracking-tight truncate max-w-[220px] sm:max-w-none">
+                        <span className="w-2 h-2 rounded-full bg-[#2D3F2C] dark:bg-[#84C799] shrink-0"></span>
+                        <span className="tracking-tight truncate">
                             {selectedModuleLabel}
                         </span>
                     </button>
                 </div>
 
-                {/* End: Enterprise Language Switcher & User Profile */}
-                <div className="flex items-center gap-3.5">
+                {/* End: Theme Switcher, Enterprise Language Switcher & User Profile */}
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    <button
+                        type="button"
+                        data-testid="theme-toggle"
+                        onClick={toggleTheme}
+                        aria-pressed={isDark}
+                        aria-label={
+                            isDark
+                                ? t('nav.switchToLightMode', { defaultValue: 'Switch to Light Mode' })
+                                : t('nav.switchToDarkMode', { defaultValue: 'Switch to Dark Mode' })
+                        }
+                        title={
+                            isDark
+                                ? t('nav.switchToLightMode', { defaultValue: 'Switch to Light Mode' })
+                                : t('nav.switchToDarkMode', { defaultValue: 'Switch to Dark Mode' })
+                        }
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#595550] hover:text-[#0D0D0D] hover:bg-[#F0ECE4] transition-colors cursor-pointer shadow-2xs"
+                    >
+                        {isDark ? (
+                            <>
+                                <Sun size={14} className="text-[#E2B478] shrink-0" />
+                                <span className="hidden md:inline text-[11px]">
+                                    {t('nav.lightMode', { defaultValue: 'Light' })}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <Moon size={14} className="text-[#2D3F2C] shrink-0" />
+                                <span className="hidden md:inline text-[11px]">
+                                    {t('nav.darkMode', { defaultValue: 'Dark' })}
+                                </span>
+                            </>
+                        )}
+                    </button>
+
                     <div
                         dir="ltr"
                         role="group"
@@ -131,11 +168,14 @@ export const Navbar = () => {
                         </button>
                     </div>
 
-                    <div className="h-5 w-[1px] bg-[#E5E0D8]" />
+                    <div className="h-5 w-[1px] bg-[#E5E0D8] dark:bg-[#2A3630]" />
 
                     <div className="relative" ref={dropdownRef}>
                         <button
                             type="button"
+                            data-testid="user-menu-trigger"
+                            aria-expanded={dropdownOpen}
+                            aria-label={t('common.myProfile')}
                             onClick={() => setDropdownOpen(!dropdownOpen)}
                             className="flex items-center gap-2.5 hover:bg-[#F8F6F2] p-1.5 rounded-xl transition cursor-pointer"
                         >
@@ -179,9 +219,11 @@ export const Navbar = () => {
 
                                 <button
                                     type="button"
+                                    data-testid="navbar-logout-button"
                                     onClick={() => {
                                         setDropdownOpen(false);
                                         logout();
+                                        navigate('/login', { replace: true });
                                     }}
                                     className="w-full text-start px-4 py-2 text-xs text-[#8C6046] hover:bg-[#8C6046]/10 flex items-center gap-2 font-medium cursor-pointer transition-colors"
                                 >
@@ -203,3 +245,4 @@ export const Navbar = () => {
         </>
     );
 };
+

@@ -12,6 +12,7 @@
     "addNew": "إضافة جديد",
     "add": "إضافة",
     "added": "تمت الإضافة",
+    "create": "إنشاء",
     "status": "الحالة",
     "active": "نشط",
     "inactive": "غير نشط",
@@ -20,6 +21,8 @@
     "success": "مكتمل بنجاح",
     "warning": "تنبيه",
     "failed": "فشل",
+    "somethingWentWrong": "حدث خطأ غير متوقع",
+    "retry": "إعادة المحاولة",
     "yes": "نعم",
     "no": "لا",
     "actions": "الإجراءات",
@@ -30,6 +33,7 @@
     "thisRecord": "هذا السجل",
     "confirmDeleteTitle": "حذف {{name}}؟",
     "confirmDeleteMessage": "هل أنت متأكد من رغبتك في حذف هذا السجل؟ لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.",
+    "confirmDeleteDesc": "هل أنت متأكد من رغبتك في حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.",
     "welcome": "مرحباً",
     "logout": "تسجيل الخروج",
     "myProfile": "الملف الشخصي",
@@ -42,6 +46,7 @@
     "submit": "اعتماد وحفظ",
     "submitting": "جاري الحفظ...",
     "cancel": "إلغاء",
+    "clear": "مسح",
     "clearAll": "مسح الكل",
     "resetFilters": "إعادة تعيين التصفية",
     "loading": "جاري التحميل...",
@@ -96,6 +101,10 @@
     "collapseSidebar": "طي القائمة الجانبية",
     "switchLanguageToAr": "التحويل إلى العربية",
     "switchLanguageToEn": "Switch to English",
+    "lightMode": "فاتح",
+    "darkMode": "داكن",
+    "switchToLightMode": "التبديل إلى الوضع الفاتح",
+    "switchToDarkMode": "التبديل إلى الوضع الداكن",
     "edmsModule": "نظام إدارة الوثائق والعمليات الإلكترونية",
     "modulesModalTitle": "أنظمة ووحدات منصة عون",
     "modulesModalSubtitle": "اختر النظام الفرعي للانتقال إلى لوحة العمليات الخاصة به",
@@ -389,7 +398,9 @@
     "messages": {
       "created": "تم إنشاء مجموعة الخدمات بنجاح",
       "updated": "تم تحديث مجموعة الخدمات بنجاح",
-      "deleted": "تم حذف مجموعة الخدمات \"{{name}}\" بنجاح"
+      "deleted": "تم حذف مجموعة الخدمات \"{{name}}\" بنجاح",
+      "createError": "تعذر إنشاء مجموعة الخدمات",
+      "updateError": "تعذر تحديث مجموعة الخدمات"
     },
     "groupOptions": {
       "Corporate & Commercial Services": "خدمات الشركات والسجلات التجارية",
@@ -544,7 +555,11 @@
     "organization": "المنشأة / الجهة",
     "organizationName": "شركة عون القابضة",
     "notificationAlerts": "تنبيهات وإشعارات النظام",
-    "enabled": "مفعّل"
+    "enabled": "مفعّل",
+    "appearance": "المظهر وتفضيلات السمة",
+    "appearanceDescription": "اختر الوضع الفاتح أو الداكن عبر منصة عون الإدارية.",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن"
   },
   "placeholder": {
     "moduleSubtitle": "وحدة إدارية وتشغيلية ضمن منصة عون ({{module}})",
@@ -1516,6 +1531,7 @@
       "exportCsv": "تصدير CSV",
       "topFilter": {
         "title": "اختيار ملاك المنشآت والشركات",
+        "helper": "اختر ملاك المنشآت والشركات لتصفية المعلومات ذات الصلة. الاختيارات مترابطة تلقائياً.",
         "helperText": "اختر ملاك المنشآت والشركات لتصفية المعلومات ذات الصلة. الاختيارات مترابطة تلقائياً.",
         "businessOwners": "ملاك المنشآت",
         "selectBusinessOwners": "اختر ملاك المنشآت",
@@ -1523,8 +1539,19 @@
         "selectCompanies": "اختر الشركات",
         "interconnectedBadge": "تصفية مترابطة",
         "ownerContextUpdated": "تمت التصفية حسب {{count}} من ملاك المنشآت",
+        "clearSelection": "مسح الاختيارات",
         "clearSelections": "مسح الاختيارات",
         "noMatchingOptions": "لا توجد خيارات مطابقة"
+      },
+      "summary": {
+        "allRequests": "جميع الطلبات",
+        "assigned": "المسندة",
+        "completed": "المكتملة",
+        "rejected": "المرفوضة",
+        "allRequestsSub": "إجمالي طلبات الخدمة المسجلة",
+        "assignedSub": "مسندة إلى مديري الحسابات",
+        "completedSub": "الطلبات المنجزة بنجاح",
+        "rejectedSub": "الطلبات المرفوضة أو المعادة"
       },
       "kpis": {
         "allRequests": "جميع الطلبات",
@@ -1535,6 +1562,46 @@
         "assignedSub": "مسندة إلى مديري الحسابات",
         "completedSub": "الطلبات المنجزة بنجاح",
         "rejectedSub": "الطلبات المرفوضة أو المعادة"
+      },
+      "createForm": {
+        "sectionTitle": "إنشاء طلب جديد",
+        "sectionSubtitle": "اختر نوع الطلب والعميل والمنشأة والخدمة من باقات الشركة النشطة.",
+        "title": "إنشاء طلب جديد",
+        "subtitle": "اختر نوع الطلب والعميل والمنشأة والخدمة من باقات الشركة النشطة.",
+        "noCompanySelected": "لم يتم اختيار شركة",
+        "crNotProvided": "CR-غير متوفر",
+        "unifiedNotProvided": "الرقم الموحد-غير متوفر",
+        "crPrefix": "CR-",
+        "unifiedPrefix": "الرقم الموحد-",
+        "requestTypeLabel": "نوع الطلب",
+        "types": {
+          "Business": "المنشآت (Business)",
+          "Employee": "الموظفين (Employees)",
+          "Employees": "الموظفين (Employees)",
+          "Assets": "الأصول (Assets)",
+          "Other": "أخرى (Other)"
+        },
+        "customerDetailsTitle": "بيانات العميل",
+        "customerLabel": "العميل",
+        "selectCustomer": "اختر العميل",
+        "businessLabel": "المنشأة",
+        "selectBusiness": "اختر المنشأة",
+        "servicesLabel": "الخدمات",
+        "selectService": "اختر الخدمة",
+        "packageBadge": "الباقة: {{package}}",
+        "priorityLabel": "الأولوية",
+        "dueDateLabel": "تاريخ الاستحقاق",
+        "descriptionLabel": "الوصف",
+        "descriptionPlaceholder": "أدخل تفاصيل الطلب أو مراجع الموظفين/الأصول أو تعليمات التنفيذ...",
+        "cancel": "إلغاء",
+        "submitRequest": "إرسال الطلب",
+        "collapseForm": "طي النموذج",
+        "expandForm": "فتح النموذج",
+        "errors": {
+          "customerRequired": "يرجى اختيار العميل.",
+          "businessRequired": "يرجى اختيار المنشأة.",
+          "serviceRequired": "يرجى اختيار الخدمة."
+        }
       },
       "createSection": {
         "title": "إنشاء طلب جديد",
@@ -2343,6 +2410,96 @@
       "foundationReadyDesc": "نماذج البيانات والمسارات الخاصة بهذا القسم مهيأة وجاهزة للربط في المرحلة القادمة.",
       "goToDashboard": "لوحة التحكم",
       "goToWorkflows": "عرض سير العمل"
+    },
+    "auditTrail": {
+      "title": "سجل تدقيق سير العمل",
+      "description": "سجل زمني للحوكمة والامتثال يوثق جميع تغييرات قواعد سير العمل والبيانات الأساسية ومستويات الحالة وقوالب البريد الإلكتروني.",
+      "kpis": {
+        "totalEvents": "إجمالي أحداث التدقيق",
+        "workflowEvents": "أحداث قواعد سير العمل",
+        "governanceEvents": "أحداث البيانات ومستويات الحالة",
+        "templateEvents": "أحداث قوالب البريد الإلكتروني"
+      },
+      "actions": {
+        "CREATED": "إنشاء",
+        "UPDATED": "تحديث",
+        "ENABLED": "تفعيل",
+        "DISABLED": "تعطيل",
+        "ACTIVATED": "تنشيط",
+        "DEACTIVATED": "إيقاف",
+        "DELETED": "حذف",
+        "refreshLogs": "تحديث السجل",
+        "goToDashboard": "لوحة التحكم",
+        "goToWorkflows": "سير العمل",
+        "exportCsv": "تصدير CSV",
+        "openResourcePage": "فتح المورد"
+      },
+      "resources": {
+        "Workflow": "سير العمل",
+        "Workflow Master": "البيانات الأساسية لسير العمل",
+        "Status Level": "مستوى الحالة",
+        "Email Template": "قالب البريد الإلكتروني"
+      },
+      "filters": {
+        "searchPlaceholder": "ابحث بالمعرّف أو عنوان سير العمل أو المورد أو المنفذ أو الملاحظات...",
+        "actionLabel": "الإجراء",
+        "allActions": "جميع الإجراءات",
+        "resourceLabel": "المورد",
+        "allResources": "جميع الموارد",
+        "performedByLabel": "تم بواسطة",
+        "allPerformers": "جميع المنفذين",
+        "fromDate": "من تاريخ",
+        "toDate": "إلى تاريخ",
+        "resetFilters": "إعادة تعيين الفلاتر"
+      },
+      "table": {
+        "actionPerformed": "الإجراء المنفذ",
+        "resource": "المورد",
+        "resourceData": "بيانات المورد",
+        "performedBy": "تم بواسطة",
+        "dateTime": "التاريخ والوقت",
+        "actions": "الإجراءات",
+        "viewDetails": "عرض التفاصيل"
+      },
+      "empty": {
+        "title": "لا توجد سجلات تدقيق لسير العمل",
+        "description": "لا توجد سجلات حوكمة مطابقة لمعايير البحث أو التصفية الحالية."
+      },
+      "pagination": {
+        "rowsPerPage": "الصفوف لكل صفحة",
+        "showingCount": "عرض {{from}}–{{to}} من أصل {{total}} سجل",
+        "previous": "السابق",
+        "next": "التالي"
+      },
+      "drawer": {
+        "title": "تفاصيل حدث تدقيق سير العمل",
+        "subtitle": "نسخة توثيقية غير قابلة للتعديل لأغراض الحوكمة والامتثال",
+        "close": "إغلاق",
+        "sectionMetadata": "البيانات الوصفية لحدث التدقيق",
+        "auditId": "معرّف حدث التدقيق",
+        "targetRecordId": "معرّف السجل المستهدف",
+        "actionPerformed": "الإجراء المنفذ",
+        "resourceType": "نوع المورد",
+        "performedBy": "تم بواسطة",
+        "dateTime": "التاريخ والوقت",
+        "statusTransition": "انتقال الحالة",
+        "isoTimestamp": "الطابع الزمني ISO 8601",
+        "sectionResource": "بيانات المورد والكيان المستهدف",
+        "resourceDataPrimary": "المعرّف الأساسي للمورد",
+        "resourceDataBilingual": "المعرّف باللغة المقابلة",
+        "sectionRemarks": "ملاحظات الحوكمة وملخص العملية",
+        "remarks": "الملاحظات",
+        "sectionLiveEntity": "حالة السجل الحالية في النظام",
+        "liveStatus": "الحالة الحالية",
+        "liveScopeOrOwner": "المصدر / النطاق",
+        "liveClassification": "التصنيف / التفاصيل",
+        "recordNotFoundNote": "لم يعد السجل المصدر موجوداً في التخزين النشط (تم حذفه أو أرشفته). يظل سجل التدقيق التاريخي هذا محفوظاً لأغراض الامتثال.",
+        "openModule": "فتح وحدة {{resource}}"
+      },
+      "feedback": {
+        "refreshed": "تم تحديث {{count}} سجل تدقيق لسير العمل.",
+        "exportedCsv": "تم تصدير {{count}} سجل تدقيق لسير العمل إلى ملف CSV."
+      }
     }
   },
   "assetManagement": {
@@ -2369,7 +2526,13 @@
       "deactivate": "تعطيل",
       "delete": "حذف",
       "bilingualNames": "الأسماء ثنائية اللغة",
-      "noDescription": "لا يوجد وصف مسجل."
+      "noDescription": "لا يوجد وصف مسجل.",
+      "previous": "السابق",
+      "next": "التالي",
+      "close": "إغلاق",
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "saveChanges": "حفظ التعديلات"
     },
     "status": {
       "title": "حالة الأصول",

@@ -1,22 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Lock, Mail, ArrowRight, Globe } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
 
 import { loginSchema, type LoginFormData } from '../schemas/authSchema';
 import { authApi } from '../api/api';
 import { useAuthStore } from '../store/useAuthStore';
+import { useThemeStore, applyThemeToDom } from '../store/useThemeStore';
 import { translateError } from '../i18n';
 
 export const LoginPage = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const setAuth = useAuthStore((state) => state.setAuth);
+    const { theme, toggleTheme } = useThemeStore();
     const [isLoading, setIsLoading] = useState(false);
     const isAr = i18n.language?.startsWith('ar');
+    const isDark = theme === 'dark';
+
+    useEffect(() => {
+        applyThemeToDom(theme);
+    }, [theme]);
 
     const setLanguage = (lang: 'en' | 'ar') => {
         if ((lang === 'ar' && !isAr) || (lang === 'en' && isAr)) {
@@ -86,10 +93,34 @@ export const LoginPage = () => {
                         </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     <div className="hidden sm:block text-xs text-[#8C847A] font-medium">
                         {t('common.awnArabic')} — {t('nav.edmsModule')}
                     </div>
+                    <button
+                        type="button"
+                        data-testid="login-theme-toggle"
+                        onClick={toggleTheme}
+                        aria-pressed={isDark}
+                        aria-label={
+                            isDark
+                                ? t('nav.switchToLightMode', { defaultValue: 'Switch to Light Mode' })
+                                : t('nav.switchToDarkMode', { defaultValue: 'Switch to Dark Mode' })
+                        }
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#595550] hover:text-[#0D0D0D] transition-colors cursor-pointer shadow-2xs"
+                    >
+                        {isDark ? (
+                            <>
+                                <Sun size={13} className="text-[#E2B478]" />
+                                <span className="text-[11px]">{t('nav.lightMode', { defaultValue: 'Light' })}</span>
+                            </>
+                        ) : (
+                            <>
+                                <Moon size={13} className="text-[#2D3F2C]" />
+                                <span className="text-[11px]">{t('nav.darkMode', { defaultValue: 'Dark' })}</span>
+                            </>
+                        )}
+                    </button>
                     <div
                         role="group"
                         aria-label={isAr ? t('nav.switchLanguageToEn') : t('nav.switchLanguageToAr')}

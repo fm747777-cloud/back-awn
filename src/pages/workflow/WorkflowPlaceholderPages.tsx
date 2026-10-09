@@ -5,13 +5,13 @@ import {
     FolderKanban,
     ListFilter,
     Mail,
-    History,
     ShieldCheck,
     ArrowRight,
     LayoutDashboard,
     GitBranch,
     type LucideIcon,
 } from 'lucide-react';
+import { WorkflowAuditTrailPage } from './WorkflowAuditTrailPage';
 
 interface WorkflowSectionPlaceholderProps {
     titleKey: string;
@@ -138,11 +138,4 @@ export const WorkflowEmailTemplatesPlaceholderPage: React.FC = () => (
     />
 );
 
-export const WorkflowAuditTrailPlaceholderPage: React.FC = () => (
-    <WorkflowSectionPlaceholder
-        titleKey="workflow.placeholders.auditTrailTitle"
-        descKey="workflow.placeholders.auditTrailDesc"
-        code="WFL-AUD"
-        icon={History}
-    />
-);
+export const WorkflowAuditTrailPlaceholderPage: React.FC = () => <WorkflowAuditTrailPage />;

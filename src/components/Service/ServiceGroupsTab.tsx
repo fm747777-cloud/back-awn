@@ -156,14 +156,6 @@ export const ServiceGroupsTab: React.FC = () => {
         setIsDrawerOpen(true);
     }, []);
 
-    const handleDrawerSubmit = (dto: CreateServiceGroupDto, id?: string) => {
-        if (id) {
-            updateMutation.mutate({ id, dto });
-        } else {
-            createMutation.mutate(dto);
-        }
-    };
-
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
@@ -243,7 +235,8 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "status",
                 header: t("common.status"),
                 cell: ({ row }) => {
-                    const isGroupActive = true;
+                    const isGroupActive =
+                        String(row.original?.status || "active").toLowerCase() !== "inactive";
                     return isGroupActive ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
@@ -324,7 +317,7 @@ export const ServiceGroupsTab: React.FC = () => {
                         setEditingGroup(null);
                     }
                 }}
-                // onSubmit={handleDrawerSubmit}
+                isEdit={Boolean(editingGroup)}
                 initialData={drawerInitialData}
             />
         </div>

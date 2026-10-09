@@ -7,12 +7,13 @@ export const ErrorPage = () => {
     const error = useRouteError();
 
     let errorMessage = t('errorPage.unexpectedError');
-    let errorStatus = t('common.failed');
+    let errorStatus = '404';
 
     if (isRouteErrorResponse(error)) {
         errorStatus = `${error.status}`;
         errorMessage = error.statusText || error.data?.message || errorMessage;
     } else if (error instanceof Error) {
+        errorStatus = t('common.failed');
         errorMessage = error.message;
     }
 

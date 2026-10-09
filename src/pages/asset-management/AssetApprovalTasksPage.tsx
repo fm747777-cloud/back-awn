@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -161,11 +161,32 @@ export const AssetApprovalTasksPage: React.FC = () => {
     const [tasks, setTasks] = useState<AssetApprovalTaskRecord[]>(() => loadAssetApprovalTasks());
 
     // Live reference data for linking tasks to Assets & Masters
-    const assets = useMemo(() => loadAssets(), []);
-    const assetTypes = useMemo(() => loadAssetTypes(), []);
-    const assetCategories = useMemo(() => loadAssetCategories(), []);
-    const assetStatuses = useMemo(() => loadAssetStatuses(), []);
-    const assetTags = useMemo(() => loadAssetTags(), []);
+    const [assets, setAssets] = useState(() => loadAssets());
+    const [assetTypes, setAssetTypes] = useState(() => loadAssetTypes());
+    const [assetCategories, setAssetCategories] = useState(() => loadAssetCategories());
+    const [assetStatuses, setAssetStatuses] = useState(() => loadAssetStatuses());
+    const [assetTags, setAssetTags] = useState(() => loadAssetTags());
+
+    const refreshReferenceData = () => {
+        setAssets(loadAssets());
+        setAssetTypes(loadAssetTypes());
+        setAssetCategories(loadAssetCategories());
+        setAssetStatuses(loadAssetStatuses());
+        setAssetTags(loadAssetTags());
+    };
+
+    useEffect(() => {
+        const handleSync = () => {
+            refreshReferenceData();
+            setTasks(loadAssetApprovalTasks());
+        };
+        window.addEventListener('focus', handleSync);
+        window.addEventListener('storage', handleSync);
+        return () => {
+            window.removeEventListener('focus', handleSync);
+            window.removeEventListener('storage', handleSync);
+        };
+    }, []);
 
     // Search, Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
@@ -274,8 +295,25 @@ export const AssetApprovalTasksPage: React.FC = () => {
             });
         }
 
+        if (editingTask && !list.some((opt) => opt.id === editingTask.assetId)) {
+            list.push({
+                id: editingTask.assetId,
+                nameEn: editingTask.assetNameEn,
+                nameAr: editingTask.assetNameAr,
+                groupLabelEn: 'Historical Record',
+                groupLabelAr: 'سجل تاريخي',
+                customerNameEn: editingTask.customerNameEn,
+                customerNameAr: editingTask.customerNameAr,
+                companyNameEn: editingTask.companyNameEn,
+                companyNameAr: editingTask.companyNameAr,
+                categoryNameEn: editingTask.categoryNameEn,
+                categoryNameAr: editingTask.categoryNameAr,
+                serialNumber: editingTask.serialNumber || '—',
+            });
+        }
+
         return list;
-    }, [assets, assetTypes, assetCategories, assetStatuses, assetTags]);
+    }, [assets, assetTypes, assetCategories, assetStatuses, assetTags, editingTask]);
 
     const defaultAssetId = targetRecordOptions[0]?.id || 'ASTID002';
 
@@ -609,6 +647,7 @@ export const AssetApprovalTasksPage: React.FC = () => {
 
     // Open Create / Edit Drawer
     const openCreateDrawer = () => {
+        refreshReferenceData();
         setEditingTask(null);
         const firstTarget = targetRecordOptions[0];
         const firstReqType = ASSET_APPROVAL_REQUEST_TYPES[0];
@@ -632,6 +671,7 @@ export const AssetApprovalTasksPage: React.FC = () => {
     };
 
     const openEditDrawer = (task: AssetApprovalTaskRecord) => {
+        refreshReferenceData();
         setViewingTask(null);
         setIsCreateOpen(false);
         setEditingTask(task);
@@ -1827,23 +1867,45 @@ export const AssetApprovalTasksPage: React.FC = () => {
                                     <p className="text-xs font-bold uppercase tracking-wider text-[#6E6862]">
                                         {t('assetManagement.approvalTasks.drawer.sectionAsset')}
                                     </p>
-                                    {viewingTask.assetId.startsWith('ASTID') && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setViewingTask(null);
-                                                navigate('/asset-management/assets');
-                                            }}
-                                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
-                                        >
-                                            <span>
-                                                {t(
-                                                    'assetManagement.approvalTasks.actions.openInAssets'
-                                                )}
-                                            </span>
-                                            <ArrowUpRight size={12} />
-                                        </button>
-                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const idUpper = viewingTask.assetId.toUpperCase();
+                                            const targetRoute = idUpper.startsWith('ASTID')
+                                                ? '/asset-management/assets'
+                                                : idUpper.startsWith('ASTTYP')
+                                                ? '/asset-management/types'
+                                                : idUpper.startsWith('ASTCAT')
+                                                ? '/asset-management/categories'
+                                                : idUpper.startsWith('ASTTAG')
+                                                ? '/asset-management/tags'
+                                                : '/asset-management/status';
+                                            const exists = targetRecordOptions.some(
+                                                (opt) => opt.id === viewingTask.assetId
+                                            );
+                                            if (!exists) {
+                                                toast.info(
+                                                    t(
+                                                        'assetManagement.auditTrail.drawer.recordNotFoundNote'
+                                                    )
+                                                );
+                                            }
+                                            setViewingTask(null);
+                                            navigate(targetRoute);
+                                        }}
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                    >
+                                        <span>
+                                            {viewingTask.assetId.toUpperCase().startsWith('ASTID')
+                                                ? t(
+                                                      'assetManagement.approvalTasks.actions.openInAssets'
+                                                  )
+                                                : t(
+                                                      'assetManagement.auditTrail.actions.openResourcePage'
+                                                  )}
+                                        </span>
+                                        <ArrowUpRight size={12} />
+                                    </button>
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

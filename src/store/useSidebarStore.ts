@@ -197,8 +197,23 @@ export const getMenuGroupsForPath = (
     if (pathname.startsWith('/asset-management')) {
         return ASSET_MANAGEMENT_SIDEBAR_GROUPS;
     }
-    if (pathname.startsWith('/service')) {
+    if (pathname.startsWith('/service') || pathname === '/') {
         return DEFAULT_SIDEBAR_GROUPS;
+    }
+    if (
+        pathname.startsWith('/ums') ||
+        pathname.startsWith('/crm') ||
+        pathname.startsWith('/customer')
+    ) {
+        const basePath = `/${pathname.replace(/^\/+/, '').split('/')[0]}`;
+        return [
+            {
+                title: 'Main',
+                items: [
+                    { label: 'Dashboard', path: basePath, icon: LayoutDashboard },
+                ],
+            },
+        ];
     }
     return fallbackGroups;
 };

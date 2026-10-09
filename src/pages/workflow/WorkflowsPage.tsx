@@ -54,8 +54,24 @@ export const WorkflowsPage: React.FC = () => {
     const isAr = i18n.language?.startsWith('ar');
     const [searchParams, setSearchParams] = useSearchParams();
 
+    const [records, setRecords] = useState<WorkflowRecord[]>(() => loadWorkflowRecords());
+    const [isLoading] = useState<boolean>(false);
+
+    // Support deep link from Audit Trail (?workflowId= or ?highlightId=)
+    const targetWorkflowIdParam =
+        searchParams.get('workflowId') || searchParams.get('highlightId');
+    const deepLinkedRecord = useMemo(
+        () =>
+            targetWorkflowIdParam
+                ? records.find((r) => String(r.id) === String(targetWorkflowIdParam)) || null
+                : null,
+        [targetWorkflowIdParam, records]
+    );
+
     const initialTab: WorkflowType =
-        searchParams.get('tab') === 'communication' ? 'communication' : 'approval';
+        searchParams.get('tab') === 'communication'
+            ? 'communication'
+            : deepLinkedRecord?.workflowType || 'approval';
 
     const [manualTab, setManualTab] = useState<WorkflowType>(initialTab);
     const urlTab = searchParams.get('tab');
@@ -65,9 +81,6 @@ export const WorkflowsPage: React.FC = () => {
             : urlTab === 'approval'
             ? 'approval'
             : manualTab;
-
-    const [records, setRecords] = useState<WorkflowRecord[]>(() => loadWorkflowRecords());
-    const [isLoading] = useState<boolean>(false);
 
     // Search & Filters
     const [searchQuery, setSearchQuery] = useState<string>('');
@@ -82,7 +95,9 @@ export const WorkflowsPage: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     // Drawers / Modals state
-    const [viewingRecord, setViewingRecord] = useState<WorkflowRecord | null>(null);
+    const [viewingRecord, setViewingRecord] = useState<WorkflowRecord | null>(
+        () => deepLinkedRecord
+    );
     const [editingRecord, setEditingRecord] = useState<WorkflowRecord | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
     const [deletingRecord, setDeletingRecord] = useState<WorkflowRecord | null>(null);
