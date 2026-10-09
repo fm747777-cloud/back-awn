@@ -1474,3 +1474,83 @@ export const serviceApi = {
         return newPackage;
     },
 };
+
+export const ticketApi = {
+    getTickets: async (params: { page: number; limit: number; search?: string }) => {
+        const response = await axiosClient.get('/task', { params });
+        return response.data;
+    },
+
+    createTicket: async (data: any) => {
+        const response = await axiosClient.post('/task', data);
+        return response.data;
+    },
+
+    deleteTicket: async (id: string) => {
+        const response = await axiosClient.delete(`/task/${id}`);
+        return response.data;
+    },
+
+    updateTicket: async (id: string, data: { subject: string; message: string }) => {
+        const response = await axiosClient.patch(`/task/${id}`, data);
+        return response.data;
+    },
+
+
+    getTicketTypes: async (params: { page: number; limit: number; search?: string }) => {
+        const response = await axiosClient.get('/task-type', { params });
+        return response.data;
+    },
+
+    createTicketType: async (data: any) => {
+        const response = await axiosClient.post('/task-type', data);
+        return response.data;
+    },
+
+    deleteTicketType: async (id: string) => {
+        const response = await axiosClient.delete(`/task-type/${id}`);
+        return response.data;
+    },
+
+
+    getReplies: async (params: { page: number; limit: number; search?: string }) => {
+        const response = await axiosClient.get('/canned-replies', { params });
+        return response.data;
+    },
+
+    createReply: async (data: any) => {
+        const response = await axiosClient.post('/canned-replies', data);
+        return response.data;
+    },
+
+    deleteReply: async (id: string) => {
+        const response = await axiosClient.delete(`/canned-replies/${id}`);
+        return response.data;
+    },
+
+    updateReply: async (id: string, data: { subject: string; message: string }) => {
+        const response = await axiosClient.patch(`/canned-replies/${id}`, data);
+        return response.data;
+    },
+}
+
+export const companyBranchApi = {
+    getCompaniesBranchs: async (params: any) => {
+        const response = await axiosClient.get('/company-branch', { params });
+        return response.data;
+    }
+}
+
+export const companyUserApi = {
+    getCompanyUsers: async (params: any) => {
+        const response = await axiosClient.get('/company-user', { params });
+        return response.data;
+    }
+}
+
+export const userApi = {
+    getCompaniesBranchs: async (params: any) => {
+        const response = await axiosClient.get('/user', { params });
+        return response.data;
+    }
+}

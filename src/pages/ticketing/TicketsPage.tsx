@@ -1,51 +1,177 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    MoreHorizontal,
-    Eye,
-    Edit2,
-    Trash2,
-    RotateCcw,
-    AlertTriangle,
-} from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MoreHorizontal, Eye, Edit2, Trash2, AlertTriangle, RotateCcw, LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '../../components/DataTable';
-import {
-    loadTickets,
-    saveCustomTicket,
-    updateTicket,
-    deleteTicket,
-    prependTicketAuditLog,
-    getActiveTicketTypeOptions,
-    normalizeTicketStatus,
-    TICKET_CUSTOMER_OPTIONS,
-    TICKET_COMPANY_OPTIONS,
-    TICKET_STATUS_OPTIONS,
-    type TableTicket,
-    type TicketLifecycleStatus,
-} from './ticketingMockData';
-import {
-    TicketDrawer,
-    type TicketDrawerMode,
-    type TicketFormSubmitData,
-} from './TicketDrawer';
+import { TicketDrawer, type TicketDrawerMode } from './TicketDrawer';
+import { TaskPriority, TaskComeFrom, type CreateTaskDto } from '../../schemas/ticketSchema';
+import { ticketApi } from '../../api/api';
+import { axiosClient } from '../../api/axiosClient';
+import { translateError } from '../../i18n';
 
-function escapeCsvCell(value: string): string {
-    const safe = (value ?? '').replace(/"/g, '""');
-    return `"${safe}"`;
+interface UserAttach {
+    first_name_En?: string | null;
+    secend_name_En?: string | null;
+    third_name_En?: string | null;
+    last_name_En?: string | null;
 }
 
-// --- Actions Dropdown Component (View, Edit, Delete) ---
-interface TicketActionsMenuProps {
-    ticket: TableTicket;
-    onView: (ticket: TableTicket) => void;
-    onEdit: (ticket: TableTicket) => void;
-    onDelete: (ticket: TableTicket) => void;
+interface TaskRelation {
+    id?: string;
+    name?: string;
+    fullName?: string;
+    service_title?: string;
+    userAttach?: UserAttach | null;
+    [key: string]: unknown;
 }
 
-const TicketActionsMenu: React.FC<TicketActionsMenuProps> = ({
-    ticket,
+interface TaskRecord {
+    id: string;
+    subject: string;
+    start_date?: string | Date;
+    end_date?: string | Date;
+    priority: TaskPriority | string;
+    come_from: TaskComeFrom | string;
+    assignTo_id?: string;
+    customer_id?: string;
+    companyBranch_id?: string;
+    service_id?: string;
+    taskType_id?: string;
+    assignTo?: TaskRelation | null;
+    customer?: TaskRelation | null;
+    companyBranch?: TaskRelation | null;
+    service?: TaskRelation | null;
+    taskType?: TaskRelation | null;
+    [key: string]: unknown;
+}
+
+interface TasksResponse {
+    items: TaskRecord[];
+    total: number;
+}
+
+function extractTasks(response: any): TasksResponse {
+    // ticketApi.getTickets returns response.data directly,
+    // so the actual API body can be { statusCode, status, count, data }.
+    const body =
+        response?.statusCode !== undefined || response?.status !== undefined
+            ? response
+            : response?.data ?? response;
+
+    let items: TaskRecord[] = [];
+
+    if (Array.isArray(body)) {
+        items = body;
+    } else if (Array.isArray(body?.data)) {
+        items = body.data;
+    } else if (Array.isArray(body?.items)) {
+        items = body.items;
+    } else if (Array.isArray(body?.data?.data)) {
+        items = body.data.data;
+    } else if (Array.isArray(body?.data?.items)) {
+        items = body.data.items;
+    }
+
+    const total = Number(
+        body?.count ??
+        body?.total ??
+        body?.totalItems ??
+        body?.meta?.totalItems ??
+        body?.meta?.total ??
+        body?.data?.count ??
+        body?.data?.total ??
+        items.length
+    );
+
+    return {
+        items,
+        total: Number.isFinite(total) ? total : items.length,
+    };
+}
+
+// function getRelationName(value?: TaskRelation | string | null): string {
+//     if (!value) return '—';
+
+//     if (typeof value === 'string') return value;
+
+//     return value.fullName || value.name || value.service_title || '—';
+// }
+function getRelationName(value?: TaskRelation | string | null): string {
+    if (!value) return '—';
+
+    if (typeof value === 'string') return value;
+
+    if (value.userAttach) {
+        const user = value.userAttach;
+
+        const englishName = [
+            user.first_name_En,
+            user.secend_name_En,
+            user.third_name_En,
+            user.last_name_En,
+        ]
+            .filter((name): name is string => Boolean(name?.trim()))
+            .join(' ');
+
+        if (englishName) return englishName;
+    }
+
+    return value.fullName || value.name || value.service_title || '—';
+}
+
+function getPriorityLabel(priority: string, isAr: boolean): string {
+    switch (priority.toLowerCase()) {
+        case 'high':
+            return isAr ? 'عالية' : 'High';
+        case 'low':
+            return isAr ? 'منخفضة' : 'Low';
+        default:
+            return isAr ? 'متوسطة' : 'Medium';
+    }
+}
+
+function getSourceLabel(source: string, isAr: boolean): string {
+    switch (source.toLowerCase()) {
+        case 'request':
+            return isAr ? 'طلب' : 'Request';
+        case 'client_request':
+            return isAr ? 'طلب عميل' : 'Client Request';
+        default:
+            return isAr ? 'مهمة' : 'Task';
+    }
+}
+
+function formatDate(value: string | Date | undefined, isAr: boolean): string {
+    if (!value) return '—';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '—';
+
+    return new Intl.DateTimeFormat(isAr ? 'ar-EG' : 'en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+}
+
+function escapeCsvCell(value: unknown): string {
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+interface TaskActionsMenuProps {
+    task: TaskRecord;
+    onView: (task: TaskRecord) => void;
+    onEdit: (task: TaskRecord) => void;
+    onDelete: (task: TaskRecord) => void;
+}
+
+const TaskActionsMenu: React.FC<TaskActionsMenuProps> = ({
+    task,
     onView,
     onEdit,
     onDelete,
@@ -55,91 +181,83 @@ const TicketActionsMenu: React.FC<TicketActionsMenuProps> = ({
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        if (!isOpen) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         };
 
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsOpen(false);
-            }
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setIsOpen(false);
         };
 
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('keydown', handleKeyDown);
-        }
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleKeyDown);
+
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [isOpen]);
 
-    const handleAction = (actionName: 'view' | 'edit' | 'delete') => {
+    const handleAction = (action: 'view' | 'edit' | 'delete') => {
         setIsOpen(false);
-        if (actionName === 'view') {
-            onView(ticket);
-        } else if (actionName === 'edit') {
-            onEdit(ticket);
-        } else if (actionName === 'delete') {
-            onDelete(ticket);
-        }
+
+        if (action === 'view') onView(task);
+        if (action === 'edit') onEdit(task);
+        if (action === 'delete') onDelete(task);
     };
 
     return (
         <div className="relative inline-block text-start" ref={menuRef}>
             <button
                 type="button"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setIsOpen((prev) => !prev);
+                onClick={(event) => {
+                    event.stopPropagation();
+                    setIsOpen((previous) => !previous);
                 }}
-                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                    isOpen
-                        ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
-                        : 'border-transparent text-[#857E74] hover:bg-[#F8F6F2] hover:text-[#0D0D0D]'
-                }`}
-                title={t('ticketing.columns.actions')}
-                aria-label={t('ticketing.columns.actions')}
+                className={`cursor-pointer rounded-lg border p-1.5 transition-colors ${isOpen
+                    ? 'border-[#2D3F2C] bg-[#2D3F2C] text-white'
+                    : 'border-transparent text-[#857E74] hover:bg-[#F8F6F2] hover:text-[#0D0D0D]'
+                    }`}
+                title={t('ticketing.columns.actions', { defaultValue: 'Actions' })}
+                aria-label={t('ticketing.columns.actions', { defaultValue: 'Actions' })}
                 aria-expanded={isOpen}
             >
                 <MoreHorizontal size={16} />
             </button>
 
             {isOpen && (
-                <div className="absolute end-0 mt-1 w-36 bg-white border border-[#E5E0D8] rounded-xl shadow-lg py-1 z-40 text-xs animate-in fade-in zoom-in-95 duration-100 font-sans">
-                    {/* 1. View */}
+                <div className="absolute end-0 z-40 mt-1 w-36 rounded-xl border border-[#E5E0D8] bg-white py-1 text-xs shadow-lg animate-in fade-in zoom-in-95 duration-100">
                     <button
                         type="button"
                         onClick={() => handleAction('view')}
-                        className="w-full text-start px-3.5 py-2 text-[#0D0D0D] hover:bg-[#FAF8F5] flex items-center gap-2 cursor-pointer transition-colors"
+                        className="flex w-full cursor-pointer items-center gap-2 px-3.5 py-2 text-start text-[#0D0D0D] transition-colors hover:bg-[#FAF8F5]"
                     >
-                        <Eye size={14} className="text-[#6E6862] shrink-0" />
-                        <span>{t('ticketing.actions.view')}</span>
+                        <Eye size={14} className="shrink-0 text-[#6E6862]" />
+                        <span>{t('ticketing.actions.view', { defaultValue: 'View' })}</span>
                     </button>
 
-                    {/* 2. Edit */}
                     <button
                         type="button"
                         onClick={() => handleAction('edit')}
-                        className="w-full text-start px-3.5 py-2 text-[#0D0D0D] hover:bg-[#FAF8F5] flex items-center gap-2 cursor-pointer transition-colors"
+                        className="flex w-full cursor-pointer items-center gap-2 px-3.5 py-2 text-start text-[#0D0D0D] transition-colors hover:bg-[#FAF8F5]"
                     >
-                        <Edit2 size={14} className="text-[#6E6862] shrink-0" />
-                        <span>{t('ticketing.actions.edit')}</span>
+                        <Edit2 size={14} className="shrink-0 text-[#6E6862]" />
+                        <span>{t('ticketing.actions.edit', { defaultValue: 'Edit' })}</span>
                     </button>
 
                     <div className="my-1 border-t border-[#F0ECE4]" />
 
-                    {/* 3. Delete */}
                     <button
                         type="button"
                         onClick={() => handleAction('delete')}
-                        className="w-full text-start px-3.5 py-2 text-[#A23B2A] hover:bg-[#A23B2A]/10 flex items-center gap-2 font-medium cursor-pointer transition-colors"
+                        className="flex w-full cursor-pointer items-center gap-2 px-3.5 py-2 text-start font-medium text-[#A23B2A] transition-colors hover:bg-[#A23B2A]/10"
                     >
                         <Trash2 size={14} className="shrink-0" />
-                        <span>{t('ticketing.actions.delete')}</span>
+                        <span>{t('ticketing.actions.delete', { defaultValue: 'Delete' })}</span>
                     </button>
                 </div>
             )}
@@ -147,654 +265,340 @@ const TicketActionsMenu: React.FC<TicketActionsMenuProps> = ({
     );
 };
 
-// --- Main Tickets Page Component ---
-export const TicketsPage = () => {
+export const TicketsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const isAr = i18n.language?.startsWith('ar');
+    const queryClient = useQueryClient();
+    const isAr = i18n.language?.startsWith('ar') ?? false;
 
-    // Persisted Tickets State
-    const [tickets, setTickets] = useState<TableTicket[]>(() => loadTickets());
-
-    // Table Controls State
     const [searchValue, setSearchValue] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+    const [selectedPriority, setSelectedPriority] = useState('all');
+    const [selectedSource, setSelectedSource] = useState('all');
 
-    // Drawer & Delete Modal State
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [drawerMode, setDrawerMode] = useState<TicketDrawerMode>('create');
-    const [activeTicket, setActiveTicket] = useState<TableTicket | null>(null);
-    const [ticketToDelete, setTicketToDelete] = useState<TableTicket | null>(null);
+    const [activeTask, setActiveTask] = useState<TaskRecord | null>(null);
+    const [taskToDelete, setTaskToDelete] = useState<TaskRecord | null>(null);
 
-    // Filter states
-    const [selectedStatus, setSelectedStatus] = useState<string>('all');
-    const [selectedPriority, setSelectedPriority] = useState<string>('all');
-    const [selectedType, setSelectedType] = useState<string>('all');
-    const [selectedCompany, setSelectedCompany] = useState<string>('all');
-    const [selectedResource, setSelectedResource] = useState<string>('all');
+    const tasksQuery = useQuery({
+        queryKey: ['tasks', pageIndex, pageSize, searchValue.trim()],
+        queryFn: async (): Promise<TasksResponse> => {
+            const response = await ticketApi.getTickets({
+                page: pageIndex + 1,
+                limit: pageSize,
+                ...(searchValue.trim() ? { search: searchValue.trim() } : {}),
+            });
 
-    // Sync tickets across tabs
-    useEffect(() => {
-        const handleStorage = () => {
-            setTickets(loadTickets());
-        };
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
+            return extractTasks(response);
+        },
+        staleTime: 30_000,
+        placeholderData: (previousData) => previousData,
+    });
+
+    const allTasks = tasksQuery.data?.items ?? [];
+    const totalCount = tasksQuery.data?.total ?? 0;
+    console.log(allTasks, totalCount);
+
+    // The supplied getTickets API currently accepts only page, limit and search.
+    // These two filters are therefore applied to the rows returned for the current page.
+    const tasks = useMemo(() => {
+        return allTasks.filter((task) => {
+            const matchesPriority =
+                selectedPriority === 'all' ||
+                String(task.priority).toLowerCase() === selectedPriority;
+
+            const matchesSource =
+                selectedSource === 'all' ||
+                String(task.come_from).toLowerCase() === selectedSource;
+
+            return matchesPriority && matchesSource;
+        });
+    }, [allTasks, selectedPriority, selectedSource]);
+
+    const createTaskMutation = useMutation({
+        mutationFn: async (data: CreateTaskDto) => {
+            const response = await axiosClient.post('/task', data);
+            return response.data;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            toast.success(isAr ? 'تم إنشاء المهمة بنجاح' : 'Task created successfully');
+            setDrawerOpen(false);
+            setActiveTask(null);
+        },
+        onError: (error: any) => {
+            toast.error(
+                translateError(
+                    t,
+                    error?.response?.data?.message || error?.message || 'Failed to create task'
+                )
+            );
+        },
+    });
+
+    const updateTaskMutation = useMutation({
+        mutationFn: async ({ id, data }: { id: string; data: CreateTaskDto }) => {
+            const response = await axiosClient.patch(`/task/${id}`, data);
+            return response.data;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            toast.success(isAr ? 'تم تعديل المهمة بنجاح' : 'Task updated successfully');
+            setDrawerOpen(false);
+            setActiveTask(null);
+        },
+        onError: (error: any) => {
+            toast.error(
+                translateError(
+                    t,
+                    error?.response?.data?.message || error?.message || 'Failed to update task'
+                )
+            );
+        },
+    });
+
+    const deleteTaskMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const response = await axiosClient.delete(`/task/${id}`);
+            return response.data;
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            toast.success(isAr ? 'تم حذف المهمة بنجاح' : 'Task deleted successfully');
+            setTaskToDelete(null);
+        },
+        onError: (error: any) => {
+            toast.error(
+                translateError(
+                    t,
+                    error?.response?.data?.message || error?.message || 'Failed to delete task'
+                )
+            );
+        },
+    });
+
+    const isSaving = createTaskMutation.isPending || updateTaskMutation.isPending;
+
+    const hasActiveFilters = selectedPriority !== 'all' || selectedSource !== 'all';
+
+    const handleResetFilters = useCallback(() => {
+        setSelectedPriority('all');
+        setSelectedSource('all');
+        setPageIndex(0);
     }, []);
 
-    const ticketTypeOptions = getActiveTicketTypeOptions();
-
-    const hasActiveFilters =
-        selectedStatus !== 'all' ||
-        selectedPriority !== 'all' ||
-        selectedType !== 'all' ||
-        selectedCompany !== 'all' ||
-        selectedResource !== 'all';
-
-    const handleResetFilters = () => {
-        setSelectedStatus('all');
-        setSelectedPriority('all');
-        setSelectedType('all');
-        setSelectedCompany('all');
-        setSelectedResource('all');
-        setPageIndex(0);
-    };
-
-    const getStatusLabel = useCallback(
-        (statusVal: string) => {
-            const normalized = normalizeTicketStatus(statusVal);
-            switch (normalized) {
-                case 'NEW':
-                    return t('ticketing.statuses.new');
-                case 'OPEN':
-                    return t('ticketing.statuses.open');
-                case 'IN PROGRESS':
-                    return t('ticketing.statuses.inProgress');
-                case 'SOLVED':
-                    return t('ticketing.statuses.solved');
-                case 'CLOSED':
-                    return t('ticketing.statuses.closed');
-                default:
-                    return statusVal;
-            }
-        },
-        [t]
-    );
-
-    // Filter and search computation
-    const filteredTickets = useMemo(() => {
-        return tickets.filter((ticket) => {
-            const normalizedStatus = normalizeTicketStatus(ticket);
-
-            // Search filter
-            if (searchValue.trim()) {
-                const q = searchValue.toLowerCase();
-                const matchId = ticket.ticketId.toLowerCase().includes(q);
-                const matchSubject =
-                    ticket.subject.toLowerCase().includes(q) ||
-                    ticket.subjectEn.toLowerCase().includes(q);
-                const matchCustomer =
-                    ticket.customer.toLowerCase().includes(q) ||
-                    ticket.customerEn.toLowerCase().includes(q);
-                const matchCompany =
-                    ticket.company.toLowerCase().includes(q) ||
-                    ticket.companyEn.toLowerCase().includes(q);
-                const matchType =
-                    ticket.ticketType.toLowerCase().includes(q) ||
-                    ticket.ticketTypeEn.toLowerCase().includes(q);
-
-                if (
-                    !matchId &&
-                    !matchSubject &&
-                    !matchCustomer &&
-                    !matchCompany &&
-                    !matchType
-                ) {
-                    return false;
-                }
-            }
-
-            // Status filter
-            if (selectedStatus !== 'all' && normalizedStatus !== selectedStatus) {
-                return false;
-            }
-
-            // Priority filter (must strictly match High, Medium, Low)
-            if (selectedPriority !== 'all' && ticket.priority !== selectedPriority) {
-                return false;
-            }
-
-            // Type filter
-            if (selectedType !== 'all') {
-                if (
-                    ticket.ticketType !== selectedType &&
-                    ticket.ticketTypeEn !== selectedType
-                ) {
-                    return false;
-                }
-            }
-
-            // Company filter
-            if (selectedCompany !== 'all') {
-                if (
-                    ticket.company !== selectedCompany &&
-                    ticket.companyEn !== selectedCompany
-                ) {
-                    return false;
-                }
-            }
-
-            // Resource filter
-            if (selectedResource !== 'all') {
-                if (selectedResource === 'unassigned') {
-                    if (ticket.assignedTo !== null) return false;
-                } else if (
-                    ticket.assignedTo !== selectedResource &&
-                    ticket.assignedToEn !== selectedResource
-                ) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-    }, [
-        tickets,
-        searchValue,
-        selectedStatus,
-        selectedPriority,
-        selectedType,
-        selectedCompany,
-        selectedResource,
-    ]);
-
-    // Paginated slice
-    const paginatedTickets = useMemo(() => {
-        const start = pageIndex * pageSize;
-        return filteredTickets.slice(start, start + pageSize);
-    }, [filteredTickets, pageIndex, pageSize]);
-
-    // Handlers for Create / View / Edit / Delete
     const handleOpenCreate = useCallback(() => {
-        setActiveTicket(null);
+        setActiveTask(null);
         setDrawerMode('create');
         setDrawerOpen(true);
     }, []);
 
-    const handleOpenView = useCallback((ticket: TableTicket) => {
-        setActiveTicket(ticket);
+    const handleOpenView = useCallback((task: TaskRecord) => {
+        setActiveTask(task);
         setDrawerMode('view');
         setDrawerOpen(true);
     }, []);
 
-    const handleOpenEdit = useCallback((ticket: TableTicket) => {
-        setActiveTicket(ticket);
+    const handleOpenEdit = useCallback((task: TaskRecord) => {
+        setActiveTask(task);
         setDrawerMode('edit');
         setDrawerOpen(true);
     }, []);
 
-    const handleOpenDelete = useCallback((ticket: TableTicket) => {
-        setTicketToDelete(ticket);
+    const handleOpenDelete = useCallback((task: TaskRecord) => {
+        setTaskToDelete(task);
     }, []);
 
     const handleDrawerSubmit = useCallback(
-        (data: TicketFormSubmitData, existingTicket?: TableTicket | null) => {
-            const customerOpt = TICKET_CUSTOMER_OPTIONS.find(
-                (o) => o.value === data.customerValue
-            );
-            const companyOpt = TICKET_COMPANY_OPTIONS.find(
-                (o) => o.value === data.companyValue
-            );
-            const allTypeOpts = getActiveTicketTypeOptions();
-            const typeOpt = allTypeOpts.find((o) => o.value === data.ticketTypeValue);
+        async (data: CreateTaskDto, existingTask?: TaskRecord | null) => {
+            if (drawerMode === 'edit') {
+                const taskId = existingTask?.id ?? activeTask?.id;
 
-            const customerEn = customerOpt?.en || data.customerValue;
-            const customerAr = customerOpt?.ar || data.customerValue;
-            const companyEn = companyOpt?.en || data.companyValue;
-            const companyAr = companyOpt?.ar || data.companyValue;
-            const ticketTypeEn =
-                typeOpt?.en || data.ticketTypeValue || 'General Inquiry';
-            const ticketTypeAr =
-                typeOpt?.ar || data.ticketTypeValue || 'استفسار عام';
+                if (!taskId) {
+                    toast.error(isAr ? 'معرّف المهمة غير موجود' : 'Task ID is missing');
+                    return;
+                }
 
-            const todayStr = new Date().toISOString().slice(0, 10);
-
-            if (drawerMode === 'edit' && existingTicket) {
-                const prevStatus = normalizeTicketStatus(existingTicket);
-                const nextStatus: TicketLifecycleStatus =
-                    data.status || prevStatus;
-
-                const isNowClosedOrSolved =
-                    nextStatus === 'CLOSED' || nextStatus === 'SOLVED';
-
-                const updatedRecord: TableTicket = {
-                    ...existingTicket,
-                    customer: customerAr,
-                    customerEn,
-                    company: companyAr,
-                    companyEn,
-                    ticketType: ticketTypeAr,
-                    ticketTypeEn,
-                    priority: data.priority,
-                    status: nextStatus,
-                    closedDate: isNowClosedOrSolved
-                        ? existingTicket.closedDate || todayStr
-                        : null,
-                    subject: isAr ? data.subject : existingTicket.subject || data.subject,
-                    subjectEn: !isAr
-                        ? data.subject
-                        : existingTicket.subjectEn || data.subject,
-                    message: isAr ? data.message : existingTicket.message || data.message,
-                    messageEn: !isAr
-                        ? data.message
-                        : existingTicket.messageEn || data.message,
-                    attachment: data.attachment,
-                };
-
-                const nextTickets = updateTicket(updatedRecord);
-                setTickets(nextTickets);
-
-                const statusNoteEn =
-                    prevStatus !== nextStatus
-                        ? `Status updated from ${prevStatus} to ${nextStatus}.`
-                        : 'Ticket details updated.';
-                const statusNoteAr =
-                    prevStatus !== nextStatus
-                        ? `تم تحديث حالة التذكرة من ${prevStatus} إلى ${nextStatus}.`
-                        : 'تم تحديث بيانات التذكرة.';
-
-                prependTicketAuditLog({
-                    action: 'UPDATED',
-                    resource: 'Ticket',
-                    resourceAr: 'تذكرة',
-                    resourceData: `${updatedRecord.ticketId} — ${updatedRecord.subjectEn}`,
-                    resourceDataAr: `${updatedRecord.ticketId} — ${updatedRecord.subject}`,
-                    details: statusNoteEn,
-                    detailsAr: statusNoteAr,
-                });
-
-                toast.success(
-                    t('ticketing.tickets.updateSuccess', {
-                        id: updatedRecord.ticketId,
-                    })
-                );
-            } else {
-                // Create new ticket
-                const maxNum = tickets.reduce((acc, item) => {
-                    const match = item.ticketId.match(/(\d+)$/);
-                    const num = match ? parseInt(match[1], 10) : 0;
-                    return num > acc ? num : acc;
-                }, 25);
-                const nextNum = maxNum + 1;
-                const nextTicketId = `TCK-2026-${String(nextNum).padStart(3, '0')}`;
-
-                const newRecord: TableTicket = {
-                    id: `tb-${Date.now()}`,
-                    ticketId: nextTicketId,
-                    subject: data.subject,
-                    subjectEn: data.subject,
-                    ticketType: ticketTypeAr,
-                    ticketTypeEn,
-                    customer: customerAr,
-                    customerEn,
-                    company: companyAr,
-                    companyEn,
-                    assignedTo: null,
-                    assignedToEn: null,
-                    assignedBy: 'مدير النظام',
-                    assignedByEn: 'System Admin',
-                    replyStatus: 'pending_agent',
-                    status: 'NEW',
-                    closedDate: null,
-                    priority: data.priority,
-                    createdDate: todayStr,
-                    message: data.message,
-                    messageEn: data.message,
-                    attachment: data.attachment,
-                };
-
-                const nextTickets = saveCustomTicket(newRecord);
-                setTickets(nextTickets);
-                setPageIndex(0);
-
-                prependTicketAuditLog({
-                    action: 'CREATED',
-                    resource: 'Ticket',
-                    resourceAr: 'تذكرة',
-                    resourceData: `${newRecord.ticketId} — ${newRecord.subjectEn}`,
-                    resourceDataAr: `${newRecord.ticketId} — ${newRecord.subject}`,
-                    details: `Created ticket for ${companyEn} (${data.priority} Priority).`,
-                    detailsAr: `تم إنشاء تذكرة لصالح ${companyAr} (أولوية ${data.priority}).`,
-                });
-
-                toast.success(
-                    t('ticketing.tickets.createSuccess', {
-                        id: newRecord.ticketId,
-                    })
-                );
+                await updateTaskMutation.mutateAsync({ id: taskId, data });
+                return;
             }
 
-            setDrawerOpen(false);
-            setActiveTicket(null);
+            await createTaskMutation.mutateAsync(data);
         },
-        [drawerMode, isAr, t, tickets]
+        [drawerMode, activeTask, isAr, createTaskMutation, updateTaskMutation]
     );
 
-    const handleConfirmDelete = useCallback(() => {
-        if (!ticketToDelete) return;
-        const deleted = ticketToDelete;
-        const nextTickets = deleteTicket(deleted.id);
-        setTickets(nextTickets);
+    const handleConfirmDelete = useCallback(async () => {
+        if (!taskToDelete?.id || deleteTaskMutation.isPending) return;
 
-        const newTotalCount = Math.max(0, filteredTickets.length - 1);
-        const maxPageIndex = Math.max(0, Math.ceil(newTotalCount / pageSize) - 1);
-        if (pageIndex > maxPageIndex) {
-            setPageIndex(maxPageIndex);
-        }
-
-        prependTicketAuditLog({
-            action: 'DELETED',
-            resource: 'Ticket',
-            resourceAr: 'تذكرة',
-            resourceData: `${deleted.ticketId} — ${deleted.subjectEn || deleted.subject}`,
-            resourceDataAr: `${deleted.ticketId} — ${deleted.subject || deleted.subjectEn}`,
-            details: `Deleted ticket ${deleted.ticketId}.`,
-            detailsAr: `تم حذف التذكرة ${deleted.ticketId}.`,
-        });
-
-        toast.success(
-            t('ticketing.tickets.deleteSuccess', {
-                id: deleted.ticketId,
-            })
-        );
-        setTicketToDelete(null);
-    }, [filteredTickets.length, pageIndex, pageSize, t, ticketToDelete]);
+        await deleteTaskMutation.mutateAsync(taskToDelete.id);
+    }, [taskToDelete, deleteTaskMutation]);
 
     const handleExportCsv = useCallback(() => {
         const headers = [
-            t('ticketing.columns.ticketId'),
-            t('ticketing.columns.subject'),
-            t('ticketing.columns.customer'),
-            t('ticketing.columns.company'),
-            t('ticketing.columns.ticketType'),
-            t('ticketing.columns.priority'),
-            t('ticketing.columns.status'),
-            t('ticketing.columns.createdDate'),
-            t('ticketing.columns.assignedBy'),
+            isAr ? 'موضوع المهمة' : 'Subject',
+            isAr ? 'تاريخ البداية' : 'Start Date',
+            isAr ? 'تاريخ النهاية' : 'End Date',
+            isAr ? 'الأولوية' : 'Priority',
+            isAr ? 'مصدر المهمة' : 'Task Source',
+            isAr ? 'المستخدم المسؤول' : 'Assigned User',
+            isAr ? 'العميل' : 'Customer',
+            isAr ? 'فرع الشركة' : 'Company Branch',
+            isAr ? 'الخدمة' : 'Service',
+            isAr ? 'نوع المهمة' : 'Task Type',
         ];
 
-        const rows = filteredTickets.map((ticket) => {
-            const subjectText = isAr ? ticket.subject : ticket.subjectEn;
-            const customerText = isAr ? ticket.customer : ticket.customerEn;
-            const companyText = isAr ? ticket.company : ticket.companyEn;
-            const typeText = isAr ? ticket.ticketType : ticket.ticketTypeEn;
-            const priorityText =
-                ticket.priority === 'High'
-                    ? t('ticketing.priorities.high')
-                    : ticket.priority === 'Medium'
-                      ? t('ticketing.priorities.medium')
-                      : t('ticketing.priorities.low');
-            const statusText = getStatusLabel(ticket.status);
-            const createdByText = isAr ? ticket.assignedBy : ticket.assignedByEn;
-
-            return [
-                escapeCsvCell(ticket.ticketId),
-                escapeCsvCell(subjectText),
-                escapeCsvCell(customerText),
-                escapeCsvCell(companyText),
-                escapeCsvCell(typeText),
-                escapeCsvCell(priorityText),
-                escapeCsvCell(statusText),
-                escapeCsvCell(ticket.createdDate),
-                escapeCsvCell(createdByText),
-            ].join(',');
-        });
+        const rows = tasks.map((task) =>
+            [
+                escapeCsvCell(task.subject),
+                escapeCsvCell(formatDate(task.start_date, isAr)),
+                escapeCsvCell(formatDate(task.end_date, isAr)),
+                escapeCsvCell(getPriorityLabel(String(task.priority), isAr)),
+                escapeCsvCell(getSourceLabel(String(task.come_from), isAr)),
+                escapeCsvCell(getRelationName(task.assignTo)),
+                escapeCsvCell(getRelationName(task.customer)),
+                escapeCsvCell(getRelationName(task.companyBranch)),
+                escapeCsvCell(getRelationName(task.service)),
+                escapeCsvCell(getRelationName(task.taskType)),
+            ].join(',')
+        );
 
         const csvContent = '\uFEFF' + [headers.map(escapeCsvCell).join(','), ...rows].join('\r\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
+
         link.href = url;
-        link.setAttribute(
-            'download',
-            `awn-tickets-${new Date().toISOString().slice(0, 10)}.csv`
-        );
+        link.download = `tasks-${new Date().toISOString().slice(0, 10)}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        toast.success(
-            t('ticketing.tickets.exportSuccess', {
-                count: filteredTickets.length,
-            })
-        );
-    }, [filteredTickets, getStatusLabel, isAr, t]);
+        toast.success(isAr ? 'تم تصدير المهام الحالية' : 'Current tasks exported');
+    }, [tasks, isAr]);
 
-    // --- Columns in Exact Required Order ---
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
-            // 1. Ticket ID
             {
-                accessorKey: 'ticketId',
-                header: t('ticketing.columns.ticketId'),
-                cell: ({ row }: any) => (
+                accessorKey: 'subject',
+                header: isAr ? 'موضوع المهمة' : 'Subject',
+                cell: ({ row }) => (
                     <button
                         type="button"
                         onClick={() => handleOpenView(row.original)}
-                        className="font-semibold font-mono text-xs text-[#2D3F2C] hover:underline cursor-pointer"
-                        dir="ltr"
+                        title={row.original.subject}
+                        className="block max-w-[260px] cursor-pointer truncate text-start font-medium text-[#0D0D0D] transition-colors hover:text-[#2D3F2C]"
                     >
-                        {row.original.ticketId}
+                        {row.original.subject || '—'}
                     </button>
                 ),
             },
-            // 2. Subject
             {
-                accessorKey: 'subject',
-                header: t('ticketing.columns.subject'),
-                cell: ({ row }: any) => {
-                    const text = isAr ? row.original.subject : row.original.subjectEn;
-                    return (
-                        <button
-                            type="button"
-                            onClick={() => handleOpenView(row.original)}
-                            className="font-medium text-[#0D0D0D] hover:text-[#2D3F2C] block max-w-[260px] truncate text-start cursor-pointer transition-colors"
-                            title={text}
-                        >
-                            {text}
-                        </button>
-                    );
-                },
-            },
-            // 3. Ticket Type
-            {
-                accessorKey: 'ticketType',
-                header: t('ticketing.columns.ticketType'),
-                cell: ({ row }: any) => {
-                    const text = isAr ? row.original.ticketType : row.original.ticketTypeEn;
-                    return (
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#FAF8F5] border border-[#E5E0D8] text-[#595550]">
-                            {text}
-                        </span>
-                    );
-                },
-            },
-            // 4. Customer
-            {
-                accessorKey: 'customer',
-                header: t('ticketing.columns.customer'),
-                cell: ({ row }: any) => {
-                    const name = isAr ? row.original.customer : row.original.customerEn;
-                    return <span className="text-[#0D0D0D] font-medium">{name}</span>;
-                },
-            },
-            // 5. Company
-            {
-                accessorKey: 'company',
-                header: t('ticketing.columns.company'),
-                cell: ({ row }: any) => {
-                    const companyName = isAr ? row.original.company : row.original.companyEn;
-                    return <span className="text-[#595550]">{companyName}</span>;
-                },
-            },
-            // 6. Assigned To
-            {
-                accessorKey: 'assignedTo',
-                header: t('ticketing.columns.assignedTo'),
-                cell: ({ row }: any) => {
-                    const val = isAr ? row.original.assignedTo : row.original.assignedToEn;
-                    if (!val) {
-                        return (
-                            <span className="text-[#857E74] italic text-[11px]">
-                                {t('ticketing.labels.unassigned')}
-                            </span>
-                        );
-                    }
-                    return (
-                        <span className="inline-flex items-center gap-1.5 text-xs text-[#0D0D0D] font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
-                            <span>{val}</span>
-                        </span>
-                    );
-                },
-            },
-            // 7. Assigned By
-            {
-                accessorKey: 'assignedBy',
-                header: t('ticketing.columns.assignedBy'),
-                cell: ({ row }: any) => {
-                    const by = isAr ? row.original.assignedBy : row.original.assignedByEn;
-                    return <span className="text-[#6E6862] text-xs">{by}</span>;
-                },
-            },
-            // 8. Reply Status
-            {
-                accessorKey: 'replyStatus',
-                header: t('ticketing.columns.replyStatus'),
-                cell: ({ getValue }: any) => {
-                    const replyStatus = getValue();
-                    if (replyStatus === 'replied') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
-                                {t('ticketing.replyStatuses.replied')}
-                            </span>
-                        );
-                    }
-                    if (replyStatus === 'waiting_customer') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#BFAB93]/20 text-[#6A5A43] border border-[#BFAB93]/40">
-                                {t('ticketing.replyStatuses.waitingCustomer')}
-                            </span>
-                        );
-                    }
-                    return (
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#8C6046]/10 text-[#8C6046] border border-[#8C6046]/20">
-                            {t('ticketing.replyStatuses.pendingAgent')}
-                        </span>
-                    );
-                },
-            },
-            // 9. Status
-            {
-                accessorKey: 'status',
-                header: t('ticketing.columns.status'),
-                cell: ({ row }: any) => {
-                    const normalized = normalizeTicketStatus(row.original);
-                    if (normalized === 'NEW') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
-                                {t('ticketing.statuses.new')}
-                            </span>
-                        );
-                    }
-                    if (normalized === 'OPEN') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#265938]/10 text-[#265938] border border-[#265938]/20">
-                                {t('ticketing.statuses.open')}
-                            </span>
-                        );
-                    }
-                    if (normalized === 'IN PROGRESS') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#8C6046]/10 text-[#8C6046] border border-[#8C6046]/20">
-                                {t('ticketing.statuses.inProgress')}
-                            </span>
-                        );
-                    }
-                    if (normalized === 'SOLVED') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#6A7358]/15 text-[#4E563F] border border-[#6A7358]/30">
-                                {t('ticketing.statuses.solved')}
-                            </span>
-                        );
-                    }
-                    return (
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#6E6862] border border-[#E5E0D8]">
-                            {t('ticketing.statuses.closed')}
-                        </span>
-                    );
-                },
-            },
-            // 10. Closed Date
-            {
-                accessorKey: 'closedDate',
-                header: t('ticketing.columns.closedDate'),
-                cell: ({ getValue }: any) => {
-                    const val = getValue();
-                    if (!val) return <span className="text-[#857E74]">—</span>;
-                    return (
-                        <span className="font-mono text-xs text-[#6E6862]" dir="ltr">
-                            {val}
-                        </span>
-                    );
-                },
-            },
-            // 11. Priority (High, Medium, Low only)
-            {
-                accessorKey: 'priority',
-                header: t('ticketing.columns.priority'),
-                cell: ({ getValue }: any) => {
-                    const priority = getValue();
-                    if (priority === 'High') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#8C6046]/10 text-[#8C6046] border border-[#8C6046]/20">
-                                {t('ticketing.priorities.high')}
-                            </span>
-                        );
-                    }
-                    if (priority === 'Medium') {
-                        return (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
-                                {t('ticketing.priorities.medium')}
-                            </span>
-                        );
-                    }
-                    return (
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#6E6862] border border-[#E5E0D8]">
-                            {t('ticketing.priorities.low')}
-                        </span>
-                    );
-                },
-            },
-            // 12. Created Date
-            {
-                accessorKey: 'createdDate',
-                header: t('ticketing.columns.createdDate'),
-                cell: ({ getValue }: any) => (
-                    <span className="font-mono text-xs text-[#6E6862]" dir="ltr">
-                        {getValue()}
+                accessorKey: 'start_date',
+                header: isAr ? 'تاريخ البداية' : 'Start Date',
+                cell: ({ row }) => (
+                    <span className="whitespace-nowrap font-mono text-xs text-[#6E6862]" dir="ltr">
+                        {formatDate(row.original.start_date, isAr)}
                     </span>
                 ),
             },
-            // 13. Actions
+            {
+                accessorKey: 'end_date',
+                header: isAr ? 'تاريخ النهاية' : 'End Date',
+                cell: ({ row }) => (
+                    <span className="whitespace-nowrap font-mono text-xs text-[#6E6862]" dir="ltr">
+                        {formatDate(row.original.end_date, isAr)}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'priority',
+                header: isAr ? 'الأولوية' : 'Priority',
+                cell: ({ row }) => {
+                    const priority = String(row.original.priority).toLowerCase();
+
+                    const className =
+                        priority === 'high'
+                            ? 'bg-[#8C6046]/10 text-[#8C6046] border-[#8C6046]/20'
+                            : priority === 'low'
+                                ? 'bg-[#FAF8F5] text-[#6E6862] border-[#E5E0D8]'
+                                : 'bg-[#2D3F2C]/10 text-[#2D3F2C] border-[#2D3F2C]/20';
+
+                    return (
+                        <span className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold ${className}`}>
+                            {getPriorityLabel(priority, isAr)}
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'come_from',
+                header: isAr ? 'مصدر المهمة' : 'Task Source',
+                cell: ({ row }) => (
+                    <span className="rounded-md border border-[#E5E0D8] bg-[#FAF8F5] px-2 py-0.5 text-[11px] font-medium text-[#595550]">
+                        {getSourceLabel(String(row.original.come_from), isAr)}
+                    </span>
+                ),
+            },
+            {
+                id: 'assignTo',
+                accessorFn: (row) => getRelationName(row.assignTo),
+                header: isAr ? 'المستخدم المسؤول' : 'Assigned User',
+                cell: ({ row }) => (
+                    <span className="text-xs text-[#0D0D0D]">
+                        {getRelationName(row.original.assignTo)}
+                    </span>
+                ),
+            },
+            {
+                id: 'customer',
+                accessorFn: (row) => getRelationName(row.customer),
+                header: isAr ? 'العميل' : 'Customer',
+                cell: ({ row }) => (
+                    <span className="text-xs text-[#595550]">
+                        {getRelationName(row.original.customer)}
+                    </span>
+                ),
+            },
+            {
+                id: 'companyBranch',
+                accessorFn: (row) => getRelationName(row.companyBranch),
+                header: isAr ? 'فرع الشركة' : 'Company Branch',
+                cell: ({ row }) => (
+                    <span className="text-xs text-[#595550]">
+                        {getRelationName(row.original.companyBranch)}
+                    </span>
+                ),
+            },
+            {
+                id: 'service',
+                accessorFn: (row) => getRelationName(row.service),
+                header: isAr ? 'الخدمة' : 'Service',
+                cell: ({ row }) => (
+                    <span className="text-xs text-[#595550]">
+                        {getRelationName(row.original.service)}
+                    </span>
+                ),
+            },
+            {
+                id: 'taskType',
+                accessorFn: (row) => getRelationName(row.taskType),
+                header: isAr ? 'نوع المهمة' : 'Task Type',
+                cell: ({ row }) => (
+                    <span className="text-xs text-[#595550]">
+                        {getRelationName(row.original.taskType)}
+                    </span>
+                ),
+            },
             {
                 id: 'actions',
-                header: t('ticketing.columns.actions'),
-                cell: ({ row }: any) => (
-                    <TicketActionsMenu
-                        ticket={row.original}
+                header: isAr ? 'الإجراءات' : 'Actions',
+                cell: ({ row }) => (
+                    <TaskActionsMenu
+                        task={row.original}
                         onView={handleOpenView}
                         onEdit={handleOpenEdit}
                         onDelete={handleOpenDelete}
@@ -802,144 +606,66 @@ export const TicketsPage = () => {
                 ),
             },
         ],
-        [t, isAr, handleOpenView, handleOpenEdit, handleOpenDelete]
+        [isAr, handleOpenView, handleOpenEdit, handleOpenDelete]
     );
 
-    // Collapsible Filters Panel
     const filtersContent = (
-        <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs space-y-3.5 mb-1">
-            <div className="flex items-center justify-between pb-2 border-b border-[#F0ECE4]">
+        <div className="mb-1 space-y-3.5 rounded-xl border border-[#E5E0D8] bg-white p-4 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-[#F0ECE4] pb-2">
                 <span className="text-xs font-bold text-[#0D0D0D]">
-                    {t('ticketing.filters.showFilters')}
+                    {isAr ? 'فلترة المهام' : 'Task Filters'}
                 </span>
+
                 {hasActiveFilters && (
                     <button
                         type="button"
                         onClick={handleResetFilters}
-                        className="inline-flex items-center gap-1.5 text-xs text-[#8C6046] hover:text-[#0D0D0D] font-medium transition cursor-pointer"
+                        className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[#8C6046] transition hover:text-[#0D0D0D]"
                     >
                         <RotateCcw size={12} />
-                        <span>{t('ticketing.filters.resetFilters')}</span>
+                        <span>{isAr ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}</span>
                     </button>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {/* 1. Status Filter */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                    <label className="block text-[11px] font-semibold text-[#595550] mb-1 text-start">
-                        {t('ticketing.filters.status')}
+                    <label className="mb-1 block text-start text-[11px] font-semibold text-[#595550]">
+                        {isAr ? 'الأولوية' : 'Priority'}
                     </label>
-                    <select
-                        value={selectedStatus}
-                        onChange={(e) => {
-                            setSelectedStatus(e.target.value);
-                            setPageIndex(0);
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
-                    >
-                        <option value="all">{t('ticketing.filters.allStatuses')}</option>
-                        {TICKET_STATUS_OPTIONS.map((st) => (
-                            <option key={st} value={st}>
-                                {getStatusLabel(st)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
 
-                {/* 2. Priority Filter (High, Medium, Low) */}
-                <div>
-                    <label className="block text-[11px] font-semibold text-[#595550] mb-1 text-start">
-                        {t('ticketing.filters.priority')}
-                    </label>
                     <select
                         value={selectedPriority}
-                        onChange={(e) => {
-                            setSelectedPriority(e.target.value);
+                        onChange={(event) => {
+                            setSelectedPriority(event.target.value);
                             setPageIndex(0);
                         }}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
+                        className="w-full cursor-pointer rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] px-2.5 py-2 text-xs text-[#0D0D0D] focus:border-[#2D3F2C] focus:bg-white focus:outline-none"
                     >
-                        <option value="all">{t('ticketing.filters.allPriorities')}</option>
-                        <option value="High">{t('ticketing.priorities.high')}</option>
-                        <option value="Medium">{t('ticketing.priorities.medium')}</option>
-                        <option value="Low">{t('ticketing.priorities.low')}</option>
+                        <option value="all">{isAr ? 'كل الأولويات' : 'All Priorities'}</option>
+                        <option value={TaskPriority.HIGH}>{isAr ? 'عالية' : 'High'}</option>
+                        <option value={TaskPriority.MEDIUM}>{isAr ? 'متوسطة' : 'Medium'}</option>
+                        <option value={TaskPriority.LOW}>{isAr ? 'منخفضة' : 'Low'}</option>
                     </select>
                 </div>
 
-                {/* 3. Ticket Type Filter */}
                 <div>
-                    <label className="block text-[11px] font-semibold text-[#595550] mb-1 text-start">
-                        {t('ticketing.filters.ticketType')}
+                    <label className="mb-1 block text-start text-[11px] font-semibold text-[#595550]">
+                        {isAr ? 'مصدر المهمة' : 'Task Source'}
                     </label>
-                    <select
-                        value={selectedType}
-                        onChange={(e) => {
-                            setSelectedType(e.target.value);
-                            setPageIndex(0);
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
-                    >
-                        <option value="all">{t('ticketing.filters.allTypes')}</option>
-                        {ticketTypeOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                                {isAr ? opt.ar : opt.en}
-                            </option>
-                        ))}
-                    </select>
-                </div>
 
-                {/* 4. Company Filter */}
-                <div>
-                    <label className="block text-[11px] font-semibold text-[#595550] mb-1 text-start">
-                        {t('ticketing.filters.company')}
-                    </label>
                     <select
-                        value={selectedCompany}
-                        onChange={(e) => {
-                            setSelectedCompany(e.target.value);
+                        value={selectedSource}
+                        onChange={(event) => {
+                            setSelectedSource(event.target.value);
                             setPageIndex(0);
                         }}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
+                        className="w-full cursor-pointer rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] px-2.5 py-2 text-xs text-[#0D0D0D] focus:border-[#2D3F2C] focus:bg-white focus:outline-none"
                     >
-                        <option value="all">{t('ticketing.filters.allCompanies')}</option>
-                        {TICKET_COMPANY_OPTIONS.map((comp) => (
-                            <option key={comp.value} value={comp.value}>
-                                {isAr ? comp.ar : comp.en}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* 5. Assigned Resource Filter */}
-                <div>
-                    <label className="block text-[11px] font-semibold text-[#595550] mb-1 text-start">
-                        {t('ticketing.filters.assignedTo')}
-                    </label>
-                    <select
-                        value={selectedResource}
-                        onChange={(e) => {
-                            setSelectedResource(e.target.value);
-                            setPageIndex(0);
-                        }}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
-                    >
-                        <option value="all">{t('ticketing.filters.allResources')}</option>
-                        <option value="Eng. Karim Wagdi">
-                            {isAr ? 'م. كريم وجدي' : 'Eng. Karim Wagdi'}
-                        </option>
-                        <option value="Fatima Abdelfattah">
-                            {isAr ? 'فاطمة عبدالفتاح' : 'Fatima Abdelfattah'}
-                        </option>
-                        <option value="Ahmed Al-Salem">
-                            {isAr ? 'أحمد السالم' : 'Ahmed Al-Salem'}
-                        </option>
-                        <option value="Omar Al-Dossary">
-                            {isAr ? 'عمر الدوسري' : 'Omar Al-Dossary'}
-                        </option>
-                        <option value="unassigned">
-                            {t('ticketing.labels.unassigned')}
-                        </option>
+                        <option value="all">{isAr ? 'كل المصادر' : 'All Sources'}</option>
+                        <option value={TaskComeFrom.TASK}>{isAr ? 'مهمة' : 'Task'}</option>
+                        <option value={TaskComeFrom.REQUEST}>{isAr ? 'طلب' : 'Request'}</option>
+                        <option value={TaskComeFrom.CLIENT_REQUEST}>{isAr ? 'طلب عميل' : 'Client Request'}</option>
                     </select>
                 </div>
             </div>
@@ -948,83 +674,112 @@ export const TicketsPage = () => {
 
     return (
         <div className="space-y-4">
+            {tasksQuery.isError && (
+                <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+                    <span>
+                        {isAr
+                            ? 'تعذر تحميل المهام. تحقق من اتصال الخادم ومسار /task.'
+                            : 'Could not load tasks. Check the server connection and /task endpoint.'}
+                    </span>
+
+                    <button
+                        type="button"
+                        onClick={() => tasksQuery.refetch()}
+                        className="cursor-pointer font-semibold underline"
+                    >
+                        {isAr ? 'إعادة المحاولة' : 'Retry'}
+                    </button>
+                </div>
+            )}
+
             <DataTable
                 columns={columns}
-                data={paginatedTickets}
-                count={filteredTickets.length}
-                loading={false}
-                searchPlaceholder={t('pages.tickets.searchPlaceholder')}
+                data={tasks}
+                count={hasActiveFilters ? tasks.length : totalCount}
+                loading={tasksQuery.isLoading || tasksQuery.isFetching}
+                searchPlaceholder={isAr ? 'ابحث في المهام...' : 'Search tasks...'}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
-                onPageChange={(newPageIndex) => setPageIndex(newPageIndex)}
+                onPageChange={setPageIndex}
                 onPageSizeChange={(newPageSize) => {
                     setPageSize(newPageSize);
                     setPageIndex(0);
                 }}
                 searchValue={searchValue}
-                onSearchChange={(val) => {
-                    setSearchValue(val);
+                onSearchChange={(value) => {
+                    setSearchValue(value);
                     setPageIndex(0);
                 }}
                 onAddNew={handleOpenCreate}
                 onExport={handleExportCsv}
-                title={t('pages.tickets.title')}
-                addNewLabel={t('pages.tickets.addLabel')}
-                onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+                title={isAr ? 'المهام' : 'Tasks'}
+                addNewLabel={isAr ? 'إضافة مهمة' : 'Add Task'}
+                onToggleFilters={() => setIsFiltersOpen((previous) => !previous)}
                 isFiltersOpen={isFiltersOpen}
                 hasActiveFilters={hasActiveFilters}
                 filtersContent={filtersContent}
             />
 
-            {/* Create / Edit / View Ticket Drawer */}
             <TicketDrawer
                 isOpen={drawerOpen}
                 mode={drawerMode}
-                ticket={activeTicket}
+                ticket={activeTask}
                 onClose={() => {
+                    if (isSaving) return;
                     setDrawerOpen(false);
-                    setActiveTicket(null);
+                    setActiveTask(null);
                 }}
                 onSubmit={handleDrawerSubmit}
             />
 
-            {/* Delete Confirmation Modal */}
-            {ticketToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-150">
-                    <div className="bg-white border border-[#E5E0D8] rounded-2xl shadow-xl max-w-md w-full p-6 text-start space-y-4">
+            {taskToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px] animate-in fade-in duration-150">
+                    <div className="w-full max-w-md space-y-4 rounded-2xl border border-[#E5E0D8] bg-white p-6 text-start shadow-xl">
                         <div className="flex items-start gap-3.5">
-                            <div className="w-10 h-10 rounded-xl bg-[#A23B2A]/10 text-[#A23B2A] flex items-center justify-center shrink-0">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#A23B2A]/10 text-[#A23B2A]">
                                 <AlertTriangle size={20} />
                             </div>
+
                             <div className="space-y-1">
                                 <h3 className="text-base font-bold text-[#0D0D0D]">
-                                    {t('ticketing.deleteModal.title')}
+                                    {isAr ? 'حذف المهمة' : 'Delete Task'}
                                 </h3>
-                                <p className="text-xs text-[#6E6862] leading-relaxed">
-                                    {t('ticketing.deleteModal.message', {
-                                        id: ticketToDelete.ticketId,
-                                        subject: isAr
-                                            ? ticketToDelete.subject
-                                            : ticketToDelete.subjectEn,
-                                    })}
+
+                                <p className="text-xs leading-relaxed text-[#6E6862]">
+                                    {isAr
+                                        ? `هل أنت متأكد من حذف المهمة "${taskToDelete.subject}"؟ لا يمكن التراجع عن هذا الإجراء.`
+                                        : `Are you sure you want to delete "${taskToDelete.subject}"? This action cannot be undone.`}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#F0ECE4]">
+                        <div className="flex items-center justify-end gap-2.5 border-t border-[#F0ECE4] pt-3">
                             <button
                                 type="button"
-                                onClick={() => setTicketToDelete(null)}
-                                className="px-4 py-2 text-xs font-semibold text-[#595550] bg-white border border-[#E5E0D8] rounded-lg hover:bg-[#FAF8F5] transition cursor-pointer"
+                                onClick={() => setTaskToDelete(null)}
+                                disabled={deleteTaskMutation.isPending}
+                                className="cursor-pointer rounded-lg border border-[#E5E0D8] bg-white px-4 py-2 text-xs font-semibold text-[#595550] transition hover:bg-[#FAF8F5] disabled:opacity-50"
                             >
-                                {t('ticketing.deleteModal.cancel')}
+                                {isAr ? 'إلغاء' : 'Cancel'}
                             </button>
+
                             <button
                                 type="button"
                                 onClick={handleConfirmDelete}
-                                className="px-4 py-2 text-xs font-semibold text-white bg-[#A23B2A] hover:bg-[#8B3122] rounded-lg shadow-xs transition cursor-pointer"
+                                disabled={deleteTaskMutation.isPending}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg bg-[#A23B2A] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#8B3122] disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                {t('ticketing.deleteModal.confirm')}
+                                {deleteTaskMutation.isPending && (
+                                    <LoaderCircle size={14} className="animate-spin" />
+                                )}
+
+                                {deleteTaskMutation.isPending
+                                    ? isAr
+                                        ? 'جاري الحذف...'
+                                        : 'Deleting...'
+                                    : isAr
+                                        ? 'تأكيد الحذف'
+                                        : 'Delete Task'}
                             </button>
                         </div>
                     </div>

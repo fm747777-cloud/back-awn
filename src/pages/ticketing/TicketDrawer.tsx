@@ -1,110 +1,179 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-    X,
-    Search,
-    ChevronDown,
-    Check,
-    Upload,
-    FileText,
-    Trash2,
-    MessageSquareQuote,
-} from 'lucide-react';
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { X, ChevronDown, LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import { translateError } from '../../i18n';
 import { focusAndScrollToFirstError } from '../../utils/formValidation';
-import {
-    TICKET_CUSTOMER_OPTIONS,
-    TICKET_COMPANY_OPTIONS,
-    TICKET_PRIORITY_OPTIONS,
-    TICKET_STATUS_OPTIONS,
-    getActiveTicketTypeOptions,
-    loadCannedReplies,
-    normalizeTicketStatus,
-    type TableTicket,
-    type TicketAttachment,
-    type TicketSelectOption,
-    type TicketLifecycleStatus,
-    type CannedReplyRecord,
-} from './ticketingMockData';
+
+import { taskSchema, TaskPriority, TaskComeFrom, type CreateTaskDto } from '../../schemas/ticketSchema';
+
+import { companyBranchApi, companyUserApi, serviceApi, userApi } from '../../api/api';
+import { axiosClient } from '../../api/axiosClient';
 
 export type TicketDrawerMode = 'create' | 'edit' | 'view';
 
-export interface TicketFormSubmitData {
-    customerValue: string;
-    companyValue: string;
-    ticketTypeValue: string;
-    priority: 'High' | 'Medium' | 'Low';
-    status?: TicketLifecycleStatus;
-    subject: string;
-    message: string;
-    attachment: TicketAttachment | null;
+type TaskFormValues = z.input<typeof taskSchema>;
+type CreateTaskPayload = CreateTaskDto;
+type TaskFieldErrors = Partial<Record<keyof TaskFormValues, string>>;
+
+interface TaskRecord {
+    id?: string;
+    subject?: string;
+    start_date?: string | Date;
+    end_date?: string | Date;
+    priority?: string;
+    come_from?: string;
+    assignTo_id?: string;
+    customer_id?: string;
+    companyBranch_id?: string;
+    service_id?: string;
+    taskType_id?: string;
+    assignTo?: { id?: string; name?: string; fullName?: string };
+    customer?: { id?: string; name?: string; fullName?: string };
+    companyBranch?: { id?: string; name?: string };
+    service?: { id?: string; name?: string };
+    taskType?: { id?: string; name?: string };
+    [key: string]: unknown;
 }
 
 interface TicketDrawerProps {
     isOpen: boolean;
     mode: TicketDrawerMode;
-    ticket?: TableTicket | null;
+    ticket?: TaskRecord | null;
     onClose: () => void;
-    onSubmit: (data: TicketFormSubmitData, existingTicket?: TableTicket | null) => void;
+    onSubmit: (data: CreateTaskPayload, existingTask?: TaskRecord | null) => void | Promise<void>;
 }
 
-interface ValidationErrors {
-    customer?: string;
-    company?: string;
-    priority?: string;
-    subject?: string;
-    message?: string;
-    attachment?: string;
+interface SelectOption {
+    id: string;
+    label: string;
 }
 
-const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+const taskDefaultValues: TaskFormValues = {
+    subject: '',
+    start_date: '',
+    end_date: '',
+    priority: TaskPriority.MEDIUM,
+    come_from: TaskComeFrom.TASK,
+    assignTo_id: '',
+    customer_id: '',
+    companyBranch_id: '',
+    service_id: '',
+    taskType_id: '',
+};
 
-const ALLOWED_EXTENSIONS_REGEX =
-    /\.(png|jpe?g|gif|webp|svg|bmp|pdf|docx?|xlsx?|csv|txt|log|md)$/i;
+const FIELD_ORDER: (keyof TaskFormValues)[] = [
+    'subject',
+    'start_date',
+    'end_date',
+    'priority',
+    'come_from',
+    'assignTo_id',
+    'customer_id',
+    'companyBranch_id',
+    'service_id',
+    'taskType_id',
+];
 
-const ALLOWED_MIME_TYPES = new Set([
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/csv',
-    'text/plain',
-]);
-
-function isAllowedAttachmentFile(file: { name: string; type: string }): boolean {
-    if (file.type && (file.type.startsWith('image/') || ALLOWED_MIME_TYPES.has(file.type))) {
-        return true;
-    }
-    return ALLOWED_EXTENSIONS_REGEX.test(file.name);
+function extractArray(response: any): any[] {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.data?.data)) return response.data.data;
+    if (Array.isArray(response?.items)) return response.items;
+    return [];
 }
 
-function formatFileSizeLatin(bytes: number): string {
-    if (bytes < 1024) {
-        return `${bytes} B`;
-    }
-    const kb = bytes / 1024;
-    if (kb < 1024) {
-        return `${kb.toFixed(1)} KB`;
-    }
-    const mb = kb / 1024;
-    return `${mb.toFixed(2)} MB`;
-}
+function getOptionLabel(item: any, isAr: boolean): string {
+    if (typeof item === 'string') return item;
 
-function resolveOptionValue(
-    options: TicketSelectOption[],
-    arVal?: string,
-    enVal?: string
-): string {
-    if (!arVal && !enVal) return '';
-    const match = options.find(
-        (o) =>
-            o.value === enVal ||
-            o.value === arVal ||
-            o.en === enVal ||
-            o.ar === arVal
+    const localizedName = isAr
+        ? item?.nameAr || item?.titleAr || item?.ar
+        : item?.nameEn || item?.titleEn || item?.en;
+
+    const combinedName = [item?.firstName, item?.lastName]
+        .filter(Boolean)
+        .join(' ');
+
+    return String(
+        localizedName ||
+        item?.fullName ||
+        item?.name ||
+        combinedName ||
+        item?.title ||
+        item?.code ||
+        item?.email ||
+        item?.id ||
+        ''
     );
-    return match ? match.value : enVal || arVal || '';
+}
+
+function toOptions(response: any, isAr: boolean): SelectOption[] {
+    return extractArray(response)
+        .map((item: any) => ({
+            id: String(item?.id ?? item?.uuid ?? ''),
+            label: getOptionLabel(item, isAr),
+        }))
+        .filter((item) => item.id && item.label);
+}
+
+function toDateInput(value?: string | Date): string {
+    if (!value) return '';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return '';
+
+    const localDate = new Date(
+        date.getTime() - date.getTimezoneOffset() * 60000
+    );
+
+    return localDate.toISOString().slice(0, 16);
+}
+
+function normalizePriority(value?: string): TaskPriority {
+    switch (String(value ?? '').toLowerCase()) {
+        case 'high':
+            return TaskPriority.HIGH;
+        case 'low':
+            return TaskPriority.LOW;
+        case 'medium':
+            return TaskPriority.MEDIUM;
+        default:
+            return TaskPriority.MEDIUM;
+    }
+}
+
+function normalizeComeFrom(value?: string): TaskComeFrom {
+    switch (String(value ?? '').toLowerCase()) {
+        case 'request':
+            return TaskComeFrom.REQUEST;
+        case 'client_request':
+            return TaskComeFrom.CLIENT_REQUEST;
+        case 'task':
+            return TaskComeFrom.TASK;
+        default:
+            return TaskComeFrom.TASK;
+    }
+}
+
+function getTaskFormValues(task?: TaskRecord | null): TaskFormValues {
+    if (!task) return { ...taskDefaultValues };
+
+    return {
+        subject: task.subject ?? '',
+        start_date: toDateInput(task.start_date),
+        end_date: toDateInput(task.end_date),
+        priority: normalizePriority(task.priority),
+        come_from: normalizeComeFrom(task.come_from),
+        assignTo_id: task.assignTo_id ?? task.assignTo?.id ?? '',
+        customer_id: task.customer_id ?? task.customer?.id ?? '',
+        companyBranch_id: task.companyBranch_id ?? task.companyBranch?.id ?? '',
+        service_id: task.service_id ?? task.service?.id ?? '',
+        taskType_id: task.taskType_id ?? task.taskType?.id ?? '',
+    };
 }
 
 export const TicketDrawer: React.FC<TicketDrawerProps> = ({
@@ -115,1119 +184,759 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
     onSubmit,
 }) => {
     const { t, i18n } = useTranslation();
-    const isAr = i18n.language?.startsWith('ar');
+    const isAr = i18n.language?.startsWith('ar') ?? false;
     const isView = mode === 'view';
     const isEdit = mode === 'edit';
 
-    // Refs for form and focus management
     const formRef = useRef<HTMLFormElement>(null);
-    const customerDropdownRef = useRef<HTMLDivElement>(null);
-    const companyDropdownRef = useRef<HTMLDivElement>(null);
-    const customerButtonRef = useRef<HTMLButtonElement>(null);
-    const companyButtonRef = useRef<HTMLButtonElement>(null);
-    const prioritySelectRef = useRef<HTMLSelectElement>(null);
-    const subjectInputRef = useRef<HTMLInputElement>(null);
-    const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const chooseFileBtnRef = useRef<HTMLButtonElement>(null);
+    const subjectRef = useRef<HTMLInputElement>(null);
+    const startDateRef = useRef<HTMLInputElement>(null);
+    const endDateRef = useRef<HTMLInputElement>(null);
+    const priorityRef = useRef<HTMLSelectElement>(null);
+    const comeFromRef = useRef<HTMLSelectElement>(null);
+    const assignToRef = useRef<HTMLSelectElement>(null);
+    const customerRef = useRef<HTMLSelectElement>(null);
+    const companyBranchRef = useRef<HTMLSelectElement>(null);
+    const serviceRef = useRef<HTMLSelectElement>(null);
+    const taskTypeRef = useRef<HTMLSelectElement>(null);
 
-    // Fields State
-    const [customerValue, setCustomerValue] = useState<string>('');
-    const [companyValue, setCompanyValue] = useState<string>('');
-    const [ticketTypeValue, setTicketTypeValue] = useState<string>('');
-    const [priority, setPriority] = useState<'' | 'High' | 'Medium' | 'Low'>('');
-    const [status, setStatus] = useState<TicketLifecycleStatus>('NEW');
-    const [subject, setSubject] = useState<string>('');
-    const [message, setMessage] = useState<string>('');
-    const [attachment, setAttachment] = useState<TicketAttachment | null>(null);
-    const [selectedCannedReplyId, setSelectedCannedReplyId] = useState<string>('');
-
-    // Searchable dropdown states
-    const [isCustomerOpen, setIsCustomerOpen] = useState(false);
-    const [customerSearch, setCustomerSearch] = useState('');
-    const [isCompanyOpen, setIsCompanyOpen] = useState(false);
-    const [companySearch, setCompanySearch] = useState('');
-
-    // Drag and drop state
-    const [isDraggingOver, setIsDraggingOver] = useState(false);
-
-    // Validation state (only shown after form submission attempt)
+    const [values, setValues] = useState<TaskFormValues>({
+        ...taskDefaultValues,
+    });
+    const [errors, setErrors] = useState<TaskFieldErrors>({});
     const [hasSubmitted, setHasSubmitted] = useState(false);
-    const [errors, setErrors] = useState<ValidationErrors>({});
+    const [isSaving, setIsSaving] = useState(false);
 
-    const activeTicketTypeOptions = getActiveTicketTypeOptions();
-    const availableCannedReplies: CannedReplyRecord[] = isOpen ? loadCannedReplies() : [];
+    useEffect(() => {
+        if (!isOpen) return;
 
-    // Adjust state during render when drawer opens or mode/ticket changes (per React docs, matching ServiceGroupDrawer)
-    const [prevSyncKey, setPrevSyncKey] = useState<string>('');
-    const currentSyncKey = `${isOpen}-${mode}-${ticket?.id ?? 'new'}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
-        setHasSubmitted(false);
+        setValues(getTaskFormValues(ticket));
         setErrors({});
-        setIsCustomerOpen(false);
-        setCustomerSearch('');
-        setIsCompanyOpen(false);
-        setCompanySearch('');
-        setIsDraggingOver(false);
-        setSelectedCannedReplyId('');
+        setHasSubmitted(false);
+        setIsSaving(false);
+    }, [isOpen, mode, ticket?.id]);
 
-        if (isOpen && (mode === 'edit' || mode === 'view') && ticket) {
-            setCustomerValue(
-                resolveOptionValue(TICKET_CUSTOMER_OPTIONS, ticket.customer, ticket.customerEn)
-            );
-            setCompanyValue(
-                resolveOptionValue(TICKET_COMPANY_OPTIONS, ticket.company, ticket.companyEn)
-            );
-            setTicketTypeValue(
-                resolveOptionValue(activeTicketTypeOptions, ticket.ticketType, ticket.ticketTypeEn)
-            );
-            setPriority(ticket.priority);
-            setStatus(normalizeTicketStatus(ticket));
-            setSubject(
-                (isAr ? ticket.subject : ticket.subjectEn) ||
-                    ticket.subject ||
-                    ticket.subjectEn ||
-                    ''
-            );
-            setMessage(
-                (isAr ? ticket.message : ticket.messageEn) ||
-                    ticket.message ||
-                    ticket.messageEn ||
-                    ''
-            );
-            setAttachment(ticket.attachment ? { ...ticket.attachment } : null);
-        } else if (isOpen && mode === 'create') {
-            setCustomerValue('');
-            setCompanyValue('');
-            setTicketTypeValue('');
-            setPriority('');
-            setStatus('NEW');
-            setSubject('');
-            setMessage('');
-            setAttachment(null);
-        }
-    }
+    const branchesQuery = useQuery({
+        queryKey: ['task-drawer', 'company-branches'],
+        queryFn: () =>
+            companyBranchApi.getCompaniesBranchs({ page: 1, limit: 100 }),
+        enabled: isOpen,
+        staleTime: 60_000,
+    });
 
-    // Close searchable dropdowns on outside click
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            if (customerDropdownRef.current && !customerDropdownRef.current.contains(target)) {
-                setIsCustomerOpen(false);
-            }
-            if (companyDropdownRef.current && !companyDropdownRef.current.contains(target)) {
-                setIsCompanyOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const customersQuery = useQuery({
+        queryKey: ['task-drawer', 'company-users'],
+        queryFn: () =>
+            companyUserApi.getCompanyUsers({ page: 1, limit: 100 }),
+        enabled: isOpen,
+        staleTime: 60_000,
+    });
 
-    // Handle Escape key
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                if (isCustomerOpen || isCompanyOpen) {
-                    setIsCustomerOpen(false);
-                    setIsCompanyOpen(false);
-                } else {
-                    onClose();
+    const usersQuery = useQuery({
+        queryKey: ['task-drawer', 'users'],
+        queryFn: () =>
+            userApi.getCompaniesBranchs({ page: 1, limit: 100 }),
+        enabled: isOpen,
+        staleTime: 60_000,
+    });
+
+    const servicesQuery = useQuery({
+        queryKey: ['task-drawer', 'services'],
+        queryFn: () => serviceApi.getServices({ page: 1, limit: 100 }),
+        enabled: isOpen,
+        staleTime: 60_000,
+    });
+
+    const taskTypesQuery = useQuery({
+        queryKey: ['task-drawer', 'task-types'],
+        queryFn: async () => {
+            const response = await axiosClient.get('/task-type', {
+                params: { page: 1, limit: 100 },
+            });
+
+            return response.data;
+        },
+        enabled: isOpen,
+        staleTime: 60_000,
+        retry: 1,
+    });
+
+    const branches = useMemo(
+        () => toOptions(branchesQuery.data, isAr),
+        [branchesQuery.data, isAr]
+    );
+
+    const customers = useMemo(
+        () => toOptions(customersQuery.data, isAr),
+        [customersQuery.data, isAr]
+    );
+
+    const users = useMemo(
+        () => toOptions(usersQuery.data, isAr),
+        [usersQuery.data, isAr]
+    );
+
+    const services = useMemo(
+        () => toOptions(servicesQuery.data, isAr),
+        [servicesQuery.data, isAr]
+    );
+
+    const taskTypes = useMemo(
+        () => toOptions(taskTypesQuery.data, isAr),
+        [taskTypesQuery.data, isAr]
+    );
+
+    const loadingOptions =
+        branchesQuery.isLoading ||
+        customersQuery.isLoading ||
+        usersQuery.isLoading ||
+        servicesQuery.isLoading ||
+        taskTypesQuery.isLoading;
+
+    const updateField = <K extends keyof TaskFormValues>(
+        field: K,
+        value: TaskFormValues[K]
+    ) => {
+        const nextValues = { ...values, [field]: value };
+
+        setValues(nextValues);
+
+        if (hasSubmitted) {
+            const result = taskSchema.safeParse(nextValues);
+
+            setErrors((previous) => {
+                const updated = { ...previous };
+                delete updated[field];
+
+                if (!result.success) {
+                    const relatedIssue = result.error.issues.find(
+                        (issue) => issue.path[0] === field
+                    );
+
+                    if (relatedIssue) {
+                        updated[field] = relatedIssue.message;
+                    }
                 }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, isCustomerOpen, isCompanyOpen, onClose]);
 
-    // Ensure custom options from ticket (if any) are included in options lists
-    const customerOptions = React.useMemo(() => {
-        if (
-            ticket &&
-            customerValue &&
-            !TICKET_CUSTOMER_OPTIONS.some((o) => o.value === customerValue)
-        ) {
-            return [
-                ...TICKET_CUSTOMER_OPTIONS,
-                {
-                    value: customerValue,
-                    ar: ticket.customer || customerValue,
-                    en: ticket.customerEn || customerValue,
-                },
-            ];
-        }
-        return TICKET_CUSTOMER_OPTIONS;
-    }, [ticket, customerValue]);
+                if (field === 'start_date' || field === 'end_date') {
+                    const dateIssue = result.success
+                        ? undefined
+                        : result.error.issues.find(
+                            (issue) => issue.path[0] === 'end_date'
+                        );
 
-    const companyOptions = React.useMemo(() => {
-        if (
-            ticket &&
-            companyValue &&
-            !TICKET_COMPANY_OPTIONS.some((o) => o.value === companyValue)
-        ) {
-            return [
-                ...TICKET_COMPANY_OPTIONS,
-                {
-                    value: companyValue,
-                    ar: ticket.company || companyValue,
-                    en: ticket.companyEn || companyValue,
-                },
-            ];
-        }
-        return TICKET_COMPANY_OPTIONS;
-    }, [ticket, companyValue]);
+                    if (dateIssue) {
+                        updated.end_date = dateIssue.message;
+                    } else {
+                        delete updated.end_date;
+                    }
+                }
 
-    const ticketTypeOptions = React.useMemo(() => {
-        const base = getActiveTicketTypeOptions();
-        if (
-            ticket &&
-            ticketTypeValue &&
-            !base.some((o) => o.value === ticketTypeValue)
-        ) {
-            return [
-                ...base,
-                {
-                    value: ticketTypeValue,
-                    ar: ticket.ticketType || ticketTypeValue,
-                    en: ticket.ticketTypeEn || ticketTypeValue,
-                },
-            ];
+                return updated;
+            });
         }
-        return base;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ticket, ticketTypeValue, isOpen]);
-
-    const selectedCustomerOption = customerOptions.find((o) => o.value === customerValue);
-    const selectedCompanyOption = companyOptions.find((o) => o.value === companyValue);
-    const selectedTicketTypeOption = ticketTypeOptions.find((o) => o.value === ticketTypeValue);
-
-    const filteredCustomerOptions = customerOptions.filter((opt) => {
-        const q = customerSearch.trim().toLowerCase();
-        if (!q) return true;
-        return opt.en.toLowerCase().includes(q) || opt.ar.toLowerCase().includes(q);
-    });
-
-    const filteredCompanyOptions = companyOptions.filter((opt) => {
-        const q = companySearch.trim().toLowerCase();
-        if (!q) return true;
-        return opt.en.toLowerCase().includes(q) || opt.ar.toLowerCase().includes(q);
-    });
-
-    const validateFields = (currentValues: {
-        customer: string;
-        company: string;
-        priority: string;
-        subject: string;
-        message: string;
-        attachment: TicketAttachment | null;
-    }): ValidationErrors => {
-        const nextErrors: ValidationErrors = {};
-
-        if (!currentValues.customer.trim()) {
-            nextErrors.customer = 'Customer is required';
-        }
-        if (!currentValues.company.trim()) {
-            nextErrors.company = 'Company is required';
-        }
-        if (!currentValues.priority) {
-            nextErrors.priority = 'Priority is required';
-        }
-        if (!currentValues.subject.trim()) {
-            nextErrors.subject = 'Subject is required';
-        }
-        if (!currentValues.message.trim()) {
-            nextErrors.message = 'Message is required';
-        }
-        if (currentValues.attachment) {
-            if (!isAllowedAttachmentFile(currentValues.attachment)) {
-                nextErrors.attachment =
-                    'Unsupported file type. Allowed: Images, PDF, Word, Excel, Text';
-            } else if (currentValues.attachment.size > MAX_ATTACHMENT_SIZE_BYTES) {
-                nextErrors.attachment = 'Attachment exceeds the 10MB size limit';
-            }
-        }
-
-        return nextErrors;
     };
 
-    const focusFirstInvalid = (validationErrors: ValidationErrors) => {
-        setTimeout(() => {
-            if (validationErrors.customer && customerButtonRef.current) {
-                customerButtonRef.current.focus();
-                customerButtonRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
+    const focusFirstInvalid = (fieldErrors: TaskFieldErrors) => {
+        window.setTimeout(() => {
+            const refs: Partial<
+                Record<keyof TaskFormValues, React.RefObject<HTMLElement | null>>
+            > = {
+                subject: subjectRef,
+                start_date: startDateRef,
+                end_date: endDateRef,
+                priority: priorityRef,
+                come_from: comeFromRef,
+                assignTo_id: assignToRef,
+                customer_id: customerRef,
+                companyBranch_id: companyBranchRef,
+                service_id: serviceRef,
+                taskType_id: taskTypeRef,
+            };
+
+            for (const field of FIELD_ORDER) {
+                if (!fieldErrors[field]) continue;
+
+                const element = refs[field]?.current;
+
+                if (element) {
+                    element.focus();
+                    element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
+                    return;
+                }
             }
-            if (validationErrors.company && companyButtonRef.current) {
-                companyButtonRef.current.focus();
-                companyButtonRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            if (validationErrors.priority && prioritySelectRef.current) {
-                prioritySelectRef.current.focus();
-                prioritySelectRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            if (validationErrors.subject && subjectInputRef.current) {
-                subjectInputRef.current.focus();
-                subjectInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            if (validationErrors.message && messageTextareaRef.current) {
-                messageTextareaRef.current.focus();
-                messageTextareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-            if (validationErrors.attachment && chooseFileBtnRef.current) {
-                chooseFileBtnRef.current.focus();
-                chooseFileBtnRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
+
             focusAndScrollToFirstError(
-                validationErrors,
-                ['customer', 'company', 'priority', 'subject', 'message', 'attachment'],
+                fieldErrors,
+                FIELD_ORDER,
                 formRef.current
             );
         }, 30);
     };
 
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isView) return;
+    const handleSubmit = async (
+        event: React.FormEvent<HTMLFormElement>
+    ) => {
+        event.preventDefault();
+
+        if (isView || isSaving) return;
 
         setHasSubmitted(true);
 
-        const validationErrors = validateFields({
-            customer: customerValue,
-            company: companyValue,
-            priority,
-            subject,
-            message,
-            attachment,
-        });
+        const result = taskSchema.safeParse(values);
 
-        setErrors(validationErrors);
+        if (!result.success) {
+            const nextErrors: TaskFieldErrors = {};
 
-        if (Object.keys(validationErrors).length > 0) {
-            focusFirstInvalid(validationErrors);
+            result.error.issues.forEach((issue) => {
+                const field = issue.path[0] as keyof TaskFormValues;
+
+                if (FIELD_ORDER.includes(field) && !nextErrors[field]) {
+                    nextErrors[field] = issue.message;
+                }
+            });
+
+            setErrors(nextErrors);
+            focusFirstInvalid(nextErrors);
             return;
         }
 
-        onSubmit(
-            {
-                customerValue,
-                companyValue,
-                ticketTypeValue,
-                priority: priority as 'High' | 'Medium' | 'Low',
-                status: isEdit ? status : 'NEW',
-                subject: subject.trim(),
-                message: message.trim(),
-                attachment,
-            },
-            ticket
+        const payload: CreateTaskPayload = {
+            subject: result.data.subject.trim(),
+            start_date: new Date(result.data.start_date).toISOString(),
+            end_date: new Date(result.data.end_date).toISOString(),
+            priority: result.data.priority,
+            come_from: result.data.come_from,
+            ...(result.data.assignTo_id
+                ? { assignTo_id: result.data.assignTo_id }
+                : {}),
+            ...(result.data.customer_id
+                ? { customer_id: result.data.customer_id }
+                : {}),
+            ...(result.data.companyBranch_id
+                ? { companyBranch_id: result.data.companyBranch_id }
+                : {}),
+            ...(result.data.service_id
+                ? { service_id: result.data.service_id }
+                : {}),
+            ...(result.data.taskType_id
+                ? { taskType_id: result.data.taskType_id }
+                : {}),
+        };
+
+        try {
+            setIsSaving(true);
+            await onSubmit(payload, ticket);
+        } catch (error: any) {
+            toast.error(
+                translateError(
+                    t,
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    'Failed to save task'
+                )
+            );
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleClose = () => {
+        if (isSaving) return;
+        onClose();
+    };
+
+    const fieldClass = (field: keyof TaskFormValues) =>
+        `w-full rounded-lg border px-3.5 py-2.5 text-xs transition ${hasSubmitted && errors[field]
+            ? 'border-red-400 bg-white focus:outline-none focus:ring-2 focus:ring-red-400/20 dark:bg-slate-800'
+            : 'border-[#E5E0D8] bg-[#FAF8F5] focus:border-[#2D3F2C] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 dark:border-slate-700 dark:bg-slate-800'
+        } ${isView
+            ? 'cursor-default text-[#595550] dark:text-slate-300'
+            : 'cursor-pointer text-[#0D0D0D] dark:text-slate-100'
+        }`;
+
+    const renderError = (field: keyof TaskFormValues) => {
+        if (!hasSubmitted || !errors[field]) return null;
+
+        return (
+            <span className="mt-1 block text-[11px] font-medium text-red-500">
+                {translateError(t, errors[field]!)}
+            </span>
         );
     };
 
-    const getStatusLabel = (st: TicketLifecycleStatus): string => {
-        switch (st) {
-            case 'NEW':
-                return t('ticketing.statuses.new');
-            case 'OPEN':
-                return t('ticketing.statuses.open');
-            case 'IN PROGRESS':
-                return t('ticketing.statuses.inProgress');
-            case 'SOLVED':
-                return t('ticketing.statuses.solved');
-            case 'CLOSED':
-                return t('ticketing.statuses.closed');
-            default:
-                return st;
-        }
-    };
+    const renderSelect = (
+        field:
+            | 'assignTo_id'
+            | 'customer_id'
+            | 'companyBranch_id'
+            | 'service_id'
+            | 'taskType_id',
+        label: string,
+        options: SelectOption[],
+        ref: React.RefObject<HTMLSelectElement | null>
+    ) => (
+        <div>
+            <label
+                htmlFor={`task-${field}`}
+                className="mb-1.5 block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200"
+            >
+                {label}
+                <span className="ms-1 font-normal text-[#857E74]">
+                    ({t('common.optional')})
+                </span>
+            </label>
 
-    const handleInsertCannedReply = (replyId: string) => {
-        setSelectedCannedReplyId(replyId);
-        if (!replyId || isView) return;
-        const found = availableCannedReplies.find((r) => r.id === replyId);
-        if (!found) return;
+            <div className="relative">
+                <select
+                    id={`task-${field}`}
+                    ref={ref}
+                    value={values[field] ?? ''}
+                    disabled={isView || loadingOptions}
+                    aria-invalid={Boolean(hasSubmitted && errors[field])}
+                    onChange={(event) =>
+                        updateField(field, event.target.value)
+                    }
+                    className={`${fieldClass(field)} appearance-none pe-9`}
+                >
+                    <option value="">
+                        {loadingOptions
+                            ? isAr
+                                ? 'جاري تحميل البيانات...'
+                                : 'Loading options...'
+                            : isAr
+                                ? 'بدون تحديد'
+                                : 'Select an option'}
+                    </option>
 
-        const replyText = (isAr ? found.replyAr || found.reply : found.reply || found.replyAr).trim();
-        if (!replyText) return;
+                    {options.map((option) => (
+                        <option key={option.id} value={option.id}>
+                            {option.label}
+                        </option>
+                    ))}
 
-        setMessage((prev) => {
-            const trimmed = prev.trim();
-            if (!trimmed) {
-                return replyText;
-            }
-            if (trimmed.includes(replyText)) {
-                return prev;
-            }
-            return `${trimmed}\n\n${replyText}`;
-        });
+                    {values[field] &&
+                        !options.some(
+                            (option) => option.id === values[field]
+                        ) && (
+                            <option value={values[field]}>
+                                {values[field]}
+                            </option>
+                        )}
+                </select>
 
-        if (hasSubmitted && errors.message) {
-            setErrors((prev) => ({ ...prev, message: undefined }));
-        }
-    };
+                {!isView && (
+                    <ChevronDown
+                        size={14}
+                        className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[#857E74]"
+                    />
+                )}
+            </div>
 
-    const handleFileSelect = (file: File | null | undefined) => {
-        if (!file || isView) return;
-
-        const nextAttachment: TicketAttachment = {
-            name: file.name,
-            size: file.size,
-            type: file.type || 'application/octet-stream',
-        };
-
-        setAttachment(nextAttachment);
-
-        if (hasSubmitted) {
-            setErrors((prev) => {
-                const updated = { ...prev };
-                if (!isAllowedAttachmentFile(nextAttachment)) {
-                    updated.attachment =
-                        'Unsupported file type. Allowed: Images, PDF, Word, Excel, Text';
-                } else if (nextAttachment.size > MAX_ATTACHMENT_SIZE_BYTES) {
-                    updated.attachment = 'Attachment exceeds the 10MB size limit';
-                } else {
-                    delete updated.attachment;
-                }
-                return updated;
-            });
-        }
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(false);
-        if (isView) return;
-
-        const droppedFile = e.dataTransfer.files?.[0];
-        if (droppedFile) {
-            handleFileSelect(droppedFile);
-        }
-    };
+            {renderError(field)}
+        </div>
+    );
 
     const headerTitle = isView
-        ? t('ticketing.form.viewTitle')
+        ? isAr
+            ? 'عرض المهمة'
+            : 'View Task'
         : isEdit
-          ? t('ticketing.form.editTitle')
-          : t('ticketing.form.createTitle');
+            ? isAr
+                ? 'تعديل المهمة'
+                : 'Edit Task'
+            : isAr
+                ? 'إنشاء مهمة جديدة'
+                : 'Create New Task';
 
     const headerSubtitle = isView
-        ? t('ticketing.form.viewSubtitle', { id: ticket?.ticketId || '' })
+        ? isAr
+            ? 'عرض تفاصيل المهمة'
+            : 'View task details'
         : isEdit
-          ? t('ticketing.form.editSubtitle', { id: ticket?.ticketId || '' })
-          : t('ticketing.form.createSubtitle');
+            ? isAr
+                ? 'تعديل بيانات المهمة'
+                : 'Update task details'
+            : isAr
+                ? 'أدخل بيانات المهمة الجديدة'
+                : 'Enter the new task details';
+
+    if (!isOpen && !ticket) {
+        return null;
+    }
 
     return (
         <div
-            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${
-                isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-            }`}
+            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${isOpen
+                ? 'pointer-events-auto opacity-100'
+                : 'pointer-events-none opacity-0'
+                }`}
             aria-hidden={!isOpen}
         >
-            {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] transition-opacity"
-                onClick={onClose}
+                className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px]"
+                onClick={handleClose}
             />
 
-            {/* Drawer Container */}
             <div
-                className={`fixed top-0 end-0 h-full w-full max-w-xl bg-white dark:bg-slate-900 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col text-start ${
-                    isOpen ? 'translate-x-0' : 'ltr:translate-x-full rtl:-translate-x-full'
-                }`}
+                dir={isAr ? 'rtl' : 'ltr'}
+                className={`fixed end-0 top-0 flex h-full w-full max-w-xl flex-col bg-white text-start shadow-2xl transition-transform duration-300 ease-in-out dark:bg-slate-900 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
-                {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-[#E5E0D8] dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+                <div className="flex shrink-0 items-center justify-between border-b border-[#E5E0D8] bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
                     <div>
                         <h2 className="text-lg font-bold text-[#0D0D0D] dark:text-slate-100">
                             {headerTitle}
                         </h2>
-                        <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-0.5">
+
+                        <p className="mt-0.5 text-xs text-[#6E6862] dark:text-slate-400">
                             {headerSubtitle}
                         </p>
                     </div>
+
                     <button
                         type="button"
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center text-[#857E74] hover:text-[#0D0D0D] dark:hover:text-slate-200 rounded-lg hover:bg-[#F8F6F2] dark:hover:bg-slate-800 transition cursor-pointer"
-                        title={t('ticketing.form.close')}
-                        aria-label={t('ticketing.form.close')}
+                        onClick={handleClose}
+                        disabled={isSaving}
+                        aria-label={isAr ? 'إغلاق' : 'Close'}
+                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[#857E74] transition hover:bg-[#F8F6F2] hover:text-[#0D0D0D] disabled:cursor-not-allowed dark:hover:bg-slate-800 dark:hover:text-slate-200"
                     >
                         <X size={18} />
                     </button>
                 </div>
 
-                {/* Form Body */}
                 <form
                     id="awn-ticket-form"
                     ref={formRef}
-                    onSubmit={handleFormSubmit}
+                    onSubmit={handleSubmit}
                     noValidate
-                    className="p-6 overflow-y-auto flex-1 space-y-5"
+                    className="flex-1 space-y-5 overflow-y-auto p-6"
                 >
-                    {/* 1. Customer * -> searchable dropdown */}
-                    <div className="relative" ref={customerDropdownRef}>
+                    <div>
                         <label
-                            htmlFor="ticket-customer-btn"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
+                            htmlFor="task-subject"
+                            className="mb-1.5 block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200"
                         >
-                            {t('ticketing.form.customer')}{' '}
-                            {!isView && <span className="text-[#A23B2A]">*</span>}
-                        </label>
-                        <button
-                            id="ticket-customer-btn"
-                            ref={customerButtonRef}
-                            type="button"
-                            disabled={isView}
-                            aria-invalid={Boolean(hasSubmitted && errors.customer)}
-                            onClick={() => {
-                                if (isView) return;
-                                setIsCustomerOpen((prev) => !prev);
-                                setIsCompanyOpen(false);
-                            }}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-start flex items-center justify-between transition ${
-                                isView
-                                    ? 'bg-[#FAF8F5] dark:bg-slate-800/60 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-200 cursor-default'
-                                    : hasSubmitted && errors.customer
-                                      ? 'bg-white dark:bg-slate-800 border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/20 cursor-pointer'
-                                      : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 hover:bg-[#F3EFE8] dark:hover:bg-slate-700/70 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer'
-                            }`}
-                        >
-                            <span
-                                className={
-                                    selectedCustomerOption
-                                        ? 'font-medium text-[#0D0D0D] dark:text-slate-100'
-                                        : 'text-[#857E74] dark:text-slate-400'
-                                }
-                            >
-                                {selectedCustomerOption
-                                    ? isAr
-                                        ? selectedCustomerOption.ar
-                                        : selectedCustomerOption.en
-                                    : t('ticketing.form.customerPlaceholder')}
-                            </span>
+                            {isAr ? 'موضوع المهمة' : 'Subject'}
                             {!isView && (
-                                <ChevronDown size={14} className="text-[#857E74] shrink-0" />
+                                <span className="ms-1 text-[#A23B2A]">
+                                    *
+                                </span>
                             )}
-                        </button>
+                        </label>
 
-                        {isCustomerOpen && !isView && (
-                            <div className="absolute z-30 mt-1 w-full bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
-                                <div className="p-2 border-b border-[#F0ECE4] dark:border-slate-700 flex items-center gap-2 bg-[#FAF8F5] dark:bg-slate-800/90">
-                                    <Search size={14} className="text-[#857E74] shrink-0" />
-                                    <input
-                                        type="text"
-                                        value={customerSearch}
-                                        onChange={(e) => setCustomerSearch(e.target.value)}
-                                        placeholder={t('ticketing.form.searchCustomer')}
-                                        className="w-full bg-transparent text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none"
-                                        autoFocus
-                                    />
-                                </div>
-                                <div className="max-h-48 overflow-y-auto py-1 divide-y divide-[#F0ECE4]/60 dark:divide-slate-700/50">
-                                    {filteredCustomerOptions.length === 0 ? (
-                                        <div className="px-3.5 py-2.5 text-xs text-[#857E74] text-center">
-                                            {t('ticketing.form.noCustomerFound')}
-                                        </div>
-                                    ) : (
-                                        filteredCustomerOptions.map((opt) => {
-                                            const isSelected = customerValue === opt.value;
-                                            return (
-                                                <button
-                                                    key={opt.value}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCustomerValue(opt.value);
-                                                        setIsCustomerOpen(false);
-                                                        setCustomerSearch('');
-                                                        if (hasSubmitted && errors.customer) {
-                                                            setErrors((prev) => ({
-                                                                ...prev,
-                                                                customer: undefined,
-                                                            }));
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3.5 py-2 text-xs text-start flex items-center justify-between transition cursor-pointer ${
-                                                        isSelected
-                                                            ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-emerald-300 font-semibold'
-                                                            : 'text-[#0D0D0D] dark:text-slate-200 hover:bg-[#FAF8F5] dark:hover:bg-slate-700/60'
-                                                    }`}
-                                                >
-                                                    <span>{isAr ? opt.ar : opt.en}</span>
-                                                    {isSelected && (
-                                                        <Check
-                                                            size={14}
-                                                            className="text-[#2D3F2C] dark:text-emerald-300 shrink-0"
-                                                        />
-                                                    )}
-                                                </button>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                        <input
+                            id="task-subject"
+                            ref={subjectRef}
+                            type="text"
+                            value={values.subject}
+                            readOnly={isView}
+                            disabled={isView}
+                            onChange={(event) =>
+                                updateField('subject', event.target.value)
+                            }
+                            placeholder={
+                                isAr
+                                    ? 'أدخل موضوع المهمة'
+                                    : 'Enter task subject'
+                            }
+                            aria-invalid={Boolean(
+                                hasSubmitted && errors.subject
+                            )}
+                            className={fieldClass('subject')}
+                        />
 
-                        {hasSubmitted && errors.customer && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {translateError(t, errors.customer)}
-                            </span>
-                        )}
+                        {renderError('subject')}
                     </div>
 
-                    {/* 2. Company * -> searchable dropdown */}
-                    <div className="relative" ref={companyDropdownRef}>
-                        <label
-                            htmlFor="ticket-company-btn"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                        >
-                            {t('ticketing.form.company')}{' '}
-                            {!isView && <span className="text-[#A23B2A]">*</span>}
-                        </label>
-                        <button
-                            id="ticket-company-btn"
-                            ref={companyButtonRef}
-                            type="button"
-                            disabled={isView}
-                            aria-invalid={Boolean(hasSubmitted && errors.company)}
-                            onClick={() => {
-                                if (isView) return;
-                                setIsCompanyOpen((prev) => !prev);
-                                setIsCustomerOpen(false);
-                            }}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-start flex items-center justify-between transition ${
-                                isView
-                                    ? 'bg-[#FAF8F5] dark:bg-slate-800/60 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-200 cursor-default'
-                                    : hasSubmitted && errors.company
-                                      ? 'bg-white dark:bg-slate-800 border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400/20 cursor-pointer'
-                                      : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 hover:bg-[#F3EFE8] dark:hover:bg-slate-700/70 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer'
-                            }`}
-                        >
-                            <span
-                                className={
-                                    selectedCompanyOption
-                                        ? 'font-medium text-[#0D0D0D] dark:text-slate-100'
-                                        : 'text-[#857E74] dark:text-slate-400'
-                                }
-                            >
-                                {selectedCompanyOption
-                                    ? isAr
-                                        ? selectedCompanyOption.ar
-                                        : selectedCompanyOption.en
-                                    : t('ticketing.form.companyPlaceholder')}
-                            </span>
-                            {!isView && (
-                                <ChevronDown size={14} className="text-[#857E74] shrink-0" />
-                            )}
-                        </button>
-
-                        {isCompanyOpen && !isView && (
-                            <div className="absolute z-30 mt-1 w-full bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-xl shadow-lg overflow-hidden">
-                                <div className="p-2 border-b border-[#F0ECE4] dark:border-slate-700 flex items-center gap-2 bg-[#FAF8F5] dark:bg-slate-800/90">
-                                    <Search size={14} className="text-[#857E74] shrink-0" />
-                                    <input
-                                        type="text"
-                                        value={companySearch}
-                                        onChange={(e) => setCompanySearch(e.target.value)}
-                                        placeholder={t('ticketing.form.searchCompany')}
-                                        className="w-full bg-transparent text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none"
-                                        autoFocus
-                                    />
-                                </div>
-                                <div className="max-h-48 overflow-y-auto py-1 divide-y divide-[#F0ECE4]/60 dark:divide-slate-700/50">
-                                    {filteredCompanyOptions.length === 0 ? (
-                                        <div className="px-3.5 py-2.5 text-xs text-[#857E74] text-center">
-                                            {t('ticketing.form.noCompanyFound')}
-                                        </div>
-                                    ) : (
-                                        filteredCompanyOptions.map((opt) => {
-                                            const isSelected = companyValue === opt.value;
-                                            return (
-                                                <button
-                                                    key={opt.value}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCompanyValue(opt.value);
-                                                        setIsCompanyOpen(false);
-                                                        setCompanySearch('');
-                                                        if (hasSubmitted && errors.company) {
-                                                            setErrors((prev) => ({
-                                                                ...prev,
-                                                                company: undefined,
-                                                            }));
-                                                        }
-                                                    }}
-                                                    className={`w-full px-3.5 py-2 text-xs text-start flex items-center justify-between transition cursor-pointer ${
-                                                        isSelected
-                                                            ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-emerald-300 font-semibold'
-                                                            : 'text-[#0D0D0D] dark:text-slate-200 hover:bg-[#FAF8F5] dark:hover:bg-slate-700/60'
-                                                    }`}
-                                                >
-                                                    <span>{isAr ? opt.ar : opt.en}</span>
-                                                    {isSelected && (
-                                                        <Check
-                                                            size={14}
-                                                            className="text-[#2D3F2C] dark:text-emerald-300 shrink-0"
-                                                        />
-                                                    )}
-                                                </button>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {hasSubmitted && errors.company && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {translateError(t, errors.company)}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* 3. Ticket Type -> dropdown, optional & 4. Priority * -> dropdown */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* 3. Ticket Type (Optional) */}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <label
-                                htmlFor="ticket-type-select"
-                                className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
+                                htmlFor="task-start-date"
+                                className="mb-1.5 block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200"
                             >
-                                {t('ticketing.form.ticketType')}{' '}
+                                {isAr ? 'تاريخ البداية' : 'Start Date'}
                                 {!isView && (
-                                    <span className="text-[#857E74] font-normal">
-                                        {t('common.optional')}
+                                    <span className="ms-1 text-[#A23B2A]">
+                                        *
                                     </span>
                                 )}
                             </label>
-                            {isView ? (
-                                <div className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 text-xs font-medium text-[#0D0D0D] dark:text-slate-200">
-                                    {selectedTicketTypeOption
-                                        ? isAr
-                                            ? selectedTicketTypeOption.ar
-                                            : selectedTicketTypeOption.en
-                                        : t('ticketing.form.noTicketType')}
-                                </div>
-                            ) : (
-                                <select
-                                    id="ticket-type-select"
-                                    value={ticketTypeValue}
-                                    onChange={(e) => setTicketTypeValue(e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer transition"
-                                >
-                                    <option value="">
-                                        {t('ticketing.form.ticketTypePlaceholder')}
-                                    </option>
-                                    {ticketTypeOptions.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {isAr ? opt.ar : opt.en}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                        </div>
 
-                        {/* 4. Priority * (Strictly High, Medium, Low) */}
-                        <div>
-                            <label
-                                htmlFor="ticket-priority-select"
-                                className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                            >
-                                {t('ticketing.form.priority')}{' '}
-                                {!isView && <span className="text-[#A23B2A]">*</span>}
-                            </label>
-                            {isView ? (
-                                <div className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 text-xs font-medium text-[#0D0D0D] dark:text-slate-200">
-                                    {priority === 'High'
-                                        ? t('ticketing.priorities.high')
-                                        : priority === 'Medium'
-                                          ? t('ticketing.priorities.medium')
-                                          : priority === 'Low'
-                                            ? t('ticketing.priorities.low')
-                                            : '—'}
-                                </div>
-                            ) : (
-                                <select
-                                    id="ticket-priority-select"
-                                    ref={prioritySelectRef}
-                                    value={priority}
-                                    aria-invalid={Boolean(hasSubmitted && errors.priority)}
-                                    onChange={(e) => {
-                                        const val = e.target.value as '' | 'High' | 'Medium' | 'Low';
-                                        setPriority(val);
-                                        if (hasSubmitted && errors.priority && val) {
-                                            setErrors((prev) => ({
-                                                ...prev,
-                                                priority: undefined,
-                                            }));
-                                        }
-                                    }}
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs transition cursor-pointer ${
-                                        hasSubmitted && errors.priority
-                                            ? 'bg-white dark:bg-slate-800 border-red-400 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400/20'
-                                            : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ticketing.form.priorityPlaceholder')}
-                                    </option>
-                                    {TICKET_PRIORITY_OPTIONS.map((prio) => (
-                                        <option key={prio} value={prio}>
-                                            {prio === 'High'
-                                                ? t('ticketing.priorities.high')
-                                                : prio === 'Medium'
-                                                  ? t('ticketing.priorities.medium')
-                                                  : t('ticketing.priorities.low')}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            {hasSubmitted && errors.priority && (
-                                <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                    {translateError(t, errors.priority)}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* 5. Subject * -> text input */}
-                    <div>
-                        <label
-                            htmlFor="ticket-subject-input"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                        >
-                            {t('ticketing.form.subject')}{' '}
-                            {!isView && <span className="text-[#A23B2A]">*</span>}
-                        </label>
-                        <input
-                            id="ticket-subject-input"
-                            ref={subjectInputRef}
-                            type="text"
-                            readOnly={isView}
-                            disabled={isView}
-                            value={subject}
-                            aria-invalid={Boolean(hasSubmitted && errors.subject)}
-                            onChange={(e) => {
-                                setSubject(e.target.value);
-                                if (hasSubmitted && errors.subject && e.target.value.trim()) {
-                                    setErrors((prev) => ({ ...prev, subject: undefined }));
+                            <input
+                                id="task-start-date"
+                                ref={startDateRef}
+                                type="datetime-local"
+                                value={values.start_date}
+                                readOnly={isView}
+                                disabled={isView}
+                                onChange={(event) =>
+                                    updateField(
+                                        'start_date',
+                                        event.target.value
+                                    )
                                 }
-                            }}
-                            placeholder={t('ticketing.form.subjectPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs transition ${
-                                isView
-                                    ? 'bg-[#FAF8F5] dark:bg-slate-800/60 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-200 cursor-default'
-                                    : hasSubmitted && errors.subject
-                                      ? 'bg-white dark:bg-slate-800 border-red-400 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400/20'
-                                      : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
-                            }`}
-                        />
-                        {hasSubmitted && errors.subject && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {translateError(t, errors.subject)}
-                            </span>
-                        )}
-                    </div>
+                                aria-invalid={Boolean(
+                                    hasSubmitted && errors.start_date
+                                )}
+                                className={fieldClass('start_date')}
+                            />
 
-                    {/* Status Selector (Shown in Edit & View modes; Create defaults to NEW) */}
-                    {(isEdit || isView) && (
+                            {renderError('start_date')}
+                        </div>
+
                         <div>
                             <label
-                                htmlFor="ticket-status-select"
-                                className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
+                                htmlFor="task-end-date"
+                                className="mb-1.5 block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200"
                             >
-                                {t('ticketing.form.status')}
+                                {isAr ? 'تاريخ النهاية' : 'End Date'}
+                                {!isView && (
+                                    <span className="ms-1 text-[#A23B2A]">
+                                        *
+                                    </span>
+                                )}
                             </label>
-                            {isView ? (
-                                <div className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 text-xs font-semibold text-[#0D0D0D] dark:text-slate-200">
-                                    {getStatusLabel(status)}
-                                </div>
-                            ) : (
+
+                            <input
+                                id="task-end-date"
+                                ref={endDateRef}
+                                type="datetime-local"
+                                value={values.end_date}
+                                readOnly={isView}
+                                disabled={isView}
+                                onChange={(event) =>
+                                    updateField(
+                                        'end_date',
+                                        event.target.value
+                                    )
+                                }
+                                aria-invalid={Boolean(
+                                    hasSubmitted && errors.end_date
+                                )}
+                                className={fieldClass('end_date')}
+                            />
+
+                            {renderError('end_date')}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label
+                                htmlFor="task-priority"
+                                className="mb-1.5 block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200"
+                            >
+                                {isAr ? 'الأولوية' : 'Priority'}
+                                {!isView && (
+                                    <span className="ms-1 text-[#A23B2A]">
+                                        *
+                                    </span>
+                                )}
+                            </label>
+
+                            <div className="relative">
                                 <select
-                                    id="ticket-status-select"
-                                    value={status}
-                                    onChange={(e) =>
-                                        setStatus(e.target.value as TicketLifecycleStatus)
+                                    id="task-priority"
+                                    ref={priorityRef}
+                                    value={values.priority}
+                                    disabled={isView}
+                                    onChange={(event) =>
+                                        updateField(
+                                            'priority',
+                                            event.target.value as TaskPriority
+                                        )
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-medium text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer transition"
+                                    aria-invalid={Boolean(
+                                        hasSubmitted && errors.priority
+                                    )}
+                                    className={`${fieldClass('priority')} appearance-none pe-9`}
                                 >
-                                    {TICKET_STATUS_OPTIONS.map((st) => (
-                                        <option key={st} value={st}>
-                                            {getStatusLabel(st)}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Optional Canned Reply Quick-Insert Selector (Create & Edit modes) */}
-                    {!isView && (
-                        <div className="p-3 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 space-y-1.5">
-                            <label
-                                htmlFor="ticket-canned-reply-select"
-                                className="flex items-center justify-between text-xs font-semibold text-[#2D3F2C] dark:text-emerald-300"
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <MessageSquareQuote size={14} className="shrink-0" />
-                                    <span>{t('ticketing.form.insertCannedReply')}</span>
-                                </span>
-                                <span className="text-[11px] text-[#857E74] font-normal">
-                                    {t('common.optional')}
-                                </span>
-                            </label>
-                            <select
-                                id="ticket-canned-reply-select"
-                                value={selectedCannedReplyId}
-                                onChange={(e) => handleInsertCannedReply(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] cursor-pointer transition"
-                            >
-                                <option value="">
-                                    {t('ticketing.form.cannedReplyPlaceholder')}
-                                </option>
-                                {availableCannedReplies.map((reply) => (
-                                    <option key={reply.id} value={reply.id}>
-                                        {isAr ? reply.titleAr || reply.title : reply.title || reply.titleAr}
+                                    <option value={TaskPriority.HIGH}>
+                                        {isAr ? 'عالية' : 'High'}
                                     </option>
-                                ))}
-                            </select>
-                            <p className="text-[11px] text-[#6E6862] dark:text-slate-400">
-                                {t('ticketing.form.cannedReplyHint')}
-                            </p>
-                        </div>
-                    )}
+                                    <option value={TaskPriority.MEDIUM}>
+                                        {isAr ? 'متوسطة' : 'Medium'}
+                                    </option>
+                                    <option value={TaskPriority.LOW}>
+                                        {isAr ? 'منخفضة' : 'Low'}
+                                    </option>
+                                </select>
 
-                    {/* 6. Message * -> textarea */}
-                    <div>
-                        <label
-                            htmlFor="ticket-message-textarea"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                        >
-                            {t('ticketing.form.message')}{' '}
-                            {!isView && <span className="text-[#A23B2A]">*</span>}
-                        </label>
-                        <textarea
-                            id="ticket-message-textarea"
-                            ref={messageTextareaRef}
-                            rows={4}
-                            readOnly={isView}
-                            disabled={isView}
-                            value={message}
-                            aria-invalid={Boolean(hasSubmitted && errors.message)}
-                            onChange={(e) => {
-                                setMessage(e.target.value);
-                                if (hasSubmitted && errors.message && e.target.value.trim()) {
-                                    setErrors((prev) => ({ ...prev, message: undefined }));
-                                }
-                            }}
-                            placeholder={t('ticketing.form.messagePlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs transition resize-y ${
-                                isView
-                                    ? 'bg-[#FAF8F5] dark:bg-slate-800/60 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-200 cursor-default'
-                                    : hasSubmitted && errors.message
-                                      ? 'bg-white dark:bg-slate-800 border-red-400 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400/20'
-                                      : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
-                            }`}
-                        />
-                        {hasSubmitted && errors.message && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {translateError(t, errors.message)}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* 7. Attachment -> file upload */}
-                    <div>
-                        <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                            {t('ticketing.form.attachment')}{' '}
-                            {!isView && (
-                                <span className="text-[#857E74] font-normal">
-                                    {t('common.optional')}
-                                </span>
-                            )}
-                        </label>
-
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.log,.md"
-                            onChange={(e) => handleFileSelect(e.target.files?.[0])}
-                            className="hidden"
-                        />
-
-                        {isView ? (
-                            attachment ? (
-                                <div className="flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700">
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                            <FileText size={16} />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p
-                                                className="text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 truncate"
-                                                dir="ltr"
-                                            >
-                                                {attachment.name}
-                                            </p>
-                                            <p
-                                                className="text-[11px] text-[#6E6862] dark:text-slate-400 font-mono"
-                                                dir="ltr"
-                                            >
-                                                {formatFileSizeLatin(attachment.size)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="px-3.5 py-3 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#857E74]">
-                                    {t('ticketing.form.noAttachment')}
-                                </div>
-                            )
-                        ) : (
-                            <div
-                                onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setIsDraggingOver(true);
-                                }}
-                                onDragLeave={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setIsDraggingOver(false);
-                                }}
-                                onDrop={handleDrop}
-                                className={`rounded-xl border-2 border-dashed p-4 transition text-center ${
-                                    hasSubmitted && errors.attachment
-                                        ? 'border-red-400 bg-red-50/30 dark:bg-red-950/20'
-                                        : isDraggingOver
-                                          ? 'border-[#2D3F2C] bg-[#2D3F2C]/5'
-                                          : 'border-[#DCD6CD] dark:border-slate-700 bg-[#FAF8F5]/70 dark:bg-slate-800/50 hover:border-[#BFAB93]'
-                                }`}
-                            >
-                                {attachment ? (
-                                    <div className="flex items-center justify-between gap-3 text-start">
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                            <div className="w-9 h-9 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                                <FileText size={18} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p
-                                                    className="text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 truncate"
-                                                    dir="ltr"
-                                                >
-                                                    {attachment.name}
-                                                </p>
-                                                <p
-                                                    className="text-[11px] text-[#6E6862] dark:text-slate-400 font-mono"
-                                                    dir="ltr"
-                                                >
-                                                    {formatFileSizeLatin(attachment.size)}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                            <button
-                                                ref={chooseFileBtnRef}
-                                                type="button"
-                                                aria-invalid={Boolean(
-                                                    hasSubmitted && errors.attachment
-                                                )}
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-200 hover:bg-[#F8F6F2] transition cursor-pointer"
-                                            >
-                                                {t('ticketing.form.replaceAttachment')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setAttachment(null);
-                                                    if (hasSubmitted && errors.attachment) {
-                                                        setErrors((prev) => ({
-                                                            ...prev,
-                                                            attachment: undefined,
-                                                        }));
-                                                    }
-                                                }}
-                                                className="p-1.5 rounded-lg text-[#A23B2A] hover:bg-[#A23B2A]/10 transition cursor-pointer"
-                                                title={t('ticketing.form.removeAttachment')}
-                                                aria-label={t('ticketing.form.removeAttachment')}
-                                            >
-                                                <Trash2 size={15} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2 py-1">
-                                        <div className="w-9 h-9 rounded-full bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-emerald-300 flex items-center justify-center mx-auto">
-                                            <Upload size={16} />
-                                        </div>
-                                        <div className="text-xs text-[#595550] dark:text-slate-300">
-                                            <span>{t('ticketing.form.dragDropTitle')} </span>
-                                            <button
-                                                ref={chooseFileBtnRef}
-                                                type="button"
-                                                aria-invalid={Boolean(
-                                                    hasSubmitted && errors.attachment
-                                                )}
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="font-semibold text-[#2D3F2C] dark:text-emerald-400 underline underline-offset-2 hover:opacity-80 cursor-pointer"
-                                            >
-                                                {t('ticketing.form.chooseFile')}
-                                            </button>
-                                        </div>
-                                        <p className="text-[11px] text-[#857E74] dark:text-slate-400">
-                                            {t('ticketing.form.attachmentHint')}
-                                        </p>
-                                    </div>
+                                {!isView && (
+                                    <ChevronDown
+                                        size={14}
+                                        className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[#857E74]"
+                                    />
                                 )}
                             </div>
+
+                            {renderError('priority')}
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="task-come-from"
+                                className="mb-1.5 block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200"
+                            >
+                                {isAr ? 'مصدر المهمة' : 'Task Source'}
+                                {!isView && (
+                                    <span className="ms-1 text-[#A23B2A]">
+                                        *
+                                    </span>
+                                )}
+                            </label>
+
+                            <div className="relative">
+                                <select
+                                    id="task-come-from"
+                                    ref={comeFromRef}
+                                    value={values.come_from}
+                                    disabled={isView}
+                                    onChange={(event) =>
+                                        updateField(
+                                            'come_from',
+                                            event.target.value as TaskComeFrom
+                                        )
+                                    }
+                                    aria-invalid={Boolean(
+                                        hasSubmitted && errors.come_from
+                                    )}
+                                    className={`${fieldClass('come_from')} appearance-none pe-9`}
+                                >
+                                    <option value={TaskComeFrom.TASK}>
+                                        {isAr ? 'مهمة' : 'Task'}
+                                    </option>
+                                    <option value={TaskComeFrom.REQUEST}>
+                                        {isAr ? 'طلب' : 'Request'}
+                                    </option>
+                                    <option value={TaskComeFrom.CLIENT_REQUEST}>
+                                        {isAr ? 'طلب عميل' : 'Client Request'}
+                                    </option>
+                                </select>
+
+                                {!isView && (
+                                    <ChevronDown
+                                        size={14}
+                                        className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[#857E74]"
+                                    />
+                                )}
+                            </div>
+
+                            {renderError('come_from')}
+                        </div>
+                    </div>
+
+                    <div className="border-t border-[#E5E0D8] pt-4 dark:border-slate-800">
+                        <h3 className="mb-4 text-sm font-bold text-[#0D0D0D] dark:text-slate-100">
+                            {isAr
+                                ? 'ربط المهمة بالبيانات'
+                                : 'Task Assignments'}
+                        </h3>
+
+                        <div className="space-y-4">
+                            {renderSelect(
+                                'assignTo_id',
+                                isAr ? 'المستخدم المسؤول' : 'Assigned User',
+                                users,
+                                assignToRef
+                            )}
+
+                            {renderSelect(
+                                'customer_id',
+                                isAr ? 'العميل' : 'Customer',
+                                customers,
+                                customerRef
+                            )}
+
+                            {renderSelect(
+                                'companyBranch_id',
+                                isAr ? 'فرع الشركة' : 'Company Branch',
+                                branches,
+                                companyBranchRef
+                            )}
+
+                            {renderSelect(
+                                'service_id',
+                                isAr ? 'الخدمة' : 'Service',
+                                services,
+                                serviceRef
+                            )}
+
+                            {renderSelect(
+                                'taskType_id',
+                                isAr ? 'نوع المهمة' : 'Task Type',
+                                taskTypes,
+                                taskTypeRef
+                            )}
+                        </div>
+
+                        {taskTypesQuery.isError && (
+                            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                                {isAr
+                                    ? 'تعذر تحميل أنواع المهام. تحقق من مسار API /task-type.'
+                                    : 'Could not load task types. Check the /task-type API endpoint.'}
+                            </p>
                         )}
 
-                        {hasSubmitted && errors.attachment && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {translateError(t, errors.attachment)}
-                            </span>
-                        )}
+                        {(branchesQuery.isError ||
+                            customersQuery.isError ||
+                            usersQuery.isError ||
+                            servicesQuery.isError) && (
+                                <p className="mt-3 text-xs text-red-500">
+                                    {isAr
+                                        ? 'تعذر تحميل بعض القوائم. تحقق من اتصال الخادم.'
+                                        : 'Some options could not be loaded. Check the server connection.'}
+                                </p>
+                            )}
                     </div>
                 </form>
 
-                {/* Sticky Footer */}
-                <div className="px-6 py-4 border-t border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-900 flex justify-end gap-2.5 shrink-0">
-                    {isView ? (
+                <div className="flex shrink-0 justify-end gap-2.5 border-t border-[#E5E0D8] bg-[#FAF8F5] px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={isSaving}
+                        className="cursor-pointer rounded-lg border border-[#E5E0D8] bg-white px-4 py-2 text-xs font-semibold text-[#595550] transition hover:bg-[#F8F6F2] disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    >
+                        {isView
+                            ? isAr
+                                ? 'إغلاق'
+                                : 'Close'
+                            : isAr
+                                ? 'إلغاء'
+                                : 'Cancel'}
+                    </button>
+
+                    {!isView && (
                         <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
+                            type="submit"
+                            form="awn-ticket-form"
+                            disabled={isSaving}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg bg-[#2D3F2C] px-5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#233222] disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            {t('ticketing.form.close')}
+                            {isSaving && (
+                                <LoaderCircle
+                                    size={14}
+                                    className="animate-spin"
+                                />
+                            )}
+
+                            {isSaving
+                                ? isAr
+                                    ? 'جاري الحفظ...'
+                                    : 'Saving...'
+                                : isEdit
+                                    ? isAr
+                                        ? 'حفظ التعديلات'
+                                        : 'Save Changes'
+                                    : isAr
+                                        ? 'إنشاء المهمة'
+                                        : 'Create Task'}
                         </button>
-                    ) : (
-                        <>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-xs font-semibold text-[#595550] dark:text-slate-300 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
-                            >
-                                {t('ticketing.form.cancel')}
-                            </button>
-                            <button
-                                type="submit"
-                                form="awn-ticket-form"
-                                className="px-5 py-2 text-xs font-semibold text-white bg-[#2D3F2C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
-                            >
-                                {isEdit
-                                    ? t('ticketing.form.saveEdit')
-                                    : t('ticketing.form.saveCreate')}
-                            </button>
-                        </>
                     )}
                 </div>
             </div>
