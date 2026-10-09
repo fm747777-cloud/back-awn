@@ -81,6 +81,16 @@
     "service": "Service",
     "requests": "Requests",
     "operationalTasks": "Operational Tasks",
+    "workflows": "Workflows",
+    "statusLevels": "Status Levels",
+    "emailTemplates": "Email Templates",
+    "assetManagement": "Asset Management",
+    "approvalTasks": "Approval Tasks",
+    "assets": "Assets",
+    "assetStatus": "Asset Status",
+    "assetTypes": "Asset Types",
+    "assetCategories": "Asset Categories",
+    "assetTags": "Asset Tags",
     "accountSettings": "Account Settings",
     "expandSidebar": "Expand Sidebar",
     "collapseSidebar": "Collapse Sidebar",
@@ -96,7 +106,7 @@
       "edms": "Document Management (EDMS)",
       "request": "Request",
       "service": "Service Management",
-      "workflow": "Workflow Engine",
+      "workflow": "Workflow Management",
       "customer": "Customer Portal",
       "ticketing": "Support & Ticketing",
       "asset": "Asset Management"
@@ -1989,6 +1999,980 @@
       "feedback": {
         "exportSuccess": "Exported {{count}} audit trail records to CSV."
       }
+    }
+  },
+  "workflow": {
+    "dashboard": {
+      "title": "Workflow Management Dashboard",
+      "description": "Executive governance and operational visibility across enterprise approval and communication workflows.",
+      "kpis": {
+        "totalWorkflows": "Total Workflows",
+        "totalWorkflowsDesc": "Configured enterprise workflows",
+        "approvalWorkflows": "Approval Workflows",
+        "approvalWorkflowsDesc": "Multi-stage governance pipelines",
+        "communicationWorkflows": "Communication Workflows",
+        "communicationWorkflowsDesc": "Automated notification & alert rules",
+        "enabledWorkflows": "Enabled Workflows",
+        "enabledWorkflowsDesc": "Active and enforcing rules",
+        "disabledWorkflows": "Disabled Workflows",
+        "disabledWorkflowsDesc": "Paused or archived definitions",
+        "connectedSources": "Connected Modules",
+        "connectedSourcesDesc": "Integrated AWN source systems"
+      },
+      "sections": {
+        "approvalWorkflowsByStatus": "Approval Workflows By Status",
+        "approvalWorkflowsByStatusDesc": "Distribution of approval workflow definitions and active governance states across AWN modules.",
+        "communicationWorkflowsByStatus": "Communication Workflows By Status",
+        "communicationWorkflowsByStatusDesc": "Status breakdown of automated communication, dispatch, and escalation workflows."
+      },
+      "labels": {
+        "workflows": "Workflows",
+        "status": "Status",
+        "modulesTag": "Modules",
+        "statusDistributionChart": "Workflows Count by Status",
+        "statusShare": "Status Breakdown Share",
+        "approvalPipeline": "Approval Governance",
+        "communicationPipeline": "Automated Dispatch",
+        "approvalBySourceModule": "Approval Workflows by Source Module",
+        "communicationBySourceModule": "Communication Workflows by Source Module",
+        "enabledCount": "{{count}} Enabled"
+      },
+      "actions": {
+        "manageWorkflows": "Manage Workflows",
+        "viewApprovalWorkflows": "View Approval Workflows",
+        "viewCommunicationWorkflows": "View Communication Workflows"
+      }
+    },
+    "workflows": {
+      "title": "Workflows",
+      "description": "Configure and monitor enterprise Approval Workflows and Communication Workflows across AWN modules.",
+      "tabs": {
+        "approval": "Approval Workflow",
+        "communication": "Communication Workflow"
+      },
+      "actions": {
+        "addWorkflow": "New Workflow",
+        "exportCsv": "Export CSV",
+        "view": "View Workflow Details",
+        "enable": "Enable Workflow",
+        "disable": "Disable Workflow"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by ID, workflow title, source, status, or create date...",
+        "sourceLabel": "Filter by Source",
+        "allSources": "All Sources",
+        "statusLabel": "Filter by Status",
+        "allStatuses": "All Statuses"
+      },
+      "statuses": {
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "selection": {
+        "selectedCount": "workflows selected",
+        "enableSelected": "Enable Selected",
+        "disableSelected": "Disable Selected",
+        "clearSelection": "Clear Selection"
+      },
+      "table": {
+        "selectAll": "Select all workflows on current page",
+        "selectRow": "Select workflow",
+        "id": "ID",
+        "workflowTitle": "Workflow Title",
+        "source": "Source",
+        "status": "Status",
+        "createDate": "Create Date",
+        "actions": "Actions"
+      },
+      "pagination": {
+        "rowsPerPage": "Rows per page:",
+        "showing": "Showing {{from}}–{{to}} of {{total}} workflows"
+      },
+      "empty": {
+        "title": "No workflows match your criteria",
+        "description": "Try adjusting your search query, source filter, or status selection."
+      },
+      "drawer": {
+        "createTitle": "Create Workflow",
+        "editTitle": "Edit Workflow",
+        "formSubtitle": "Define workflow metadata, source module, and operational status",
+        "workflowType": "Workflow Type",
+        "titleEn": "Workflow Title (English)",
+        "titleAr": "Workflow Title (Arabic)",
+        "stagesCount": "Configured Stages",
+        "triggerEvent": "Trigger Event",
+        "description": "Workflow Description",
+        "configuredStages": "Approval Stages & SLA"
+      },
+      "feedback": {
+        "statusUpdated": "Updated \"{{title}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} workflows to {{status}}.",
+        "workflowCreated": "Created workflow \"{{title}}\" successfully.",
+        "workflowUpdated": "Updated workflow \"{{title}}\" successfully.",
+        "workflowDeleted": "Deleted workflow \"{{title}}\".",
+        "titleRequired": "Please enter a workflow title.",
+        "exportSuccess": "Exported {{count}} workflows to CSV."
+      }
+    },
+    "masters": {
+      "title": "Workflow Masters",
+      "description": "Centralized master data definitions for Workflow Sources, Types, Statuses, and Actions across AWN modules.",
+      "kpis": {
+        "totalMasters": "Total Master Records",
+        "activeMasters": "Active Definitions"
+      },
+      "tabs": {
+        "sources": "Workflow Sources",
+        "types": "Workflow Types",
+        "statuses": "Workflow Statuses",
+        "actions": "Workflow Actions"
+      },
+      "actions": {
+        "addMaster": "New Master Record"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by ID, code, master name, scope, status, or date...",
+        "scopeLabel": "Filter by Module Scope",
+        "allScopes": "All Scopes"
+      },
+      "selection": {
+        "selectedCount": "master records selected"
+      },
+      "table": {
+        "id": "ID",
+        "code": "Master Code",
+        "masterName": "Master Definition",
+        "scope": "Module Scope",
+        "linkedWorkflows": "Linked Workflows",
+        "status": "Status",
+        "createDate": "Create Date",
+        "actions": "Actions"
+      },
+      "labels": {
+        "systemCore": "System Core"
+      },
+      "pagination": {
+        "showing": "Showing {{from}}–{{to}} of {{total}} master records"
+      },
+      "empty": {
+        "title": "No master definitions match your filters",
+        "description": "Try clearing your search query or adjusting the module scope and status filters."
+      },
+      "drawer": {
+        "createTitle": "Create Master Definition",
+        "editTitle": "Edit Master Definition",
+        "formSubtitle": "Configure bilingual master lookup record and module scope",
+        "category": "Master Section",
+        "nameEn": "Master Name (English)",
+        "nameAr": "Master Name (Arabic)",
+        "bilingualNames": "Bilingual Display Titles",
+        "badgeColor": "Indicator Color"
+      },
+      "feedback": {
+        "statusUpdated": "Updated \"{{title}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} master records to {{status}}.",
+        "masterCreated": "Created master record \"{{title}}\" successfully.",
+        "masterUpdated": "Updated master record \"{{title}}\" successfully.",
+        "masterDeleted": "Deleted master record \"{{title}}\".",
+        "nameRequired": "Please enter a master name.",
+        "exportSuccess": "Exported {{count}} master records to CSV."
+      }
+    },
+    "statusLevels": {
+      "title": "Status Levels",
+      "description": "Configure multi-tier workflow approval stages, authority roles, transition sequence, and SLA targets.",
+      "kpis": {
+        "totalLevels": "Total Status Levels",
+        "approvalLevels": "Approval Levels",
+        "communicationLevels": "Communication Levels",
+        "finalStages": "Final Sign-Off Stages"
+      },
+      "tabs": {
+        "all": "All Status Levels"
+      },
+      "actions": {
+        "addStatusLevel": "New Status Level"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by ID, code, level name, workflow, source, or approver role...",
+        "stageLabel": "Filter by Stage Category",
+        "allStages": "All Stage Categories"
+      },
+      "stages": {
+        "Initiation": "Initiation",
+        "Verification": "Verification",
+        "Compliance": "Compliance",
+        "Authorization": "Authorization",
+        "Completion": "Completion"
+      },
+      "selection": {
+        "selectedCount": "status levels selected"
+      },
+      "table": {
+        "id": "ID",
+        "levelName": "Status Level",
+        "levelOrder": "Level & Stage",
+        "workflowAndSource": "Workflow & Source",
+        "approverAndSla": "Approver Role & SLA",
+        "status": "Status",
+        "createDate": "Create Date",
+        "actions": "Actions"
+      },
+      "labels": {
+        "finalStage": "Final Stage",
+        "commentRequired": "Mandatory Comment"
+      },
+      "pagination": {
+        "showing": "Showing {{from}}–{{to}} of {{total}} status levels"
+      },
+      "empty": {
+        "title": "No status levels match your criteria",
+        "description": "Try adjusting your search query, source module, or stage category filter."
+      },
+      "drawer": {
+        "createTitle": "Create Status Level",
+        "editTitle": "Edit Status Level",
+        "formSubtitle": "Define stage sequence, responsible role, and SLA target",
+        "levelNameEn": "Status Level Name (English)",
+        "levelNameAr": "Status Level Name (Arabic)",
+        "stageCategory": "Stage Category",
+        "approverRole": "Responsible Role",
+        "slaHours": "SLA Target (Hours)"
+      },
+      "feedback": {
+        "statusUpdated": "Updated \"{{title}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} status levels to {{status}}.",
+        "levelCreated": "Created status level \"{{title}}\" successfully.",
+        "levelUpdated": "Updated status level \"{{title}}\" successfully.",
+        "levelDeleted": "Deleted status level \"{{title}}\".",
+        "nameRequired": "Please enter a status level name.",
+        "exportSuccess": "Exported {{count}} status levels to CSV."
+      }
+    },
+    "emailTemplates": {
+      "title": "Email Templates",
+      "description": "Manage enterprise notification templates, dynamic workflow variables, and automated email dispatches.",
+      "kpis": {
+        "totalTemplates": "Total Templates",
+        "activeTemplates": "Active Templates",
+        "inactiveTemplates": "Inactive Templates",
+        "connectedWorkflows": "Connected Workflows"
+      },
+      "actions": {
+        "newTemplate": "New Template",
+        "view": "View Template Details",
+        "activate": "Activate Template",
+        "deactivate": "Deactivate Template"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by ID, template name, creator, email, workflow, or date...",
+        "workflowLabel": "Filter by Communication Workflow",
+        "allWorkflows": "All Communication Workflows",
+        "statusLabel": "Filter by Status",
+        "allStatuses": "All Statuses"
+      },
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "selection": {
+        "selectedCount": "templates selected",
+        "activateSelected": "Activate Selected",
+        "deactivateSelected": "Deactivate Selected"
+      },
+      "table": {
+        "id": "ID",
+        "templateName": "Template Name",
+        "creator": "Creator / Author",
+        "email": "Email",
+        "createDate": "Create Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "pagination": {
+        "showing": "Showing {{from}}–{{to}} out of {{total}} entries"
+      },
+      "empty": {
+        "title": "No email templates match your filters",
+        "description": "Try clearing your search query or adjusting the communication workflow and status filters."
+      },
+      "drawer": {
+        "createTitle": "New Email Template",
+        "editTitle": "Edit Email Template",
+        "formSubtitle": "Configure template subject, body content, and dynamic workflow variables",
+        "templateName": "Template Name",
+        "templateNamePlaceholder": "e.g., Renew the subscription of GOSI",
+        "communicationWorkflow": "Communication Workflow",
+        "searchWorkflowPlaceholder": "Search communication workflows...",
+        "selectWorkflowOption": "Select a Communication Workflow...",
+        "availableVariables": "Available Variables",
+        "clickToInsertHint": "Click a variable chip to insert into content",
+        "noAvailableVariables": "No Available Variables",
+        "emailSubject": "Email Subject",
+        "emailSubjectPlaceholder": "e.g., Action Required: Subscription Renewal for {{companyName}}",
+        "emailContent": "Email Template / Content",
+        "emailContentPlaceholder": "Write the email message body here and click variable chips above to insert dynamic placeholders..."
+      },
+      "validation": {
+        "templateNameRequired": "Template Name is required.",
+        "workflowRequired": "Please select a Communication Workflow.",
+        "subjectRequired": "Email Subject is required.",
+        "contentRequired": "Email Template content is required.",
+        "fixErrors": "Please complete all required fields before saving."
+      },
+      "feedback": {
+        "statusUpdated": "Updated \"{{title}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} templates to {{status}}.",
+        "templateCreated": "Created email template \"{{title}}\" successfully.",
+        "templateUpdated": "Updated email template \"{{title}}\" successfully.",
+        "templateDeleted": "Deleted email template \"{{title}}\".",
+        "variableInserted": "Inserted {{variable}} into template content.",
+        "exportSuccess": "Exported {{count}} email templates to CSV."
+      }
+    },
+    "placeholders": {
+      "mastersTitle": "Workflow Masters",
+      "mastersDesc": "Centralized master definitions and lookup configurations for enterprise workflow routing.",
+      "statusLevelsTitle": "Status Levels",
+      "statusLevelsDesc": "Define multi-tier approval status levels, transition rules, and authority thresholds.",
+      "emailTemplatesTitle": "Email Templates",
+      "emailTemplatesDesc": "Manage bilingual notification and communication templates linked to workflow triggers.",
+      "auditTrailTitle": "Workflow Audit Trail",
+      "auditTrailDesc": "Chronological governance and compliance log of all workflow configuration and status changes.",
+      "foundationReadyTitle": "Workflow Management Foundation Active",
+      "foundationReadyDesc": "Data models and routing for this section are provisioned and ready for module connection.",
+      "goToDashboard": "Dashboard",
+      "goToWorkflows": "View Workflows"
+    }
+  },
+  "assetManagement": {
+    "title": "Asset Management",
+    "common": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "allStatuses": "All Statuses",
+      "filterByStatus": "Filter by Status",
+      "resetFilters": "Reset Filters",
+      "exportCsv": "Export CSV",
+      "exportedCsv": "Exported {{count}} records to CSV.",
+      "rowsPerPage": "Rows per page",
+      "showingCount": "Showing {{from}}–{{to}} out of {{total}} entries",
+      "selectAll": "Select all rows on page",
+      "selectRow": "Select row",
+      "selectedCount": "records selected",
+      "activateSelected": "Activate Selected",
+      "deactivateSelected": "Deactivate Selected",
+      "clearSelection": "Clear Selection",
+      "view": "View Details",
+      "edit": "Edit",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "delete": "Delete",
+      "bilingualNames": "Bilingual Names",
+      "noDescription": "No description provided."
+    },
+    "status": {
+      "title": "Asset Status",
+      "description": "Define and manage lifecycle status definitions, visual color badges, and operational states for enterprise assets.",
+      "kpis": {
+        "totalStatuses": "Total Statuses",
+        "activeStatuses": "Active Statuses",
+        "inactiveStatuses": "Inactive Statuses",
+        "linkedAssets": "Linked Assets"
+      },
+      "actions": {
+        "newStatus": "New Status"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by status ID, name, description, color, creator, or date..."
+      },
+      "table": {
+        "id": "Status ID",
+        "name": "Status Name",
+        "description": "Description",
+        "color": "Color",
+        "creator": "Creator",
+        "createDate": "Creation Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "empty": {
+        "title": "No asset statuses match your filters",
+        "description": "Try clearing your search query or resetting the status filter."
+      },
+      "drawer": {
+        "createTitle": "New Asset Status",
+        "editTitle": "Edit Asset Status",
+        "subtitle": "Configure asset lifecycle status name, color badge, and description",
+        "nameEn": "Status Name",
+        "nameEnPlaceholder": "e.g., New Assets",
+        "nameAr": "Status Name (Arabic)",
+        "nameArPlaceholder": "e.g., أصول جديدة",
+        "color": "Status Color",
+        "descriptionEn": "Description",
+        "descriptionPlaceholder": "Enter a brief description of this asset status...",
+        "descriptionAr": "Description (Arabic)",
+        "descriptionArPlaceholder": "أدخل وصفاً مختصراً لحالة الأصل..."
+      },
+      "validation": {
+        "nameRequired": "Status Name is required.",
+        "nameDuplicate": "A status with this name already exists."
+      },
+      "feedback": {
+        "created": "Created asset status \"{{name}}\" successfully.",
+        "updated": "Updated asset status \"{{name}}\" successfully.",
+        "deleted": "Deleted asset status \"{{name}}\".",
+        "statusUpdated": "Updated \"{{name}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} asset statuses to {{status}}."
+      },
+      "deleteModal": {
+        "title": "Delete Asset Status",
+        "message": "Are you sure you want to delete status \"{{name}}\" ({{id}})? This action will be recorded in the Asset Audit Trail."
+      }
+    },
+    "types": {
+      "title": "Asset Types",
+      "description": "Configure enterprise asset types, category bindings, asset subtypes, and linked compliance document templates.",
+      "kpis": {
+        "totalTypes": "Total Asset Types",
+        "activeTypes": "Active Types",
+        "linkedCategories": "Linked Categories",
+        "linkedTemplates": "Linked Templates"
+      },
+      "actions": {
+        "newType": "New Asset Type"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by type ID, name, category, subtype, description, templates, or creator...",
+        "categoryLabel": "Filter by Category",
+        "allCategories": "All Categories",
+        "subTypeLabel": "Filter by Subtype",
+        "allSubTypes": "All Subtypes"
+      },
+      "table": {
+        "id": "Type ID",
+        "name": "Type Name",
+        "category": "Category",
+        "assetSubtype": "Asset Subtype",
+        "description": "Description",
+        "templates": "Templates",
+        "creator": "Creator",
+        "createDate": "Creation Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "labels": {
+        "noTemplates": "No templates"
+      },
+      "empty": {
+        "title": "No asset types match your filters",
+        "description": "Try clearing your search query or adjusting the category, subtype, and status filters."
+      },
+      "drawer": {
+        "createTitle": "New Asset Type",
+        "editTitle": "Edit Asset Type",
+        "subtitle": "Configure asset type classification, category, subtype, and document templates",
+        "nameEn": "Asset Type Name",
+        "nameEnPlaceholder": "e.g., New Type Asset",
+        "nameAr": "Asset Type Name (Arabic)",
+        "nameArPlaceholder": "e.g., نوع أصل جديد",
+        "category": "Asset Category",
+        "assetSubtype": "Asset Subtype",
+        "templates": "Document Templates",
+        "templatesHint": "Select one or more document templates to associate with this asset type (optional).",
+        "clearTemplates": "Clear all",
+        "addCustomTemplatePlaceholder": "Add custom template name...",
+        "addTemplateBtn": "Add",
+        "descriptionEn": "Description",
+        "descriptionPlaceholder": "Enter a brief description of this asset type..."
+      },
+      "validation": {
+        "nameRequired": "Asset Type Name is required.",
+        "categoryRequired": "Please select an Asset Category.",
+        "nameDuplicate": "An asset type with this name already exists."
+      },
+      "feedback": {
+        "created": "Created asset type \"{{name}}\" successfully.",
+        "updated": "Updated asset type \"{{name}}\" successfully.",
+        "deleted": "Deleted asset type \"{{name}}\".",
+        "statusUpdated": "Updated \"{{name}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} asset types to {{status}}."
+      },
+      "deleteModal": {
+        "title": "Delete Asset Type",
+        "message": "Are you sure you want to delete asset type \"{{name}}\" ({{id}})? This action will be recorded in the Asset Audit Trail."
+      }
+    },
+    "categories": {
+      "title": "Asset Categories",
+      "description": "Manage top-level classifications for organizing enterprise operational assets, vehicles, and facilities.",
+      "kpis": {
+        "totalCategories": "Total Categories",
+        "activeCategories": "Active Categories",
+        "inactiveCategories": "Inactive Categories",
+        "linkedTypes": "Linked Asset Types"
+      },
+      "actions": {
+        "newCategory": "New Category"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by category ID, name, description, creator, or date..."
+      },
+      "table": {
+        "id": "Category ID",
+        "name": "Category Name",
+        "description": "Description",
+        "linkedTypes": "Linked Types",
+        "creator": "Creator",
+        "createDate": "Creation Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "labels": {
+        "typesUnit": "types"
+      },
+      "empty": {
+        "title": "No asset categories match your filters",
+        "description": "Try clearing your search query or resetting the status filter."
+      },
+      "drawer": {
+        "createTitle": "New Asset Category",
+        "editTitle": "Edit Asset Category",
+        "subtitle": "Configure top-level asset category name, description, and status",
+        "nameEn": "Category Name",
+        "nameEnPlaceholder": "e.g., Category Asset",
+        "nameAr": "Category Name (Arabic)",
+        "nameArPlaceholder": "e.g., تصنيف الأصل",
+        "descriptionEn": "Description",
+        "descriptionPlaceholder": "Enter a brief description of this asset category...",
+        "descriptionAr": "Description (Arabic)",
+        "descriptionArPlaceholder": "أدخل وصفاً مختصراً لتصنيف الأصل..."
+      },
+      "validation": {
+        "nameRequired": "Category Name is required.",
+        "nameDuplicate": "A category with this name already exists."
+      },
+      "feedback": {
+        "created": "Created asset category \"{{name}}\" successfully.",
+        "updated": "Updated asset category \"{{name}}\" successfully.",
+        "deleted": "Deleted asset category \"{{name}}\".",
+        "statusUpdated": "Updated \"{{name}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} asset categories to {{status}}."
+      },
+      "deleteModal": {
+        "title": "Delete Asset Category",
+        "message": "Are you sure you want to delete asset category \"{{name}}\" ({{id}})? This action will be recorded in the Asset Audit Trail."
+      }
+    },
+    "tags": {
+      "title": "Asset Tags",
+      "description": "Create and manage identification tags and color labels for grouping, tracking, and filtering enterprise assets.",
+      "kpis": {
+        "totalTags": "Total Tags",
+        "activeTags": "Active Tags",
+        "inactiveTags": "Inactive Tags",
+        "taggedAssets": "Tagged Assets"
+      },
+      "actions": {
+        "newTag": "New Tag"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by tag ID, name, description, color, creator, or date..."
+      },
+      "table": {
+        "id": "Tag ID",
+        "name": "Tag Name",
+        "description": "Description",
+        "color": "Color",
+        "creator": "Creator",
+        "createDate": "Creation Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "empty": {
+        "title": "No asset tags match your filters",
+        "description": "Try clearing your search query or resetting the status filter."
+      },
+      "drawer": {
+        "createTitle": "New Asset Tag",
+        "editTitle": "Edit Asset Tag",
+        "subtitle": "Configure asset tag name, color badge, and description",
+        "nameEn": "Tag Name",
+        "nameEnPlaceholder": "e.g., Tag Asset",
+        "nameAr": "Tag Name (Arabic)",
+        "nameArPlaceholder": "e.g., وسم الأصل",
+        "color": "Tag Color",
+        "descriptionEn": "Description",
+        "descriptionPlaceholder": "Enter a brief description of this asset tag...",
+        "descriptionAr": "Description (Arabic)",
+        "descriptionArPlaceholder": "أدخل وصفاً مختصراً لوسم الأصل..."
+      },
+      "validation": {
+        "nameRequired": "Tag Name is required.",
+        "nameDuplicate": "A tag with this name already exists."
+      },
+      "feedback": {
+        "created": "Created asset tag \"{{name}}\" successfully.",
+        "updated": "Updated asset tag \"{{name}}\" successfully.",
+        "deleted": "Deleted asset tag \"{{name}}\".",
+        "statusUpdated": "Updated \"{{name}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} asset tags to {{status}}."
+      },
+      "deleteModal": {
+        "title": "Delete Asset Tag",
+        "message": "Are you sure you want to delete asset tag \"{{name}}\" ({{id}})? This action will be recorded in the Asset Audit Trail."
+      }
+    },
+    "assets": {
+      "title": "Assets",
+      "description": "Centralized registry of enterprise operational assets, customer and company assignments, classifications, serial numbers, and registration validity.",
+      "kpis": {
+        "totalAssets": "Total Assets",
+        "activeAssets": "Active Assets",
+        "inactiveAssets": "Inactive Assets",
+        "linkedCompanies": "Linked Companies"
+      },
+      "actions": {
+        "newAsset": "New Asset"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by asset ID, customer, business, category, type, owner, brand, serial, year, or email...",
+        "customerLabel": "Filter by Customer",
+        "allCustomers": "All Customers",
+        "companyLabel": "Filter by Business / Company",
+        "allCompanies": "All Businesses",
+        "categoryLabel": "Filter by Category",
+        "allCategories": "All Categories",
+        "typeLabel": "Filter by Asset Type",
+        "allTypes": "All Asset Types"
+      },
+      "table": {
+        "id": "Asset ID",
+        "customer": "Customer",
+        "company": "Business / Company",
+        "category": "Category",
+        "assetType": "Asset Type",
+        "owner": "Owner",
+        "brand": "Brand",
+        "serialNumber": "Serial Number",
+        "year": "Year",
+        "registrationValidity": "Registration Validity",
+        "createdBy": "Created By",
+        "email": "Email",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "empty": {
+        "title": "No assets match your filters",
+        "description": "Try clearing your search query or resetting the customer, business, category, type, and status filters."
+      },
+      "drawer": {
+        "createTitle": "New Asset",
+        "editTitle": "Edit Asset",
+        "viewTitle": "Asset Details",
+        "subtitle": "Configure customer, business, master classification, technical specifications, and validity details",
+        "sectionAssignment": "Customer & Business Assignment",
+        "sectionClassification": "Master Classification",
+        "sectionSpecs": "Technical & Registration Details",
+        "sectionCreator": "Creator & Governance",
+        "customerEn": "Customer",
+        "customerEnPlaceholder": "e.g., mohd",
+        "customerAr": "Customer (Arabic)",
+        "customerArPlaceholder": "e.g., محمد",
+        "companyEn": "Business / Company",
+        "companyEnPlaceholder": "e.g., dezen company",
+        "companyAr": "Business / Company (Arabic)",
+        "companyArPlaceholder": "e.g., شركة ديزن",
+        "category": "Category",
+        "assetType": "Asset Type",
+        "assetStatusMaster": "Asset Lifecycle Status",
+        "ownerEn": "Owner",
+        "ownerEnPlaceholder": "e.g., dezen company",
+        "ownerAr": "Owner (Arabic)",
+        "ownerArPlaceholder": "e.g., شركة ديزن",
+        "brandEn": "Brand",
+        "brandEnPlaceholder": "e.g., nexus",
+        "brandAr": "Brand (Arabic)",
+        "brandArPlaceholder": "e.g., نيكسس",
+        "serialNumber": "Serial Number",
+        "serialNumberPlaceholder": "e.g., 7485896989",
+        "year": "Manufacturing Year",
+        "yearPlaceholder": "e.g., 2015",
+        "registrationValidity": "Registration Validity",
+        "registrationValidityPlaceholder": "e.g., 10/10/2028",
+        "createdByEn": "Created By",
+        "createdByEnPlaceholder": "e.g., Dezen Team",
+        "createdByAr": "Created By (Arabic)",
+        "createdByArPlaceholder": "e.g., فريق ديزن",
+        "email": "Email",
+        "emailPlaceholder": "e.g., abdul.basith@dezensolutions.org",
+        "notesEn": "Notes / Description",
+        "notesPlaceholder": "Optional notes or registration remarks..."
+      },
+      "validation": {
+        "customerRequired": "Customer is required.",
+        "companyRequired": "Business / Company is required.",
+        "categoryRequired": "Please select a Category.",
+        "typeRequired": "Please select an Asset Type.",
+        "ownerRequired": "Owner is required.",
+        "brandRequired": "Brand is required.",
+        "serialRequired": "Serial Number is required.",
+        "serialDuplicate": "An asset with this Serial Number already exists.",
+        "yearRequired": "Manufacturing Year is required.",
+        "yearInvalid": "Please enter a valid 4-digit year between 1950 and 2030.",
+        "validityRequired": "Registration Validity date is required.",
+        "validityInvalid": "Please enter a valid date (e.g., 10/10/2028 or YYYY-MM-DD).",
+        "createdByRequired": "Created By is required.",
+        "emailRequired": "Email is required.",
+        "emailInvalid": "Please enter a valid email address."
+      },
+      "feedback": {
+        "created": "Created asset \"{{id}}\" ({{serial}}) successfully.",
+        "updated": "Updated asset \"{{id}}\" successfully.",
+        "deleted": "Deleted asset \"{{id}}\".",
+        "statusUpdated": "Updated asset \"{{id}}\" status to {{status}}.",
+        "bulkStatusUpdated": "Updated {{count}} assets to {{status}}."
+      },
+      "deleteModal": {
+        "title": "Delete Asset",
+        "message": "Are you sure you want to delete asset \"{{id}}\" (Serial: {{serial}})? This action will be recorded in the Asset Audit Trail."
+      }
+    },
+    "approvalTasks": {
+      "title": "Approval Tasks",
+      "description": "Review, approve, reject, and manage asset registration, lifecycle status, and governance approval tasks across enterprise workflows.",
+      "kpis": {
+        "totalTasks": "Total Approval Tasks",
+        "pendingTasks": "Pending Approval",
+        "approvedTasks": "Approved Tasks",
+        "rejectedTasks": "Rejected Tasks"
+      },
+      "statuses": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "priorities": {
+        "urgent": "Urgent",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "actions": {
+        "newTask": "New Approval Task",
+        "viewAssets": "Assets Registry",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveSelected": "Approve Selected",
+        "rejectSelected": "Reject Selected",
+        "openInAssets": "Open in Assets Registry"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by task ID, title, asset ID, serial, customer, company, request type, requester, or assignee...",
+        "statusLabel": "Filter by Status",
+        "allStatuses": "All Statuses",
+        "priorityLabel": "Filter by Priority",
+        "allPriorities": "All Priorities",
+        "requestTypeLabel": "Filter by Request Type",
+        "allRequestTypes": "All Request Types",
+        "assigneeLabel": "Filter by Assignee",
+        "allAssignees": "All Assignees"
+      },
+      "table": {
+        "id": "Task ID",
+        "taskInfo": "Task & Workflow Stage",
+        "asset": "Asset / Target Record",
+        "priority": "Priority",
+        "requestedBy": "Requested By",
+        "assignee": "Assignee / Approver",
+        "dates": "Request & Due Dates",
+        "status": "Status",
+        "actions": "Actions",
+        "requestedLabel": "Req:",
+        "dueLabel": "Due:",
+        "decidedLabel": "Decided:"
+      },
+      "empty": {
+        "title": "No approval tasks match your filters",
+        "description": "Try clearing your search query or resetting the status, priority, request type, and assignee filters."
+      },
+      "drawer": {
+        "viewTitle": "Approval Task Details",
+        "createTitle": "New Approval Task",
+        "editTitle": "Edit / Reassign Approval Task",
+        "subtitle": "Configure linked asset or master record, workflow stage, priority, assigned approver, and governance remarks",
+        "sectionTask": "Task & Workflow Classification",
+        "sectionAsset": "Linked Asset & Organization",
+        "sectionAssignment": "Requester, Approver & Schedule",
+        "sectionRemarks": "Governance Remarks & Decision Notes",
+        "taskTitle": "Task Title",
+        "taskTitlePlaceholder": "e.g., Registration & Template Verification for Asset ASTID002",
+        "requestType": "Request Type",
+        "workflowTitle": "Linked Workflow",
+        "stageName": "Approval Stage",
+        "stageNamePlaceholder": "e.g., Compliance Review",
+        "linkedRecord": "Target Asset / Master Record",
+        "priority": "Priority",
+        "assignee": "Assigned Approver",
+        "requestedBy": "Requested By",
+        "requestedByPlaceholder": "e.g., Dezen Team",
+        "requestedByEmail": "Requester Email",
+        "requestedByEmailPlaceholder": "e.g., abdul.basith@dezensolutions.org",
+        "requestDate": "Request Date",
+        "dueDate": "Due Date",
+        "dueDatePlaceholder": "e.g., 20.09.2026",
+        "actionDate": "Decision Date",
+        "status": "Task Status",
+        "remarks": "Remarks / Decision Notes",
+        "remarksPlaceholder": "Enter verification notes, compliance instructions, or approval remarks..."
+      },
+      "decisionModal": {
+        "approveTitle": "Approve Task",
+        "approveBulkTitle": "Approve Selected Tasks ({{count}})",
+        "approveDesc": "Confirm approval for this governance task. You may include optional approval remarks for the audit trail.",
+        "rejectTitle": "Reject Task",
+        "rejectBulkTitle": "Reject Selected Tasks ({{count}})",
+        "rejectDesc": "Please provide a clear rejection reason before rejecting this task. This reason is required and will be recorded in the Asset Audit Trail.",
+        "remarksLabel": "Approval Remarks (Optional)",
+        "remarksPlaceholder": "Approved after verifying asset compliance and registration documents...",
+        "rejectReasonLabel": "Rejection Reason",
+        "rejectReasonPlaceholder": "Specify the missing document, compliance issue, or reason for rejection...",
+        "confirmApprove": "Confirm Approval",
+        "confirmReject": "Confirm Rejection"
+      },
+      "validation": {
+        "titleRequired": "Task Title is required.",
+        "assetRequired": "Please select a target Asset or Master record.",
+        "requestedByRequired": "Requested By is required.",
+        "emailRequired": "Requester Email is required.",
+        "emailInvalid": "Please enter a valid email address.",
+        "dueDateRequired": "Due Date is required.",
+        "rejectReasonRequired": "A rejection reason is required to reject an approval task.",
+        "noPendingSelected": "None of the selected tasks are in Pending status.",
+        "alreadyDecided": "This task has already been {{status}}."
+      },
+      "feedback": {
+        "created": "Created approval task \"{{id}}\" successfully.",
+        "updated": "Updated approval task \"{{id}}\" successfully.",
+        "approved": "Approved task \"{{id}}\" ({{title}}).",
+        "rejected": "Rejected task \"{{id}}\" ({{title}}).",
+        "bulkApproved": "Approved {{count}} pending approval task(s).",
+        "bulkRejected": "Rejected {{count}} pending approval task(s).",
+        "deleted": "Deleted approval task \"{{id}}\"."
+      },
+      "deleteModal": {
+        "title": "Delete Approval Task",
+        "message": "Are you sure you want to delete approval task \"{{id}}\" ({{title}})? This action will be recorded in the Asset Audit Trail."
+      }
+    },
+    "auditTrail": {
+      "title": "Asset Audit Trail",
+      "description": "Chronological governance and compliance log of all operations across Assets, Approval Tasks, Statuses, Types, Categories, and Tags.",
+      "kpis": {
+        "totalEvents": "Total Audit Events",
+        "assetEvents": "Asset Registry Events",
+        "approvalEvents": "Approval Task Events",
+        "mastersEvents": "Masters Config Events"
+      },
+      "actions": {
+        "CREATED": "Created",
+        "UPDATED": "Updated",
+        "ACTIVATED": "Activated",
+        "DEACTIVATED": "Deactivated",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "DELETED": "Deleted",
+        "goToApprovalTasks": "Approval Tasks",
+        "goToAssets": "Assets Registry",
+        "openResourcePage": "Open Resource Page",
+        "refreshLogs": "Refresh"
+      },
+      "resources": {
+        "Asset": "Asset",
+        "Approval Task": "Asset Approval Task",
+        "Asset Approval Task": "Asset Approval Task",
+        "Asset Status": "Asset Status",
+        "Asset Type": "Asset Type",
+        "Asset Category": "Asset Category",
+        "Asset Tag": "Asset Tag",
+        "Asset Master": "Asset Master"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by audit ID, record ID, action, resource, resource data, performed by, remarks, or date...",
+        "actionLabel": "Filter by Action",
+        "allActions": "All Actions",
+        "resourceLabel": "Filter by Resource",
+        "allResources": "All Resources",
+        "performedByLabel": "Filter by Performed By",
+        "allPerformers": "All Performers",
+        "fromDate": "From Date",
+        "toDate": "To Date"
+      },
+      "table": {
+        "actionPerformed": "Action Performed",
+        "resource": "Resource",
+        "resourceData": "Resource Data",
+        "performedBy": "Performed By",
+        "dateTime": "Date & Time",
+        "actions": "Actions",
+        "viewDetails": "View Details",
+        "recordIdLabel": "Record ID:",
+        "auditIdLabel": "Audit ID:"
+      },
+      "empty": {
+        "title": "No audit trail records match your filters",
+        "description": "Try clearing your search query or resetting the action, resource, performer, and date filters."
+      },
+      "drawer": {
+        "title": "Audit Event Details",
+        "subtitle": "Complete governance record, target entity snapshot, and audit remarks",
+        "sectionMetadata": "Event Metadata & Classification",
+        "sectionResource": "Target Resource & Entity Data",
+        "sectionRemarks": "Governance Remarks & Operation Summary",
+        "sectionLiveEntity": "Live Entity Snapshot",
+        "auditId": "Audit Event ID",
+        "actionPerformed": "Action Performed",
+        "resourceType": "Resource Type",
+        "targetRecordId": "Target Record ID",
+        "performedBy": "Performed By",
+        "dateTime": "Date & Time",
+        "isoTimestamp": "ISO Timestamp (UTC)",
+        "resourceDataPrimary": "Resource Data",
+        "resourceDataBilingual": "Bilingual Resource Reference",
+        "remarks": "Audit Remarks",
+        "liveStatus": "Current Record Status",
+        "liveOwnerOrCreator": "Owner / Creator",
+        "liveCategoryOrWorkflow": "Category / Workflow",
+        "recordNotFoundNote": "This record is no longer present in active storage (or was deleted after this event).",
+        "openModule": "Open {{resource}} Module"
+      },
+      "feedback": {
+        "refreshed": "Audit trail refreshed ({{count}} events)."
+      }
+    },
+    "placeholders": {
+      "approvalTasksTitle": "Approval Tasks",
+      "approvalTasksDesc": "Review and process pending asset registration, modification, and lifecycle approval tasks.",
+      "noTasksFound": "No Tasks Found",
+      "noTasksFoundDesc": "There are currently no pending asset approval tasks in your queue.",
+      "assetsTitle": "Assets",
+      "assetsDesc": "Centralized registry of enterprise operational assets, vehicles, equipment, and associated compliance documents.",
+      "mastersTitle": "Asset Masters",
+      "mastersDesc": "Unified master data workspace for configuring asset statuses, types, categories, and tags.",
+      "statusTitle": "Asset Status",
+      "statusDesc": "Define and manage lifecycle status definitions for enterprise assets.",
+      "typesTitle": "Asset Types",
+      "typesDesc": "Configure asset types, category bindings, and linked document templates.",
+      "categoriesTitle": "Asset Categories",
+      "categoriesDesc": "Manage top-level classifications for organizing enterprise assets.",
+      "tagsTitle": "Asset Tags",
+      "tagsDesc": "Create and manage identification tags for grouping and filtering assets.",
+      "auditTrailTitle": "Asset Audit Trail",
+      "auditTrailDesc": "Chronological governance and compliance log of all asset and master data operations.",
+      "foundationReadyTitle": "Asset Management Foundation Active",
+      "foundationReadyDesc": "Phase 1 routing, sidebar navigation, and initial demo datasets are provisioned.",
+      "goToApprovalTasks": "Approval Tasks",
+      "goToAssets": "View Assets"
     }
   }
 }

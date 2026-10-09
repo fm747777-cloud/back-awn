@@ -13,7 +13,9 @@ import {
     Ticket,
     MessageSquareQuote,
     ClipboardList,
-    CheckSquare
+    CheckSquare,
+    GitBranch,
+    Mail
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -24,6 +26,8 @@ export interface MenuItem {
 
 export interface MenuGroup {
     title?: string;
+    collapsible?: boolean;
+    icon?: LucideIcon;
     items: MenuItem[];
 }
 
@@ -117,6 +121,55 @@ export const REQUEST_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
+export const WORKFLOW_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Main',
+        items: [
+            { label: 'Dashboard', path: '/workflow/dashboard', icon: LayoutDashboard },
+            { label: 'Workflows', path: '/workflow/workflows', icon: GitBranch },
+        ],
+    },
+    {
+        title: 'Masters',
+        items: [
+            { label: 'Masters', path: '/workflow/masters', icon: FolderKanban },
+            { label: 'Status Levels', path: '/workflow/status-levels', icon: ListFilter },
+            { label: 'Email Templates', path: '/workflow/email-templates', icon: Mail },
+        ],
+    },
+    {
+        items: [
+            { label: 'Audit Trail', path: '/workflow/audit-trail', icon: History },
+        ],
+    },
+];
+
+export const ASSET_MANAGEMENT_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Main',
+        items: [
+            { label: 'Approval Tasks', path: '/asset-management/approval-tasks', icon: CheckSquare },
+            { label: 'Assets', path: '/asset-management/assets', icon: PackageCheck },
+        ],
+    },
+    {
+        title: 'Masters',
+        collapsible: true,
+        icon: FolderKanban,
+        items: [
+            { label: 'Asset Status', path: '/asset-management/status', icon: ListFilter },
+            { label: 'Asset Types', path: '/asset-management/types', icon: Layers },
+            { label: 'Asset Categories', path: '/asset-management/categories', icon: Grid },
+            { label: 'Asset Tags', path: '/asset-management/tags', icon: Tag },
+        ],
+    },
+    {
+        items: [
+            { label: 'Audit Trail', path: '/asset-management/audit-trail', icon: History },
+        ],
+    },
+];
+
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -125,17 +178,34 @@ interface SidebarState {
     setMenuGroups: (groups: MenuGroup[]) => void;
 }
 
+export const getMenuGroupsForPath = (
+    pathname: string,
+    fallbackGroups: MenuGroup[] = DEFAULT_SIDEBAR_GROUPS
+): MenuGroup[] => {
+    if (pathname.startsWith('/ticketing')) {
+        return TICKETING_SIDEBAR_GROUPS;
+    }
+    if (pathname.startsWith('/edms')) {
+        return EDMS_SIDEBAR_GROUPS;
+    }
+    if (pathname.startsWith('/request')) {
+        return REQUEST_SIDEBAR_GROUPS;
+    }
+    if (pathname.startsWith('/workflow')) {
+        return WORKFLOW_SIDEBAR_GROUPS;
+    }
+    if (pathname.startsWith('/asset-management')) {
+        return ASSET_MANAGEMENT_SIDEBAR_GROUPS;
+    }
+    if (pathname.startsWith('/service')) {
+        return DEFAULT_SIDEBAR_GROUPS;
+    }
+    return fallbackGroups;
+};
+
 const getInitialMenuGroups = (): MenuGroup[] => {
     if (typeof window !== 'undefined') {
-        if (window.location.pathname.startsWith('/ticketing')) {
-            return TICKETING_SIDEBAR_GROUPS;
-        }
-        if (window.location.pathname.startsWith('/edms')) {
-            return EDMS_SIDEBAR_GROUPS;
-        }
-        if (window.location.pathname.startsWith('/request')) {
-            return REQUEST_SIDEBAR_GROUPS;
-        }
+        return getMenuGroupsForPath(window.location.pathname, DEFAULT_SIDEBAR_GROUPS);
     }
     return DEFAULT_SIDEBAR_GROUPS;
 };

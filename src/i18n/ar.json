@@ -81,6 +81,16 @@
     "service": "الخدمات",
     "requests": "الطلبات",
     "operationalTasks": "المهام التشغيلية",
+    "workflows": "سير العمل",
+    "statusLevels": "مستويات الحالة",
+    "emailTemplates": "قوالب البريد الإلكتروني",
+    "assetManagement": "إدارة الأصول",
+    "approvalTasks": "مهام الاعتماد",
+    "assets": "الأصول",
+    "assetStatus": "حالة الأصول",
+    "assetTypes": "أنواع الأصول",
+    "assetCategories": "تصنيفات الأصول",
+    "assetTags": "وسوم الأصول",
     "accountSettings": "إعدادات الحساب",
     "expandSidebar": "توسيع القائمة الجانبية",
     "collapseSidebar": "طي القائمة الجانبية",
@@ -96,7 +106,7 @@
       "edms": "إدارة الوثائق الإلكترونية (EDMS)",
       "request": "الطلبات",
       "service": "إدارة الخدمات",
-      "workflow": "محرك سير العمل",
+      "workflow": "إدارة سير العمل",
       "customer": "بوابة العملاء",
       "ticketing": "الدعم الفني والبلاغات",
       "asset": "إدارة الأصول والممتلكات"
@@ -1989,6 +1999,980 @@
       "feedback": {
         "exportSuccess": "تم تصدير {{count}} سجل تدقيق إلى ملف CSV."
       }
+    }
+  },
+  "workflow": {
+    "dashboard": {
+      "title": "لوحة تحكم إدارة سير العمل",
+      "description": "رؤية تنفيذية وتشغيلية شاملة لمسارات عمل الاعتمادات والتواصل التلقائي عبر وحدات منصة عون.",
+      "kpis": {
+        "totalWorkflows": "إجمالي مسارات العمل",
+        "totalWorkflowsDesc": "مسارات العمل المؤسسية المعرفة",
+        "approvalWorkflows": "سير عمل الاعتمادات",
+        "approvalWorkflowsDesc": "مسارات الحوكمة متعددة المراحل",
+        "communicationWorkflows": "سير عمل التواصل",
+        "communicationWorkflowsDesc": "قواعد الإشعارات والتنبيهات التلقائية",
+        "enabledWorkflows": "مسارات العمل المفعّلة",
+        "enabledWorkflowsDesc": "نشطة وتطبق القواعد حالياً",
+        "disabledWorkflows": "مسارات العمل المعطّلة",
+        "disabledWorkflowsDesc": "مسارات متوقفة أو مؤرشفة",
+        "connectedSources": "الوحدات المرتبطة",
+        "connectedSourcesDesc": "أنظمة عون المصدرية المتكاملة"
+      },
+      "sections": {
+        "approvalWorkflowsByStatus": "سير عمل الاعتمادات حسب الحالة",
+        "approvalWorkflowsByStatusDesc": "توزيع تعريفات سير عمل الاعتمادات وحالات الحوكمة النشطة عبر وحدات منصة عون.",
+        "communicationWorkflowsByStatus": "سير عمل التواصل حسب الحالة",
+        "communicationWorkflowsByStatusDesc": "تحليل حالات سير عمل التواصل والإرسال والتصعيد التلقائي."
+      },
+      "labels": {
+        "workflows": "مسار عمل",
+        "status": "الحالة",
+        "modulesTag": "وحدات",
+        "statusDistributionChart": "عدد مسارات العمل حسب الحالة",
+        "statusShare": "نسب توزيع الحالات",
+        "approvalPipeline": "حوكمة الاعتمادات",
+        "communicationPipeline": "الإرسال التلقائي",
+        "approvalBySourceModule": "سير عمل الاعتمادات حسب الوحدة المصدرية",
+        "communicationBySourceModule": "سير عمل التواصل حسب الوحدة المصدرية",
+        "enabledCount": "{{count}} مفعّل"
+      },
+      "actions": {
+        "manageWorkflows": "إدارة سير العمل",
+        "viewApprovalWorkflows": "عرض سير عمل الاعتمادات",
+        "viewCommunicationWorkflows": "عرض سير عمل التواصل"
+      }
+    },
+    "workflows": {
+      "title": "سير العمل",
+      "description": "إعداد ومتابعة مسارات عمل الاعتمادات ومسارات عمل التواصل والإشعارات عبر وحدات منصة عون.",
+      "tabs": {
+        "approval": "سير عمل الاعتمادات",
+        "communication": "سير عمل التواصل"
+      },
+      "actions": {
+        "addWorkflow": "إضافة سير عمل",
+        "exportCsv": "تصدير CSV",
+        "view": "عرض تفاصيل سير العمل",
+        "enable": "تفعيل سير العمل",
+        "disable": "تعطيل سير العمل"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بالمعرف، عنوان سير العمل، المصدر، الحالة، أو تاريخ الإنشاء...",
+        "sourceLabel": "التصفية حسب المصدر",
+        "allSources": "جميع المصادر",
+        "statusLabel": "التصفية حسب الحالة",
+        "allStatuses": "جميع الحالات"
+      },
+      "statuses": {
+        "enabled": "مفعّل",
+        "disabled": "معطّل"
+      },
+      "selection": {
+        "selectedCount": "مسارات عمل محددة",
+        "enableSelected": "تفعيل المحدد",
+        "disableSelected": "تعطيل المحدد",
+        "clearSelection": "إلغاء التحديد"
+      },
+      "table": {
+        "selectAll": "تحديد جميع مسارات العمل في الصفحة الحالية",
+        "selectRow": "تحديد مسار العمل",
+        "id": "المعرف",
+        "workflowTitle": "عنوان سير العمل",
+        "source": "المصدر",
+        "status": "الحالة",
+        "createDate": "تاريخ الإنشاء",
+        "actions": "الإجراءات"
+      },
+      "pagination": {
+        "rowsPerPage": "الصفوف لكل صفحة:",
+        "showing": "عرض {{from}}–{{to}} من أصل {{total}} مسار عمل"
+      },
+      "empty": {
+        "title": "لا توجد مسارات عمل مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو فلتر المصدر أو الحالة."
+      },
+      "drawer": {
+        "createTitle": "إنشاء سير عمل",
+        "editTitle": "تعديل سير العمل",
+        "formSubtitle": "تحديد البيانات الوصفية لسير العمل والوحدة المصدرية والحالة التشغيلية",
+        "workflowType": "نوع سير العمل",
+        "titleEn": "عنوان سير العمل (بالإنجليزية)",
+        "titleAr": "عنوان سير العمل (بالعربية)",
+        "stagesCount": "عدد المراحل المعرفة",
+        "triggerEvent": "الحدث المشغّل",
+        "description": "وصف سير العمل",
+        "configuredStages": "مراحل الاعتماد واتفاقية مستوى الخدمة"
+      },
+      "feedback": {
+        "statusUpdated": "تم تحديث حالة \"{{title}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث حالة {{count}} مسار عمل إلى {{status}}.",
+        "workflowCreated": "تم إنشاء سير العمل \"{{title}}\" بنجاح.",
+        "workflowUpdated": "تم تحديث سير العمل \"{{title}}\" بنجاح.",
+        "workflowDeleted": "تم حذف سير العمل \"{{title}}\".",
+        "titleRequired": "يرجى إدخال عنوان سير العمل.",
+        "exportSuccess": "تم تصدير {{count}} مسار عمل إلى ملف CSV."
+      }
+    },
+    "masters": {
+      "title": "البيانات الأساسية لسير العمل",
+      "description": "إدارة التعريفات المركزية لمصادر وأنواع وحالات وإجراءات سير العمل عبر وحدات منصة عون.",
+      "kpis": {
+        "totalMasters": "إجمالي التعريفات الأساسية",
+        "activeMasters": "التعريفات المفعّلة"
+      },
+      "tabs": {
+        "sources": "مصادر سير العمل",
+        "types": "أنواع سير العمل",
+        "statuses": "حالات سير العمل",
+        "actions": "إجراءات سير العمل"
+      },
+      "actions": {
+        "addMaster": "إضافة تعريف أساسي"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بالمعرف، الكود، الاسم، النطاق، الحالة، أو تاريخ الإنشاء...",
+        "scopeLabel": "التصفية حسب النطاق",
+        "allScopes": "جميع النطاقات"
+      },
+      "selection": {
+        "selectedCount": "تعريفات أساسية محددة"
+      },
+      "table": {
+        "id": "المعرف",
+        "code": "كود التعريف",
+        "masterName": "اسم التعريف الأساسي",
+        "scope": "نطاق الوحدة",
+        "linkedWorkflows": "مسارات العمل المرتبطة",
+        "status": "الحالة",
+        "createDate": "تاريخ الإنشاء",
+        "actions": "الإجراءات"
+      },
+      "labels": {
+        "systemCore": "أساسي للنظام"
+      },
+      "pagination": {
+        "showing": "عرض {{from}}–{{to}} من أصل {{total}} تعريف أساسي"
+      },
+      "empty": {
+        "title": "لا توجد تعريفات أساسية مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو فلتر نطاق الوحدة أو الحالة."
+      },
+      "drawer": {
+        "createTitle": "إنشاء تعريف أساسي",
+        "editTitle": "تعديل التعريف الأساسي",
+        "formSubtitle": "إعداد سجل التعريف الأساسي ثنائي اللغة ونطاق الوحدة المرتبطة",
+        "category": "قسم البيانات الأساسية",
+        "nameEn": "الاسم (بالإنجليزية)",
+        "nameAr": "الاسم (بالعربية)",
+        "bilingualNames": "التسمية ثنائية اللغة",
+        "badgeColor": "لون المؤشر"
+      },
+      "feedback": {
+        "statusUpdated": "تم تحديث حالة \"{{title}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث حالة {{count}} تعريف أساسي إلى {{status}}.",
+        "masterCreated": "تم إنشاء التعريف الأساسي \"{{title}}\" بنجاح.",
+        "masterUpdated": "تم تحديث التعريف الأساسي \"{{title}}\" بنجاح.",
+        "masterDeleted": "تم حذف التعريف الأساسي \"{{title}}\".",
+        "nameRequired": "يرجى إدخال اسم التعريف الأساسي.",
+        "exportSuccess": "تم تصدير {{count}} تعريف أساسي إلى ملف CSV."
+      }
+    },
+    "statusLevels": {
+      "title": "مستويات الحالة",
+      "description": "إعداد مراحل ومستويات اعتماد سير العمل متعددة الطبقات، والأدوار المسؤولة، واتفاقيات مستوى الخدمة.",
+      "kpis": {
+        "totalLevels": "إجمالي مستويات الحالة",
+        "approvalLevels": "مستويات الاعتماد",
+        "communicationLevels": "مستويات التواصل",
+        "finalStages": "مراحل التوقيع النهائي"
+      },
+      "tabs": {
+        "all": "جميع مستويات الحالة"
+      },
+      "actions": {
+        "addStatusLevel": "إضافة مستوى حالة"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بالمعرف، الكود، اسم المستوى، سير العمل، المصدر، أو الدور المسؤول...",
+        "stageLabel": "التصفية حسب فئة المرحلة",
+        "allStages": "جميع فئات المراحل"
+      },
+      "stages": {
+        "Initiation": "البدء والاستلام",
+        "Verification": "التحقق والفحص",
+        "Compliance": "مراجعة الامتثال",
+        "Authorization": "الاعتماد والصلاحية",
+        "Completion": "الإنجاز والإغلاق"
+      },
+      "selection": {
+        "selectedCount": "مستويات حالة محددة"
+      },
+      "table": {
+        "id": "المعرف",
+        "levelName": "مستوى الحالة",
+        "levelOrder": "الترتيب والمرحلة",
+        "workflowAndSource": "سير العمل والمصدر",
+        "approverAndSla": "الدور المسؤول واتفاقية الخدمة",
+        "status": "الحالة",
+        "createDate": "تاريخ الإنشاء",
+        "actions": "الإجراءات"
+      },
+      "labels": {
+        "finalStage": "مرحلة نهائية",
+        "commentRequired": "يتطلب ملاحظة"
+      },
+      "pagination": {
+        "showing": "عرض {{from}}–{{to}} من أصل {{total}} مستوى حالة"
+      },
+      "empty": {
+        "title": "لا توجد مستويات حالة مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو فلتر المصدر أو فئة المرحلة."
+      },
+      "drawer": {
+        "createTitle": "إنشاء مستوى حالة",
+        "editTitle": "تعديل مستوى الحالة",
+        "formSubtitle": "تحديد تسلسل المرحلة والدور المسؤول والمدة المستهدفة",
+        "levelNameEn": "اسم مستوى الحالة (بالإنجليزية)",
+        "levelNameAr": "اسم مستوى الحالة (بالعربية)",
+        "stageCategory": "فئة المرحلة",
+        "approverRole": "الدور المسؤول",
+        "slaHours": "اتفاقية مستوى الخدمة (ساعات)"
+      },
+      "feedback": {
+        "statusUpdated": "تم تحديث حالة \"{{title}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث حالة {{count}} مستوى حالة إلى {{status}}.",
+        "levelCreated": "تم إنشاء مستوى الحالة \"{{title}}\" بنجاح.",
+        "levelUpdated": "تم تحديث مستوى الحالة \"{{title}}\" بنجاح.",
+        "levelDeleted": "تم حذف مستوى الحالة \"{{title}}\".",
+        "nameRequired": "يرجى إدخال اسم مستوى الحالة.",
+        "exportSuccess": "تم تصدير {{count}} مستوى حالة إلى ملف CSV."
+      }
+    },
+    "emailTemplates": {
+      "title": "قوالب البريد الإلكتروني",
+      "description": "إدارة قوالب الإشعارات المؤسسية ومتغيرات سير العمل الديناميكية وإعدادات الإرسال التلقائي.",
+      "kpis": {
+        "totalTemplates": "إجمالي القوالب",
+        "activeTemplates": "القوالب النشطة",
+        "inactiveTemplates": "القوالب غير النشطة",
+        "connectedWorkflows": "مسارات التواصل المرتبطة"
+      },
+      "actions": {
+        "newTemplate": "قالب جديد",
+        "view": "عرض تفاصيل القالب",
+        "activate": "تفعيل القالب",
+        "deactivate": "تعطيل القالب"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بالمعرف، اسم القالب، المنشئ، البريد الإلكتروني، سير العمل، أو التاريخ...",
+        "workflowLabel": "التصفية حسب سير عمل التواصل",
+        "allWorkflows": "جميع مسارات عمل التواصل",
+        "statusLabel": "التصفية حسب الحالة",
+        "allStatuses": "جميع الحالات"
+      },
+      "statuses": {
+        "active": "نشط",
+        "inactive": "غير نشط"
+      },
+      "selection": {
+        "selectedCount": "قوالب محددة",
+        "activateSelected": "تفعيل المحدد",
+        "deactivateSelected": "تعطيل المحدد"
+      },
+      "table": {
+        "id": "المعرف",
+        "templateName": "اسم القالب",
+        "creator": "المنشئ / المؤلف",
+        "email": "البريد الإلكتروني",
+        "createDate": "تاريخ الإنشاء",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "pagination": {
+        "showing": "عرض {{from}}–{{to}} من أصل {{total}} سجل"
+      },
+      "empty": {
+        "title": "لا توجد قوالب بريد إلكتروني مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو فلتر سير عمل التواصل أو الحالة."
+      },
+      "drawer": {
+        "createTitle": "قالب بريد إلكتروني جديد",
+        "editTitle": "تعديل قالب البريد الإلكتروني",
+        "formSubtitle": "إعداد عنوان الرسالة ومحتوى القالب ومتغيرات سير العمل الديناميكية",
+        "templateName": "اسم القالب",
+        "templateNamePlaceholder": "مثال: تجديد اشتراك التأمينات الاجتماعية GOSI",
+        "communicationWorkflow": "سير عمل التواصل",
+        "searchWorkflowPlaceholder": "ابحث في مسارات عمل التواصل...",
+        "selectWorkflowOption": "اختر سير عمل التواصل...",
+        "availableVariables": "المتغيرات المتاحة",
+        "clickToInsertHint": "انقر على المتغير لإدراجه في نص الرسالة",
+        "noAvailableVariables": "لا توجد متغيرات متاحة",
+        "emailSubject": "عنوان البريد الإلكتروني",
+        "emailSubjectPlaceholder": "مثال: إجراء مطلوب: تجديد الاشتراك لـ {{companyName}}",
+        "emailContent": "محتوى قالب البريد الإلكتروني",
+        "emailContentPlaceholder": "اكتب نص رسالة البريد الإلكتروني هنا وانقر على المتغيرات المتاحة أعلاه لإدراجها..."
+      },
+      "validation": {
+        "templateNameRequired": "يرجى إدخال اسم القالب.",
+        "workflowRequired": "يرجى اختيار سير عمل التواصل.",
+        "subjectRequired": "يرجى إدخال عنوان البريد الإلكتروني.",
+        "contentRequired": "يرجى إدخال محتوى قالب البريد الإلكتروني.",
+        "fixErrors": "يرجى استكمال جميع الحقول الإلزامية قبل الحفظ."
+      },
+      "feedback": {
+        "statusUpdated": "تم تحديث حالة \"{{title}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث حالة {{count}} قالب إلى {{status}}.",
+        "templateCreated": "تم إنشاء قالب البريد الإلكتروني \"{{title}}\" بنجاح.",
+        "templateUpdated": "تم تحديث قالب البريد الإلكتروني \"{{title}}\" بنجاح.",
+        "templateDeleted": "تم حذف قالب البريد الإلكتروني \"{{title}}\".",
+        "variableInserted": "تم إدراج المتغير {{variable}} في محتوى القالب.",
+        "exportSuccess": "تم تصدير {{count}} قالب بريد إلكتروني إلى ملف CSV."
+      }
+    },
+    "placeholders": {
+      "mastersTitle": "البيانات الأساسية لسير العمل",
+      "mastersDesc": "التعريفات المركزية وإعدادات الربط الأساسية لتوجيه مسارات العمل المؤسسية.",
+      "statusLevelsTitle": "مستويات الحالة",
+      "statusLevelsDesc": "تعريف مستويات حالة الاعتماد متعددة المراحل وقواعد الانتقال والصلاحيات.",
+      "emailTemplatesTitle": "قوالب البريد الإلكتروني",
+      "emailTemplatesDesc": "إدارة قوالب الإشعارات والرسائل ثنائية اللغة المرتبطة بأحداث سير العمل.",
+      "auditTrailTitle": "سجل تدقيق سير العمل",
+      "auditTrailDesc": "سجل زمني للحوكمة والامتثال يوثق جميع تغييرات إعدادات وحالات سير العمل.",
+      "foundationReadyTitle": "البنية التأسيسية لإدارة سير العمل مفعّلة",
+      "foundationReadyDesc": "نماذج البيانات والمسارات الخاصة بهذا القسم مهيأة وجاهزة للربط في المرحلة القادمة.",
+      "goToDashboard": "لوحة التحكم",
+      "goToWorkflows": "عرض سير العمل"
+    }
+  },
+  "assetManagement": {
+    "title": "إدارة الأصول",
+    "common": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "allStatuses": "جميع الحالات",
+      "filterByStatus": "التصفية حسب الحالة",
+      "resetFilters": "إعادة تعيين الفلاتر",
+      "exportCsv": "تصدير CSV",
+      "exportedCsv": "تم تصدير {{count}} سجل إلى ملف CSV.",
+      "rowsPerPage": "الصفوف لكل صفحة",
+      "showingCount": "عرض {{from}}–{{to}} من أصل {{total}} سجل",
+      "selectAll": "تحديد كل الصفوف في الصفحة",
+      "selectRow": "تحديد الصف",
+      "selectedCount": "سجلات محددة",
+      "activateSelected": "تفعيل المحدد",
+      "deactivateSelected": "تعطيل المحدد",
+      "clearSelection": "إلغاء التحديد",
+      "view": "عرض التفاصيل",
+      "edit": "تعديل",
+      "activate": "تفعيل",
+      "deactivate": "تعطيل",
+      "delete": "حذف",
+      "bilingualNames": "الأسماء ثنائية اللغة",
+      "noDescription": "لا يوجد وصف مسجل."
+    },
+    "status": {
+      "title": "حالة الأصول",
+      "description": "تعريف وإدارة حالات دورة حياة الأصول والألوان التعريفية والحالات التشغيلية للأصول المؤسسية.",
+      "kpis": {
+        "totalStatuses": "إجمالي الحالات",
+        "activeStatuses": "الحالات النشطة",
+        "inactiveStatuses": "الحالات غير النشطة",
+        "linkedAssets": "الأصول المرتبطة"
+      },
+      "actions": {
+        "newStatus": "حالة أصل جديدة"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بمعرف الحالة، الاسم، الوصف، اللون، المنشئ، أو التاريخ..."
+      },
+      "table": {
+        "id": "معرف الحالة",
+        "name": "اسم الحالة",
+        "description": "الوصف",
+        "color": "اللون",
+        "creator": "المنشئ",
+        "createDate": "تاريخ الإنشاء",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "empty": {
+        "title": "لا توجد حالات أصول مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو إعادة تعيين فلتر الحالة."
+      },
+      "drawer": {
+        "createTitle": "إضافة حالة أصل جديدة",
+        "editTitle": "تعديل حالة الأصل",
+        "subtitle": "إعداد اسم حالة الأصل واللون التعريفي والوصف",
+        "nameEn": "اسم الحالة",
+        "nameEnPlaceholder": "مثال: New Assets",
+        "nameAr": "اسم الحالة (بالعربية)",
+        "nameArPlaceholder": "مثال: أصول جديدة",
+        "color": "لون الحالة",
+        "descriptionEn": "الوصف",
+        "descriptionPlaceholder": "أدخل وصفاً مختصراً لحالة الأصل...",
+        "descriptionAr": "الوصف (بالعربية)",
+        "descriptionArPlaceholder": "أدخل وصفاً مختصراً لحالة الأصل بالعربية..."
+      },
+      "validation": {
+        "nameRequired": "يرجى إدخال اسم الحالة.",
+        "nameDuplicate": "توجد حالة بهذا الاسم بالفعل."
+      },
+      "feedback": {
+        "created": "تم إنشاء حالة الأصل \"{{name}}\" بنجاح.",
+        "updated": "تم تحديث حالة الأصل \"{{name}}\" بنجاح.",
+        "deleted": "تم حذف حالة الأصل \"{{name}}\".",
+        "statusUpdated": "تم تحديث حالة \"{{name}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث {{count}} من حالات الأصول إلى {{status}}."
+      },
+      "deleteModal": {
+        "title": "حذف حالة الأصل",
+        "message": "هل أنت متأكد من رغبتك في حذف حالة الأصل \"{{name}}\" ({{id}})؟ سيتم توثيق هذا الإجراء في سجل تدقيق الأصول."
+      }
+    },
+    "types": {
+      "title": "أنواع الأصول",
+      "description": "إعداد أنواع الأصول المؤسسية وربطها بالتصنيفات والأنواع الفرعية وقوالب الوثائق المعتمدة.",
+      "kpis": {
+        "totalTypes": "إجمالي أنواع الأصول",
+        "activeTypes": "الأنواع النشطة",
+        "linkedCategories": "التصنيفات المرتبطة",
+        "linkedTemplates": "القوالب المرتبطة"
+      },
+      "actions": {
+        "newType": "نوع أصل جديد"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بمعرف النوع، الاسم، التصنيف، النوع الفرعي، الوصف، القوالب، أو المنشئ...",
+        "categoryLabel": "التصفية حسب التصنيف",
+        "allCategories": "جميع التصنيفات",
+        "subTypeLabel": "التصفية حسب النوع الفرعي",
+        "allSubTypes": "جميع الأنواع الفرعية"
+      },
+      "table": {
+        "id": "معرف النوع",
+        "name": "اسم النوع",
+        "category": "التصنيف",
+        "assetSubtype": "النوع الفرعي للأصل",
+        "description": "الوصف",
+        "templates": "القوالب",
+        "creator": "المنشئ",
+        "createDate": "تاريخ الإنشاء",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "labels": {
+        "noTemplates": "بدون قوالب"
+      },
+      "empty": {
+        "title": "لا توجد أنواع أصول مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو فلاتر التصنيف والنوع الفرعي والحالة."
+      },
+      "drawer": {
+        "createTitle": "إضافة نوع أصل جديد",
+        "editTitle": "تعديل نوع الأصل",
+        "subtitle": "إعداد تصنيف نوع الأصل والنوع الفرعي وقوالب الوثائق المرتبطة",
+        "nameEn": "اسم نوع الأصل",
+        "nameEnPlaceholder": "مثال: New Type Asset",
+        "nameAr": "اسم نوع الأصل (بالعربية)",
+        "nameArPlaceholder": "مثال: نوع أصل جديد",
+        "category": "تصنيف الأصل",
+        "assetSubtype": "النوع الفرعي للأصل",
+        "templates": "قوالب الوثائق",
+        "templatesHint": "اختر قالباً واحداً أو أكثر من قوالب الوثائق لربطها بنوع الأصل (اختياري).",
+        "clearTemplates": "مسح الكل",
+        "addCustomTemplatePlaceholder": "إضافة اسم قالب مخصص...",
+        "addTemplateBtn": "إضافة",
+        "descriptionEn": "الوصف",
+        "descriptionPlaceholder": "أدخل وصفاً مختصراً لنوع الأصل..."
+      },
+      "validation": {
+        "nameRequired": "يرجى إدخال اسم نوع الأصل.",
+        "categoryRequired": "يرجى اختيار تصنيف الأصل.",
+        "nameDuplicate": "يوجد نوع أصل بهذا الاسم بالفعل."
+      },
+      "feedback": {
+        "created": "تم إنشاء نوع الأصل \"{{name}}\" بنجاح.",
+        "updated": "تم تحديث نوع الأصل \"{{name}}\" بنجاح.",
+        "deleted": "تم حذف نوع الأصل \"{{name}}\".",
+        "statusUpdated": "تم تحديث حالة \"{{name}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث {{count}} من أنواع الأصول إلى {{status}}."
+      },
+      "deleteModal": {
+        "title": "حذف نوع الأصل",
+        "message": "هل أنت متأكد من رغبتك في حذف نوع الأصل \"{{name}}\" ({{id}})؟ سيتم توثيق هذا الإجراء في سجل تدقيق الأصول."
+      }
+    },
+    "categories": {
+      "title": "تصنيفات الأصول",
+      "description": "إدارة التصنيفات الرئيسية لتنظيم الأصول التشغيلية المؤسسية والمركبات والمرافق.",
+      "kpis": {
+        "totalCategories": "إجمالي التصنيفات",
+        "activeCategories": "التصنيفات النشطة",
+        "inactiveCategories": "التصنيفات غير النشطة",
+        "linkedTypes": "أنواع الأصول المرتبطة"
+      },
+      "actions": {
+        "newCategory": "تصنيف أصل جديد"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بمعرف التصنيف، الاسم، الوصف، المنشئ، أو التاريخ..."
+      },
+      "table": {
+        "id": "معرف التصنيف",
+        "name": "اسم التصنيف",
+        "description": "الوصف",
+        "linkedTypes": "الأنواع المرتبطة",
+        "creator": "المنشئ",
+        "createDate": "تاريخ الإنشاء",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "labels": {
+        "typesUnit": "أنواع"
+      },
+      "empty": {
+        "title": "لا توجد تصنيفات أصول مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو إعادة تعيين فلتر الحالة."
+      },
+      "drawer": {
+        "createTitle": "إضافة تصنيف أصل جديد",
+        "editTitle": "تعديل تصنيف الأصل",
+        "subtitle": "إعداد اسم تصنيف الأصل الرئيسي والوصف والحالة",
+        "nameEn": "اسم التصنيف",
+        "nameEnPlaceholder": "مثال: Category Asset",
+        "nameAr": "اسم التصنيف (بالعربية)",
+        "nameArPlaceholder": "مثال: تصنيف الأصل",
+        "descriptionEn": "الوصف",
+        "descriptionPlaceholder": "أدخل وصفاً مختصراً لتصنيف الأصل...",
+        "descriptionAr": "الوصف (بالعربية)",
+        "descriptionArPlaceholder": "أدخل وصفاً مختصراً لتصنيف الأصل بالعربية..."
+      },
+      "validation": {
+        "nameRequired": "يرجى إدخال اسم التصنيف.",
+        "nameDuplicate": "يوجد تصنيف بهذا الاسم بالفعل."
+      },
+      "feedback": {
+        "created": "تم إنشاء تصنيف الأصل \"{{name}}\" بنجاح.",
+        "updated": "تم تحديث تصنيف الأصل \"{{name}}\" بنجاح.",
+        "deleted": "تم حذف تصنيف الأصل \"{{name}}\".",
+        "statusUpdated": "تم تحديث حالة \"{{name}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث {{count}} من تصنيفات الأصول إلى {{status}}."
+      },
+      "deleteModal": {
+        "title": "حذف تصنيف الأصل",
+        "message": "هل أنت متأكد من رغبتك في حذف تصنيف الأصل \"{{name}}\" ({{id}})؟ سيتم توثيق هذا الإجراء في سجل تدقيق الأصول."
+      }
+    },
+    "tags": {
+      "title": "وسوم الأصول",
+      "description": "إنشاء وإدارة الوسوم التعريفية والألوان المميزة لتجميع وتتبع وتصفية الأصول المؤسسية.",
+      "kpis": {
+        "totalTags": "إجمالي الوسوم",
+        "activeTags": "الوسوم النشطة",
+        "inactiveTags": "الوسوم غير النشطة",
+        "taggedAssets": "الأصول الموسومة"
+      },
+      "actions": {
+        "newTag": "وسم أصل جديد"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بمعرف الوسم، الاسم، الوصف، اللون، المنشئ، أو التاريخ..."
+      },
+      "table": {
+        "id": "معرف الوسم",
+        "name": "اسم الوسم",
+        "description": "الوصف",
+        "color": "اللون",
+        "creator": "المنشئ",
+        "createDate": "تاريخ الإنشاء",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "empty": {
+        "title": "لا توجد وسوم أصول مطابقة",
+        "description": "يرجى تعديل عبارة البحث أو إعادة تعيين فلتر الحالة."
+      },
+      "drawer": {
+        "createTitle": "إضافة وسم أصل جديد",
+        "editTitle": "تعديل وسم الأصل",
+        "subtitle": "إعداد اسم وسم الأصل واللون التعريفي والوصف",
+        "nameEn": "اسم الوسم",
+        "nameEnPlaceholder": "مثال: Tag Asset",
+        "nameAr": "اسم الوسم (بالعربية)",
+        "nameArPlaceholder": "مثال: وسم الأصل",
+        "color": "لون الوسم",
+        "descriptionEn": "الوصف",
+        "descriptionPlaceholder": "أدخل وصفاً مختصراً لوسم الأصل...",
+        "descriptionAr": "الوصف (بالعربية)",
+        "descriptionArPlaceholder": "أدخل وصفاً مختصراً لوسم الأصل بالعربية..."
+      },
+      "validation": {
+        "nameRequired": "يرجى إدخال اسم الوسم.",
+        "nameDuplicate": "يوجد وسم بهذا الاسم بالفعل."
+      },
+      "feedback": {
+        "created": "تم إنشاء وسم الأصل \"{{name}}\" بنجاح.",
+        "updated": "تم تحديث وسم الأصل \"{{name}}\" بنجاح.",
+        "deleted": "تم حذف وسم الأصل \"{{name}}\".",
+        "statusUpdated": "تم تحديث حالة \"{{name}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث {{count}} من وسوم الأصول إلى {{status}}."
+      },
+      "deleteModal": {
+        "title": "حذف وسم الأصل",
+        "message": "هل أنت متأكد من رغبتك في حذف وسم الأصل \"{{name}}\" ({{id}})؟ سيتم توثيق هذا الإجراء في سجل تدقيق الأصول."
+      }
+    },
+    "assets": {
+      "title": "الأصول",
+      "description": "السجل المركزي للأصول التشغيلية المؤسسية وارتباطات العملاء والشركات والتصنيفات والأرقام التسلسلية وصلاحية التسجيل.",
+      "kpis": {
+        "totalAssets": "إجمالي الأصول",
+        "activeAssets": "الأصول النشطة",
+        "inactiveAssets": "الأصول غير النشطة",
+        "linkedCompanies": "الشركات المرتبطة"
+      },
+      "actions": {
+        "newAsset": "أصل جديد"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بمعرف الأصل، العميل، الشركة، التصنيف، النوع، المالك، العلامة، الرقم التسلسلي، السنة، أو البريد...",
+        "customerLabel": "التصفية حسب العميل",
+        "allCustomers": "جميع العملاء",
+        "companyLabel": "التصفية حسب الشركة",
+        "allCompanies": "جميع الشركات",
+        "categoryLabel": "التصفية حسب التصنيف",
+        "allCategories": "جميع التصنيفات",
+        "typeLabel": "التصفية حسب نوع الأصل",
+        "allTypes": "جميع أنواع الأصول"
+      },
+      "table": {
+        "id": "معرف الأصل",
+        "customer": "العميل",
+        "company": "الشركة / المنشأة",
+        "category": "التصنيف",
+        "assetType": "نوع الأصل",
+        "owner": "المالك",
+        "brand": "العلامة التجارية",
+        "serialNumber": "الرقم التسلسلي",
+        "year": "السنة",
+        "registrationValidity": "صلاحية التسجيل",
+        "createdBy": "أنشئ بواسطة",
+        "email": "البريد الإلكتروني",
+        "status": "الحالة",
+        "actions": "الإجراءات"
+      },
+      "empty": {
+        "title": "لا توجد أصول مطابقة للفلاتر",
+        "description": "يرجى مسح عبارة البحث أو إعادة تعيين فلاتر العميل والشركة والتصنيف والنوع والحالة."
+      },
+      "drawer": {
+        "createTitle": "إضافة أصل جديد",
+        "editTitle": "تعديل الأصل",
+        "viewTitle": "تفاصيل الأصل",
+        "subtitle": "إعداد بيانات العميل والشركة والتصنيف والمواصفات الفنية وصلاحية التسجيل",
+        "sectionAssignment": "تخصيص العميل والشركة",
+        "sectionClassification": "التصنيف الأساسي",
+        "sectionSpecs": "المواصفات الفنية والتسجيل",
+        "sectionCreator": "المنشئ والحوكمة",
+        "customerEn": "العميل",
+        "customerEnPlaceholder": "مثال: mohd",
+        "customerAr": "العميل (بالعربية)",
+        "customerArPlaceholder": "مثال: محمد",
+        "companyEn": "الشركة / المنشأة",
+        "companyEnPlaceholder": "مثال: dezen company",
+        "companyAr": "الشركة / المنشأة (بالعربية)",
+        "companyArPlaceholder": "مثال: شركة ديزن",
+        "category": "التصنيف",
+        "assetType": "نوع الأصل",
+        "assetStatusMaster": "حالة دورة حياة الأصل",
+        "ownerEn": "المالك",
+        "ownerEnPlaceholder": "مثال: dezen company",
+        "ownerAr": "المالك (بالعربية)",
+        "ownerArPlaceholder": "مثال: شركة ديزن",
+        "brandEn": "العلامة التجارية",
+        "brandEnPlaceholder": "مثال: nexus",
+        "brandAr": "العلامة التجارية (بالعربية)",
+        "brandArPlaceholder": "مثال: نيكسس",
+        "serialNumber": "الرقم التسلسلي",
+        "serialNumberPlaceholder": "مثال: 7485896989",
+        "year": "سنة الصنع",
+        "yearPlaceholder": "مثال: 2015",
+        "registrationValidity": "صلاحية التسجيل",
+        "registrationValidityPlaceholder": "مثال: 10/10/2028",
+        "createdByEn": "أنشئ بواسطة",
+        "createdByEnPlaceholder": "مثال: Dezen Team",
+        "createdByAr": "أنشئ بواسطة (بالعربية)",
+        "createdByArPlaceholder": "مثال: فريق ديزن",
+        "email": "البريد الإلكتروني",
+        "emailPlaceholder": "مثال: abdul.basith@dezensolutions.org",
+        "notesEn": "ملاحظات / وصف",
+        "notesPlaceholder": "ملاحظات اختيارية حول تسجيل الأصل..."
+      },
+      "validation": {
+        "customerRequired": "يرجى إدخال اسم العميل.",
+        "companyRequired": "يرجى إدخال اسم الشركة / المنشأة.",
+        "categoryRequired": "يرجى اختيار التصنيف.",
+        "typeRequired": "يرجى اختيار نوع الأصل.",
+        "ownerRequired": "يرجى إدخال اسم المالك.",
+        "brandRequired": "يرجى إدخال العلامة التجارية.",
+        "serialRequired": "يرجى إدخال الرقم التسلسلي.",
+        "serialDuplicate": "يوجد أصل مسجل بهذا الرقم التسلسلي بالفعل.",
+        "yearRequired": "يرجى إدخال سنة الصنع.",
+        "yearInvalid": "يرجى إدخال سنة صحيحة مكونة من 4 أرقام بين 1950 و 2030.",
+        "validityRequired": "يرجى إدخال تاريخ صلاحية التسجيل.",
+        "validityInvalid": "يرجى إدخال تاريخ صحيح (مثال: 10/10/2028 أو YYYY-MM-DD).",
+        "createdByRequired": "يرجى إدخال اسم المنشئ.",
+        "emailRequired": "يرجى إدخال البريد الإلكتروني.",
+        "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح."
+      },
+      "feedback": {
+        "created": "تم إنشاء الأصل \"{{id}}\" ({{serial}}) بنجاح.",
+        "updated": "تم تحديث الأصل \"{{id}}\" بنجاح.",
+        "deleted": "تم حذف الأصل \"{{id}}\".",
+        "statusUpdated": "تم تحديث حالة الأصل \"{{id}}\" إلى {{status}}.",
+        "bulkStatusUpdated": "تم تحديث حالة {{count}} من الأصول إلى {{status}}."
+      },
+      "deleteModal": {
+        "title": "حذف الأصل",
+        "message": "هل أنت متأكد من رغبتك في حذف الأصل \"{{id}}\" (الرقم التسلسلي: {{serial}})؟ سيتم توثيق هذا الإجراء في سجل تدقيق الأصول."
+      }
+    },
+    "approvalTasks": {
+      "title": "مهام الاعتماد",
+      "description": "مراجعة واعتماد ورفض وإدارة مهام تسجيل الأصول وحالات دورة الحياة والحوكمة عبر مسارات العمل المؤسسية.",
+      "kpis": {
+        "totalTasks": "إجمالي مهام الاعتماد",
+        "pendingTasks": "بانتظار الاعتماد",
+        "approvedTasks": "المهام المعتمدة",
+        "rejectedTasks": "المهام المرفوضة"
+      },
+      "statuses": {
+        "pending": "قيد الانتظار",
+        "approved": "معتمد",
+        "rejected": "مرفوض"
+      },
+      "priorities": {
+        "urgent": "عاجل",
+        "high": "عالي",
+        "medium": "متوسط",
+        "low": "منخفض"
+      },
+      "actions": {
+        "newTask": "مهمة اعتماد جديدة",
+        "viewAssets": "سجل الأصول",
+        "approve": "اعتماد",
+        "reject": "رفض",
+        "approveSelected": "اعتماد المحدد",
+        "rejectSelected": "رفض المحدد",
+        "openInAssets": "فتح في سجل الأصول"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بمعرف المهمة، العنوان، معرف الأصل، الرقم التسلسلي، العميل، الشركة، نوع الطلب، مقدم الطلب، أو المعتمد...",
+        "statusLabel": "التصفية حسب الحالة",
+        "allStatuses": "جميع الحالات",
+        "priorityLabel": "التصفية حسب الأولوية",
+        "allPriorities": "جميع الأولويات",
+        "requestTypeLabel": "التصفية حسب نوع الطلب",
+        "allRequestTypes": "جميع أنواع الطلبات",
+        "assigneeLabel": "التصفية حسب المعتمد",
+        "allAssignees": "جميع المعتمدين"
+      },
+      "table": {
+        "id": "معرف المهمة",
+        "taskInfo": "المهمة ومرحلة سير العمل",
+        "asset": "الأصل / السجل المستهدف",
+        "priority": "الأولوية",
+        "requestedBy": "مقدم الطلب",
+        "assignee": "المسند إليه / المعتمد",
+        "dates": "تاريخ الطلب والاستحقاق",
+        "status": "الحالة",
+        "actions": "الإجراءات",
+        "requestedLabel": "الطلب:",
+        "dueLabel": "الاستحقاق:",
+        "decidedLabel": "القرار:"
+      },
+      "empty": {
+        "title": "لا توجد مهام اعتماد مطابقة للفلاتر",
+        "description": "يرجى مسح عبارة البحث أو إعادة تعيين فلاتر الحالة والأولوية ونوع الطلب والمعتمد."
+      },
+      "drawer": {
+        "viewTitle": "تفاصيل مهمة الاعتماد",
+        "createTitle": "إنشاء مهمة اعتماد جديدة",
+        "editTitle": "تعديل / إعادة إسناد مهمة الاعتماد",
+        "subtitle": "إعداد الأصل أو السجل المرتبط، مرحلة سير العمل، الأولوية، المسؤول المعتمد، وملاحظات الحوكمة",
+        "sectionTask": "بيانات المهمة وتصنيف سير العمل",
+        "sectionAsset": "الأصل والمنشأة المرتبطة",
+        "sectionAssignment": "مقدم الطلب والمعتمد والجدول الزمني",
+        "sectionRemarks": "ملاحظات الحوكمة ومبررات القرار",
+        "taskTitle": "عنوان المهمة",
+        "taskTitlePlaceholder": "مثال: التحقق من تسجيل الأصل وقالب الإقامة للأصل ASTID002",
+        "requestType": "نوع الطلب",
+        "workflowTitle": "سير العمل المرتبط",
+        "stageName": "مرحلة الاعتماد",
+        "stageNamePlaceholder": "مثال: مراجعة الامتثال",
+        "linkedRecord": "الأصل / السجل الأساسي المستهدف",
+        "priority": "الأولوية",
+        "assignee": "المسؤول المعتمد",
+        "requestedBy": "مقدم الطلب",
+        "requestedByPlaceholder": "مثال: فريق ديزن",
+        "requestedByEmail": "البريد الإلكتروني لمقدم الطلب",
+        "requestedByEmailPlaceholder": "مثال: abdul.basith@dezensolutions.org",
+        "requestDate": "تاريخ الطلب",
+        "dueDate": "تاريخ الاستحقاق",
+        "dueDatePlaceholder": "مثال: 20.09.2026",
+        "actionDate": "تاريخ القرار",
+        "status": "حالة المهمة",
+        "remarks": "الملاحظات / مبررات القرار",
+        "remarksPlaceholder": "أدخل ملاحظات التحقق أو تعليمات الامتثال أو مبررات القرار..."
+      },
+      "decisionModal": {
+        "approveTitle": "اعتماد المهمة",
+        "approveBulkTitle": "اعتماد المهام المحددة ({{count}})",
+        "approveDesc": "تأكيد اعتماد مهمة الحوكمة هذه. يمكنك إضافة ملاحظات اعتماد اختيارية لتوثيقها في سجل التدقيق.",
+        "rejectTitle": "رفض المهمة",
+        "rejectBulkTitle": "رفض المهام المحددة ({{count}})",
+        "rejectDesc": "يرجى إدخال سبب واضح لرفض هذه المهمة. هذا الحقل إلزامي وسيتم توثيقه في سجل تدقيق الأصول.",
+        "remarksLabel": "ملاحظات الاعتماد (اختياري)",
+        "remarksPlaceholder": "تم الاعتماد بعد التحقق من امتثال الأصل ومستندات التسجيل...",
+        "rejectReasonLabel": "سبب الرفض",
+        "rejectReasonPlaceholder": "حدد المستند الناقص أو ملاحظة الامتثال أو سبب الرفض...",
+        "confirmApprove": "تأكيد الاعتماد",
+        "confirmReject": "تأكيد الرفض"
+      },
+      "validation": {
+        "titleRequired": "يرجى إدخال عنوان المهمة.",
+        "assetRequired": "يرجى اختيار الأصل أو السجل الأساسي المستهدف.",
+        "requestedByRequired": "يرجى إدخال اسم مقدم الطلب.",
+        "emailRequired": "يرجى إدخال البريد الإلكتروني لمقدم الطلب.",
+        "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح.",
+        "dueDateRequired": "يرجى إدخال تاريخ الاستحقاق.",
+        "rejectReasonRequired": "يرجى إدخال سبب الرفض لإتمام عملية رفض المهمة.",
+        "noPendingSelected": "لا توجد مهام معلقة (قيد الانتظار) ضمن السجلات المحددة.",
+        "alreadyDecided": "تم اتخاذ قرار بشأن هذه المهمة مسبقاً ({{status}})."
+      },
+      "feedback": {
+        "created": "تم إنشاء مهمة الاعتماد \"{{id}}\" بنجاح.",
+        "updated": "تم تحديث مهمة الاعتماد \"{{id}}\" بنجاح.",
+        "approved": "تم اعتماد المهمة \"{{id}}\" ({{title}}).",
+        "rejected": "تم رفض المهمة \"{{id}}\" ({{title}}).",
+        "bulkApproved": "تم اعتماد {{count}} من مهام الاعتماد المعلقة.",
+        "bulkRejected": "تم رفض {{count}} من مهام الاعتماد المعلقة.",
+        "deleted": "تم حذف مهمة الاعتماد \"{{id}}\"."
+      },
+      "deleteModal": {
+        "title": "حذف مهمة الاعتماد",
+        "message": "هل أنت متأكد من رغبتك في حذف مهمة الاعتماد \"{{id}}\" ({{title}})؟ سيتم توثيق هذا الإجراء في سجل تدقيق الأصول."
+      }
+    },
+    "auditTrail": {
+      "title": "سجل تدقيق الأصول",
+      "description": "سجل زمني للحوكمة والامتثال يوثق كافة العمليات المنفذة على الأصول ومهام الاعتماد والحالات والأنواع والتصنيفات والوسوم.",
+      "kpis": {
+        "totalEvents": "إجمالي أحداث التدقيق",
+        "assetEvents": "أحداث سجل الأصول",
+        "approvalEvents": "أحداث مهام الاعتماد",
+        "mastersEvents": "أحداث البيانات الأساسية"
+      },
+      "actions": {
+        "CREATED": "تم الإنشاء",
+        "UPDATED": "تم التحديث",
+        "ACTIVATED": "تم التفعيل",
+        "DEACTIVATED": "تم التعطيل",
+        "APPROVED": "تم الاعتماد",
+        "REJECTED": "تم الرفض",
+        "DELETED": "تم الحذف",
+        "goToApprovalTasks": "مهام الاعتماد",
+        "goToAssets": "سجل الأصول",
+        "openResourcePage": "فتح صفحة المورد",
+        "refreshLogs": "تحديث"
+      },
+      "resources": {
+        "Asset": "أصل",
+        "Approval Task": "مهمة اعتماد الأصل",
+        "Asset Approval Task": "مهمة اعتماد الأصل",
+        "Asset Status": "حالة الأصل",
+        "Asset Type": "نوع الأصل",
+        "Asset Category": "تصنيف الأصل",
+        "Asset Tag": "وسم الأصل",
+        "Asset Master": "بيانات أساسية للأصل"
+      },
+      "filters": {
+        "searchPlaceholder": "ابحث بمعرف التدقيق، معرف السجل، الإجراء، المورد، بيانات المورد، المنفذ، الملاحظات، أو التاريخ...",
+        "actionLabel": "تصفية حسب الإجراء",
+        "allActions": "جميع الإجراءات",
+        "resourceLabel": "تصفية حسب المورد",
+        "allResources": "جميع الموارد",
+        "performedByLabel": "تصفية حسب المنفذ",
+        "allPerformers": "جميع المنفذين",
+        "fromDate": "من تاريخ",
+        "toDate": "إلى تاريخ"
+      },
+      "table": {
+        "actionPerformed": "الإجراء المنفذ",
+        "resource": "المورد",
+        "resourceData": "بيانات المورد",
+        "performedBy": "نُفذ بواسطة",
+        "dateTime": "التاريخ والوقت",
+        "actions": "الإجراءات",
+        "viewDetails": "عرض التفاصيل",
+        "recordIdLabel": "معرف السجل:",
+        "auditIdLabel": "معرف التدقيق:"
+      },
+      "empty": {
+        "title": "لا توجد سجلات تدقيق مطابقة لعوامل التصفية",
+        "description": "جرّب مسح نص البحث أو إعادة تعيين عوامل التصفية الخاصة بالإجراء والمورد والمنفذ والتاريخ."
+      },
+      "drawer": {
+        "title": "تفاصيل حدث التدقيق",
+        "subtitle": "سجل الحوكمة الكامل وبيانات الكيان المستهدف وملاحظات التدقيق",
+        "sectionMetadata": "البيانات الوصفية للحدث والتصنيف",
+        "sectionResource": "المورد المستهدف وبيانات الكيان",
+        "sectionRemarks": "ملاحظات الحوكمة وملخص العملية",
+        "sectionLiveEntity": "حالة السجل الحالية في النظام",
+        "auditId": "معرف حدث التدقيق",
+        "actionPerformed": "الإجراء المنفذ",
+        "resourceType": "نوع المورد",
+        "targetRecordId": "معرف السجل المستهدف",
+        "performedBy": "نُفذ بواسطة",
+        "dateTime": "التاريخ والوقت",
+        "isoTimestamp": "الطابع الزمني القياسي (UTC)",
+        "resourceDataPrimary": "بيانات المورد",
+        "resourceDataBilingual": "مرجع بيانات المورد ثنائي اللغة",
+        "remarks": "ملاحظات التدقيق",
+        "liveStatus": "الحالة الحالية للسجل",
+        "liveOwnerOrCreator": "المالك / المنشئ",
+        "liveCategoryOrWorkflow": "التصنيف / مسار العمل",
+        "recordNotFoundNote": "هذا السجل لم يعد موجوداً في التخزين النشط (أو تم حذفه بعد تسجيل هذا الحدث).",
+        "openModule": "فتح صفحة {{resource}}"
+      },
+      "feedback": {
+        "refreshed": "تم تحديث سجل التدقيق ({{count}} حدثاً)."
+      }
+    },
+    "placeholders": {
+      "approvalTasksTitle": "مهام الاعتماد",
+      "approvalTasksDesc": "مراجعة ومعالجة مهام اعتماد تسجيل الأصول وتعديلاتها ودورة حياتها.",
+      "noTasksFound": "لا توجد مهام",
+      "noTasksFoundDesc": "لا توجد حالياً أي مهام اعتماد أصول معلقة في قائمة الانتظار.",
+      "assetsTitle": "الأصول",
+      "assetsDesc": "السجل المركزي للأصول التشغيلية المؤسسية والمركبات والمعدات ووثائق الامتثال المرتبطة بها.",
+      "mastersTitle": "البيانات الأساسية للأصول",
+      "mastersDesc": "مساحة العمل الموحدة لإعداد حالات الأصول وأنواعها وتصنيفاتها ووسومها.",
+      "statusTitle": "حالة الأصول",
+      "statusDesc": "تعريف وإدارة حالات دورة حياة الأصول المؤسسية.",
+      "typesTitle": "أنواع الأصول",
+      "typesDesc": "إعداد أنواع الأصول وربطها بالتصنيفات وقوالب الوثائق المعتمدة.",
+      "categoriesTitle": "تصنيفات الأصول",
+      "categoriesDesc": "إدارة التصنيفات الرئيسية لتنظيم الأصول المؤسسية.",
+      "tagsTitle": "وسوم الأصول",
+      "tagsDesc": "إنشاء وإدارة الوسوم التعريفية لتجميع وتصفية الأصول.",
+      "auditTrailTitle": "سجل تدقيق الأصول",
+      "auditTrailDesc": "سجل زمني للحوكمة والامتثال يوثق جميع عمليات الأصول والبيانات الأساسية.",
+      "foundationReadyTitle": "البنية التأسيسية لإدارة الأصول مفعّلة",
+      "foundationReadyDesc": "تم تهيئة مسارات المرحلة الأولى والقائمة الجانبية والبيانات التجريبية الأولية.",
+      "goToApprovalTasks": "مهام الاعتماد",
+      "goToAssets": "عرض الأصول"
     }
   }
 }

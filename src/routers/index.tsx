@@ -36,6 +36,25 @@ const RequestsPage = () => import('../pages/request/RequestsPage').then((m) => (
 const OperationalTasksPage = () => import('../pages/request/OperationalTasksPage').then((m) => ({ Component: m.OperationalTasksPage }));
 const RequestAuditTrailPage = () => import('../pages/request/RequestAuditTrailPage').then((m) => ({ Component: m.RequestAuditTrailPage }));
 
+// Workflow Management Module
+const WorkflowPage = () => import('../pages/WorkflowPage').then((m) => ({ Component: m.WorkflowPage }));
+const WorkflowDashboardPage = () => import('../pages/workflow/WorkflowDashboardPage').then((m) => ({ Component: m.WorkflowDashboardPage }));
+const WorkflowsPage = () => import('../pages/workflow/WorkflowsPage').then((m) => ({ Component: m.WorkflowsPage }));
+const WorkflowMastersPage = () => import('../pages/workflow/WorkflowMastersPage').then((m) => ({ Component: m.WorkflowMastersPage }));
+const WorkflowStatusLevelsPage = () => import('../pages/workflow/WorkflowStatusLevelsPage').then((m) => ({ Component: m.WorkflowStatusLevelsPage }));
+const WorkflowEmailTemplatesPage = () => import('../pages/workflow/WorkflowEmailTemplatesPage').then((m) => ({ Component: m.WorkflowEmailTemplatesPage }));
+const WorkflowAuditTrailPlaceholderPage = () => import('../pages/workflow/WorkflowPlaceholderPages').then((m) => ({ Component: m.WorkflowAuditTrailPlaceholderPage }));
+
+// Asset Management Module
+const AssetManagementPage = () => import('../pages/AssetManagementPage').then((m) => ({ Component: m.AssetManagementPage }));
+const AssetApprovalTasksPage = () => import('../pages/asset-management/AssetApprovalTasksPage').then((m) => ({ Component: m.AssetApprovalTasksPage }));
+const AssetsPage = () => import('../pages/asset-management/AssetsPage').then((m) => ({ Component: m.AssetsPage }));
+const AssetStatusPage = () => import('../pages/asset-management/AssetStatusPage').then((m) => ({ Component: m.AssetStatusPage }));
+const AssetTypesPage = () => import('../pages/asset-management/AssetTypesPage').then((m) => ({ Component: m.AssetTypesPage }));
+const AssetCategoriesPage = () => import('../pages/asset-management/AssetCategoriesPage').then((m) => ({ Component: m.AssetCategoriesPage }));
+const AssetTagsPage = () => import('../pages/asset-management/AssetTagsPage').then((m) => ({ Component: m.AssetTagsPage }));
+const AssetAuditTrailPage = () => import('../pages/asset-management/AssetAuditTrailPage').then((m) => ({ Component: m.AssetAuditTrailPage }));
+
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
 const ServicesListTab = () => import('../components/Service/ServicesListTab').then((m) => ({ Component: m.ServicesListTab }));
@@ -166,7 +185,37 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/workflow',
-                        lazy: PlaceholderModulePage,
+                        lazy: WorkflowPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/workflow/dashboard" replace />,
+                            },
+                            {
+                                path: 'dashboard',
+                                lazy: WorkflowDashboardPage,
+                            },
+                            {
+                                path: 'workflows',
+                                lazy: WorkflowsPage,
+                            },
+                            {
+                                path: 'masters',
+                                lazy: WorkflowMastersPage,
+                            },
+                            {
+                                path: 'status-levels',
+                                lazy: WorkflowStatusLevelsPage,
+                            },
+                            {
+                                path: 'email-templates',
+                                lazy: WorkflowEmailTemplatesPage,
+                            },
+                            {
+                                path: 'audit-trail',
+                                lazy: WorkflowAuditTrailPlaceholderPage,
+                            },
+                        ],
                     },
                     {
                         path: '/customer',
@@ -204,7 +253,41 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/asset-management',
-                        lazy: PlaceholderModulePage,
+                        lazy: AssetManagementPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/asset-management/approval-tasks" replace />,
+                            },
+                            {
+                                path: 'approval-tasks',
+                                lazy: AssetApprovalTasksPage,
+                            },
+                            {
+                                path: 'assets',
+                                lazy: AssetsPage,
+                            },
+                            {
+                                path: 'status',
+                                lazy: AssetStatusPage,
+                            },
+                            {
+                                path: 'types',
+                                lazy: AssetTypesPage,
+                            },
+                            {
+                                path: 'categories',
+                                lazy: AssetCategoriesPage,
+                            },
+                            {
+                                path: 'tags',
+                                lazy: AssetTagsPage,
+                            },
+                            {
+                                path: 'audit-trail',
+                                lazy: AssetAuditTrailPage,
+                            },
+                        ],
                     },
                     {
                         path: '/service',
