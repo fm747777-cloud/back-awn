@@ -32,6 +32,8 @@ import {
     generateNextRoleCode,
     checkRoleDeletionEligibility,
     recordUmsAuditEvent,
+    escapeSafeCsvCell,
+    syncMasterEntityEmployeeCounts,
     UMS_PAGE_SIZE_OPTIONS,
     type RoleRecord,
     type SecurityGroupRecord,
@@ -67,7 +69,18 @@ export const UmsRolesPage: React.FC = () => {
     // Data State
     const [roles, setRoles] = useState<RoleRecord[]>(() => loadRoles());
     const [securityGroups] = useState<SecurityGroupRecord[]>(() => loadSecurityGroups());
-    const [employees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
+
+    // Resolve live Security Group display name in active language
+    const resolveSecurityGroupDisplayName = (item: RoleRecord): string => {
+        if (item.securityGroupId) {
+            const grp = securityGroups.find((g) => g.id === item.securityGroupId);
+            if (grp) {
+                return isRtl ? grp.nameAr || grp.nameEn : grp.nameEn;
+            }
+        }
+        return item.securityGroupName;
+    };
 
     // Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
@@ -105,8 +118,10 @@ export const UmsRolesPage: React.FC = () => {
 
     // Sync roles state with localStorage
     const persistRoles = (updated: RoleRecord[]) => {
-        setRoles(updated);
         saveRoles(updated);
+        syncMasterEntityEmployeeCounts(employees);
+        setEmployees(loadEmployees());
+        setRoles(loadRoles());
     };
 
     // Summary KPIs
@@ -147,17 +162,23 @@ export const UmsRolesPage: React.FC = () => {
                 return false;
             }
             if (!query) return true;
+            const linkedGroup = item.securityGroupId
+                ? securityGroups.find((g) => g.id === item.securityGroupId)
+                : undefined;
             return (
                 item.code.toLowerCase().includes(query) ||
                 item.nameEn.toLowerCase().includes(query) ||
                 item.nameAr.toLowerCase().includes(query) ||
+                (linkedGroup &&
+                    (linkedGroup.nameEn.toLowerCase().includes(query) ||
+                        linkedGroup.nameAr.toLowerCase().includes(query))) ||
                 item.securityGroupName.toLowerCase().includes(query) ||
                 String(item.level).includes(query) ||
                 item.descriptionEn.toLowerCase().includes(query) ||
                 item.descriptionAr.toLowerCase().includes(query)
             );
         });
-    }, [roles, searchQuery, statusFilter, securityGroupFilter, levelFilter]);
+    }, [roles, searchQuery, statusFilter, securityGroupFilter, levelFilter, securityGroups]);
 
     const totalPages = Math.max(1, Math.ceil(filteredRoles.length / pageSize));
     const paginatedRoles = useMemo(() => {
@@ -294,11 +315,7 @@ export const UmsRolesPage: React.FC = () => {
         if (!validateForm(false)) return;
 
         const linkedGroup = securityGroups.find((g) => g.id === formData.securityGroupId);
-        const groupName = linkedGroup
-            ? isRtl
-                ? linkedGroup.nameAr
-                : linkedGroup.nameEn
-            : 'Custom Security Group';
+        const groupName = linkedGroup ? linkedGroup.nameEn : 'Custom Security Group';
 
         const newRole: RoleRecord = {
             id: `rol-${Date.now()}`,
@@ -344,11 +361,7 @@ export const UmsRolesPage: React.FC = () => {
         if (!validateForm(true, editingRole.id)) return;
 
         const linkedGroup = securityGroups.find((g) => g.id === formData.securityGroupId);
-        const groupName = linkedGroup
-            ? isRtl
-                ? linkedGroup.nameAr
-                : linkedGroup.nameEn
-            : editingRole.securityGroupName;
+        const groupName = linkedGroup ? linkedGroup.nameEn : editingRole.securityGroupName;
 
         const updatedRole: RoleRecord = {
             ...editingRole,
@@ -470,15 +483,15 @@ export const UmsRolesPage: React.FC = () => {
         ];
 
         const rows = roles.map((r) => [
-            r.code,
-            `"${r.nameEn.replace(/"/g, '""')}"`,
-            `"${r.nameAr.replace(/"/g, '""')}"`,
-            `"${r.securityGroupName.replace(/"/g, '""')}"`,
+            escapeSafeCsvCell(r.code),
+            escapeSafeCsvCell(r.nameEn),
+            escapeSafeCsvCell(r.nameAr),
+            escapeSafeCsvCell(resolveSecurityGroupDisplayName(r)),
             r.level,
             employeeCountByRole[r.id] || 0,
-            r.status,
-            r.createdAt,
-            `"${(r.descriptionEn || '').replace(/"/g, '""')}"`,
+            escapeSafeCsvCell(r.status),
+            escapeSafeCsvCell(r.createdAt),
+            escapeSafeCsvCell(r.descriptionEn || ''),
         ]);
 
         const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -953,7 +966,9 @@ export const UmsRolesPage: React.FC = () => {
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
                                                     <Shield size={13} className="text-[#2D3F2C]" />
-                                                    <span className="font-medium">{item.securityGroupName}</span>
+                                                    <span className="font-medium">
+                                                        {resolveSecurityGroupDisplayName(item)}
+                                                    </span>
                                                 </div>
                                             </td>
 
@@ -1412,7 +1427,7 @@ export const UmsRolesPage: React.FC = () => {
                                         {t('ums.roles.colSecurityGroup', { defaultValue: 'Security Group' })}
                                     </span>
                                     <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
-                                        {viewingRole.securityGroupName}
+                                        {resolveSecurityGroupDisplayName(viewingRole)}
                                     </span>
                                 </div>
 
@@ -1458,7 +1473,7 @@ export const UmsRolesPage: React.FC = () => {
                                                 defaultValue: 'Security Group Permissions Matrix',
                                             })}{' '}
                                             <span className="font-normal text-[#6E6862]">
-                                                ({viewedSecurityGroup.code} — {viewedSecurityGroup.nameEn})
+                                                ({viewedSecurityGroup.code} — {isRtl ? viewedSecurityGroup.nameAr : viewedSecurityGroup.nameEn})
                                             </span>
                                         </h3>
                                     </div>
@@ -1573,7 +1588,7 @@ export const UmsRolesPage: React.FC = () => {
                                                             {isRtl ? emp.nameAr : emp.nameEn}
                                                         </span>
                                                         <span className="text-[11px] text-[#6E6862]">
-                                                            {emp.code} · {emp.email}
+                                                            {emp.code} · {isRtl ? emp.departmentNameAr || emp.departmentName : emp.departmentName}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1584,7 +1599,7 @@ export const UmsRolesPage: React.FC = () => {
                                                             : 'bg-[#FAF8F5] text-[#857E74]'
                                                     }`}
                                                 >
-                                                    {emp.status}
+                                                    {t(`ums.employees.statuses.${emp.status}`, { defaultValue: emp.status })}
                                                 </span>
                                             </div>
                                         ))}

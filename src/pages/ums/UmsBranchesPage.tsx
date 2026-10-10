@@ -28,6 +28,8 @@ import {
     generateNextBranchCode,
     checkBranchDeletionEligibility,
     recordUmsAuditEvent,
+    escapeSafeCsvCell,
+    syncMasterEntityEmployeeCounts,
     UMS_PAGE_SIZE_OPTIONS,
     type BranchRecord,
     type EmployeeRecord,
@@ -69,7 +71,7 @@ export const UmsBranchesPage: React.FC = () => {
 
     // Data State
     const [branches, setBranches] = useState<BranchRecord[]>(() => loadBranches());
-    const [employees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
 
     // Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
@@ -100,17 +102,21 @@ export const UmsBranchesPage: React.FC = () => {
 
     // Unique cities for filter dropdown
     const availableCities = useMemo(() => {
-        const cities = new Set<string>();
+        const map = new Map<string, { cityEn: string; cityAr: string }>();
         for (const b of branches) {
-            if (b.cityEn) cities.add(b.cityEn);
+            if (b.cityEn && !map.has(b.cityEn)) {
+                map.set(b.cityEn, { cityEn: b.cityEn, cityAr: b.cityAr || b.cityEn });
+            }
         }
-        return Array.from(cities);
+        return Array.from(map.values());
     }, [branches]);
 
     // Sync branches state with localStorage
     const persistBranches = (updated: BranchRecord[]) => {
-        setBranches(updated);
         saveBranches(updated);
+        syncMasterEntityEmployeeCounts(employees);
+        setEmployees(loadEmployees());
+        setBranches(loadBranches());
     };
 
     // Summary KPIs
@@ -494,19 +500,19 @@ export const UmsBranchesPage: React.FC = () => {
         ];
 
         const rows = branches.map((b) => [
-            b.code,
-            `"${b.nameEn.replace(/"/g, '""')}"`,
-            `"${b.nameAr.replace(/"/g, '""')}"`,
-            b.cityEn,
-            b.cityAr,
-            b.crNumber,
-            b.isHeadquarter ? 'YES' : 'NO',
-            b.phone,
-            b.email,
+            escapeSafeCsvCell(b.code),
+            escapeSafeCsvCell(b.nameEn),
+            escapeSafeCsvCell(b.nameAr),
+            escapeSafeCsvCell(b.cityEn),
+            escapeSafeCsvCell(b.cityAr),
+            escapeSafeCsvCell(b.crNumber),
+            escapeSafeCsvCell(b.isHeadquarter ? 'YES' : 'NO'),
+            escapeSafeCsvCell(b.phone),
+            escapeSafeCsvCell(b.email),
             employeeCountByBranch[b.id] || 0,
-            b.status,
-            b.createdAt,
-            `"${(b.addressEn || '').replace(/"/g, '""')}"`,
+            escapeSafeCsvCell(b.status),
+            escapeSafeCsvCell(b.createdAt),
+            escapeSafeCsvCell(b.addressEn || ''),
         ]);
 
         const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -538,17 +544,17 @@ export const UmsBranchesPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
                 <div>
                     <div className="flex items-center gap-2.5">
-                        <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D] dark:text-[#F3F0EA]">
+                        <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
                             {t('ums.branches.title', { defaultValue: 'Branches & Locations' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] dark:bg-[#1C2521] text-[#2D3F2C] dark:text-[#84C799] border border-[#E5E0D8] dark:border-[#2A3630]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             BRN-MST
                         </span>
                     </div>
-                    <p className="text-xs text-[#6E6862] dark:text-[#A8A298] mt-1 font-normal">
+                    <p className="text-xs text-[#6E6862] mt-1 font-normal">
                         {t('ums.branches.subtitle', {
                             defaultValue:
                                 'Corporate headquarters, regional branches, commercial registrations, and site contacts.',
@@ -560,7 +566,7 @@ export const UmsBranchesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleExportCsv}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-[#161D1A] hover:bg-[#FAF8F5] dark:hover:bg-[#232E29] border border-[#E5E0D8] dark:border-[#2A3630] text-xs font-semibold text-[#45413C] dark:text-[#F3F0EA] transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#45413C] transition-colors cursor-pointer shadow-2xs"
                     >
                         <Download size={14} className="text-[#857E74]" />
                         <span>{t('common.export', { defaultValue: 'Export' })}</span>
@@ -569,7 +575,7 @@ export const UmsBranchesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] dark:bg-[#265938] hover:bg-[#223121] dark:hover:bg-[#1e462c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={15} />
                         <span>{t('ums.branches.addBranch', { defaultValue: 'Add Branch' })}</span>
@@ -579,17 +585,17 @@ export const UmsBranchesPage: React.FC = () => {
 
             {/* Summary KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-xl p-4 shadow-2xs">
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-[#A8A298]">
+                        <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.branches.kpi.total', { defaultValue: 'Total Locations' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] flex items-center justify-center text-[#2D3F2C] dark:text-[#84C799]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
                             <MapPin size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-mono text-[#0D0D0D] dark:text-[#F3F0EA]">
+                        <span className="text-2xl font-bold font-mono text-[#0D0D0D]">
                             {kpis.total}
                         </span>
                         <span className="text-[11px] text-[#857E74]">
@@ -598,17 +604,17 @@ export const UmsBranchesPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-xl p-4 shadow-2xs">
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-[#A8A298]">
+                        <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.branches.kpi.active', { defaultValue: 'Active Sites' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] dark:bg-[#265938]/20 border border-[#265938]/25 flex items-center justify-center text-[#265938] dark:text-[#84C799]">
+                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#265938]/25 flex items-center justify-center text-[#265938]">
                             <CheckCircle2 size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-mono text-[#265938] dark:text-[#84C799]">
+                        <span className="text-2xl font-bold font-mono text-[#265938]">
                             {kpis.active}
                         </span>
                         <span className="text-[11px] text-[#857E74]">
@@ -617,36 +623,36 @@ export const UmsBranchesPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-xl p-4 shadow-2xs">
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-[#A8A298]">
+                        <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.branches.kpi.hq', { defaultValue: 'Main Headquarters' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] flex items-center justify-center text-[#8C6046]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#8C6046]">
                             <Landmark size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-base font-bold text-[#0D0D0D] dark:text-[#F3F0EA] truncate">
+                        <span className="text-base font-bold text-[#0D0D0D] truncate">
                             {kpis.hqBranch ? (isRtl ? kpis.hqBranch.cityAr : kpis.hqBranch.cityEn) : 'Not Set'}
                         </span>
-                        <span className="text-[11px] font-mono text-[#265938] dark:text-[#84C799]">
+                        <span className="text-[11px] font-mono text-[#265938]">
                             {kpis.hqBranch?.code || '—'}
                         </span>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-xl p-4 shadow-2xs">
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-[#A8A298]">
+                        <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.branches.kpi.workforce', { defaultValue: 'Branch Workforce' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] flex items-center justify-center text-[#2D3F2C] dark:text-[#84C799]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
                             <Users size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold font-mono text-[#0D0D0D] dark:text-[#F3F0EA]">
+                        <span className="text-2xl font-bold font-mono text-[#0D0D0D]">
                             {kpis.totalAssignedStaff}
                         </span>
                         <span className="text-[11px] text-[#857E74]">
@@ -657,7 +663,7 @@ export const UmsBranchesPage: React.FC = () => {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-xl p-4 shadow-2xs space-y-3">
+            <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs space-y-3">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     {/* Search */}
                     <div className="relative flex-1">
@@ -675,7 +681,7 @@ export const UmsBranchesPage: React.FC = () => {
                             placeholder={t('ums.branches.searchPlaceholder', {
                                 defaultValue: 'Search by branch name, code, city, CR number, phone, email...',
                             })}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] dark:focus:ring-[#84C799]"
+                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
                         />
                         {searchQuery && (
                             <button
@@ -697,12 +703,12 @@ export const UmsBranchesPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('ums.branches.filterCity', { defaultValue: 'Filter by City' })}
-                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none cursor-pointer"
+                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none cursor-pointer"
                         >
                             <option value="ALL">{t('common.allCities', { defaultValue: 'All Cities' })}</option>
                             {availableCities.map((c) => (
-                                <option key={c} value={c}>
-                                    {c}
+                                <option key={c.cityEn} value={c.cityEn}>
+                                    {isRtl ? c.cityAr : c.cityEn}
                                 </option>
                             ))}
                         </select>
@@ -714,7 +720,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('common.status', { defaultValue: 'Status' })}
-                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none cursor-pointer"
+                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none cursor-pointer"
                         >
                             <option value="ALL">{t('common.allStatus', { defaultValue: 'All Statuses' })}</option>
                             <option value="Active">{t('common.active', { defaultValue: 'Active' })}</option>
@@ -730,7 +736,7 @@ export const UmsBranchesPage: React.FC = () => {
                                     setCityFilter('ALL');
                                     setCurrentPage(1);
                                 }}
-                                className="inline-flex items-center gap-1 px-2.5 py-2 text-xs text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] dark:hover:bg-[#232E29] rounded-lg transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-2 text-xs text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] rounded-lg transition-colors cursor-pointer"
                             >
                                 <RotateCcw size={13} />
                                 <span>{t('common.resetFilters', { defaultValue: 'Reset' })}</span>
@@ -741,11 +747,11 @@ export const UmsBranchesPage: React.FC = () => {
             </div>
 
             {/* Table Card */}
-            <div className="bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-xl shadow-2xs overflow-hidden">
+            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-xs text-start border-collapse">
                         <thead>
-                            <tr className="border-b border-[#E5E0D8] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#1C2521] text-[#6E6862] dark:text-[#A8A298] font-semibold select-none">
+                            <tr className="border-b border-[#E5E0D8] bg-[#FAF8F5] text-[#6E6862] font-semibold select-none">
                                 <th className="p-3 w-10 text-center">
                                     <input
                                         type="checkbox"
@@ -765,7 +771,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 <th className="p-3 text-end">{t('common.actions', { defaultValue: 'Actions' })}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F0ECE4] dark:divide-[#2A3630]">
+                        <tbody className="divide-y divide-[#F0ECE4]">
                             {paginatedBranches.length === 0 ? (
                                 <tr>
                                     <td colSpan={9} className="p-8 text-center text-[#857E74]">
@@ -783,8 +789,8 @@ export const UmsBranchesPage: React.FC = () => {
                                     return (
                                         <tr
                                             key={branch.id}
-                                            className={`transition-colors hover:bg-[#FAF8F5]/80 dark:hover:bg-[#232E29]/50 ${
-                                                isSelected ? 'bg-[#FAF8F5] dark:bg-[#1C2521]' : ''
+                                            className={`transition-colors hover:bg-[#FAF8F5]/80 ${
+                                                isSelected ? 'bg-[#FAF8F5]' : ''
                                             }`}
                                         >
                                             <td className="p-3 text-center">
@@ -796,13 +802,13 @@ export const UmsBranchesPage: React.FC = () => {
                                                     className="rounded border-[#D6CFC4] text-[#2D3F2C] focus:ring-0 cursor-pointer"
                                                 />
                                             </td>
-                                            <td className="p-3 font-mono font-semibold text-[#2D3F2C] dark:text-[#84C799] whitespace-nowrap">
-                                                <span className="px-2 py-0.5 rounded bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630]" dir="ltr">
+                                            <td className="p-3 font-mono font-semibold text-[#2D3F2C] whitespace-nowrap">
+                                                <span className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8]" dir="ltr">
                                                     {branch.code}
                                                 </span>
                                             </td>
                                             <td className="p-3">
-                                                <div className="flex items-center gap-1.5 font-semibold text-[#0D0D0D] dark:text-[#F3F0EA]">
+                                                <div className="flex items-center gap-1.5 font-semibold text-[#0D0D0D]">
                                                     <span>{isRtl ? branch.nameAr : branch.nameEn}</span>
                                                     {branch.isHeadquarter && (
                                                         <span className="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded bg-[#BFAB93]/20 text-[#8C6046] border border-[#BFAB93]/40">
@@ -815,28 +821,28 @@ export const UmsBranchesPage: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="p-3">
-                                                <div className="font-medium text-[#0D0D0D] dark:text-[#F3F0EA]">
+                                                <div className="font-medium text-[#0D0D0D]">
                                                     {isRtl ? branch.cityAr : branch.cityEn}
                                                 </div>
                                                 <div className="text-[11px] text-[#857E74] truncate max-w-xs">
                                                     {isRtl ? branch.addressAr : branch.addressEn}
                                                 </div>
                                             </td>
-                                            <td className="p-3 font-mono text-[#0D0D0D] dark:text-[#F3F0EA] whitespace-nowrap">
+                                            <td className="p-3 font-mono text-[#0D0D0D] whitespace-nowrap">
                                                 <span dir="ltr">{branch.crNumber}</span>
                                             </td>
                                             <td className="p-3 text-[11px] space-y-0.5 whitespace-nowrap">
-                                                <div className="flex items-center gap-1 text-[#45413C] dark:text-[#A8A298]">
+                                                <div className="flex items-center gap-1 text-[#45413C]">
                                                     <Phone size={11} className="text-[#857E74]" />
                                                     <span dir="ltr">{branch.phone}</span>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-[#45413C] dark:text-[#A8A298]">
+                                                <div className="flex items-center gap-1 text-[#45413C]">
                                                     <Mail size={11} className="text-[#857E74]" />
                                                     <span dir="ltr">{branch.email}</span>
                                                 </div>
                                             </td>
                                             <td className="p-3 text-center">
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] dark:bg-[#1C2521] text-[#2D3F2C] dark:text-[#84C799] border border-[#E5E0D8] dark:border-[#2A3630]">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
                                                     <Users size={11} />
                                                     <span>{assignedCount}</span>
                                                 </span>
@@ -845,13 +851,13 @@ export const UmsBranchesPage: React.FC = () => {
                                                 <span
                                                     className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                                                         branch.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] dark:bg-[#265938]/30 text-[#265938] dark:text-[#84C799] border-[#265938]/25'
-                                                            : 'bg-[#F4F1EA] dark:bg-[#1C2521] text-[#6E6862] dark:text-[#A8A298] border-[#E5E0D8] dark:border-[#2A3630]'
+                                                            ? 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25'
+                                                            : 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]'
                                                     }`}
                                                 >
                                                     <span
                                                         className={`w-1.5 h-1.5 rounded-full ${
-                                                            branch.status === 'Active' ? 'bg-[#265938] dark:bg-[#84C799]' : 'bg-[#857E74]'
+                                                            branch.status === 'Active' ? 'bg-[#265938]' : 'bg-[#857E74]'
                                                         }`}
                                                     />
                                                     {branch.status === 'Active'
@@ -865,7 +871,7 @@ export const UmsBranchesPage: React.FC = () => {
                                                         type="button"
                                                         onClick={() => setViewingBranch(branch)}
                                                         title={t('common.view', { defaultValue: 'View Details' })}
-                                                        className="p-1.5 rounded-md text-[#595550] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] dark:hover:bg-[#232E29] transition-colors"
+                                                        className="p-1.5 rounded-md text-[#595550] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors"
                                                     >
                                                         <Eye size={14} />
                                                     </button>
@@ -873,7 +879,7 @@ export const UmsBranchesPage: React.FC = () => {
                                                         type="button"
                                                         onClick={() => handleOpenEdit(branch)}
                                                         title={t('common.edit', { defaultValue: 'Edit' })}
-                                                        className="p-1.5 rounded-md text-[#595550] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] dark:hover:bg-[#232E29] transition-colors"
+                                                        className="p-1.5 rounded-md text-[#595550] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors"
                                                     >
                                                         <Pencil size={14} />
                                                     </button>
@@ -881,7 +887,7 @@ export const UmsBranchesPage: React.FC = () => {
                                                         type="button"
                                                         onClick={() => handleToggleStatus(branch)}
                                                         title={branch.status === 'Active' ? t('common.deactivate') : t('common.activate')}
-                                                        className="p-1.5 rounded-md text-[#595550] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] dark:hover:bg-[#232E29] transition-colors"
+                                                        className="p-1.5 rounded-md text-[#595550] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors"
                                                     >
                                                         <Power size={14} />
                                                     </button>
@@ -889,7 +895,7 @@ export const UmsBranchesPage: React.FC = () => {
                                                         type="button"
                                                         onClick={() => setDeletingBranch(branch)}
                                                         title={t('common.delete', { defaultValue: 'Delete' })}
-                                                        className="p-1.5 rounded-md text-[#A63A3A] hover:bg-[#FDF2F2] dark:hover:bg-[#7F1D1D]/30 transition-colors"
+                                                        className="p-1.5 rounded-md text-[#A63A3A] hover:bg-[#FDF2F2] transition-colors"
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
@@ -904,7 +910,7 @@ export const UmsBranchesPage: React.FC = () => {
                 </div>
 
                 {/* Pagination Controls */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-[#E5E0D8] dark:border-[#2A3630] bg-[#FAF8F5] dark:bg-[#1C2521] text-xs text-[#6E6862] dark:text-[#A8A298]">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#6E6862]">
                     <div className="flex items-center gap-2">
                         <span>{t('pagination.show', { defaultValue: 'Show' })}</span>
                         <select
@@ -914,7 +920,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('pagination.chooseEntriesAria', { defaultValue: 'Choose entries per page' })}
-                            className="px-2 py-1 rounded bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none"
+                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none"
                         >
                             {UMS_PAGE_SIZE_OPTIONS.map((size) => (
                                 <option key={size} value={size}>
@@ -941,18 +947,18 @@ export const UmsBranchesPage: React.FC = () => {
                             type="button"
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="p-1.5 rounded bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded bg-white border border-[#E5E0D8] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronLeft size={14} className="rtl:rotate-180" />
                         </button>
-                        <span className="px-3 py-1 font-mono font-semibold text-[#0D0D0D] dark:text-[#F3F0EA]">
+                        <span className="px-3 py-1 font-mono font-semibold text-[#0D0D0D]">
                             {currentPage} / {totalPages}
                         </span>
                         <button
                             type="button"
                             disabled={currentPage >= totalPages}
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            className="p-1.5 rounded bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 rounded bg-white border border-[#E5E0D8] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronRight size={14} className="rtl:rotate-180" />
                         </button>
@@ -963,19 +969,19 @@ export const UmsBranchesPage: React.FC = () => {
             {/* Create / Edit Branch Drawer Modal */}
             {(isCreateOpen || editingBranch) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-                    <div className="w-full max-w-2xl bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150 my-8">
-                        <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D8] dark:border-[#2A3630] mb-5">
+                    <div className="w-full max-w-2xl bg-white border border-[#E5E0D8] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150 my-8">
+                        <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D8] mb-5">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] flex items-center justify-center text-[#2D3F2C] dark:text-[#84C799]">
+                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
                                     <MapPin size={18} />
                                 </div>
                                 <div>
-                                    <h3 className="text-base font-bold text-[#0D0D0D] dark:text-[#F3F0EA]">
+                                    <h3 className="text-base font-bold text-[#0D0D0D]">
                                         {editingBranch
                                             ? t('ums.branches.editBranch', { defaultValue: 'Edit Branch' })
                                             : t('ums.branches.addBranch', { defaultValue: 'Register New Branch' })}
                                     </h3>
-                                    <p className="text-[11px] text-[#6E6862] dark:text-[#A8A298]">
+                                    <p className="text-[11px] text-[#6E6862]">
                                         {formData.code || 'BRN-NEW'}
                                     </p>
                                 </div>
@@ -986,7 +992,7 @@ export const UmsBranchesPage: React.FC = () => {
                                     setIsCreateOpen(false);
                                     setEditingBranch(null);
                                 }}
-                                className="p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] dark:hover:bg-[#232E29]"
+                                className="p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5]"
                             >
                                 <X size={16} />
                             </button>
@@ -999,7 +1005,7 @@ export const UmsBranchesPage: React.FC = () => {
                             {/* Code, CR Number & Status */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.colCode', { defaultValue: 'Branch Code' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1008,12 +1014,12 @@ export const UmsBranchesPage: React.FC = () => {
                                         readOnly={Boolean(editingBranch)}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                         dir="ltr"
-                                        className="w-full px-3 py-2 text-xs font-mono font-bold rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] text-[#2D3F2C] dark:text-[#84C799] focus:outline-none"
+                                        className="w-full px-3 py-2 text-xs font-mono font-bold rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] focus:outline-none"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.colCr', { defaultValue: 'CR Number' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1022,11 +1028,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, crNumber: e.target.value })}
                                         placeholder="e.g. 1010892019"
                                         dir="ltr"
-                                        className={`w-full px-3 py-2 text-xs font-mono rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs font-mono rounded-lg bg-white border ${
                                             formErrors.crNumber
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.crNumber && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.crNumber}</p>
@@ -1034,13 +1040,13 @@ export const UmsBranchesPage: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('common.status', { defaultValue: 'Status' })}
                                     </label>
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                                        className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none"
+                                        className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none"
                                     >
                                         <option value="Active">{t('common.active', { defaultValue: 'Active' })}</option>
                                         <option value="Inactive">{t('common.inactive', { defaultValue: 'Inactive' })}</option>
@@ -1051,7 +1057,7 @@ export const UmsBranchesPage: React.FC = () => {
                             {/* Bilingual Names */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.form.nameEn', { defaultValue: 'Branch Name (English)' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1059,11 +1065,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         value={formData.nameEn}
                                         onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                                         placeholder="e.g. Riyadh Main Headquarters"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                             formErrors.nameEn
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.nameEn && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.nameEn}</p>
@@ -1071,7 +1077,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.form.nameAr', { defaultValue: 'Branch Name (Arabic)' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1080,11 +1086,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                                         placeholder="مثال: المقر الرئيسي - الرياض"
                                         dir="rtl"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                             formErrors.nameAr
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.nameAr && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.nameAr}</p>
@@ -1095,7 +1101,7 @@ export const UmsBranchesPage: React.FC = () => {
                             {/* City (En / Ar) */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.form.cityEn', { defaultValue: 'City (English)' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1103,11 +1109,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         value={formData.cityEn}
                                         onChange={(e) => setFormData({ ...formData, cityEn: e.target.value })}
                                         placeholder="e.g. Riyadh"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                             formErrors.cityEn
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.cityEn && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.cityEn}</p>
@@ -1115,7 +1121,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.form.cityAr', { defaultValue: 'City (Arabic)' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1124,11 +1130,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, cityAr: e.target.value })}
                                         placeholder="مثال: الرياض"
                                         dir="rtl"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                             formErrors.cityAr
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.cityAr && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.cityAr}</p>
@@ -1139,7 +1145,7 @@ export const UmsBranchesPage: React.FC = () => {
                             {/* Contact Phone & Email */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.form.phone', { defaultValue: 'Phone Number' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1148,11 +1154,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                         placeholder="+966 11 450 8899"
                                         dir="ltr"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                             formErrors.phone
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.phone && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.phone}</p>
@@ -1160,7 +1166,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                         {t('ums.branches.form.email', { defaultValue: 'Contact Email' })} <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -1169,11 +1175,11 @@ export const UmsBranchesPage: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="branch@awn.sa"
                                         dir="ltr"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                             formErrors.email
                                                 ? 'border-red-500'
-                                                : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                        } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                                : 'border-[#E5E0D8]'
+                                        } text-[#0D0D0D] focus:outline-none`}
                                     />
                                     {formErrors.email && (
                                         <p className="text-[11px] text-red-500 mt-1">{formErrors.email}</p>
@@ -1183,7 +1189,7 @@ export const UmsBranchesPage: React.FC = () => {
 
                             {/* Addresses */}
                             <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                     {t('ums.branches.form.addressEn', { defaultValue: 'Physical Address (English)' })} <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
@@ -1191,11 +1197,11 @@ export const UmsBranchesPage: React.FC = () => {
                                     value={formData.addressEn}
                                     onChange={(e) => setFormData({ ...formData, addressEn: e.target.value })}
                                     placeholder="Street, District, Building No, Postal Code..."
-                                    className={`w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border ${
+                                    className={`w-full px-3 py-2 text-xs rounded-lg bg-white border ${
                                         formErrors.addressEn
                                             ? 'border-red-500'
-                                            : 'border-[#E5E0D8] dark:border-[#2A3630]'
-                                    } text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none`}
+                                            : 'border-[#E5E0D8]'
+                                    } text-[#0D0D0D] focus:outline-none`}
                                 />
                                 {formErrors.addressEn && (
                                     <p className="text-[11px] text-red-500 mt-1">{formErrors.addressEn}</p>
@@ -1203,7 +1209,7 @@ export const UmsBranchesPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] mb-1">
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                     {t('ums.branches.form.addressAr', { defaultValue: 'Physical Address (Arabic)' })}
                                 </label>
                                 <textarea
@@ -1212,12 +1218,12 @@ export const UmsBranchesPage: React.FC = () => {
                                     onChange={(e) => setFormData({ ...formData, addressAr: e.target.value })}
                                     placeholder="الشارع، الحي، رقم المبنى، الرمز البريدي..."
                                     dir="rtl"
-                                    className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] focus:outline-none"
+                                    className="w-full px-3 py-2 text-xs rounded-lg bg-white border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none"
                                 />
                             </div>
 
                             {/* Is Headquarter Checkbox */}
-                            <div className="p-3 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630]">
+                            <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
                                 <label className="flex items-start gap-3 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -1228,10 +1234,10 @@ export const UmsBranchesPage: React.FC = () => {
                                         className="mt-0.5 rounded border-[#D6CFC4] text-[#2D3F2C] focus:ring-0 cursor-pointer"
                                     />
                                     <div>
-                                        <span className="text-xs font-semibold text-[#0D0D0D] dark:text-[#F3F0EA] block">
+                                        <span className="text-xs font-semibold text-[#0D0D0D] block">
                                             {t('ums.branches.form.designateHq', { defaultValue: 'Set as Primary Corporate Headquarters' })}
                                         </span>
-                                        <span className="text-[11px] text-[#6E6862] dark:text-[#A8A298]">
+                                        <span className="text-[11px] text-[#6E6862]">
                                             {t('ums.branches.form.designateHqNote', {
                                                 defaultValue:
                                                     'Designating this branch will automatically transfer main enterprise headquarters governance from any previous HQ.',
@@ -1245,20 +1251,20 @@ export const UmsBranchesPage: React.FC = () => {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E5E0D8] dark:border-[#2A3630]">
+                            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E5E0D8]">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setIsCreateOpen(false);
                                         setEditingBranch(null);
                                     }}
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] text-[#6E6862] hover:bg-[#FAF8F5] transition-colors"
+                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-white border border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5] transition-colors"
                                 >
                                     {t('common.cancel', { defaultValue: 'Cancel' })}
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] dark:bg-[#265938] hover:bg-[#223121] text-white transition-colors"
+                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white transition-colors"
                                 >
                                     {editingBranch
                                         ? t('common.saveChanges', { defaultValue: 'Save Changes' })
@@ -1273,13 +1279,13 @@ export const UmsBranchesPage: React.FC = () => {
             {/* View Details Drawer */}
             {viewingBranch && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-                    <div className="w-full max-w-lg bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150">
-                        <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D8] dark:border-[#2A3630] mb-4">
+                    <div className="w-full max-w-lg bg-white border border-[#E5E0D8] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D8] mb-4">
                             <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] text-[#2D3F2C] dark:text-[#84C799]">
+                                <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
                                     {viewingBranch.code}
                                 </span>
-                                <h3 className="text-base font-bold text-[#0D0D0D] dark:text-[#F3F0EA]">
+                                <h3 className="text-base font-bold text-[#0D0D0D]">
                                     {isRtl ? viewingBranch.nameAr : viewingBranch.nameEn}
                                 </h3>
                                 {viewingBranch.isHeadquarter && (
@@ -1298,14 +1304,14 @@ export const UmsBranchesPage: React.FC = () => {
                         </div>
 
                         <div className="space-y-3.5 text-xs">
-                            <div className="p-3 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] space-y-2">
+                            <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
                                 <div className="flex justify-between">
                                     <span className="text-[#857E74]">{t('ums.branches.colNameEn', { defaultValue: 'English Name' })}:</span>
-                                    <span className="font-semibold text-[#0D0D0D] dark:text-[#F3F0EA]">{viewingBranch.nameEn}</span>
+                                    <span className="font-semibold text-[#0D0D0D]">{viewingBranch.nameEn}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-[#857E74]">{t('ums.branches.colNameAr', { defaultValue: 'Arabic Name' })}:</span>
-                                    <span className="font-semibold text-[#0D0D0D] dark:text-[#F3F0EA]">{viewingBranch.nameAr}</span>
+                                    <span className="font-semibold text-[#0D0D0D]">{viewingBranch.nameAr}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-[#857E74]">{t('ums.branches.colCity', { defaultValue: 'City' })}:</span>
@@ -1325,12 +1331,16 @@ export const UmsBranchesPage: React.FC = () => {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-[#857E74]">{t('common.status', { defaultValue: 'Status' })}:</span>
-                                    <span className="font-semibold">{viewingBranch.status}</span>
+                                    <span className="font-semibold">
+                                        {viewingBranch.status === 'Active'
+                                            ? t('common.active', { defaultValue: 'Active' })
+                                            : t('common.inactive', { defaultValue: 'Inactive' })}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-[#857E74]">{t('ums.branches.colStaff', { defaultValue: 'Deployed Workforce' })}:</span>
-                                    <span className="font-mono font-bold text-[#2D3F2C] dark:text-[#84C799]">
-                                        {employeeCountByBranch[viewingBranch.id] || 0} employees
+                                    <span className="font-mono font-bold text-[#2D3F2C]">
+                                        {employeeCountByBranch[viewingBranch.id] || 0} {t('ums.departments.staffCountSuffix', { defaultValue: 'employees' })}
                                     </span>
                                 </div>
                             </div>
@@ -1340,7 +1350,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 <span className="block text-[11px] font-semibold text-[#857E74] mb-1">
                                     {t('ums.branches.form.addressEn', { defaultValue: 'English Address' })}
                                 </span>
-                                <p className="p-2.5 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] text-[#0D0D0D] dark:text-[#F3F0EA] text-[11px] leading-relaxed">
+                                <p className="p-2.5 rounded-lg bg-[#FAF8F5] text-[#0D0D0D] text-[11px] leading-relaxed">
                                     {viewingBranch.addressEn}
                                 </p>
                             </div>
@@ -1350,7 +1360,7 @@ export const UmsBranchesPage: React.FC = () => {
                                     <span className="block text-[11px] font-semibold text-[#857E74] mb-1">
                                         {t('ums.branches.form.addressAr', { defaultValue: 'Arabic Address' })}
                                     </span>
-                                    <p className="p-2.5 rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] text-[#0D0D0D] dark:text-[#F3F0EA] text-[11px] leading-relaxed" dir="rtl">
+                                    <p className="p-2.5 rounded-lg bg-[#FAF8F5] text-[#0D0D0D] text-[11px] leading-relaxed" dir="rtl">
                                         {viewingBranch.addressAr}
                                     </p>
                                 </div>
@@ -1362,7 +1372,7 @@ export const UmsBranchesPage: React.FC = () => {
                                     {t('ums.branches.staffPreview', { defaultValue: 'Stationed Personnel' })} (
                                     {employeeCountByBranch[viewingBranch.id] || 0})
                                 </span>
-                                <div className="max-h-36 overflow-y-auto rounded-lg border border-[#E5E0D8] dark:border-[#2A3630] divide-y divide-[#F0ECE4] dark:divide-[#2A3630]">
+                                <div className="max-h-36 overflow-y-auto rounded-lg border border-[#E5E0D8] divide-y divide-[#F0ECE4]">
                                     {employees.filter((e) => e.branchId === viewingBranch.id).length === 0 ? (
                                         <p className="p-3 text-[11px] text-center text-[#857E74] italic">
                                             {t('ums.branches.noStaffAssigned', { defaultValue: 'No employees currently registered at this location.' })}
@@ -1373,14 +1383,19 @@ export const UmsBranchesPage: React.FC = () => {
                                             .map((emp) => (
                                                 <div key={emp.id} className="p-2 flex items-center justify-between text-[11px]">
                                                     <div>
-                                                        <span className="font-semibold text-[#0D0D0D] dark:text-[#F3F0EA]">
+                                                        <span className="font-semibold text-[#0D0D0D]">
                                                             {isRtl ? emp.nameAr : emp.nameEn}
                                                         </span>
                                                         <span className="ms-2 font-mono text-[10px] text-[#857E74]">
                                                             {emp.code}
                                                         </span>
+                                                        <span className="block text-[10px] text-[#6E6862]">
+                                                            {isRtl
+                                                                ? emp.departmentNameAr || emp.departmentName
+                                                                : emp.departmentName}
+                                                        </span>
                                                     </div>
-                                                    <span className="text-[#6E6862] dark:text-[#A8A298]">{emp.phone}</span>
+                                                    <span className="text-[#6E6862]">{emp.phone}</span>
                                                 </div>
                                             ))
                                     )}
@@ -1388,11 +1403,11 @@ export const UmsBranchesPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="mt-5 pt-3 border-t border-[#E5E0D8] dark:border-[#2A3630] flex justify-end">
+                        <div className="mt-5 pt-3 border-t border-[#E5E0D8] flex justify-end">
                             <button
                                 type="button"
                                 onClick={() => setViewingBranch(null)}
-                                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#FAF8F5] dark:bg-[#1C2521] border border-[#E5E0D8] dark:border-[#2A3630] text-[#0D0D0D] dark:text-[#F3F0EA] hover:bg-[#EFECE6]"
+                                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#EFECE6]"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>
@@ -1411,7 +1426,7 @@ export const UmsBranchesPage: React.FC = () => {
 
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-                        <div className="w-full max-w-md bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150">
+                        <div className="w-full max-w-md bg-white border border-[#E5E0D8] rounded-2xl shadow-2xl p-6 relative animate-in fade-in zoom-in-95 duration-150">
                             <div className="flex items-center gap-3 mb-4">
                                 <div
                                     className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -1427,18 +1442,18 @@ export const UmsBranchesPage: React.FC = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-[#0D0D0D] dark:text-[#F3F0EA]">
+                                    <h3 className="text-sm font-bold text-[#0D0D0D]">
                                         {eligibility.canDelete
                                             ? t('ums.branches.deleteTitle', { defaultValue: 'Delete Branch' })
                                             : t('ums.branches.deleteBlockedTitle', { defaultValue: 'Branch Deletion Blocked' })}
                                     </h3>
-                                    <p className="text-xs text-[#6E6862] dark:text-[#A8A298]">
+                                    <p className="text-xs text-[#6E6862]">
                                         {deletingBranch.nameEn} ({deletingBranch.code})
                                     </p>
                                 </div>
                             </div>
 
-                            <p className="text-xs text-[#45413C] dark:text-[#DCD6CD] mb-5 leading-relaxed">
+                            <p className="text-xs text-[#45413C] mb-5 leading-relaxed">
                                 {eligibility.canDelete
                                     ? t('ums.branches.deleteConfirmDesc', {
                                           defaultValue:
@@ -1453,7 +1468,7 @@ export const UmsBranchesPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setDeletingBranch(null)}
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-white dark:bg-[#161D1A] border border-[#E5E0D8] dark:border-[#2A3630] text-[#6E6862] hover:bg-[#FAF8F5] transition-colors"
+                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-white border border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5] transition-colors"
                                 >
                                     {t('common.cancel', { defaultValue: 'Cancel' })}
                                 </button>

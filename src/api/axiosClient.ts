@@ -9,7 +9,7 @@ import { useAuthStore } from '../store/useAuthStore';
 export const IS_BACKEND_ENABLED = false;
 
 export const axiosClient = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL || import.meta.env.VITE_API_BASE_URL,
+    baseURL: import.meta.env?.VITE_BASE_URL || import.meta.env?.VITE_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },

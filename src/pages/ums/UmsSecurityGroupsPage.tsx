@@ -43,6 +43,8 @@ import {
     generateNextSecurityGroupCode,
     checkSecurityGroupDeletionEligibility,
     recordUmsAuditEvent,
+    escapeSafeCsvCell,
+    syncMasterEntityEmployeeCounts,
     UMS_PAGE_SIZE_OPTIONS,
     type SecurityGroupRecord,
     type SecurityGroupPermissions,
@@ -168,12 +170,12 @@ function countActivePermissions(permissions: SecurityGroupPermissions): number {
 
 export const UmsSecurityGroupsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
-    const isRtl = i18n.language === 'ar';
+    const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
     // State
     const [groups, setGroups] = useState<SecurityGroupRecord[]>(() => loadSecurityGroups());
-    const [roles] = useState<RoleRecord[]>(() => loadRoles());
-    const [employees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    const [roles, setRoles] = useState<RoleRecord[]>(() => loadRoles());
+    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
     const [departments] = useState<DepartmentRecord[]>(() => loadDepartments());
 
     // Search and Filters
@@ -198,8 +200,11 @@ export const UmsSecurityGroupsPage: React.FC = () => {
 
     // Synchronize to localStorage
     const persistGroups = (newGroups: SecurityGroupRecord[]) => {
-        setGroups(newGroups);
         saveSecurityGroups(newGroups);
+        syncMasterEntityEmployeeCounts(employees);
+        setEmployees(loadEmployees());
+        setRoles(loadRoles());
+        setGroups(loadSecurityGroups());
     };
 
     // Calculate dynamic counts
@@ -402,7 +407,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             resourceName: newGroup.nameEn,
             detailsEn: `Created security group ${newGroup.code} (${newGroup.nameEn}) with ${countActivePermissions(newGroup.permissions)}/28 privileges configured.`,
             detailsAr: `إنشاء مجموعة أمان جديدة ${newGroup.code} (${newGroup.nameAr}) وتعيين ${countActivePermissions(newGroup.permissions)}/28 صلاحية.`,
-            newState: JSON.stringify(newGroup),
+            newState: `Code: ${newGroup.code} | Name: ${newGroup.nameEn} | Status: ${newGroup.status}`,
         });
 
         toast.success(
@@ -444,8 +449,8 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             resourceName: updatedGroup.nameEn,
             detailsEn: `Updated security group ${updatedGroup.code} (${updatedGroup.nameEn}).`,
             detailsAr: `تحديث بيانات مجموعة الأمان ${updatedGroup.code} (${updatedGroup.nameAr}).`,
-            previousState: JSON.stringify(editingGroup),
-            newState: JSON.stringify(updatedGroup),
+            previousState: `Code: ${editingGroup.code} | Name: ${editingGroup.nameEn} | Status: ${editingGroup.status}`,
+            newState: `Code: ${updatedGroup.code} | Name: ${updatedGroup.nameEn} | Status: ${updatedGroup.status}`,
         });
 
         toast.success(
@@ -506,7 +511,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             resourceName: target.nameEn,
             detailsEn: `Permanently deleted security group ${target.code} (${target.nameEn}).`,
             detailsAr: `تم حذف مجموعة الأمان ${target.code} (${target.nameAr}) نهائياً.`,
-            previousState: JSON.stringify(target),
+            previousState: `Code: ${target.code} | Name: ${target.nameEn} | Status: ${target.status}`,
         });
 
         toast.success(
@@ -571,16 +576,16 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             const userCount = (groupEmployeeMap.get(g.id) || []).length;
             const activePrivileges = countActivePermissions(g.permissions);
             return [
-                `"${g.code}"`,
-                `"${g.nameEn.replace(/"/g, '""')}"`,
-                `"${g.nameAr.replace(/"/g, '""')}"`,
-                `"${(g.descriptionEn || '').replace(/"/g, '""')}"`,
-                `"${(g.descriptionAr || '').replace(/"/g, '""')}"`,
+                escapeSafeCsvCell(g.code),
+                escapeSafeCsvCell(g.nameEn),
+                escapeSafeCsvCell(g.nameAr),
+                escapeSafeCsvCell(g.descriptionEn || ''),
+                escapeSafeCsvCell(g.descriptionAr || ''),
                 roleCount,
                 userCount,
-                `"${activePrivileges} / 28"`,
-                `"${g.status}"`,
-                `"${g.createdAt}"`,
+                escapeSafeCsvCell(`${activePrivileges} / 28`),
+                escapeSafeCsvCell(g.status),
+                escapeSafeCsvCell(g.createdAt),
             ].join(',');
         });
 

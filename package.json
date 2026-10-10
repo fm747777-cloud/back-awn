@@ -7,7 +7,9 @@
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:ums:4f": "npx tsx scripts/verify-ums-phase4f.ts",
+    "verify:ums:4g": "npx tsx scripts/verify-ums-phase4g.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

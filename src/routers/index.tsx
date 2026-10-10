@@ -58,16 +58,16 @@ const AssetAuditTrailPage = () => import('../pages/asset-management/AssetAuditTr
 // UMS Module (User Management System)
 const UmsPage = () => import('../pages/UmsPage').then((m) => ({ Component: m.UmsPage }));
 const UmsDashboardPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsDashboardPage }));
-const UmsEmployeesPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeesPage }));
-const UmsEmployeeNewPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeeNewPage }));
-const UmsEmployeeDetailsPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeeDetailsPage }));
-const UmsEmployeeImportPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsEmployeeImportPage }));
+const UmsEmployeesPage = () => import('../pages/ums/UmsEmployeesPage').then((m) => ({ Component: m.UmsEmployeesPage }));
+const UmsEmployeeNewPage = () => import('../pages/ums/UmsEmployeeWizardPage').then((m) => ({ Component: m.UmsEmployeeWizardPage }));
+const UmsEmployeeDetailsPage = () => import('../pages/ums/UmsEmployeesPage').then((m) => ({ Component: m.UmsEmployeeDetailsPage }));
+const UmsEmployeeImportPage = () => import('../pages/ums/UmsEmployeeImportPage').then((m) => ({ Component: m.UmsEmployeeImportPage }));
 const UmsDesignationsPage = () => import('../pages/ums/UmsDesignationsPage').then((m) => ({ Component: m.UmsDesignationsPage }));
 const UmsDepartmentsPage = () => import('../pages/ums/UmsDepartmentsPage').then((m) => ({ Component: m.UmsDepartmentsPage }));
 const UmsSecurityGroupsPage = () => import('../pages/ums/UmsSecurityGroupsPage').then((m) => ({ Component: m.UmsSecurityGroupsPage }));
 const UmsRolesPage = () => import('../pages/ums/UmsRolesPage').then((m) => ({ Component: m.UmsRolesPage }));
 const UmsBranchesPage = () => import('../pages/ums/UmsBranchesPage').then((m) => ({ Component: m.UmsBranchesPage }));
-const UmsCustomAddonsPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsCustomAddonsPage }));
+const UmsCustomAddonsPage = () => import('../pages/ums/UmsCustomAddonsPage').then((m) => ({ Component: m.UmsCustomAddonsPage }));
 const UmsAuditTrailPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsAuditTrailPage }));
 
 // Tabs

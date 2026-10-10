@@ -30,6 +30,8 @@ import {
     generateNextDesignationCode,
     checkDesignationDeletionEligibility,
     recordUmsAuditEvent,
+    escapeSafeCsvCell,
+    syncMasterEntityEmployeeCounts,
     UMS_PAGE_SIZE_OPTIONS,
     type DesignationRecord,
     type DepartmentRecord,
@@ -63,7 +65,18 @@ export const UmsDesignationsPage: React.FC = () => {
     // Data State
     const [designations, setDesignations] = useState<DesignationRecord[]>(() => loadDesignations());
     const [departments] = useState<DepartmentRecord[]>(() => loadDepartments());
-    const [employees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
+
+    // Resolve live Department display name in active language
+    const resolveDepartmentDisplayName = (item: DesignationRecord): string | undefined => {
+        if (item.departmentId) {
+            const dept = departments.find((d) => d.id === item.departmentId);
+            if (dept) {
+                return isRtl ? dept.nameAr || dept.nameEn : dept.nameEn;
+            }
+        }
+        return item.departmentName;
+    };
 
     // Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
@@ -100,8 +113,10 @@ export const UmsDesignationsPage: React.FC = () => {
 
     // Sync designations state with localStorage
     const persistDesignations = (updated: DesignationRecord[]) => {
-        setDesignations(updated);
         saveDesignations(updated);
+        syncMasterEntityEmployeeCounts(employees);
+        setEmployees(loadEmployees());
+        setDesignations(loadDesignations());
     };
 
     // Summary KPIs
@@ -127,16 +142,22 @@ export const UmsDesignationsPage: React.FC = () => {
                 return false;
             }
             if (!query) return true;
+            const linkedDept = item.departmentId
+                ? departments.find((d) => d.id === item.departmentId)
+                : undefined;
             return (
                 item.code.toLowerCase().includes(query) ||
                 item.titleEn.toLowerCase().includes(query) ||
                 item.titleAr.toLowerCase().includes(query) ||
+                (linkedDept &&
+                    (linkedDept.nameEn.toLowerCase().includes(query) ||
+                        linkedDept.nameAr.toLowerCase().includes(query))) ||
                 (item.departmentName && item.departmentName.toLowerCase().includes(query)) ||
                 item.descriptionEn.toLowerCase().includes(query) ||
                 item.descriptionAr.toLowerCase().includes(query)
             );
         });
-    }, [designations, searchQuery, statusFilter, departmentFilter]);
+    }, [designations, searchQuery, statusFilter, departmentFilter, departments]);
 
     const totalPages = Math.max(1, Math.ceil(filteredDesignations.length / pageSize));
     const paginatedDesignations = useMemo(() => {
@@ -264,7 +285,7 @@ export const UmsDesignationsPage: React.FC = () => {
             titleEn: formData.titleEn.trim(),
             titleAr: formData.titleAr.trim(),
             departmentId: formData.departmentId || undefined,
-            departmentName: linkedDept ? (isRtl ? linkedDept.nameAr : linkedDept.nameEn) : undefined,
+            departmentName: linkedDept ? linkedDept.nameEn : undefined,
             descriptionEn: formData.descriptionEn.trim(),
             descriptionAr: formData.descriptionAr.trim(),
             status: formData.status,
@@ -307,7 +328,7 @@ export const UmsDesignationsPage: React.FC = () => {
             titleEn: formData.titleEn.trim(),
             titleAr: formData.titleAr.trim(),
             departmentId: formData.departmentId || undefined,
-            departmentName: linkedDept ? (isRtl ? linkedDept.nameAr : linkedDept.nameEn) : undefined,
+            departmentName: linkedDept ? linkedDept.nameEn : undefined,
             descriptionEn: formData.descriptionEn.trim(),
             descriptionAr: formData.descriptionAr.trim(),
             status: formData.status,
@@ -422,14 +443,14 @@ export const UmsDesignationsPage: React.FC = () => {
         ];
 
         const rows = designations.map((d) => [
-            d.code,
-            `"${d.titleEn.replace(/"/g, '""')}"`,
-            `"${d.titleAr.replace(/"/g, '""')}"`,
-            `"${(d.departmentName || 'General / Unassigned').replace(/"/g, '""')}"`,
+            escapeSafeCsvCell(d.code),
+            escapeSafeCsvCell(d.titleEn),
+            escapeSafeCsvCell(d.titleAr),
+            escapeSafeCsvCell(resolveDepartmentDisplayName(d) || 'General / Unassigned'),
             employeeCountByDesignation[d.id] || 0,
-            d.status,
-            d.createdAt,
-            `"${(d.descriptionEn || '').replace(/"/g, '""')}"`,
+            escapeSafeCsvCell(d.status),
+            escapeSafeCsvCell(d.createdAt),
+            escapeSafeCsvCell(d.descriptionEn || ''),
         ]);
 
         const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -827,10 +848,10 @@ export const UmsDesignationsPage: React.FC = () => {
 
                                             {/* Department */}
                                             <td className="px-4 py-3">
-                                                {item.departmentName ? (
+                                                {resolveDepartmentDisplayName(item) ? (
                                                     <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
                                                         <Building2 size={13} className="text-[#857E74]" />
-                                                        <span>{item.departmentName}</span>
+                                                        <span>{resolveDepartmentDisplayName(item)}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-xs text-[#857E74] italic">
@@ -1254,7 +1275,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                         {t('ums.designations.colDepartment', { defaultValue: 'Department' })}
                                     </span>
                                     <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
-                                        {viewingDesignation.departmentName ||
+                                        {resolveDepartmentDisplayName(viewingDesignation) ||
                                             t('ums.designations.noDepartment', { defaultValue: 'General' })}
                                     </span>
                                 </div>
@@ -1339,7 +1360,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                             {isRtl ? emp.nameAr : emp.nameEn}
                                                         </span>
                                                         <span className="text-[11px] text-[#6E6862]">
-                                                            {emp.code} · {emp.email}
+                                                            {emp.code} · {isRtl ? emp.departmentNameAr || emp.departmentName : emp.departmentName}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1350,7 +1371,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                             : 'bg-[#FAF8F5] text-[#857E74]'
                                                     }`}
                                                 >
-                                                    {emp.status}
+                                                    {t(`ums.employees.statuses.${emp.status}`, { defaultValue: emp.status })}
                                                 </span>
                                             </div>
                                         ))}
