@@ -1,975 +1,313 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ColumnDef } from '@tanstack/react-table';
-import {
-    MoreHorizontal,
-    Edit2,
-    Trash2,
-    X,
-    AlertTriangle,
-    ChevronDown,
-    Search as SearchIcon,
-    Check,
-    RotateCcw,
-} from 'lucide-react';
+import { AlertTriangle, MoreHorizontal, Edit2, Trash2, RotateCcw, LoaderCircle } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { DataTable } from '../../components/DataTable';
-import {
-    EDMS_DEMO_DOCUMENT_TYPES,
-    getEdmsCategories,
-    formatEdmsCategoryLabel,
-    prependDemoDocumentType,
-    updateDemoDocumentType,
-    removeDemoDocumentType,
-    type EdmsDocumentTypeRecord,
-    type EdmsDocumentCategory,
-} from './edmsMockData';
+import { documentApi } from '../../api/api';
+import { DocumentTypeDrawer, type DocumentCategoryOption, type DocumentTypeRecord } from './DocumentTypeDrawer';
+import { DocumentTypeFormValues } from '../../schemas/edmsSchema';
 
-// --- Actions Dropdown Component (Strictly Edit & Delete only) ---
-interface TypeActionsMenuProps {
-    item: EdmsDocumentTypeRecord;
-    onEdit: (item: EdmsDocumentTypeRecord) => void;
-    onDelete: (item: EdmsDocumentTypeRecord) => void;
+const DOCUMENT_TYPES_QUERY_KEY = ['document-types'];
+const DOCUMENT_CATEGORIES_QUERY_KEY = ['document-categories'];
+
+type ApiRecord = Record<string, any>;
+
+const extractArray = (response: any): ApiRecord[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.results)) return response.results;
+    if (Array.isArray(response?.data?.items)) return response.data.items;
+    if (Array.isArray(response?.data?.results)) return response.data.results;
+    return [];
+};
+
+const normalizeCategory = (item: ApiRecord): DocumentCategoryOption => ({
+    id: String(item.id ?? ''),
+    name: String(item.name ?? item.categoryName ?? ''),
+    description: item.description ?? '',
+});
+
+const normalizeDocumentType = (item: ApiRecord): DocumentTypeRecord => {
+    const relation = item.documentCategory ?? item.category ?? null;
+    return {
+        id: String(item.id ?? ''),
+        name: String(item.name ?? item.typeName ?? ''),
+        description: String(item.description ?? ''),
+        documentCategoryId: String(item.documentCategoryId ?? item.categoryId ?? relation?.id ?? ''),
+        documentCategory: relation ? { id: relation.id, name: relation.name ?? relation.categoryName } : null,
+        createdBy: item.createdBy ?? item.createdByName ?? item.createdByUser?.name ?? null,
+        createdAt: item.createdAt ?? null,
+        updatedAt: item.updatedAt ?? null,
+        status: item.status ?? 'Active',
+    };
+};
+
+const getErrorMessage = (error: any, fallback: string) =>
+    error?.response?.data?.message ?? error?.message ?? fallback;
+
+interface DocumentTypeActionsProps {
+    item: DocumentTypeRecord;
+    onEdit: (item: DocumentTypeRecord) => void;
+    onDelete: (item: DocumentTypeRecord) => void;
 }
 
-const TypeActionsMenu: React.FC<TypeActionsMenuProps> = ({ item, onEdit, onDelete }) => {
+const DocumentTypeActions: React.FC<DocumentTypeActionsProps> = ({ item, onEdit, onDelete }) => {
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const [open, setOpen] = useState(false);
+    const wrapperRef = React.useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-                setIsOpen(false);
-            }
+    React.useEffect(() => {
+        if (!open) return;
+        const handleOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setOpen(false);
         };
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsOpen(false);
-            }
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setOpen(false);
         };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-            document.addEventListener('keydown', handleKeyDown);
-        }
+        document.addEventListener('mousedown', handleOutside);
+        document.addEventListener('keydown', handleEscape);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('mousedown', handleOutside);
+            document.removeEventListener('keydown', handleEscape);
         };
-    }, [isOpen]);
+    }, [open]);
 
     return (
-        <div className="relative inline-block text-start" ref={menuRef}>
-            <button
-                type="button"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setIsOpen((prev) => !prev);
-                }}
-                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                    isOpen
-                        ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
-                        : 'border-transparent text-[#857E74] hover:bg-[#F8F6F2] dark:hover:bg-slate-800 hover:text-[#0D0D0D] dark:hover:text-slate-100'
-                }`}
-                title={t('edms.documentTypes.columns.actions')}
-                aria-label={t('edms.documentTypes.columns.actions')}
-                aria-expanded={isOpen}
-            >
+        <div className="relative inline-block" ref={wrapperRef}>
+            <button type="button" onClick={(event) => { event.stopPropagation(); setOpen((value) => !value); }} className={`rounded-lg border p-1.5 transition ${open ? 'border-[#2D3F2C] bg-[#2D3F2C] text-white' : 'border-transparent text-[#857E74] hover:bg-[#F8F6F2] dark:hover:bg-slate-800'}`} aria-label={t('edms.documentTypes.columns.actions', 'Actions')} aria-expanded={open}>
                 <MoreHorizontal size={16} />
             </button>
-
-            {isOpen && (
-                <div className="absolute end-0 mt-1 w-36 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-xl shadow-lg py-1 z-40 text-xs animate-in fade-in zoom-in-95 duration-100 font-sans">
-                    {/* 1. Edit */}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsOpen(false);
-                            onEdit(item);
-                        }}
-                        className="w-full text-start px-3.5 py-2 text-[#0D0D0D] dark:text-slate-100 hover:bg-[#FAF8F5] dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
-                    >
-                        <Edit2 size={14} className="text-[#6E6862] dark:text-slate-400 shrink-0" />
-                        <span>{t('edms.documentTypes.actions.edit')}</span>
-                    </button>
-
+            {open && (
+                <div className="absolute end-0 z-40 mt-1 w-36 rounded-xl border border-[#E5E0D8] bg-white py-1 text-xs shadow-lg dark:border-slate-700 dark:bg-slate-800">
+                    <button type="button" onClick={() => { setOpen(false); onEdit(item); }} className="flex w-full items-center gap-2 px-3.5 py-2 text-start text-[#0D0D0D] hover:bg-[#FAF8F5] dark:text-slate-100 dark:hover:bg-slate-700"><Edit2 size={14} />{t('edms.documentTypes.actions.edit', 'Edit')}</button>
                     <div className="my-1 border-t border-[#F0ECE4] dark:border-slate-700" />
-
-                    {/* 2. Delete */}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setIsOpen(false);
-                            onDelete(item);
-                        }}
-                        className="w-full text-start px-3.5 py-2 text-[#A23B2A] hover:bg-[#A23B2A]/10 flex items-center gap-2 font-medium cursor-pointer transition-colors"
-                    >
-                        <Trash2 size={14} className="shrink-0" />
-                        <span>{t('edms.documentTypes.actions.delete')}</span>
-                    </button>
+                    <button type="button" onClick={() => { setOpen(false); onDelete(item); }} className="flex w-full items-center gap-2 px-3.5 py-2 text-start font-medium text-[#A23B2A] hover:bg-[#A23B2A]/10"><Trash2 size={14} />{t('edms.documentTypes.actions.delete', 'Delete')}</button>
                 </div>
             )}
         </div>
     );
 };
 
-// --- Add / Edit Document Type Drawer (Strictly Type Name *, Document Category *, Description * only) ---
-interface DocumentTypeDrawerProps {
-    isOpen: boolean;
-    editingItem: EdmsDocumentTypeRecord | null;
-    categories: EdmsDocumentCategory[];
-    onClose: () => void;
-    onSubmit: (
-        data: {
-            typeName: string;
-            categoryId: string;
-            categoryName: string;
-            description: string;
-        },
-        existingItem?: EdmsDocumentTypeRecord | null
-    ) => void;
-}
-
-const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
-    isOpen,
-    editingItem,
-    categories,
-    onClose,
-    onSubmit,
-}) => {
-    const { t, i18n } = useTranslation();
-    const isAr = Boolean(i18n.language?.startsWith('ar'));
-    const isEdit = Boolean(editingItem);
-
-    const typeNameInputRef = useRef<HTMLInputElement>(null);
-    const categoryTriggerRef = useRef<HTMLButtonElement>(null);
-    const categorySearchInputRef = useRef<HTMLInputElement>(null);
-    const categoryDropdownRef = useRef<HTMLDivElement>(null);
-    const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
-
-    const [typeName, setTypeName] = useState('');
-    const [selectedCategoryId, setSelectedCategoryId] = useState('');
-    const [description, setDescription] = useState('');
-
-    // Searchable Category Dropdown state
-    const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-    const [categorySearchQuery, setCategorySearchQuery] = useState('');
-
-    // Validation state (errors only shown after submit)
-    const [hasSubmitted, setHasSubmitted] = useState(false);
-    const [typeNameError, setTypeNameError] = useState<string | null>(null);
-    const [categoryError, setCategoryError] = useState<string | null>(null);
-    const [descriptionError, setDescriptionError] = useState<string | null>(null);
-
-    // Sync state during render when drawer opens or target record changes
-    const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${editingItem?.id ?? 'new'}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
-        setHasSubmitted(false);
-        setTypeNameError(null);
-        setCategoryError(null);
-        setDescriptionError(null);
-        setIsCategoryDropdownOpen(false);
-        setCategorySearchQuery('');
-
-        if (isOpen && editingItem) {
-            setTypeName(editingItem.typeName);
-            setDescription(editingItem.description);
-
-            // Resolve category from current live EDMS Document Categories dataset
-            const matchedById = categories.find((cat) => cat.id === editingItem.categoryId);
-            const matchedByName = categories.find(
-                (cat) => cat.categoryName === editingItem.categoryName
-            );
-            const resolvedCategory = matchedById || matchedByName;
-            setSelectedCategoryId(resolvedCategory ? resolvedCategory.id : '');
-        } else if (isOpen && !editingItem) {
-            setTypeName('');
-            setSelectedCategoryId('');
-            setDescription('');
-        }
-    }
-
-    // Close category dropdown on outside click
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (
-                categoryDropdownRef.current &&
-                !categoryDropdownRef.current.contains(e.target as Node)
-            ) {
-                setIsCategoryDropdownOpen(false);
-            }
-        };
-        if (isCategoryDropdownOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isCategoryDropdownOpen]);
-
-    // Close drawer on Escape
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                if (isCategoryDropdownOpen) {
-                    setIsCategoryDropdownOpen(false);
-                } else {
-                    onClose();
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, isCategoryDropdownOpen, onClose]);
-
-    // Focus search input when category dropdown opens
-    useEffect(() => {
-        if (isCategoryDropdownOpen) {
-            const timer = setTimeout(() => {
-                categorySearchInputRef.current?.focus();
-            }, 30);
-            return () => clearTimeout(timer);
-        }
-    }, [isCategoryDropdownOpen]);
-
-    const selectedCategoryObj = useMemo(
-        () => categories.find((cat) => cat.id === selectedCategoryId) || null,
-        [categories, selectedCategoryId]
-    );
-
-    const filteredCategories = useMemo(() => {
-        const q = categorySearchQuery.trim().toLowerCase();
-        if (!q) return categories;
-        return categories.filter(
-            (cat) =>
-                cat.categoryName.toLowerCase().includes(q) ||
-                formatEdmsCategoryLabel(cat.categoryName, false).toLowerCase().includes(q) ||
-                formatEdmsCategoryLabel(cat.categoryName, true).toLowerCase().includes(q) ||
-                cat.categoryCode.toLowerCase().includes(q) ||
-                cat.description.toLowerCase().includes(q)
-        );
-    }, [categories, categorySearchQuery]);
-
-    const handleSelectCategory = (cat: EdmsDocumentCategory) => {
-        setSelectedCategoryId(cat.id);
-        setIsCategoryDropdownOpen(false);
-        setCategorySearchQuery('');
-        if (hasSubmitted && categoryError) {
-            setCategoryError(null);
-        }
-    };
-
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setHasSubmitted(true);
-
-        const trimmedName = typeName.trim();
-        const validCategory = categories.find((cat) => cat.id === selectedCategoryId);
-        const trimmedDesc = description.trim();
-
-        let firstInvalid: 'name' | 'category' | 'description' | null = null;
-
-        if (!trimmedName) {
-            setTypeNameError(t('edms.documentTypes.form.errors.typeNameRequired'));
-            firstInvalid = 'name';
-        } else {
-            setTypeNameError(null);
-        }
-
-        if (!validCategory) {
-            setCategoryError(t('edms.documentTypes.form.errors.documentCategoryRequired'));
-            if (!firstInvalid) firstInvalid = 'category';
-        } else {
-            setCategoryError(null);
-        }
-
-        if (!trimmedDesc) {
-            setDescriptionError(t('edms.documentTypes.form.errors.descriptionRequired'));
-            if (!firstInvalid) firstInvalid = 'description';
-        } else {
-            setDescriptionError(null);
-        }
-
-        if (firstInvalid === 'name') {
-            typeNameInputRef.current?.focus();
-            typeNameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
-
-        if (firstInvalid === 'category') {
-            categoryTriggerRef.current?.focus();
-            categoryTriggerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
-
-        if (firstInvalid === 'description') {
-            descriptionInputRef.current?.focus();
-            descriptionInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-        }
-
-        if (!validCategory) return;
-
-        onSubmit(
-            {
-                typeName: trimmedName,
-                categoryId: validCategory.id,
-                categoryName: validCategory.categoryName,
-                description: trimmedDesc,
-            },
-            editingItem
-        );
-    };
-
-    return (
-        <div
-            className={`fixed inset-0 z-50 overflow-hidden transition-all duration-300 ${
-                isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-            }`}
-            aria-hidden={!isOpen}
-        >
-            {/* Backdrop */}
-            <div
-                className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] transition-opacity"
-                onClick={onClose}
-            />
-
-            {/* Right/End-side Drawer */}
-            <div
-                className={`fixed top-0 end-0 h-full w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl transition-transform duration-300 ease-in-out transform flex flex-col text-start ${
-                    isOpen ? 'translate-x-0' : 'ltr:translate-x-full rtl:-translate-x-full'
-                }`}
-            >
-                {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-[#E5E0D8] dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-                    <div>
-                        <h2 className="text-lg font-bold text-[#0D0D0D] dark:text-slate-100">
-                            {isEdit
-                                ? t('edms.documentTypes.form.editTitle')
-                                : t('edms.documentTypes.form.createTitle')}
-                        </h2>
-                        <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-0.5">
-                            {isEdit
-                                ? t('edms.documentTypes.form.editSubtitle', {
-                                      code: editingItem?.typeCode || '',
-                                  })
-                                : t('edms.documentTypes.form.createSubtitle')}
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center text-[#857E74] hover:text-[#0D0D0D] dark:hover:text-slate-200 rounded-lg hover:bg-[#F8F6F2] dark:hover:bg-slate-800 transition cursor-pointer"
-                        title={t('common.close')}
-                        aria-label={t('common.close')}
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
-
-                {/* Form Body - Strictly ONLY 3 fields: Type Name *, Document Category *, Description * */}
-                <form
-                    id="awn-edms-document-type-form"
-                    onSubmit={handleFormSubmit}
-                    noValidate
-                    className="p-6 overflow-y-auto flex-1 space-y-5"
-                >
-                    {/* 1. Type Name * (Required) */}
-                    <div>
-                        <label
-                            htmlFor="edms-type-name-input"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                        >
-                            {t('edms.documentTypes.form.typeName')}{' '}
-                            <span className="text-[#A23B2A]">*</span>
-                        </label>
-                        <input
-                            id="edms-type-name-input"
-                            name="typeName"
-                            ref={typeNameInputRef}
-                            type="text"
-                            value={typeName}
-                            aria-invalid={Boolean(hasSubmitted && typeNameError)}
-                            onChange={(e) => {
-                                setTypeName(e.target.value);
-                                if (hasSubmitted && typeNameError && e.target.value.trim()) {
-                                    setTypeNameError(null);
-                                }
-                            }}
-                            placeholder={t('edms.documentTypes.form.typeNamePlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs transition ${
-                                hasSubmitted && typeNameError
-                                    ? 'bg-white dark:bg-slate-800 border-red-400 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400/20'
-                                    : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
-                            }`}
-                        />
-                        {hasSubmitted && typeNameError && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {typeNameError}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* 2. Document Category * (Required - Searchable Select Dropdown synced with EDMS Categories Master) */}
-                    <div ref={categoryDropdownRef} className="relative">
-                        <label
-                            htmlFor="edms-type-category-select"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                        >
-                            {t('edms.documentTypes.form.documentCategory')}{' '}
-                            <span className="text-[#A23B2A]">*</span>
-                        </label>
-
-                        <button
-                            id="edms-type-category-select"
-                            ref={categoryTriggerRef}
-                            type="button"
-                            onClick={() => setIsCategoryDropdownOpen((prev) => !prev)}
-                            aria-expanded={isCategoryDropdownOpen}
-                            aria-haspopup="listbox"
-                            aria-invalid={Boolean(hasSubmitted && categoryError)}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs flex items-center justify-between gap-2 text-start transition cursor-pointer ${
-                                hasSubmitted && categoryError
-                                    ? 'bg-white dark:bg-slate-800 border-red-400 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400/20'
-                                    : isCategoryDropdownOpen
-                                      ? 'bg-white dark:bg-slate-800 border-[#2D3F2C] ring-2 ring-[#2D3F2C]/20 text-[#0D0D0D] dark:text-slate-100'
-                                      : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
-                            }`}
-                        >
-                            {selectedCategoryObj ? (
-                                <span className="flex items-center gap-2 truncate font-medium text-[#0D0D0D] dark:text-slate-100">
-                                    <span>
-                                        {formatEdmsCategoryLabel(
-                                            selectedCategoryObj.categoryName,
-                                            isAr
-                                        )}
-                                    </span>
-                                    <span
-                                        className="text-[10px] font-mono text-[#6E6862] dark:text-slate-400 px-1.5 py-0.5 rounded bg-[#F0ECE4] dark:bg-slate-700"
-                                        dir="ltr"
-                                    >
-                                        {selectedCategoryObj.categoryCode}
-                                    </span>
-                                </span>
-                            ) : (
-                                <span className="text-[#857E74] dark:text-slate-400 truncate">
-                                    {t('edms.documentTypes.form.documentCategoryPlaceholder')}
-                                </span>
-                            )}
-                            <ChevronDown
-                                size={15}
-                                className={`text-[#857E74] shrink-0 transition-transform duration-150 ${
-                                    isCategoryDropdownOpen ? 'rotate-180 text-[#2D3F2C]' : ''
-                                }`}
-                            />
-                        </button>
-
-                        {isCategoryDropdownOpen && (
-                            <div className="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                                {/* Search box inside dropdown */}
-                                <div className="p-2 border-b border-[#EFECE6] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800/80">
-                                    <div className="relative flex items-center">
-                                        <SearchIcon
-                                            size={13}
-                                            className="absolute start-2.5 text-[#857E74] pointer-events-none"
-                                        />
-                                        <input
-                                            ref={categorySearchInputRef}
-                                            type="text"
-                                            value={categorySearchQuery}
-                                            onChange={(e) => setCategorySearchQuery(e.target.value)}
-                                            placeholder={t(
-                                                'edms.documentTypes.form.searchCategoryPlaceholder'
-                                            )}
-                                            className="w-full ps-8 pe-7 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
-                                        />
-                                        {categorySearchQuery && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setCategorySearchQuery('')}
-                                                className="absolute end-2 text-[#857E74] hover:text-[#0D0D0D] dark:hover:text-slate-200 cursor-pointer"
-                                            >
-                                                <X size={12} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Category Options List */}
-                                <ul
-                                    role="listbox"
-                                    className="max-h-52 overflow-y-auto py-1 divide-y divide-[#F5F2EB] dark:divide-slate-700/50"
-                                >
-                                    {filteredCategories.length === 0 ? (
-                                        <li className="px-3.5 py-3 text-xs text-[#857E74] dark:text-slate-400 text-center">
-                                            {t('edms.documentTypes.form.noCategoryFound')}
-                                        </li>
-                                    ) : (
-                                        filteredCategories.map((cat) => {
-                                            const isSelected = cat.id === selectedCategoryId;
-                                            return (
-                                                <li key={cat.id} role="option" aria-selected={isSelected}>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleSelectCategory(cat)}
-                                                        className={`w-full px-3.5 py-2.5 text-xs flex items-center justify-between gap-2 text-start transition cursor-pointer ${
-                                                            isSelected
-                                                                ? 'bg-[#2D3F2C]/10 dark:bg-emerald-900/30 text-[#2D3F2C] dark:text-emerald-300 font-semibold'
-                                                                : 'text-[#0D0D0D] dark:text-slate-100 hover:bg-[#FAF8F5] dark:hover:bg-slate-700/70'
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center gap-2 min-w-0">
-                                                            <span className="truncate">
-                                                                {formatEdmsCategoryLabel(
-                                                                    cat.categoryName,
-                                                                    isAr
-                                                                )}
-                                                            </span>
-                                                            <span
-                                                                className="text-[10px] font-mono text-[#6E6862] dark:text-slate-400 px-1.5 py-0.5 rounded bg-[#F0ECE4] dark:bg-slate-700 shrink-0"
-                                                                dir="ltr"
-                                                            >
-                                                                {cat.categoryCode}
-                                                            </span>
-                                                        </div>
-                                                        {isSelected && (
-                                                            <Check
-                                                                size={14}
-                                                                className="text-[#2D3F2C] dark:text-emerald-400 shrink-0"
-                                                            />
-                                                        )}
-                                                    </button>
-                                                </li>
-                                            );
-                                        })
-                                    )}
-                                </ul>
-                            </div>
-                        )}
-
-                        {hasSubmitted && categoryError && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {categoryError}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* 3. Description * (Required) */}
-                    <div>
-                        <label
-                            htmlFor="edms-type-description-input"
-                            className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5"
-                        >
-                            {t('edms.documentTypes.form.description')}{' '}
-                            <span className="text-[#A23B2A]">*</span>
-                        </label>
-                        <textarea
-                            id="edms-type-description-input"
-                            name="description"
-                            ref={descriptionInputRef}
-                            rows={4}
-                            value={description}
-                            aria-invalid={Boolean(hasSubmitted && descriptionError)}
-                            onChange={(e) => {
-                                setDescription(e.target.value);
-                                if (hasSubmitted && descriptionError && e.target.value.trim()) {
-                                    setDescriptionError(null);
-                                }
-                            }}
-                            placeholder={t('edms.documentTypes.form.descriptionPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs transition resize-y ${
-                                hasSubmitted && descriptionError
-                                    ? 'bg-white dark:bg-slate-800 border-red-400 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-400/20'
-                                    : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]'
-                            }`}
-                        />
-                        {hasSubmitted && descriptionError && (
-                            <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                {descriptionError}
-                            </span>
-                        )}
-                    </div>
-                </form>
-
-                {/* Sticky Footer - Strictly Cancel and Submit */}
-                <div className="px-6 py-4 border-t border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-900 flex justify-end gap-2.5 shrink-0">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 text-xs font-semibold text-[#595550] dark:text-slate-300 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
-                    >
-                        {t('edms.documentTypes.form.cancel')}
-                    </button>
-                    <button
-                        type="submit"
-                        form="awn-edms-document-type-form"
-                        className="px-5 py-2 text-xs font-semibold text-white bg-[#2D3F2C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
-                    >
-                        {t('edms.documentTypes.form.submit')}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- Main EDMS Document Types Master Page ---
 export const EdmsDocumentTypesPage: React.FC = () => {
-    const { t, i18n } = useTranslation();
-    const isAr = Boolean(i18n.language?.startsWith('ar'));
-
-    const [documentTypes, setDocumentTypes] = useState<EdmsDocumentTypeRecord[]>(() => [
-        ...EDMS_DEMO_DOCUMENT_TYPES,
-    ]);
+    const { t } = useTranslation();
+    const queryClient = useQueryClient();
     const [searchValue, setSearchValue] = useState('');
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-
-    // Drawer & Delete Modal state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [editingType, setEditingType] = useState<EdmsDocumentTypeRecord | null>(null);
-    const [deletingType, setDeletingType] = useState<EdmsDocumentTypeRecord | null>(null);
+    const [editingType, setEditingType] = useState<DocumentTypeRecord | null>(null);
+    const [deletingType, setDeletingType] = useState<DocumentTypeRecord | null>(null);
 
-    // Read the live EDMS Document Categories dataset (reflects any additions/edits/deletions in Categories master)
-    const liveCategories = getEdmsCategories();
+    const categoriesQuery = useQuery({
+        queryKey: DOCUMENT_CATEGORIES_QUERY_KEY,
+        queryFn: async () => extractArray(await documentApi.getDocumentCategories({})).map(normalizeCategory),
+        staleTime: 60_000,
+    });
 
-    const resolveRecordCategoryLabel = useCallback(
-        (record: EdmsDocumentTypeRecord) => {
-            const matchedCat =
-                liveCategories.find((cat) => cat.id === record.categoryId) ||
-                liveCategories.find((cat) => cat.categoryName === record.categoryName);
-            const rawName = matchedCat ? matchedCat.categoryName : record.categoryName;
-            return formatEdmsCategoryLabel(rawName, isAr);
+    const typesQuery = useQuery({
+        queryKey: [...DOCUMENT_TYPES_QUERY_KEY],
+        queryFn: async () => extractArray(await documentApi.getDocumentTypes({})).map(normalizeDocumentType),
+        staleTime: 30_000,
+    });
+
+    const categories = categoriesQuery.data ?? [];
+    const documentTypes = typesQuery.data ?? [];
+
+    const createMutation = useMutation({
+        mutationFn: (data: DocumentTypeFormValues) => documentApi.createDocumentType({
+            name: data.name,
+            description: data.description,
+            documentCategoryId: data.documentCategoryId,
+        }),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: DOCUMENT_TYPES_QUERY_KEY });
+            toast.success(t('edms.documentTypes.feedback.createSuccess', 'Document type created successfully'));
+            setIsDrawerOpen(false);
+            setEditingType(null);
+            setPageIndex(0);
         },
-        [isAr, liveCategories]
-    );
+        onError: (error: any) => toast.error(getErrorMessage(error, t('common.error', 'Something went wrong'))),
+    });
 
-    const hasActiveFilters = Boolean(selectedCategoryId || searchValue.trim());
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: DocumentTypeFormValues }) => documentApi.updateDocumentType({
+            id,
+            name: data.name,
+            description: data.description,
+            documentCategoryId: data.documentCategoryId,
+        }),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: DOCUMENT_TYPES_QUERY_KEY });
+            toast.success(t('edms.documentTypes.feedback.editSuccess', 'Document type updated successfully'));
+            setIsDrawerOpen(false);
+            setEditingType(null);
+        },
+        onError: (error: any) => toast.error(getErrorMessage(error, t('common.error', 'Something went wrong'))),
+    });
 
-    const handleClearFilters = useCallback(() => {
-        setSelectedCategoryId('');
-        setSearchValue('');
-        setPageIndex(0);
-    }, []);
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => documentApi.deleteDocumentType({ id }),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: DOCUMENT_TYPES_QUERY_KEY });
+            toast.success(t('edms.documentTypes.feedback.deleteSuccess', 'Document type deleted successfully'));
+            setDeletingType(null);
+        },
+        onError: (error: any) => toast.error(getErrorMessage(error, t('common.error', 'Something went wrong'))),
+    });
+
+    const categoryNameById = useMemo(() => new Map(categories.map((category) => [category.id, category.name])), [categories]);
 
     const filteredTypes = useMemo(() => {
-        const q = searchValue.trim().toLowerCase();
+        const query = searchValue.trim().toLowerCase();
         return documentTypes.filter((item) => {
-            if (selectedCategoryId) {
-                const selectedCatObj = liveCategories.find((c) => c.id === selectedCategoryId);
-                const matchesCategory =
-                    item.categoryId === selectedCategoryId ||
-                    (selectedCatObj && item.categoryName === selectedCatObj.categoryName);
-                if (!matchesCategory) {
-                    return false;
-                }
-            }
-
-            if (!q) return true;
-
-            const categoryLabelEn = formatEdmsCategoryLabel(item.categoryName, false).toLowerCase();
-            const categoryLabelAr = formatEdmsCategoryLabel(item.categoryName, true).toLowerCase();
-
-            return (
-                item.typeCode.toLowerCase().includes(q) ||
-                item.typeName.toLowerCase().includes(q) ||
-                item.categoryName.toLowerCase().includes(q) ||
-                categoryLabelEn.includes(q) ||
-                categoryLabelAr.includes(q) ||
-                item.description.toLowerCase().includes(q) ||
-                item.createdByEn.toLowerCase().includes(q) ||
-                item.createdByAr.toLowerCase().includes(q) ||
-                item.createdByInitials.toLowerCase().includes(q)
-            );
+            if (selectedCategoryId && item.documentCategoryId !== selectedCategoryId) return false;
+            if (!query) return true;
+            const categoryName = categoryNameById.get(item.documentCategoryId) ?? item.documentCategory?.name ?? '';
+            const createdBy = String(item.createdBy ?? '').replace(/\s+null\s*$/i, '').trim();
+            return [item.id, item.name, item.description, categoryName, createdBy]
+                .some((value) => String(value ?? '').toLowerCase().includes(query));
         });
-    }, [documentTypes, liveCategories, searchValue, selectedCategoryId]);
+    }, [documentTypes, searchValue, selectedCategoryId, categoryNameById]);
 
     const paginatedTypes = useMemo(() => {
         const start = pageIndex * pageSize;
         return filteredTypes.slice(start, start + pageSize);
     }, [filteredTypes, pageIndex, pageSize]);
 
-    const handleSearchChange = useCallback((val: string) => {
-        setSearchValue(val);
-        setPageIndex(0);
-    }, []);
-
     const handleOpenCreate = useCallback(() => {
         setEditingType(null);
         setIsDrawerOpen(true);
     }, []);
 
-    const handleOpenEdit = useCallback((item: EdmsDocumentTypeRecord) => {
+    const handleOpenEdit = useCallback((item: DocumentTypeRecord) => {
         setEditingType(item);
         setIsDrawerOpen(true);
     }, []);
 
-    const handleOpenDelete = useCallback((item: EdmsDocumentTypeRecord) => {
-        setDeletingType(item);
-    }, []);
-
-    const handleFormSubmit = useCallback(
-        (
-            formData: {
-                typeName: string;
-                categoryId: string;
-                categoryName: string;
-                description: string;
-            },
-            existingItem?: EdmsDocumentTypeRecord | null
-        ) => {
-            if (existingItem) {
-                const updated: EdmsDocumentTypeRecord = {
-                    ...existingItem,
-                    typeName: formData.typeName,
-                    categoryId: formData.categoryId,
-                    categoryName: formData.categoryName,
-                    description: formData.description,
-                };
-                updateDemoDocumentType(updated);
-                setDocumentTypes([...EDMS_DEMO_DOCUMENT_TYPES]);
-                setIsDrawerOpen(false);
-                setEditingType(null);
-                toast.success(t('edms.documentTypes.feedback.editSuccess'));
-            } else {
-                // Generate next type code following DTY001, DTY002, ... DTY035 format
-                const maxNum = documentTypes.reduce((max, item) => {
-                    const num = parseInt(item.typeCode.replace(/\D/g, ''), 10);
-                    return !isNaN(num) && num > max ? num : max;
-                }, 0);
-                const nextCode = `DTY${String(maxNum + 1).padStart(3, '0')}`;
-
-                const newRecord: EdmsDocumentTypeRecord = {
-                    id: `dtype-${documentTypes.length + 1}-${maxNum + 1}`,
-                    typeCode: nextCode,
-                    typeName: formData.typeName,
-                    categoryId: formData.categoryId,
-                    categoryName: formData.categoryName,
-                    description: formData.description,
-                    createdByInitials: 'UU',
-                    createdByEn: 'Unknown User',
-                    createdByAr: 'مستخدم غير معروف',
-                    status: 'Active',
-                };
-
-                prependDemoDocumentType(newRecord);
-                setDocumentTypes([...EDMS_DEMO_DOCUMENT_TYPES]);
-                setPageIndex(0);
-                setIsDrawerOpen(false);
-                toast.success(t('edms.documentTypes.feedback.createSuccess'));
-            }
-        },
-        [documentTypes, t]
-    );
+    const handleSubmit = useCallback((data: DocumentTypeFormValues, item: DocumentTypeRecord | null) => {
+        if (item) updateMutation.mutate({ id: item.id, data });
+        else createMutation.mutate(data);
+    }, [createMutation, updateMutation]);
 
     const handleConfirmDelete = useCallback(() => {
-        if (!deletingType) return;
-        removeDemoDocumentType(deletingType.id);
-        const nextList = [...EDMS_DEMO_DOCUMENT_TYPES];
-        setDocumentTypes(nextList);
-
-        const maxPage = Math.max(0, Math.ceil(nextList.length / pageSize) - 1);
-        if (pageIndex > maxPage) {
-            setPageIndex(maxPage);
-        }
-
-        setDeletingType(null);
-        toast.success(t('edms.documentTypes.feedback.deleteSuccess'));
-    }, [deletingType, pageIndex, pageSize, t]);
+        if (deletingType) deleteMutation.mutate(deletingType.id);
+    }, [deletingType, deleteMutation]);
 
     const handleExportCsv = useCallback(() => {
         const headers = [
-            t('edms.documentTypes.columns.typeCode'),
-            t('edms.documentTypes.columns.typeName'),
-            t('edms.documentTypes.columns.documentCategory'),
-            t('edms.documentTypes.columns.description'),
-            t('edms.documentTypes.columns.createdBy'),
-            t('edms.documentTypes.columns.status'),
+            t('edms.documentTypes.columns.typeCode', 'Type Code'),
+            t('edms.documentTypes.columns.typeName', 'Type Name'),
+            t('edms.documentTypes.columns.documentCategory', 'Document Category'),
+            t('edms.documentTypes.columns.description', 'Description'),
+            t('edms.documentTypes.columns.createdBy', 'Created By'),
+            t('edms.documentTypes.columns.status', 'Status'),
         ];
-
-        const escapeCsv = (val: string) => `"${String(val ?? '').replace(/"/g, '""')}"`;
-
-        const rows = filteredTypes.map((item) => [
-            escapeCsv(item.typeCode),
-            escapeCsv(item.typeName),
-            escapeCsv(resolveRecordCategoryLabel(item)),
-            escapeCsv(item.description),
-            escapeCsv(`${item.createdByInitials} / ${isAr ? item.createdByAr : item.createdByEn}`),
-            escapeCsv(t('common.active')),
+        const escapeCsv = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const rows = filteredTypes.map((item, index) => [
+            `DTY${String(index + 1).padStart(3, '0')}`,
+            item.name,
+            categoryNameById.get(item.documentCategoryId) ?? item.documentCategory?.name ?? '',
+            item.description,
+            String(item.createdBy ?? '').replace(/\s+null\s*$/i, '').trim() || '—',
+            item.status ?? 'Active',
         ]);
-
-        const csvContent =
-            '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows.map((r) => r.join(','))].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const content = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows.map((row) => row.map(escapeCsv).join(','))].join('\n');
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 'edms-document-types.csv');
+        link.download = 'edms-document-types.csv';
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
         URL.revokeObjectURL(url);
+        toast.success(t('edms.documentTypes.exportSuccess', { count: filteredTypes.length, defaultValue: 'Exported {{count}} document types' }));
+    }, [filteredTypes, categoryNameById, t]);
 
-        toast.success(
-            t('edms.documentTypes.exportSuccess', {
-                count: filteredTypes.length,
-            })
-        );
-    }, [filteredTypes, isAr, resolveRecordCategoryLabel, t]);
+    const columns = useMemo<ColumnDef<any, any>[]>(() => [
+        {
+            id: 'typeCode',
+            header: t('edms.documentTypes.columns.typeCode', 'Type Code'),
+            cell: ({ row }) => {
+                const globalIndex = filteredTypes.findIndex((item) => item.id === row.original.id);
+                return <span className="font-mono text-xs font-semibold text-[#2D3F2C] dark:text-emerald-300" dir="ltr">DTY{String(Math.max(globalIndex + 1, 1)).padStart(3, '0')}</span>;
+            },
+        },
+        {
+            accessorKey: 'name',
+            header: t('edms.documentTypes.columns.typeName', 'Type Name'),
+            cell: ({ row }) => <span className="inline-block text-start font-medium text-[#0D0D0D] dark:text-slate-100">{row.original.name}</span>,
+        },
+        {
+            id: 'categoryName',
+            header: t('edms.documentTypes.columns.documentCategory', 'Document Category'),
+            cell: ({ row }) => <span className="inline-flex items-center rounded-md border border-[#E5E0D8] bg-[#FAF8F5] px-2.5 py-0.5 text-xs font-medium text-[#2D3F2C] dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300">{categoryNameById.get(row.original.documentCategoryId) ?? row.original.documentCategory?.name ?? '—'}</span>,
+        },
+        {
+            accessorKey: 'description',
+            header: t('edms.documentTypes.columns.description', 'Description'),
+            cell: ({ row }) => <span className="inline-block max-w-md text-start text-[#595550] dark:text-slate-300">{row.original.description || '—'}</span>,
+        },
+        {
+            id: 'createdBy',
+            header: t('edms.documentTypes.columns.createdBy', 'Created By'),
+            cell: ({ row }) => {
+                const createdBy = String(row.original.createdBy ?? '').replace(/\s+null\s*$/i, '').trim();
+                const initials = createdBy.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || '—';
+                return <div className="inline-flex items-center gap-2 text-start"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#2D3F2C]/20 bg-[#2D3F2C]/10 font-mono text-[10px] font-bold text-[#2D3F2C] dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300" dir="ltr">{initials}</span><span className="font-medium text-[#0D0D0D] dark:text-slate-100">{createdBy || '—'}</span></div>;
+            },
+        },
+        {
+            accessorKey: 'status',
+            header: t('edms.documentTypes.columns.status', 'Status'),
+            cell: ({ row }) => <span className="inline-flex items-center gap-1.5 rounded-full border border-[#2D3F2C]/20 bg-[#2D3F2C]/10 px-2.5 py-0.5 text-xs font-medium text-[#2D3F2C] dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-300"><span className="h-1.5 w-1.5 rounded-full bg-[#2D3F2C] dark:bg-emerald-400" />{row.original.status ?? t('common.active', 'Active')}</span>,
+        },
+        {
+            id: 'actions',
+            header: t('edms.documentTypes.columns.actions', 'Actions'),
+            cell: ({ row }) => <DocumentTypeActions item={row.original} onEdit={handleOpenEdit} onDelete={setDeletingType} />,
+        },
+    ], [categoryNameById, filteredTypes, handleOpenEdit, t]);
 
-    // Columns in exact required order:
-    // 1. Type Code
-    // 2. Type Name
-    // 3. Description
-    // 4. Created By
-    // 5. Status
-    // 6. Actions
-    const columns = useMemo<ColumnDef<any, any>[]>(
-        () => [
-            {
-                accessorKey: 'typeCode',
-                header: t('edms.documentTypes.columns.typeCode'),
-                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
-                    <span
-                        className="font-semibold font-mono text-xs text-[#2D3F2C] dark:text-emerald-300"
-                        dir="ltr"
-                    >
-                        {row.original.typeCode}
-                    </span>
-                ),
-            },
-            {
-                accessorKey: 'typeName',
-                header: t('edms.documentTypes.columns.typeName'),
-                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
-                    <span className="font-medium text-[#0D0D0D] dark:text-slate-100 inline-block text-start">
-                        {row.original.typeName}
-                    </span>
-                ),
-            },
-            {
-                accessorKey: 'categoryName',
-                header: t('edms.documentTypes.columns.documentCategory'),
-                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#FAF8F5] dark:bg-slate-800 text-[#2D3F2C] dark:text-emerald-300 border border-[#E5E0D8] dark:border-slate-700">
-                        {resolveRecordCategoryLabel(row.original)}
-                    </span>
-                ),
-            },
-            {
-                accessorKey: 'description',
-                header: t('edms.documentTypes.columns.description'),
-                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
-                    <span className="text-[#595550] dark:text-slate-300 inline-block text-start max-w-md">
-                        {row.original.description}
-                    </span>
-                ),
-            },
-            {
-                id: 'createdBy',
-                header: t('edms.documentTypes.columns.createdBy'),
-                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
-                    <div className="inline-flex items-center gap-2 text-start">
-                        <span
-                            className="w-6 h-6 rounded-full bg-[#2D3F2C]/10 dark:bg-slate-800 border border-[#2D3F2C]/20 dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300 font-mono text-[10px] font-bold flex items-center justify-center shrink-0"
-                            dir="ltr"
-                        >
-                            {row.original.createdByInitials}
-                        </span>
-                        <span className="font-medium text-[#0D0D0D] dark:text-slate-100">
-                            {isAr ? row.original.createdByAr : row.original.createdByEn}
-                        </span>
-                    </div>
-                ),
-            },
-            {
-                accessorKey: 'status',
-                header: t('edms.documentTypes.columns.status'),
-                cell: () => (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] dark:bg-emerald-900/30 dark:text-emerald-300 border border-[#2D3F2C]/20 dark:border-emerald-700/40">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C] dark:bg-emerald-400" />
-                        {t('common.active')}
-                    </span>
-                ),
-            },
-            {
-                id: 'actions',
-                header: t('edms.documentTypes.columns.actions'),
-                cell: ({ row }: { row: { original: EdmsDocumentTypeRecord } }) => (
-                    <TypeActionsMenu
-                        item={row.original}
-                        onEdit={handleOpenEdit}
-                        onDelete={handleOpenDelete}
-                    />
-                ),
-            },
-        ],
-        [handleOpenDelete, handleOpenEdit, isAr, resolveRecordCategoryLabel, t]
-    );
-
+    const hasActiveFilters = Boolean(selectedCategoryId || searchValue.trim());
     const filtersContent = (
-        <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-wrap items-end justify-between gap-3 mb-1">
+        <div className="mb-1 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-[#E5E0D8] bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
             <div className="w-full sm:w-72">
-                <label
-                    htmlFor="edms-types-category-filter"
-                    className="block text-[11px] font-semibold text-[#595550] dark:text-slate-300 mb-1 text-start"
-                >
-                    {t('edms.documentTypes.filters.category')}
-                </label>
-                <select
-                    id="edms-types-category-filter"
-                    value={selectedCategoryId}
-                    onChange={(e) => {
-                        setSelectedCategoryId(e.target.value);
-                        setPageIndex(0);
-                    }}
-                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C] focus:bg-white cursor-pointer"
-                >
-                    <option value="">{t('edms.documentTypes.filters.allCategories')}</option>
-                    {liveCategories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                            {formatEdmsCategoryLabel(cat.categoryName, isAr)} ({cat.categoryCode})
-                        </option>
-                    ))}
+                <label htmlFor="document-types-category-filter" className="mb-1 block text-start text-[11px] font-semibold text-[#595550] dark:text-slate-300">{t('edms.documentTypes.filters.category', 'Category')}</label>
+                <select id="document-types-category-filter" value={selectedCategoryId} onChange={(event) => { setSelectedCategoryId(event.target.value); setPageIndex(0); }} className="w-full cursor-pointer rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] px-3 py-2 text-xs text-[#0D0D0D] focus:border-[#2D3F2C] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                    <option value="">{t('edms.documentTypes.filters.allCategories', 'All Categories')}</option>
+                    {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select>
             </div>
-
-            {hasActiveFilters && (
-                <button
-                    type="button"
-                    onClick={handleClearFilters}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-[#8C6046] border border-[#BFAB93]/60 bg-[#FAF8F5] hover:bg-[#F3EFE8] hover:text-[#0D0D0D] dark:bg-slate-800 dark:text-amber-300 dark:border-slate-700 transition cursor-pointer"
-                >
-                    <RotateCcw size={12} />
-                    <span>{t('edms.documentTypes.filters.clearFilters')}</span>
-                </button>
-            )}
+            {hasActiveFilters && <button type="button" onClick={() => { setSelectedCategoryId(''); setSearchValue(''); setPageIndex(0); }} className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#BFAB93]/60 bg-[#FAF8F5] px-3 py-2 text-xs font-semibold text-[#8C6046] transition hover:bg-[#F3EFE8] dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300"><RotateCcw size={12} />{t('edms.documentTypes.filters.clearFilters', 'Clear Filters')}</button>}
         </div>
     );
 
+    const loading = categoriesQuery.isLoading || typesQuery.isLoading;
+    const queryError = categoriesQuery.error || typesQuery.error;
+
     return (
         <div className="space-y-4">
+            {queryError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">{getErrorMessage(queryError, t('common.error', 'Unable to load data'))}</div>}
             <DataTable
                 columns={columns}
                 data={paginatedTypes}
                 count={filteredTypes.length}
-                loading={false}
-                title={t('edms.documentTypes.title')}
-                description={t('edms.documentTypes.description')}
-                addNewLabel={t('edms.documentTypes.addNew')}
-                searchPlaceholder={t('edms.documentTypes.searchPlaceholder')}
+                loading={loading}
+                title={t('edms.documentTypes.title', 'Document Types')}
+                description={t('edms.documentTypes.description', 'Manage document types')}
+                addNewLabel={t('edms.documentTypes.addNew', 'Add Document Type')}
+                searchPlaceholder={t('edms.documentTypes.searchPlaceholder', 'Search document types...')}
                 searchValue={searchValue}
-                onSearchChange={handleSearchChange}
+                onSearchChange={(value: string) => { setSearchValue(value); setPageIndex(0); }}
                 pageIndex={pageIndex}
                 pageSize={pageSize}
                 onPageChange={setPageIndex}
-                onPageSizeChange={setPageSize}
+                onPageSizeChange={(size: number) => { setPageSize(size); setPageIndex(0); }}
                 onAddNew={handleOpenCreate}
                 onExport={handleExportCsv}
                 isFiltersOpen={true}
@@ -977,54 +315,25 @@ export const EdmsDocumentTypesPage: React.FC = () => {
                 filtersContent={filtersContent}
             />
 
-            {/* Add / Edit Document Type Drawer */}
             <DocumentTypeDrawer
                 isOpen={isDrawerOpen}
                 editingItem={editingType}
-                categories={liveCategories}
-                onClose={() => {
-                    setIsDrawerOpen(false);
-                    setEditingType(null);
-                }}
-                onSubmit={handleFormSubmit}
+                categories={categories}
+                isSubmitting={createMutation.isPending || updateMutation.isPending}
+                onClose={() => { if (createMutation.isPending || updateMutation.isPending) return; setIsDrawerOpen(false); setEditingType(null); }}
+                onSubmit={handleSubmit}
             />
 
-            {/* Delete Confirmation Modal */}
             {deletingType && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-                    <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-2xl shadow-2xl p-6 text-start animate-in fade-in zoom-in-95 duration-150">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+                    <div className="w-full max-w-md animate-in rounded-2xl border border-[#E5E0D8] bg-white p-6 text-start shadow-2xl fade-in zoom-in-95 duration-150 dark:border-slate-800 dark:bg-slate-900">
                         <div className="flex items-start gap-3.5">
-                            <div className="w-10 h-10 rounded-xl bg-[#A23B2A]/10 text-[#A23B2A] flex items-center justify-center shrink-0">
-                                <AlertTriangle size={20} />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">
-                                    {t('edms.documentTypes.deleteModal.title')}
-                                </h3>
-                                <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-1.5 leading-relaxed">
-                                    {t('edms.documentTypes.deleteModal.message', {
-                                        code: deletingType.typeCode,
-                                        name: deletingType.typeName,
-                                    })}
-                                </p>
-                            </div>
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#A23B2A]/10 text-[#A23B2A]"><AlertTriangle size={20} /></div>
+                            <div className="flex-1"><h3 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">{t('edms.documentTypes.deleteModal.title', 'Delete Document Type')}</h3><p className="mt-1.5 text-xs leading-relaxed text-[#6E6862] dark:text-slate-400">{t('edms.documentTypes.deleteModal.message', { code: deletingType.id, name: deletingType.name, defaultValue: 'Are you sure you want to delete "{{name}}"?' })}</p></div>
                         </div>
-
-                        <div className="flex items-center justify-end gap-2.5 mt-6 pt-4 border-t border-[#EFECE6] dark:border-slate-800">
-                            <button
-                                type="button"
-                                onClick={() => setDeletingType(null)}
-                                className="px-4 py-2 text-xs font-semibold text-[#595550] dark:text-slate-300 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
-                            >
-                                {t('edms.documentTypes.deleteModal.cancel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmDelete}
-                                className="px-4 py-2 text-xs font-semibold text-white bg-[#A23B2A] hover:bg-[#8B3122] rounded-lg shadow-xs transition cursor-pointer"
-                            >
-                                {t('edms.documentTypes.deleteModal.confirm')}
-                            </button>
+                        <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-[#EFECE6] pt-4 dark:border-slate-800">
+                            <button type="button" disabled={deleteMutation.isPending} onClick={() => setDeletingType(null)} className="rounded-lg border border-[#E5E0D8] bg-white px-4 py-2 text-xs font-semibold text-[#595550] transition hover:bg-[#F8F6F2] disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{t('edms.documentTypes.deleteModal.cancel', 'Cancel')}</button>
+                            <button type="button" disabled={deleteMutation.isPending} onClick={handleConfirmDelete} className="inline-flex items-center gap-2 rounded-lg bg-[#A23B2A] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#8B3122] disabled:opacity-60">{deleteMutation.isPending && <LoaderCircle size={14} className="animate-spin" />}{t('edms.documentTypes.deleteModal.confirm', 'Delete')}</button>
                         </div>
                     </div>
                 </div>
@@ -1032,3 +341,5 @@ export const EdmsDocumentTypesPage: React.FC = () => {
         </div>
     );
 };
+
+export default EdmsDocumentTypesPage;

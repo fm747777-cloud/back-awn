@@ -459,7 +459,7 @@ const initialPackages = [
 
 // Temporary flag to disable runtime backend API requests and use local demo/mock data.
 // Set USE_DEMO_MODE to false to re-enable live backend API requests immediately.
-export const USE_DEMO_MODE = true;
+export const USE_DEMO_MODE = false;
 
 const initialServices = [
     {
@@ -1549,8 +1549,95 @@ export const companyUserApi = {
 }
 
 export const userApi = {
-    getCompaniesBranchs: async (params: any) => {
+    getUsers: async (params: any) => {
         const response = await axiosClient.get('/user', { params });
         return response.data;
     }
+}
+
+export const documentApi = {
+    getDocuments: async (params: any) => {
+        const response = await axiosClient.get('/document', { params });
+        return response.data;
+    },
+
+    createDocument: async (data: any) => {
+        const response = await axiosClient.post('/document', data);
+        return response.data;
+    },
+
+    updateDocument: async (data: any) => {
+        const response = await axiosClient.put('/document', data);
+        return response.data;
+    },
+
+    deleteDocument: async (data: any) => {
+        const response = await axiosClient.delete('/document', data);
+        return response.data;
+    },
+
+
+    getDocumentCategories: async (params: any) => {
+        const response = await axiosClient.get('/document-category', { params });
+        return response.data;
+    },
+
+    createDocumentCategory: async (data: any) => {
+        const response = await axiosClient.post('/document-category', data);
+        return response.data;
+    },
+
+    updateDocumentCategory: async (data: any) => {
+        const response = await axiosClient.put('/document-category', data);
+        return response.data;
+    },
+
+    deleteDocumentCategory: async (data: any) => {
+        const response = await axiosClient.delete('/document-category', data);
+        return response.data;
+    },
+
+
+
+    getDocumentTypes: async (params: any) => {
+        const response = await axiosClient.get('/document-type', { params });
+        return response.data;
+    },
+
+    createDocumentType: async (data: any) => {
+        const response = await axiosClient.post('/document-type', data);
+        return response.data;
+    },
+
+    updateDocumentType: async (data: any) => {
+        const response = await axiosClient.put('/document-type', data);
+        return response.data;
+    },
+
+    deleteDocumentType: async (data: any) => {
+        const response = await axiosClient.delete('/document-type', data);
+        return response.data;
+    },
+
+
+
+    getDocumentTags: async (params: any) => {
+        const response = await axiosClient.get('/document-tag', { params });
+        return response.data;
+    },
+
+    createDocumentTag: async (data: any) => {
+        const response = await axiosClient.post('/document-tag', data);
+        return response.data;
+    },
+
+    updateDocumentTag: async (data: any) => {
+        const response = await axiosClient.put('/document-tag', data);
+        return response.data;
+    },
+
+    deleteDocumentTag: async (data: any) => {
+        const response = await axiosClient.delete('/document-tag', data);
+        return response.data;
+    },
 }

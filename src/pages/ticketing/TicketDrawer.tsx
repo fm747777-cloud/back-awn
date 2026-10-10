@@ -237,7 +237,7 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
     const usersQuery = useQuery({
         queryKey: ['task-drawer', 'users'],
         queryFn: () =>
-            userApi.getCompaniesBranchs({ page: 1, limit: 100 }),
+            companyBranchApi.getCompaniesBranchs({ page: 1, limit: 100 }),
         enabled: isOpen,
         staleTime: 60_000,
     });
