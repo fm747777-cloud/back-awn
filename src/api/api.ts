@@ -459,7 +459,7 @@ const initialPackages = [
 
 // Temporary flag to disable runtime backend API requests and use local demo/mock data.
 // Set USE_DEMO_MODE to false to re-enable live backend API requests immediately.
-export const USE_DEMO_MODE = false;
+export const USE_DEMO_MODE = true;
 
 const initialServices = [
     {

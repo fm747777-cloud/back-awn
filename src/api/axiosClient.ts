@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/useAuthStore';
  * Set to false to disable all runtime API/backend requests and run using local demo/mock data.
  * Set to true to re-enable real backend/API communication.
  */
-export const IS_BACKEND_ENABLED = true;
+export const IS_BACKEND_ENABLED = false;
 
 export const axiosClient = axios.create({
     baseURL: import.meta.env?.VITE_BASE_URL || import.meta.env?.VITE_API_BASE_URL,
