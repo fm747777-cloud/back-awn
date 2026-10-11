@@ -23,6 +23,13 @@ import {
     UserCheck,
     MapPin,
     Puzzle,
+    BarChart3,
+    UserPlus,
+    FileText,
+    FileCheck,
+    Receipt,
+    Award,
+    Percent,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -203,6 +210,54 @@ export const UMS_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
+export const CRM_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Main',
+        items: [
+            { label: 'Sales Performance Dashboard', path: '/crm/sales-performance-dashboard', icon: BarChart3 },
+            { label: 'Dashboard Sales', path: '/crm/dashboard-sales', icon: LayoutDashboard },
+            { label: 'Approval Tasks', path: '/crm/approval-tasks', icon: CheckSquare },
+            { label: 'Operational Task', path: '/crm/operational-task', icon: ClipboardList },
+        ],
+    },
+    {
+        title: 'Leads',
+        items: [
+            { label: 'Leads', path: '/crm/leads', icon: UserPlus },
+            { label: 'Companies', path: '/crm/companies', icon: Building2 },
+            { label: 'Contacts', path: '/crm/contacts', icon: Users },
+            { label: 'Owners', path: '/crm/owners', icon: UserCheck },
+        ],
+    },
+    {
+        title: 'Deals',
+        items: [
+            { label: 'Deals', path: '/crm/deals', icon: Briefcase },
+            { label: 'Quotations', path: '/crm/quotations', icon: FileText },
+            { label: 'Contracts', path: '/crm/contracts', icon: FileCheck },
+            { label: 'Invoices', path: '/crm/invoices', icon: Receipt },
+            { label: 'Won Deals', path: '/crm/won-deals', icon: Award },
+        ],
+    },
+    {
+        title: 'Master',
+        items: [
+            { label: 'Lead Source', path: '/crm/lead-source', icon: FolderKanban },
+            { label: 'Lead Status', path: '/crm/lead-status', icon: ListFilter },
+            { label: 'Sectors', path: '/crm/sectors', icon: Layers },
+            { label: 'Tax', path: '/crm/tax', icon: Percent },
+            { label: 'Organizational Types', path: '/crm/organizational-types', icon: Grid },
+            { label: 'Ownership Types', path: '/crm/ownership-types', icon: ShieldCheck },
+        ],
+    },
+    {
+        title: 'Audit Trail',
+        items: [
+            { label: 'Audit Trails', path: '/crm/audit-trails', icon: History },
+        ],
+    },
+];
+
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -217,6 +272,9 @@ export const getMenuGroupsForPath = (
 ): MenuGroup[] => {
     if (pathname.startsWith('/ums')) {
         return UMS_SIDEBAR_GROUPS;
+    }
+    if (pathname.startsWith('/crm')) {
+        return CRM_SIDEBAR_GROUPS;
     }
     if (pathname.startsWith('/ticketing')) {
         return TICKETING_SIDEBAR_GROUPS;
@@ -236,10 +294,7 @@ export const getMenuGroupsForPath = (
     if (pathname.startsWith('/service') || pathname === '/') {
         return DEFAULT_SIDEBAR_GROUPS;
     }
-    if (
-        pathname.startsWith('/crm') ||
-        pathname.startsWith('/customer')
-    ) {
+    if (pathname.startsWith('/customer')) {
         const basePath = `/${pathname.replace(/^\/+/, '').split('/')[0]}`;
         return [
             {

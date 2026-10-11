@@ -38,8 +38,7 @@ export const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
     onClose,
     onSubmit,
 }) => {
-    const { t, i18n } = useTranslation();
-    const isAr = Boolean(i18n.language?.startsWith('ar'));
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [documentCategoryId, setDocumentCategoryId] = useState('');
@@ -49,6 +48,7 @@ export const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
 
     useEffect(() => {
         if (!isOpen) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setName(editingItem?.name ?? '');
         setDescription(editingItem?.description ?? '');
         setDocumentCategoryId(

@@ -70,6 +70,29 @@ const UmsBranchesPage = () => import('../pages/ums/UmsBranchesPage').then((m) =>
 const UmsCustomAddonsPage = () => import('../pages/ums/UmsCustomAddonsPage').then((m) => ({ Component: m.UmsCustomAddonsPage }));
 const UmsAuditTrailPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsAuditTrailPage }));
 
+// CRM Module (Client Relations Management)
+const CrmPage = () => import('../pages/CrmPage').then((m) => ({ Component: m.CrmPage }));
+const SalesPerformanceDashboardPage = () => import('../pages/crm/SalesPerformanceDashboardPage').then((m) => ({ Component: m.SalesPerformanceDashboardPage }));
+const DashboardSalesPage = () => import('../pages/crm/DashboardSalesPage').then((m) => ({ Component: m.DashboardSalesPage }));
+const CrmApprovalTasksPage = () => import('../pages/crm/CrmApprovalTasksPage').then((m) => ({ Component: m.CrmApprovalTasksPage }));
+const CrmOperationalTaskPage = () => import('../pages/crm/CrmOperationalTaskPage').then((m) => ({ Component: m.CrmOperationalTaskPage }));
+const LeadsPage = () => import('../pages/crm/LeadsPage').then((m) => ({ Component: m.LeadsPage }));
+const CompaniesPage = () => import('../pages/crm/CompaniesPage').then((m) => ({ Component: m.CompaniesPage }));
+const ContactsPage = () => import('../pages/crm/ContactsPage').then((m) => ({ Component: m.ContactsPage }));
+const OwnersPage = () => import('../pages/crm/OwnersPage').then((m) => ({ Component: m.OwnersPage }));
+const DealsPage = () => import('../pages/crm/DealsPage').then((m) => ({ Component: m.DealsPage }));
+const QuotationsPage = () => import('../pages/crm/QuotationsPage').then((m) => ({ Component: m.QuotationsPage }));
+const ContractsPage = () => import('../pages/crm/ContractsPage').then((m) => ({ Component: m.ContractsPage }));
+const InvoicesPage = () => import('../pages/crm/InvoicesPage').then((m) => ({ Component: m.InvoicesPage }));
+const WonDealsPage = () => import('../pages/crm/WonDealsPage').then((m) => ({ Component: m.WonDealsPage }));
+const LeadSourcePage = () => import('../pages/crm/LeadSourcePage').then((m) => ({ Component: m.LeadSourcePage }));
+const LeadStatusPage = () => import('../pages/crm/LeadStatusPage').then((m) => ({ Component: m.LeadStatusPage }));
+const SectorsPage = () => import('../pages/crm/SectorsPage').then((m) => ({ Component: m.SectorsPage }));
+const TaxPage = () => import('../pages/crm/TaxPage').then((m) => ({ Component: m.TaxPage }));
+const OrganizationalTypesPage = () => import('../pages/crm/OrganizationalTypesPage').then((m) => ({ Component: m.OrganizationalTypesPage }));
+const OwnershipTypesPage = () => import('../pages/crm/OwnershipTypesPage').then((m) => ({ Component: m.OwnershipTypesPage }));
+const CrmAuditTrailsPage = () => import('../pages/crm/CrmAuditTrailsPage').then((m) => ({ Component: m.CrmAuditTrailsPage }));
+
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
 const ServicesListTab = () => import('../components/Service/ServicesListTab').then((m) => ({ Component: m.ServicesListTab }));
@@ -190,7 +213,93 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/crm',
-                        lazy: PlaceholderModulePage,
+                        lazy: CrmPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/crm/sales-performance-dashboard" replace />,
+                            },
+                            {
+                                path: 'sales-performance-dashboard',
+                                lazy: SalesPerformanceDashboardPage,
+                            },
+                            {
+                                path: 'dashboard-sales',
+                                lazy: DashboardSalesPage,
+                            },
+                            {
+                                path: 'approval-tasks',
+                                lazy: CrmApprovalTasksPage,
+                            },
+                            {
+                                path: 'operational-task',
+                                lazy: CrmOperationalTaskPage,
+                            },
+                            {
+                                path: 'leads',
+                                lazy: LeadsPage,
+                            },
+                            {
+                                path: 'companies',
+                                lazy: CompaniesPage,
+                            },
+                            {
+                                path: 'contacts',
+                                lazy: ContactsPage,
+                            },
+                            {
+                                path: 'owners',
+                                lazy: OwnersPage,
+                            },
+                            {
+                                path: 'deals',
+                                lazy: DealsPage,
+                            },
+                            {
+                                path: 'quotations',
+                                lazy: QuotationsPage,
+                            },
+                            {
+                                path: 'contracts',
+                                lazy: ContractsPage,
+                            },
+                            {
+                                path: 'invoices',
+                                lazy: InvoicesPage,
+                            },
+                            {
+                                path: 'won-deals',
+                                lazy: WonDealsPage,
+                            },
+                            {
+                                path: 'lead-source',
+                                lazy: LeadSourcePage,
+                            },
+                            {
+                                path: 'lead-status',
+                                lazy: LeadStatusPage,
+                            },
+                            {
+                                path: 'sectors',
+                                lazy: SectorsPage,
+                            },
+                            {
+                                path: 'tax',
+                                lazy: TaxPage,
+                            },
+                            {
+                                path: 'organizational-types',
+                                lazy: OrganizationalTypesPage,
+                            },
+                            {
+                                path: 'ownership-types',
+                                lazy: OwnershipTypesPage,
+                            },
+                            {
+                                path: 'audit-trails',
+                                lazy: CrmAuditTrailsPage,
+                            },
+                        ],
                     },
                     {
                         path: '/edms',
