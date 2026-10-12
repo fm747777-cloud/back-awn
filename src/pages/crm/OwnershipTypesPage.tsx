@@ -150,7 +150,7 @@ export const OwnershipTypesPage: React.FC = () => {
         mutationFn: (payload: CrmOwnershipTypeInput) =>
             crmApi.createOwnershipType(payload),
         onSuccess: (created) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.created', {
                     name: isRtl ? created.nameAr : created.nameEn,
@@ -180,7 +180,7 @@ export const OwnershipTypesPage: React.FC = () => {
             payload: Partial<CrmOwnershipTypeInput>;
         }) => crmApi.updateOwnershipType(id, payload),
         onSuccess: (updated) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.updated', {
                     name: isRtl ? updated.nameAr : updated.nameEn,
@@ -213,7 +213,7 @@ export const OwnershipTypesPage: React.FC = () => {
             nextStatus: CrmRecordStatus;
         }) => crmApi.updateOwnershipType(id, { status: nextStatus }),
         onSuccess: (updated) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.statusUpdated', {
                     name: isRtl ? updated.nameAr : updated.nameEn,
@@ -243,7 +243,7 @@ export const OwnershipTypesPage: React.FC = () => {
         mutationFn: (id: string) => crmApi.deleteOwnershipType(id),
         onSuccess: (_, deletedId) => {
             const target = records.find((r) => r.id === deletedId);
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.deleted', {
                     name: target
@@ -302,7 +302,7 @@ export const OwnershipTypesPage: React.FC = () => {
                 'ownershipType',
                 deletingRecord.id
             );
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.deactivatedInstead', {
                     name: isRtl ? deletingRecord.nameAr : deletingRecord.nameEn,

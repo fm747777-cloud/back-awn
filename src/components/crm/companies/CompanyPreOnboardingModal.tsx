@@ -754,16 +754,29 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                     className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
                                 >
                                     <option value="draft">
-                                        {t('crm.customer.companies.onboardingDraft')}
+                                        {t(
+                                            'crm.customer.companies.onboardingStatuses.draft'
+                                        )}
                                     </option>
                                     <option value="pre_onboarding">
-                                        {t('crm.customer.companies.onboardingPre')}
+                                        {t(
+                                            'crm.customer.companies.onboardingStatuses.pre_onboarding'
+                                        )}
                                     </option>
-                                    <option value="pending_approval">
-                                        {t('crm.customer.companies.onboardingPending')}
+                                    <option value="under_review">
+                                        {t(
+                                            'crm.customer.companies.onboardingStatuses.under_review'
+                                        )}
                                     </option>
-                                    <option value="completed">
-                                        {t('crm.customer.companies.onboardingCompleted')}
+                                    <option value="active">
+                                        {t(
+                                            'crm.customer.companies.onboardingStatuses.active'
+                                        )}
+                                    </option>
+                                    <option value="inactive">
+                                        {t(
+                                            'crm.customer.companies.onboardingStatuses.inactive'
+                                        )}
                                     </option>
                                 </select>
                             </div>

@@ -150,7 +150,7 @@ export const TaxPage: React.FC = () => {
     const createMutation = useMutation({
         mutationFn: (payload: CrmTaxInput) => crmApi.createTax(payload),
         onSuccess: (created) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.created', {
                     name: isRtl ? created.nameAr : created.nameEn,
@@ -180,7 +180,7 @@ export const TaxPage: React.FC = () => {
             payload: Partial<CrmTaxInput>;
         }) => crmApi.updateTax(id, payload),
         onSuccess: (updated) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.updated', {
                     name: isRtl ? updated.nameAr : updated.nameEn,
@@ -213,7 +213,7 @@ export const TaxPage: React.FC = () => {
             nextStatus: CrmRecordStatus;
         }) => crmApi.updateTax(id, { status: nextStatus }),
         onSuccess: (updated) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.statusUpdated', {
                     name: isRtl ? updated.nameAr : updated.nameEn,
@@ -243,7 +243,7 @@ export const TaxPage: React.FC = () => {
         mutationFn: (id: string) =>
             crmApi.updateTax(id, { isDefault: true, status: 'active' }),
         onSuccess: (updated) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.updated', {
                     name: isRtl ? updated.nameAr : updated.nameEn,
@@ -267,7 +267,7 @@ export const TaxPage: React.FC = () => {
         mutationFn: (id: string) => crmApi.deleteTax(id),
         onSuccess: (_, deletedId) => {
             const target = records.find((r) => r.id === deletedId);
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.deleted', {
                     name: target
@@ -332,7 +332,7 @@ export const TaxPage: React.FC = () => {
         if (!deletingRecord) return;
         try {
             await crmApi.deactivateMasterRecord('tax', deletingRecord.id);
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.deactivatedInstead', {
                     name: isRtl ? deletingRecord.nameAr : deletingRecord.nameEn,

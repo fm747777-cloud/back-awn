@@ -72,7 +72,10 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                                     : t('crm.customer.common.inactive')}
                             </span>
                             <span className="px-2.5 py-0.5 rounded-md bg-[#EEF2FF] text-[#3730A3] border border-[#3730A3]/20 text-xs font-semibold">
-                                {record.onboardingStatus}
+                                {t(
+                                    `crm.customer.companies.onboardingStatuses.${record.onboardingStatus}`,
+                                    { defaultValue: record.onboardingStatus }
+                                )}
                             </span>
                         </div>
                         <h2

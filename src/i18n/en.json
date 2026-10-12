@@ -4444,7 +4444,22 @@
         "nationalOnly": "National / GCC Only",
         "yes": "Yes",
         "no": "No",
-        "required": "Required"
+        "required": "Required",
+        "totalRecords": "Total Records",
+        "activeRecords": "Active Records",
+        "inactiveRecords": "Inactive Records",
+        "referencedRecords": "Referenced in CRM",
+        "searchBilingualPlaceholder": "Search by code, English or Arabic name, or description...",
+        "status": "Status",
+        "noRecordsTitle": "No records found",
+        "noMatchingRecords": "No matching master records found",
+        "noRecordsSubtext": "Create a new master record to get started.",
+        "noMatchingSubtext": "Adjust your search or status filter, or create a new master record.",
+        "viewDetails": "View Details",
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "records": "records"
       },
       "columns": {
         "code": "Code",
@@ -4453,7 +4468,9 @@
         "nameAr": "Arabic Name",
         "description": "Description",
         "linkedRecords": "References",
+        "references": "References",
         "creator": "Created By",
+        "createdBy": "Created By",
         "createdAt": "Created Date",
         "updatedAt": "Last Updated",
         "status": "Status",
@@ -4464,6 +4481,7 @@
         "stageConfig": "Stage Role",
         "taxType": "Tax Type",
         "rate": "Rate (%)",
+        "taxRate": "Tax Rate (%)",
         "defaultStatus": "Default",
         "foreignOwnership": "Foreign Ownership"
       },
@@ -4583,7 +4601,9 @@
           "createTitle": "Create Tax Configuration",
           "createSubtitle": "Configure a VAT or tax percentage (0–100%) for quotations and invoices.",
           "editTitle": "Edit Tax Configuration",
-          "editSubtitle": "Update tax rate, classification, or default status for {{code}}."
+          "editSubtitle": "Update tax rate, classification, or default status for {{code}}.",
+          "defaultRateCard": "Default Tax Rate",
+          "setDefaultAction": "Set as Default"
         },
         "organizationalTypes": {
           "badge": "CRM-ORG",
@@ -4593,6 +4613,9 @@
           "editTitle": "Edit Organizational Type",
           "editSubtitle": "Update legal entity classification details for {{code}}."
         },
+        "organizationalType": {
+          "newButton": "New Organizational Type"
+        },
         "ownershipTypes": {
           "badge": "CRM-OWT",
           "newButton": "New Ownership Type",
@@ -4600,7 +4623,15 @@
           "createSubtitle": "Define a shareholder capital ownership classification.",
           "editTitle": "Edit Ownership Type",
           "editSubtitle": "Update ownership classification details for {{code}}."
+        },
+        "ownershipType": {
+          "newButton": "New Ownership Type",
+          "allowsForeignLabel": "Foreign Ownership Allowed",
+          "foreignAllowedBadge": "Foreign Ownership Allowed"
         }
+      },
+      "validation": {
+        "cannotDeactivateDefault": "Default records cannot be set to Inactive. Assign another record as default first."
       }
     },
     "customer": {
@@ -4776,8 +4807,15 @@
         "allOnboarding": "All Onboarding States",
         "onboardingDraft": "Draft",
         "onboardingPre": "Pre-Onboarding",
-        "onboardingPending": "Pending Approval",
-        "onboardingCompleted": "Completed",
+        "onboardingPending": "Under Review / Pending Approval",
+        "onboardingCompleted": "Active / Completed",
+        "onboardingStatuses": {
+          "draft": "Draft",
+          "pre_onboarding": "Pre-Onboarding",
+          "under_review": "Under Review",
+          "active": "Active Client",
+          "inactive": "Inactive"
+        },
         "sortByCreated": "Newest First",
         "sortByName": "Name (A–Z)",
         "sortByCode": "Company Code",
@@ -5054,8 +5092,15 @@
         "create": "Create Record",
         "saving": "Saving...",
         "close": "Close",
+        "clear": "Clear",
+        "loading": "Loading records...",
+        "errorLoading": "Unable to load records.",
+        "retry": "Retry",
+        "view": "View Details",
         "showing": "Showing {{from}}–{{to}} of {{total}} records",
+        "showingRecords": "Showing {{from}}–{{to}} of {{total}} records",
         "prev": "Previous",
+        "previous": "Previous",
         "next": "Next",
         "sarCurrency": "SAR",
         "unassigned": "Unassigned",
@@ -5115,6 +5160,8 @@
         "searchPlaceholder": "Search by code, deal title (EN/AR), company, lead, contact, or sales rep...",
         "allStages": "All Deal Stages",
         "stages": {
+          "new": "New",
+          "qualified": "Qualified",
           "qualification": "Qualification",
           "needs_analysis": "Needs Analysis",
           "proposal": "Proposal / Quotation",
@@ -5199,6 +5246,7 @@
           "draft": "Draft",
           "sent": "Sent / Pending Approval",
           "approved": "Approved",
+          "accepted": "Accepted",
           "rejected": "Rejected",
           "expired": "Expired"
         },
@@ -5271,6 +5319,7 @@
         "allContractStatuses": "All Contract Statuses",
         "statuses": {
           "draft": "Draft",
+          "pending_signature": "Pending Signature",
           "under_review": "Under Review",
           "active": "Active",
           "expired": "Expired",
@@ -5279,7 +5328,8 @@
         "renewalTypes": {
           "one_time": "One-Time Engagement",
           "annual_auto": "Annual Auto-Renewal",
-          "manual_renewal": "Manual Renewal"
+          "manual_renewal": "Manual Renewal",
+          "manual": "Manual Renewal"
         },
         "kpis": {
           "totalContracts": "Total Contracts",
@@ -5493,6 +5543,515 @@
           "description": "Transition a Deal to Closed Won or clear your filters to view awarded engagements."
         }
       }
+    },
+    "salesPerformanceDashboard": {
+      "badge": "CRM-SPD",
+      "refresh": "Refresh Data",
+      "refreshing": "Refreshing...",
+      "refreshedToast": "Sales performance metrics refreshed.",
+      "exportCsv": "Export Rep Summary CSV",
+      "exportedCsv": "Exported {{count}} sales performance row(s) to CSV.",
+      "lastUpdated": "Updated",
+      "filters": {
+        "title": "Performance Scope & Date Range",
+        "dateFrom": "From Date",
+        "dateTo": "To Date",
+        "allReps": "All Sales Representatives",
+        "allSectors": "All Sectors",
+        "allCompanies": "All Client Companies",
+        "reset": "Reset Filters",
+        "activeFilters": "Active Filters Applied"
+      },
+      "kpis": {
+        "wonRevenue": "Closed-Won Revenue",
+        "wonRevenueSub": "{{wonCount}} of {{totalDeals}} deals won ({{winRate}}% win rate)",
+        "weightedPipeline": "Weighted Pipeline Value",
+        "weightedPipelineSub": "{{openCount}} open deals • {{totalPipeline}} SAR gross",
+        "contractedCoverage": "Contracted Value",
+        "contractedCoverageSub": "{{activeCount}} active of {{totalCount}} contracts",
+        "collectedRevenue": "Collected Invoice Revenue",
+        "collectedRevenueSub": "{{collectionRate}}% of {{invoiced}} SAR invoiced",
+        "leadConversion": "Lead Conversion Rate",
+        "leadConversionSub": "{{converted}} converted • {{qualified}} qualified of {{total}} leads",
+        "quotationAcceptance": "Quotation Acceptance Rate",
+        "quotationAcceptanceSub": "{{accepted}} accepted of {{total}} quotes ({{value}} SAR)",
+        "avgWonDealSize": "Average Won Deal Size",
+        "avgWonDealSizeSub": "Across {{wonCount}} awarded deals ({{avgAll}} SAR avg pipeline)",
+        "outstandingReceivables": "Outstanding Receivables",
+        "outstandingReceivablesSub": "{{overdue}} SAR overdue across {{invoiceCount}} invoices"
+      },
+      "charts": {
+        "monthlyTrendTitle": "Monthly Commercial & Revenue Progression (SAR)",
+        "monthlyTrendSubtitle": "Comparison of pipeline added, awarded deals, invoiced billing, and cash collections by period",
+        "repComparisonTitle": "Sales Representative Revenue & Pipeline Attainment (SAR)",
+        "repComparisonSubtitle": "Gross pipeline, closed-won value, and collected invoice revenue per account executive",
+        "stageDistributionTitle": "Deal Stage Value & Weighted Forecast (SAR)",
+        "stageDistributionSubtitle": "Distribution of expected deal value vs probability-weighted value across pipeline stages",
+        "sectorBreakdownTitle": "Commercial Performance by Sector",
+        "sectorBreakdownSubtitle": "Pipeline, closed-won value, and invoiced revenue across industry sectors",
+        "series": {
+          "pipelineAdded": "Pipeline Added",
+          "wonDealValue": "Won Deal Value",
+          "quotedValue": "Quoted Value",
+          "contractedValue": "Contracted Value",
+          "invoicedAmount": "Invoiced Amount",
+          "collectedAmount": "Collected Revenue",
+          "expectedValue": "Expected Value",
+          "weightedValue": "Weighted Value"
+        }
+      },
+      "tables": {
+        "repScorecardTitle": "Sales Representative Performance Scorecard",
+        "repScorecardSubtitle": "End-to-end conversion from assigned leads and deals to quotations, contracts, and invoice collections",
+        "companyScorecardTitle": "Client Company Commercial Performance",
+        "companyScorecardSubtitle": "Awarded value, contracted coverage, and billing collection status by client company",
+        "columns": {
+          "rep": "Sales Representative",
+          "leadsAndConversion": "Leads & Conversion",
+          "dealsAndWinRate": "Deals & Win Rate",
+          "pipelineAndWeighted": "Pipeline / Weighted (SAR)",
+          "wonValue": "Won Value (SAR)",
+          "quotesAndContracts": "Quotes & Contracts (SAR)",
+          "invoicedAndCollected": "Invoiced / Collected (SAR)",
+          "collectionRate": "Collection Rate",
+          "company": "Client Company",
+          "sector": "Sector",
+          "onboardingStatus": "Onboarding Status",
+          "dealsSummary": "Deals (Won / Total)",
+          "contractedValue": "Contracted (SAR)",
+          "outstanding": "Outstanding (SAR)"
+        }
+      },
+      "quickLinks": {
+        "viewDeals": "View Deals",
+        "viewWonDeals": "Won Deals 360°",
+        "viewQuotations": "Quotations",
+        "viewInvoices": "Invoices"
+      },
+      "states": {
+        "loadingTitle": "Calculating sales performance metrics...",
+        "loadingSubtitle": "Aggregating CRM deals, quotations, contracts, invoices, and representative scorecards.",
+        "errorTitle": "Unable to load Sales Performance Dashboard",
+        "errorSubtitle": "An error occurred while aggregating CRM sales performance data.",
+        "retry": "Retry",
+        "emptyTitle": "No sales performance records match the selected filters",
+        "emptySubtitle": "Try expanding the date range or resetting the representative, sector, or company filters.",
+        "noTrendData": "No dated commercial activity recorded within the selected filter window.",
+        "noStageData": "No deals available for stage breakdown under current filters."
+      }
+    },
+    "dashboardSales": {
+      "badge": "CRM-DBS",
+      "refresh": "Refresh Dashboard",
+      "refreshing": "Refreshing...",
+      "refreshedToast": "Sales dashboard data refreshed.",
+      "lastUpdated": "Updated",
+      "filters": {
+        "title": "Pipeline & Activity Filter",
+        "dateFrom": "From Date",
+        "dateTo": "To Date",
+        "repLabel": "Sales Representative",
+        "allReps": "All Sales Representatives",
+        "reset": "Reset Filters",
+        "active": "Filtered View"
+      },
+      "nav": {
+        "deals": "Deals Pipeline",
+        "leads": "Leads",
+        "wonDeals": "Won Deals",
+        "operationalTasks": "Operational Tasks"
+      },
+      "kpis": {
+        "totalDeals": "Total Deals",
+        "totalDealsSub": "{{pipeline}} SAR total pipeline • {{avg}} SAR avg",
+        "openDeals": "Open Deals",
+        "openDealsSub": "Active opportunities across qualification to negotiation",
+        "wonDeals": "Won Deals",
+        "wonDealsSub": "{{revenue}} SAR won revenue ({{winRate}}% win rate)",
+        "lostDeals": "Lost Deals",
+        "lostDealsSub": "{{convertedLeads}} of {{totalLeads}} leads converted to deals",
+        "openPipelineValue": "Open Pipeline Value",
+        "openPipelineValueSub": "{{weighted}} SAR probability-weighted forecast"
+      },
+      "charts": {
+        "stageDistributionTitle": "Deal-Stage Distribution",
+        "stageDistributionSubtitle": "Pipeline value (SAR), weighted forecast, and deal count across sales stages",
+        "monthlyTrendTitle": "Monthly Sales Trend (SAR)",
+        "monthlyTrendSubtitle": "Monthly progression of new pipeline value added vs. closed-won deal revenue",
+        "series": {
+          "expectedValue": "Stage Pipeline (SAR)",
+          "weightedValue": "Weighted Value (SAR)",
+          "pipelineAdded": "Pipeline Added (SAR)",
+          "wonDealValue": "Won Revenue (SAR)",
+          "dealsCount": "Deals"
+        },
+        "stageMeta": "{{count}} deals • {{share}}% of pipeline • Avg prob {{prob}}%"
+      },
+      "activities": {
+        "tasksTitle": "Upcoming & Recent Sales Tasks",
+        "tasksSubtitle": "Operational follow-ups and commercial actions linked to CRM records",
+        "viewAllTasks": "All Operational Tasks",
+        "noTasks": "No sales operational tasks match the current filter.",
+        "dealsTitle": "Active Pipeline & Recent Deals",
+        "dealsSubtitle": "Open opportunities ordered by target close date and recent commercial deals",
+        "viewAllDeals": "Open Deals Board",
+        "noDeals": "No deals match the current filter criteria.",
+        "due": "Due",
+        "closeDate": "Target Close",
+        "probability": "Prob.",
+        "openTasksCount": "{{open}} open of {{total}} tasks",
+        "priorities": {
+          "Low": "Low",
+          "Medium": "Medium",
+          "High": "High",
+          "Urgent": "Urgent"
+        },
+        "taskStatuses": {
+          "Pending": "Pending",
+          "Assigned": "Assigned",
+          "In Progress": "In Progress",
+          "Under Review": "Under Review",
+          "Completed": "Completed",
+          "Blocked": "Blocked",
+          "Rejected": "Rejected"
+        }
+      },
+      "states": {
+        "loadingTitle": "Loading Sales Dashboard...",
+        "loadingSubtitle": "Fetching deal pipeline metrics, stage distribution, monthly trends, and sales activities.",
+        "errorTitle": "Unable to load Sales Dashboard",
+        "errorSubtitle": "An error occurred while retrieving CRM sales pipeline and activity data.",
+        "retry": "Retry",
+        "emptyTitle": "No sales records match your current filters",
+        "emptySubtitle": "Adjust the date range or sales representative filter to view deals and activities.",
+        "noStageData": "No deals available for stage distribution.",
+        "noTrendData": "No monthly sales trend data available for the selected window."
+      }
+    },
+    "companies": {
+      "onboardingStatuses": {
+        "draft": "Draft",
+        "pre_onboarding": "Pre-Onboarding",
+        "under_review": "Under Review",
+        "active": "Active Client",
+        "inactive": "Inactive",
+        "Pending": "Pending Onboarding",
+        "Documents Verified": "Documents Verified",
+        "Contract Signed": "Contract Signed",
+        "Active Client": "Active Client",
+        "Suspended": "Suspended"
+      }
+    },
+    "workflow": {
+      "common": {
+        "priorities": {
+          "Low": "Low",
+          "Medium": "Medium",
+          "High": "High",
+          "Urgent": "Urgent"
+        }
+      },
+      "approvalTasks": {
+        "title": "Approval Tasks",
+        "subtitle": "Centralized queue for CRM commercial, onboarding, and pricing approval requests.",
+        "modules": {
+          "Quotation": "Quotation",
+          "Contract": "Contract",
+          "Deal": "Deal",
+          "Company": "Company",
+          "Invoice": "Invoice"
+        },
+        "statuses": {
+          "Pending": "Pending Approval",
+          "Approved": "Approved",
+          "Rejected": "Rejected"
+        },
+        "kpis": {
+          "totalTasks": "Total Approval Tasks",
+          "pendingTasks": "Pending Decisions",
+          "approvedTasks": "Approved Requests",
+          "rejectedTasks": "Rejected Requests"
+        },
+        "filters": {
+          "allTasks": "All Statuses",
+          "searchPlaceholder": "Search by code, task name, company, module, or assignee...",
+          "allModules": "All Modules",
+          "allPriorities": "All Priorities",
+          "allAssignees": "All Approvers"
+        },
+        "table": {
+          "serialNumber": "Serial #",
+          "module": "Module & Target",
+          "taskName": "Approval Task",
+          "assignedUser": "Assigned Approver",
+          "department": "Department",
+          "designation": "Designation",
+          "createdBy": "Created By",
+          "createdDate": "Created Date",
+          "currentStatus": "Current Status",
+          "actions": "Actions"
+        },
+        "fields": {
+          "module": "CRM Module",
+          "priority": "Priority",
+          "targetEntity": "Target Record",
+          "targetCode": "Target Code",
+          "targetEntityName": "Target Record Name",
+          "company": "Client Company",
+          "titleEn": "Task Title (English)",
+          "titleAr": "Task Title (Arabic)",
+          "assignedUser": "Assigned Approver",
+          "department": "Department",
+          "designation": "Designation",
+          "stage": "Approval Stage",
+          "requestedBy": "Requested By",
+          "createdBy": "Created By",
+          "createdDate": "Created Date",
+          "notes": "Request Notes",
+          "decidedBy": "Decided By",
+          "decidedAt": "Decision Timestamp",
+          "decisionNotes": "Decision Remarks",
+          "rejectionReason": "Rejection Reason"
+        },
+        "actions": {
+          "createRequest": "New Approval Request",
+          "approve": "Approve",
+          "reject": "Reject",
+          "confirmApprove": "Confirm Approval",
+          "confirmReject": "Confirm Rejection",
+          "openRelatedRecord": "Open Related Record"
+        },
+        "viewDrawer": {
+          "subtitle": "Approval governance details, target record linkage, and decision history",
+          "pendingActionBannerTitle": "Pending Governance Decision",
+          "pendingActionBannerSubtitle": "Review the commercial or onboarding details below and record an approval or rejection.",
+          "targetEntitySection": "Target CRM Record",
+          "assignmentSection": "Approver & Request Metadata",
+          "decisionSection": "Governance Decision Outcome"
+        },
+        "decisionModal": {
+          "approveTitle": "Approve CRM Request",
+          "approveSubtitle": "Confirm approval and synchronize status with the linked CRM record.",
+          "rejectTitle": "Reject CRM Request",
+          "rejectSubtitle": "Provide a clear reason for rejecting this CRM request.",
+          "decidedBy": "Decision Recorded By",
+          "rejectionReason": "Rejection Reason",
+          "rejectionReasonPlaceholder": "Explain why this request is being rejected...",
+          "rejectionHint": "A rejection reason is mandatory and will be logged in the CRM Audit Trail.",
+          "reasonRequired": "Please provide a rejection reason before submitting.",
+          "decisionRemarks": "Additional Remarks (Optional)",
+          "decisionRemarksPlaceholder": "Add any governance notes or conditions..."
+        },
+        "formDrawer": {
+          "createTitle": "Create Approval Request",
+          "subtitle": "Submit a quotation, contract, deal, company, or invoice for governance approval.",
+          "selectTargetRecord": "Select Target Record...",
+          "submitButton": "Submit Approval Request"
+        },
+        "empty": {
+          "title": "No approval tasks match your filter criteria",
+          "description": "Try clearing your filters or create a new approval request."
+        },
+        "feedback": {
+          "created": "Approval task ({{code}}) created successfully.",
+          "approved": "Approval task ({{code}}) approved.",
+          "rejected": "Approval task ({{code}}) rejected."
+        }
+      },
+      "operationalTasks": {
+        "title": "Operational Tasks",
+        "subtitle": "Track, assign, and execute operational follow-up tasks across CRM records.",
+        "entityTypes": {
+          "Company": "Company",
+          "Deal": "Deal",
+          "Contract": "Contract",
+          "Quotation": "Quotation",
+          "Lead": "Lead",
+          "Invoice": "Invoice"
+        },
+        "statuses": {
+          "Pending": "Pending",
+          "Assigned": "Assigned",
+          "In Progress": "In Progress",
+          "Under Review": "Under Review",
+          "Completed": "Completed",
+          "Blocked": "Blocked",
+          "Rejected": "Rejected"
+        },
+        "badges": {
+          "overdue": "Overdue"
+        },
+        "kpis": {
+          "totalTasks": "Total Operational Tasks",
+          "unassignedAndPending": "Unassigned / Pending",
+          "activeExecution": "In Active Execution",
+          "completedTasks": "Completed Tasks"
+        },
+        "filters": {
+          "allTasks": "All Statuses",
+          "searchPlaceholder": "Search by task code, title, company, related record, or specialist...",
+          "allEntityTypes": "All Related Entities",
+          "allPriorities": "All Priorities",
+          "allSpecialists": "All Specialists",
+          "unassigned": "Unassigned",
+          "unassignedOnly": "Unassigned Only"
+        },
+        "table": {
+          "taskCode": "Task Code",
+          "taskName": "Task Title & Department",
+          "relatedEntity": "Related CRM Record",
+          "priority": "Priority",
+          "dueDate": "Due Date",
+          "assignedSpecialist": "Assigned Specialist",
+          "status": "Execution Status",
+          "actions": "Actions"
+        },
+        "fields": {
+          "titleEn": "Task Title (English)",
+          "titleAr": "Task Title (Arabic)",
+          "relatedEntityType": "Related Entity Type",
+          "relatedEntity": "Related CRM Record",
+          "relatedCode": "Related Record Code",
+          "company": "Client Company",
+          "priority": "Task Priority",
+          "taskStatus": "Execution Status",
+          "dueDate": "Target Due Date",
+          "assignedSpecialist": "Assigned Specialist",
+          "department": "Department",
+          "createdBy": "Created By",
+          "createdDate": "Created Date",
+          "completedAt": "Completed Date",
+          "notes": "Execution Notes & Instructions"
+        },
+        "actions": {
+          "createTask": "New Operational Task",
+          "markCompleted": "Mark Completed",
+          "openRelatedRecord": "Open Related Record"
+        },
+        "viewDrawer": {
+          "subtitle": "Operational task execution controls, specialist assignment, and linked CRM context",
+          "quickExecutionTitle": "Quick Assignment & Status Controls",
+          "relatedEntitySection": "Linked CRM Entity",
+          "scheduleAndOwnershipSection": "Schedule & Ownership Metadata"
+        },
+        "formDrawer": {
+          "createTitle": "Create Operational Task",
+          "editTitle": "Edit Operational Task",
+          "subtitle": "Configure task deliverables, linked CRM entity, due date, and assigned specialist.",
+          "titleEnPlaceholder": "e.g., Verify ZATCA VAT Certificate & Commercial Registration",
+          "titleArPlaceholder": "مثال: التحقق من شهادة ضريبة القيمة المضافة والسجل التجاري",
+          "selectRelatedEntity": "Select CRM Record...",
+          "notesPlaceholder": "Provide detailed execution steps or client requirements...",
+          "createButton": "Create Task",
+          "saveButton": "Save Changes"
+        },
+        "deleteModal": {
+          "title": "Delete Operational Task",
+          "subtitle": "Confirm permanent removal of this operational task",
+          "warning": "Are you sure you want to delete this operational task? This action will be recorded in the CRM Audit Trail."
+        },
+        "empty": {
+          "title": "No operational tasks match your filter criteria",
+          "description": "Try clearing your filters or create a new operational task."
+        },
+        "feedback": {
+          "created": "Operational task ({{code}}) created successfully.",
+          "updated": "Operational task ({{code}}) updated successfully.",
+          "statusUpdated": "Task ({{code}}) status updated to {{status}}.",
+          "assigned": "Task ({{code}}) specialist assignment updated.",
+          "deleted": "Operational task ({{code}}) deleted."
+        }
+      },
+      "auditTrails": {
+        "title": "CRM Audit Trails",
+        "subtitle": "Immutable chronological ledger of all CRM creations, updates, conversions, and governance decisions.",
+        "actions": {
+          "Created": "Created",
+          "Updated": "Updated",
+          "Deleted": "Deleted",
+          "Status Changed": "Status Changed",
+          "Converted": "Converted",
+          "Approved": "Approved",
+          "Rejected": "Rejected",
+          "Assigned": "Assigned",
+          "Deactivated": "Deactivated",
+          "Payment Recorded": "Payment Recorded",
+          "CREATED": "Created",
+          "UPDATED": "Updated",
+          "DELETED": "Deleted",
+          "STATUS_CHANGED": "Status Changed",
+          "APPROVED": "Approved",
+          "REJECTED": "Rejected",
+          "inspect": "Inspect",
+          "refresh": "Refresh Log"
+        },
+        "resourceTypes": {
+          "Lead": "Lead",
+          "Company": "Company",
+          "Contact": "Contact",
+          "Owner": "Owner",
+          "Deal": "Deal",
+          "Quotation": "Quotation",
+          "Contract": "Contract",
+          "Invoice": "Invoice",
+          "Approval Task": "Approval Task",
+          "Operational Task": "Operational Task",
+          "Lead Source": "Lead Source",
+          "Lead Status": "Lead Status",
+          "Sector": "Sector",
+          "Tax": "Tax",
+          "Organizational Type": "Organizational Type",
+          "Ownership Type": "Ownership Type"
+        },
+        "kpis": {
+          "totalEvents": "Total Logged Events",
+          "creationsAndConversions": "Creations & Conversions",
+          "approvalsAndTransitions": "Approvals & Transitions",
+          "rejectionsAndDeletions": "Rejections & Deletions"
+        },
+        "filters": {
+          "allEvents": "All Action Types",
+          "searchPlaceholder": "Search by event code, resource code, actor, or summary...",
+          "allResourceTypes": "All Resource Types",
+          "allActors": "All Users / Actors",
+          "dateFrom": "From Date",
+          "dateTo": "To Date"
+        },
+        "table": {
+          "eventCode": "Event Code",
+          "timestamp": "Timestamp",
+          "action": "Action",
+          "resource": "Target Resource",
+          "eventSummary": "Event Summary",
+          "performedBy": "Performed By",
+          "actions": "Actions"
+        },
+        "fields": {
+          "resourceType": "Resource Type",
+          "resourceCode": "Resource Code",
+          "resourceNameEn": "Resource Name (EN)",
+          "resourceNameAr": "Resource Name (AR)",
+          "actor": "Performed By",
+          "actorRole": "Actor Role",
+          "actorEmail": "Actor Email"
+        },
+        "viewDrawer": {
+          "subtitle": "Complete audit event inspection, actor metadata, and before/after state diff",
+          "summarySection": "Event Summary",
+          "resourceSection": "Target CRM Resource",
+          "openResourceModule": "Open Module",
+          "actorSection": "Actor & Session Metadata",
+          "statePayloadSection": "State Transition Payload",
+          "previousState": "Previous State",
+          "newState": "New State",
+          "bilingualLogSection": "Bilingual Audit Log Entries"
+        },
+        "empty": {
+          "title": "No audit trail events match your filter criteria",
+          "description": "Try expanding the date range or resetting your action and resource filters."
+        }
+      }
     }
   }
 }
+

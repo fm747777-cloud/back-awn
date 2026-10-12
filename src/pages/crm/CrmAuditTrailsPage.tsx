@@ -103,8 +103,8 @@ export const CrmAuditTrailsPage: React.FC = () => {
             case 'Contact':
                 navigate('/crm/contacts');
                 break;
-            case 'Activity':
-                navigate('/crm/activities');
+            case 'Owner':
+                navigate('/crm/owners');
                 break;
             case 'Quotation':
                 navigate('/crm/quotations');
@@ -115,14 +115,32 @@ export const CrmAuditTrailsPage: React.FC = () => {
             case 'Invoice':
                 navigate('/crm/invoices');
                 break;
-            case 'ApprovalTask':
+            case 'Approval Task':
                 navigate('/crm/approval-tasks');
                 break;
-            case 'OperationalTask':
+            case 'Operational Task':
                 navigate('/crm/operational-task');
                 break;
+            case 'Lead Source':
+                navigate('/crm/lead-source');
+                break;
+            case 'Lead Status':
+                navigate('/crm/lead-status');
+                break;
+            case 'Sector':
+                navigate('/crm/sectors');
+                break;
+            case 'Tax':
+                navigate('/crm/tax');
+                break;
+            case 'Organizational Type':
+                navigate('/crm/organizational-types');
+                break;
+            case 'Ownership Type':
+                navigate('/crm/ownership-types');
+                break;
             default:
-                navigate('/crm/overview');
+                navigate('/crm/dashboard-sales');
         }
     };
 

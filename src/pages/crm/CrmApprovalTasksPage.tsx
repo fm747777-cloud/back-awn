@@ -220,6 +220,9 @@ export const CrmApprovalTasksPage: React.FC = () => {
             case 'Contract':
                 navigate('/crm/contracts');
                 break;
+            case 'Company':
+                navigate('/crm/companies');
+                break;
             case 'Deal':
                 navigate('/crm/deals');
                 break;

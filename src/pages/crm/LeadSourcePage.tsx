@@ -141,7 +141,7 @@ export const LeadSourcePage: React.FC = () => {
     const createMutation = useMutation({
         mutationFn: (payload: CrmLeadSourceInput) => crmApi.createLeadSource(payload),
         onSuccess: (created) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             setIsFormOpen(false);
             setEditingRecord(null);
             setApiError(null);
@@ -171,7 +171,7 @@ export const LeadSourcePage: React.FC = () => {
             payload: Partial<CrmLeadSourceInput>;
         }) => crmApi.updateLeadSource(id, payload),
         onSuccess: (updated) => {
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             setIsFormOpen(false);
             setEditingRecord(null);
             setApiError(null);
@@ -199,7 +199,7 @@ export const LeadSourcePage: React.FC = () => {
         mutationFn: (id: string) => crmApi.deleteLeadSource(id),
         onSuccess: (_res, deletedId) => {
             const target = records.find((r) => r.id === deletedId);
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             setDeletingRecord(null);
             setSelectedIds((prev) => prev.filter((id) => id !== deletedId));
             if (viewingRecord?.id === deletedId) {
@@ -236,7 +236,7 @@ export const LeadSourcePage: React.FC = () => {
             const updated = await crmApi.updateLeadSource(record.id, {
                 status: nextStatus,
             });
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             if (viewingRecord?.id === record.id) {
                 setViewingRecord(updated);
             }
@@ -265,7 +265,7 @@ export const LeadSourcePage: React.FC = () => {
                     await crmApi.updateLeadSource(id, { status: targetStatus });
                 }
             }
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.bulkStatusUpdated', {
                     count: selectedIds.length,
@@ -287,7 +287,7 @@ export const LeadSourcePage: React.FC = () => {
         if (!deletingRecord) return;
         try {
             await crmApi.deactivateMasterRecord('leadSource', deletingRecord.id);
-            queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: ['crm'] });
             toast.success(
                 t('crm.master.feedback.deactivatedInstead', {
                     name: isRtl ? deletingRecord.nameAr : deletingRecord.nameEn,

@@ -4444,7 +4444,22 @@
         "nationalOnly": "ملكية وطنية / خليجية فقط",
         "yes": "نعم",
         "no": "لا",
-        "required": "مطلوب"
+        "required": "مطلوب",
+        "totalRecords": "إجمالي السجلات",
+        "activeRecords": "السجلات النشطة",
+        "inactiveRecords": "السجلات غير النشطة",
+        "referencedRecords": "مرتبطة بسجلات CRM",
+        "searchBilingualPlaceholder": "ابحث بالرمز أو الاسم بالعربية أو الإنجليزية أو الوصف...",
+        "status": "الحالة",
+        "noRecordsTitle": "لا توجد سجلات",
+        "noMatchingRecords": "لا توجد سجلات مطابقة",
+        "noRecordsSubtext": "قم بإنشاء سجل أساسي جديد للبدء.",
+        "noMatchingSubtext": "جرّب تعديل معايير البحث أو التصفية، أو قم بإنشاء سجل أساسي جديد.",
+        "viewDetails": "عرض التفاصيل",
+        "showing": "عرض",
+        "to": "إلى",
+        "of": "من أصل",
+        "records": "سجل"
       },
       "columns": {
         "code": "الرمز",
@@ -4453,7 +4468,9 @@
         "nameAr": "الاسم بالعربية",
         "description": "الوصف",
         "linkedRecords": "الارتباطات",
+        "references": "الارتباطات",
         "creator": "أنشئ بواسطة",
+        "createdBy": "أنشئ بواسطة",
         "createdAt": "تاريخ الإنشاء",
         "updatedAt": "آخر تحديث",
         "status": "الحالة",
@@ -4464,6 +4481,7 @@
         "stageConfig": "نوع المرحلة",
         "taxType": "نوع الضريبة",
         "rate": "النسبة (%)",
+        "taxRate": "نسبة الضريبة (%)",
         "defaultStatus": "افتراضي",
         "foreignOwnership": "الملكية الأجنبية"
       },
@@ -4583,7 +4601,9 @@
           "createTitle": "إنشاء إعداد ضريبة",
           "createSubtitle": "إعداد نسبة ضريبة القيمة المضافة أو الضرائب (0–100%) لعروض الأسعار والفواتير.",
           "editTitle": "تعديل إعداد الضريبة",
-          "editSubtitle": "تحديث النسبة المئوية أو التصنيف أو الإعداد الافتراضي للسجل {{code}}."
+          "editSubtitle": "تحديث النسبة المئوية أو التصنيف أو الإعداد الافتراضي للسجل {{code}}.",
+          "defaultRateCard": "نسبة الضريبة الافتراضية",
+          "setDefaultAction": "تعيين كافتراضي"
         },
         "organizationalTypes": {
           "badge": "CRM-ORG",
@@ -4593,6 +4613,9 @@
           "editTitle": "تعديل النوع التنظيمي",
           "editSubtitle": "تحديث بيانات التصنيف التنظيمي {{code}}."
         },
+        "organizationalType": {
+          "newButton": "إضافة نوع تنظيمي"
+        },
         "ownershipTypes": {
           "badge": "CRM-OWT",
           "newButton": "إضافة نوع ملكية",
@@ -4600,7 +4623,15 @@
           "createSubtitle": "تعريف تصنيف ملكية رأس المال والشركاء لتأهيل الشركات.",
           "editTitle": "تعديل نوع الملكية",
           "editSubtitle": "تحديث بيانات تصنيف الملكية {{code}}."
+        },
+        "ownershipType": {
+          "newButton": "إضافة نوع ملكية",
+          "allowsForeignLabel": "يسمح بالملكية الأجنبية",
+          "foreignAllowedBadge": "يسمح بالملكية الأجنبية"
         }
+      },
+      "validation": {
+        "cannotDeactivateDefault": "لا يمكن تعطيل السجل الافتراضي. يرجى تعيين سجل آخر كافتراضي أولاً."
       }
     },
     "customer": {
@@ -4776,8 +4807,15 @@
         "allOnboarding": "جميع مراحل التأهيل",
         "onboardingDraft": "مسودة",
         "onboardingPre": "تأهيل مسبق",
-        "onboardingPending": "بانتظار الاعتماد",
-        "onboardingCompleted": "مكتمل التأهيل",
+        "onboardingPending": "قيد المراجعة / بانتظار الاعتماد",
+        "onboardingCompleted": "مكتمل التأهيل (نشط)",
+        "onboardingStatuses": {
+          "draft": "مسودة",
+          "pre_onboarding": "تأهيل مسبق",
+          "under_review": "قيد المراجعة",
+          "active": "عميل نشط",
+          "inactive": "غير نشط"
+        },
         "sortByCreated": "الأحدث أولاً",
         "sortByName": "الاسم (أ–ي)",
         "sortByCode": "رمز الشركة",
@@ -5054,8 +5092,15 @@
         "create": "إنشاء السجل",
         "saving": "جارٍ الحفظ...",
         "close": "إغلاق",
+        "clear": "مسح",
+        "loading": "جارٍ تحميل السجلات...",
+        "errorLoading": "تعذر تحميل السجلات.",
+        "retry": "إعادة المحاولة",
+        "view": "عرض التفاصيل",
         "showing": "عرض {{from}}–{{to}} من أصل {{total}} سجل",
+        "showingRecords": "عرض {{from}}–{{to}} من أصل {{total}} سجل",
         "prev": "السابق",
+        "previous": "السابق",
         "next": "التالي",
         "sarCurrency": "ر.س",
         "unassigned": "غير معين",
@@ -5115,6 +5160,8 @@
         "searchPlaceholder": "ابحث بالرمز أو عنوان الصفقة أو الشركة أو العميل المحتمل أو مسؤول المبيعات...",
         "allStages": "جميع مراحل الصفقات",
         "stages": {
+          "new": "جديدة",
+          "qualified": "مؤهلة",
           "qualification": "التأهيل",
           "needs_analysis": "تحليل الاحتياجات",
           "proposal": "تقديم العرض / التسعير",
@@ -5199,6 +5246,7 @@
           "draft": "مسودة",
           "sent": "مُرسل / بانتظار الاعتماد",
           "approved": "معتمد",
+          "accepted": "مقبول",
           "rejected": "مرفوض",
           "expired": "منتهي الصلاحية"
         },
@@ -5271,6 +5319,7 @@
         "allContractStatuses": "جميع حالات العقود",
         "statuses": {
           "draft": "مسودة",
+          "pending_signature": "بانتظار التوقيع",
           "under_review": "قيد المراجعة",
           "active": "ساري (نشط)",
           "expired": "منتهي",
@@ -5279,7 +5328,8 @@
         "renewalTypes": {
           "one_time": "عقد لمرة واحدة",
           "annual_auto": "تجديد سنوي تلقائي",
-          "manual_renewal": "تجديد يدوي بإشعار"
+          "manual_renewal": "تجديد يدوي بإشعار",
+          "manual": "تجديد يدوي بإشعار"
         },
         "kpis": {
           "totalContracts": "إجمالي العقود",
@@ -5493,6 +5543,515 @@
           "description": "قم بتحويل صفقة إلى مرحلة \"صفقة ناجحة\" أو امسح عوامل التصفية."
         }
       }
+    },
+    "salesPerformanceDashboard": {
+      "badge": "CRM-SPD",
+      "refresh": "تحديث البيانات",
+      "refreshing": "جارٍ التحديث...",
+      "refreshedToast": "تم تحديث مؤشرات أداء المبيعات بنجاح.",
+      "exportCsv": "تصدير ملخص الأداء CSV",
+      "exportedCsv": "تم تصدير {{count}} سجل من تقارير أداء المبيعات إلى ملف CSV.",
+      "lastUpdated": "آخر تحديث",
+      "filters": {
+        "title": "نطاق الأداء والفترة الزمنية",
+        "dateFrom": "من تاريخ",
+        "dateTo": "إلى تاريخ",
+        "allReps": "جميع مسؤولي المبيعات",
+        "allSectors": "جميع القطاعات",
+        "allCompanies": "جميع الشركات العميلة",
+        "reset": "إعادة تعيين",
+        "activeFilters": "عوامل التصفية النشطة"
+      },
+      "kpis": {
+        "wonRevenue": "إيرادات الصفقات الرابحة",
+        "wonRevenueSub": "{{wonCount}} رابحة من أصل {{totalDeals}} صفقة (نسبة الفوز {{winRate}}%)",
+        "weightedPipeline": "القيمة المرجحة لمسار الصفقات",
+        "weightedPipelineSub": "{{openCount}} صفقة مفتوحة • {{totalPipeline}} ر.س إجمالي",
+        "contractedCoverage": "إجمالي القيمة التعاقدية",
+        "contractedCoverageSub": "{{activeCount}} عقد نشط من أصل {{totalCount}} عقود",
+        "collectedRevenue": "الإيرادات المحصلة الفعليّة",
+        "collectedRevenueSub": "{{collectionRate}}% من أصل {{invoiced}} ر.س مفوترة",
+        "leadConversion": "معدل تحويل العملاء المحتملين",
+        "leadConversionSub": "{{converted}} محوّل • {{qualified}} مؤهل من أصل {{total}} عميل",
+        "quotationAcceptance": "معدل قبول عروض الأسعار",
+        "quotationAcceptanceSub": "{{accepted}} مقبول من أصل {{total}} عرض ({{value}} ر.س)",
+        "avgWonDealSize": "متوسط قيمة الصفقة الرابحة",
+        "avgWonDealSizeSub": "عبر {{wonCount}} صفقة رابحة ({{avgAll}} ر.س متوسط عام)",
+        "outstandingReceivables": "المستحقات المالية القائمة",
+        "outstandingReceivablesSub": "{{overdue}} ر.س متأخرة عبر {{invoiceCount}} فاتورة"
+      },
+      "charts": {
+        "monthlyTrendTitle": "التطور الشهري للنشاط التجاري والإيرادات (ر.س)",
+        "monthlyTrendSubtitle": "مقارنة الصفقات المضافة والرابحة والفوترة والتحصيل النقدي حسب الشهر",
+        "repComparisonTitle": "أداء مسؤولي المبيعات والإيرادات المحصلة (ر.س)",
+        "repComparisonSubtitle": "إجمالي المسار والصفقات الرابحة والمبالغ المحصلة لكل مسؤول مبيعات",
+        "stageDistributionTitle": "توزيع قيمة الصفقات والتوقعات المرجحة حسب المرحلة (ر.س)",
+        "stageDistributionSubtitle": "مقارنة القيمة المتوقعة بالقيمة المرجحة بالاحتمالية عبر مراحل الصفقات",
+        "sectorBreakdownTitle": "الأداء التجاري حسب القطاع",
+        "sectorBreakdownSubtitle": "قيمة المسار والصفقات الرابحة والفوترة عبر القطاعات الاقتصادية",
+        "series": {
+          "pipelineAdded": "المسار المضاف",
+          "wonDealValue": "الصفقات الرابحة",
+          "quotedValue": "عروض الأسعار",
+          "contractedValue": "القيمة التعاقدية",
+          "invoicedAmount": "المفوتر",
+          "collectedAmount": "المحصل الفعلي",
+          "expectedValue": "القيمة المتوقعة",
+          "weightedValue": "القيمة المرجحة"
+        }
+      },
+      "tables": {
+        "repScorecardTitle": "بطاقة الأداء التفصيلية لمسؤولي المبيعات",
+        "repScorecardSubtitle": "تتبع متكامل لمعدلات التحويل من العملاء المحتملين والصفقات إلى العروض والعقود والتحصيل",
+        "companyScorecardTitle": "الأداء التجاري والمالي للشركات العميلة",
+        "companyScorecardSubtitle": "القيم المرساة والتغطية التعاقدية ونسب تحصيل الفواتير لكل شركة عميلة",
+        "columns": {
+          "rep": "مسؤول المبيعات",
+          "leadsAndConversion": "العملاء المحتملون والتحويل",
+          "dealsAndWinRate": "الصفقات ونسبة الفوز",
+          "pipelineAndWeighted": "المسار / المرجح (ر.س)",
+          "wonValue": "الصفقات الرابحة (ر.س)",
+          "quotesAndContracts": "العروض والعقود (ر.س)",
+          "invoicedAndCollected": "المفوتر / المحصل (ر.س)",
+          "collectionRate": "نسبة التحصيل",
+          "company": "الشركة العميلة",
+          "sector": "القطاع",
+          "onboardingStatus": "حالة التأهيل",
+          "dealsSummary": "الصفقات (رابحة / إجمالي)",
+          "contractedValue": "القيمة التعاقدية (ر.س)",
+          "outstanding": "المتبقي المستحق (ر.س)"
+        }
+      },
+      "quickLinks": {
+        "viewDeals": "عرض الصفقات",
+        "viewWonDeals": "الصفقات الرابحة 360°",
+        "viewQuotations": "عروض الأسعار",
+        "viewInvoices": "الفواتير"
+      },
+      "states": {
+        "loadingTitle": "جارٍ احتساب مؤشرات أداء المبيعات...",
+        "loadingSubtitle": "تجميع بيانات الصفقات وعروض الأسعار والعقود والفواتير وبطاقات أداء الموظفين.",
+        "errorTitle": "تعذر تحميل لوحة أداء المبيعات",
+        "errorSubtitle": "حدث خطأ أثناء تجميع بيانات أداء المبيعات في النظام.",
+        "retry": "إعادة المحاولة",
+        "emptyTitle": "لا توجد سجلات أداء مبيعات مطابقة لمعايير التصفية المحددة",
+        "emptySubtitle": "جرّب توسيع النطاق الزمني أو إعادة تعيين تصفية الموظف أو القطاع أو الشركة.",
+        "noTrendData": "لا توجد أنشطة تجارية مؤرخة ضمن النطاق الزمني المحدد.",
+        "noStageData": "لا توجد صفقات متاحة لعرض توزيع المراحل وفق التصفية الحالية."
+      }
+    },
+    "dashboardSales": {
+      "badge": "CRM-DBS",
+      "refresh": "تحديث اللوحة",
+      "refreshing": "جارٍ التحديث...",
+      "refreshedToast": "تم تحديث بيانات لوحة المبيعات بنجاح.",
+      "lastUpdated": "آخر تحديث",
+      "filters": {
+        "title": "تصفية مسار المبيعات والأنشطة",
+        "dateFrom": "من تاريخ",
+        "dateTo": "إلى تاريخ",
+        "repLabel": "مسؤول المبيعات",
+        "allReps": "جميع مسؤولي المبيعات",
+        "reset": "إعادة تعيين",
+        "active": "تصفية نشطة"
+      },
+      "nav": {
+        "deals": "مسار الصفقات",
+        "leads": "العملاء المحتملون",
+        "wonDeals": "الصفقات الرابحة",
+        "operationalTasks": "المهام التشغيلية"
+      },
+      "kpis": {
+        "totalDeals": "إجمالي الصفقات",
+        "totalDealsSub": "{{pipeline}} ر.س إجمالي المسار • {{avg}} ر.س متوسط الصفقة",
+        "openDeals": "الصفقات المفتوحة",
+        "openDealsSub": "فرص بيعية نشطة من مرحلة التأهيل حتى التفاوض",
+        "wonDeals": "الصفقات الرابحة",
+        "wonDealsSub": "{{revenue}} ر.س إيرادات مرساة (نسبة الفوز {{winRate}}%)",
+        "lostDeals": "الصفقات الخاسرة",
+        "lostDealsSub": "تحويل {{convertedLeads}} من أصل {{totalLeads}} عميل محتمل",
+        "openPipelineValue": "قيمة المسار المفتوح",
+        "openPipelineValueSub": "{{weighted}} ر.س القيمة المرجحة بالاحتمالية"
+      },
+      "charts": {
+        "stageDistributionTitle": "توزيع الصفقات حسب المرحلة",
+        "stageDistributionSubtitle": "قيمة المسار (ر.س) والتوقعات المرجحة وعدد الصفقات عبر مراحل البيع",
+        "monthlyTrendTitle": "اتجاه المبيعات الشهري (ر.س)",
+        "monthlyTrendSubtitle": "التطور الشهري لقيمة الصفقات المضافة مقارنةً بإيرادات الصفقات الرابحة",
+        "series": {
+          "expectedValue": "قيمة المرحلة (ر.س)",
+          "weightedValue": "القيمة المرجحة (ر.س)",
+          "pipelineAdded": "المسار المضاف (ر.س)",
+          "wonDealValue": "إيرادات الصفقات الرابحة (ر.س)",
+          "dealsCount": "عدد الصفقات"
+        },
+        "stageMeta": "{{count}} صفقات • {{share}}% من المسار • متوسط الاحتمال {{prob}}%"
+      },
+      "activities": {
+        "tasksTitle": "مهام المبيعات القادمة والحديثة",
+        "tasksSubtitle": "المتابعات التشغيلية والإجراءات التجارية المرتبطة بسجلات العملاء والصفقات",
+        "viewAllTasks": "جميع المهام التشغيلية",
+        "noTasks": "لا توجد مهام مبيعات تشغيلية مطابقة للتصفية الحالية.",
+        "dealsTitle": "الصفقات النشطة والحديثة في المسار",
+        "dealsSubtitle": "الفرص المفتوحة مرتبة حسب تاريخ الإغلاق المتوقع وأحدث الصفقات التجارية",
+        "viewAllDeals": "فتح لوحة الصفقات",
+        "noDeals": "لا توجد صفقات مطابقة لمعايير التصفية الحالية.",
+        "due": "الاستحقاق",
+        "closeDate": "الإغلاق المتوقع",
+        "probability": "الاحتمال",
+        "openTasksCount": "{{open}} مفتوحة من أصل {{total}} مهام",
+        "priorities": {
+          "Low": "منخفضة",
+          "Medium": "متوسطة",
+          "High": "عالية",
+          "Urgent": "عاجلة"
+        },
+        "taskStatuses": {
+          "Pending": "قيد الانتظار",
+          "Assigned": "مسندة",
+          "In Progress": "قيد التنفيذ",
+          "Under Review": "قيد المراجعة",
+          "Completed": "مكتملة",
+          "Blocked": "متوقفة",
+          "Rejected": "مرفوضة"
+        }
+      },
+      "states": {
+        "loadingTitle": "جارٍ تحميل لوحة المبيعات...",
+        "loadingSubtitle": "جلب مؤشرات مسار الصفقات وتوزيع المراحل والاتجاه الشهري وأنشطة المبيعات.",
+        "errorTitle": "تعذر تحميل لوحة المبيعات",
+        "errorSubtitle": "حدث خطأ أثناء استرجاع بيانات مسار المبيعات والأنشطة من النظام.",
+        "retry": "إعادة المحاولة",
+        "emptyTitle": "لا توجد سجلات مبيعات مطابقة لعوامل التصفية الحالية",
+        "emptySubtitle": "عدّل النطاق الزمني أو مسؤول المبيعات لعرض الصفقات والأنشطة.",
+        "noStageData": "لا توجد صفقات متاحة لعرض توزيع المراحل.",
+        "noTrendData": "لا توجد بيانات اتجاه مبيعات شهري ضمن الفترة المحددة."
+      }
+    },
+    "companies": {
+      "onboardingStatuses": {
+        "draft": "مسودة",
+        "pre_onboarding": "تأهيل مسبق",
+        "under_review": "قيد المراجعة",
+        "active": "عميل نشط",
+        "inactive": "غير نشط",
+        "Pending": "قيد التأهيل",
+        "Documents Verified": "تم توثيق المستندات",
+        "Contract Signed": "تم توقيع العقد",
+        "Active Client": "عميل نشط",
+        "Suspended": "موقوف"
+      }
+    },
+    "workflow": {
+      "common": {
+        "priorities": {
+          "Low": "منخفضة",
+          "Medium": "متوسطة",
+          "High": "عالية",
+          "Urgent": "عاجلة"
+        }
+      },
+      "approvalTasks": {
+        "title": "مهام الاعتماد",
+        "subtitle": "قائمة الحوكمة المركزية لطلبات اعتماد عروض الأسعار والعقود والصفقات وتأهيل الشركات.",
+        "modules": {
+          "Quotation": "عرض سعر",
+          "Contract": "عقد",
+          "Deal": "صفقة",
+          "Company": "شركة",
+          "Invoice": "فاتورة"
+        },
+        "statuses": {
+          "Pending": "بانتظار الاعتماد",
+          "Approved": "معتمد",
+          "Rejected": "مرفوض"
+        },
+        "kpis": {
+          "totalTasks": "إجمالي مهام الاعتماد",
+          "pendingTasks": "بانتظار القرار",
+          "approvedTasks": "الطلبات المعتمدة",
+          "rejectedTasks": "الطلبات المرفوضة"
+        },
+        "filters": {
+          "allTasks": "جميع الحالات",
+          "searchPlaceholder": "ابحث بالرمز أو اسم المهمة أو الشركة أو الوحدة أو المسؤول...",
+          "allModules": "جميع الوحدات",
+          "allPriorities": "جميع الأولويات",
+          "allAssignees": "جميع المعتمدين"
+        },
+        "table": {
+          "serialNumber": "الرقم التسلسلي",
+          "module": "الوحدة والسجل",
+          "taskName": "مهمة الاعتماد",
+          "assignedUser": "المسؤول المعتمد",
+          "department": "الإدارة",
+          "designation": "المسمى الوظيفي",
+          "createdBy": "أنشئ بواسطة",
+          "createdDate": "تاريخ الإنشاء",
+          "currentStatus": "الحالة الحالية",
+          "actions": "الإجراءات"
+        },
+        "fields": {
+          "module": "وحدة CRM",
+          "priority": "الأولوية",
+          "targetEntity": "السجل المرتبط",
+          "targetCode": "رمز السجل",
+          "targetEntityName": "اسم السجل المرتبط",
+          "company": "الشركة العميلة",
+          "titleEn": "عنوان المهمة (بالإنجليزية)",
+          "titleAr": "عنوان المهمة (بالعربية)",
+          "assignedUser": "المسؤول المعتمد",
+          "department": "الإدارة",
+          "designation": "المسمى الوظيفي",
+          "stage": "مرحلة الاعتماد",
+          "requestedBy": "مقدم الطلب",
+          "createdBy": "أنشئ بواسطة",
+          "createdDate": "تاريخ الإنشاء",
+          "notes": "ملاحظات الطلب",
+          "decidedBy": "اتخذ القرار بواسطة",
+          "decidedAt": "تاريخ ووقت القرار",
+          "decisionNotes": "ملاحظات القرار",
+          "rejectionReason": "سبب الرفض"
+        },
+        "actions": {
+          "createRequest": "طلب اعتماد جديد",
+          "approve": "اعتماد",
+          "reject": "رفض",
+          "confirmApprove": "تأكيد الاعتماد",
+          "confirmReject": "تأكيد الرفض",
+          "openRelatedRecord": "فتح السجل المرتبط"
+        },
+        "viewDrawer": {
+          "subtitle": "تفاصيل حوكمة الاعتماد والسجل التجاري المرتبط وسجل القرار",
+          "pendingActionBannerTitle": "قرار اعتماد قيد الانتظار",
+          "pendingActionBannerSubtitle": "يرجى مراجعة التفاصيل التجارية أدناه وتسجيل قرار الاعتماد أو الرفض.",
+          "targetEntitySection": "سجل CRM المرتبط",
+          "assignmentSection": "بيانات المعتمد ومقدم الطلب",
+          "decisionSection": "نتيجة قرار الاعتماد"
+        },
+        "decisionModal": {
+          "approveTitle": "اعتماد طلب CRM",
+          "approveSubtitle": "تأكيد الاعتماد ومزامنة الحالة تلقائياً مع السجل المرتبط.",
+          "rejectTitle": "رفض طلب CRM",
+          "rejectSubtitle": "يرجى توضيح سبب رفض هذا الطلب.",
+          "decidedBy": "مسجل القرار",
+          "rejectionReason": "سبب الرفض",
+          "rejectionReasonPlaceholder": "اشرح سبب رفض هذا الطلب...",
+          "rejectionHint": "سبب الرفض إلزامي وسيتم توثيقه في سجل تدقيق CRM.",
+          "reasonRequired": "يرجى إدخال سبب الرفض قبل المتابعة.",
+          "decisionRemarks": "ملاحظات إضافية (اختياري)",
+          "decisionRemarksPlaceholder": "أضف أي ملاحظات أو شروط متعلقة بالاعتماد..."
+        },
+        "formDrawer": {
+          "createTitle": "إنشاء طلب اعتماد",
+          "subtitle": "إرسال عرض سعر أو عقد أو صفقة أو شركة أو فاتورة للاعتماد الإداري.",
+          "selectTargetRecord": "اختر السجل المرتبط...",
+          "submitButton": "إرسال طلب الاعتماد"
+        },
+        "empty": {
+          "title": "لا توجد مهام اعتماد مطابقة لمعايير التصفية",
+          "description": "جرّب مسح عوامل التصفية أو إنشاء طلب اعتماد جديد."
+        },
+        "feedback": {
+          "created": "تم إنشاء مهمة الاعتماد ({{code}}) بنجاح.",
+          "approved": "تم اعتماد المهمة ({{code}}) بنجاح.",
+          "rejected": "تم رفض المهمة ({{code}})."
+        }
+      },
+      "operationalTasks": {
+        "title": "المهام التشغيلية",
+        "subtitle": "متابعة وإسناد وتنفيذ المهام التشغيلية المرتبطة بسجلات العملاء والصفقات والعقود.",
+        "entityTypes": {
+          "Company": "شركة",
+          "Deal": "صفقة",
+          "Contract": "عقد",
+          "Quotation": "عرض سعر",
+          "Lead": "عميل محتمل",
+          "Invoice": "فاتورة"
+        },
+        "statuses": {
+          "Pending": "قيد الانتظار",
+          "Assigned": "مسندة",
+          "In Progress": "قيد التنفيذ",
+          "Under Review": "قيد المراجعة",
+          "Completed": "مكتملة",
+          "Blocked": "متوقفة",
+          "Rejected": "مرفوضة"
+        },
+        "badges": {
+          "overdue": "متأخرة"
+        },
+        "kpis": {
+          "totalTasks": "إجمالي المهام التشغيلية",
+          "unassignedAndPending": "غير مسندة / بالانتظار",
+          "activeExecution": "قيد التنفيذ النشط",
+          "completedTasks": "المهام المكتملة"
+        },
+        "filters": {
+          "allTasks": "جميع الحالات",
+          "searchPlaceholder": "ابحث برمز المهمة أو العنوان أو الشركة أو السجل المرتبط أو المختص...",
+          "allEntityTypes": "جميع السجلات المرتبطة",
+          "allPriorities": "جميع الأولويات",
+          "allSpecialists": "جميع المختصين",
+          "unassigned": "غير مسند",
+          "unassignedOnly": "غير المسندة فقط"
+        },
+        "table": {
+          "taskCode": "رمز المهمة",
+          "taskName": "عنوان المهمة والإدارة",
+          "relatedEntity": "سجل CRM المرتبط",
+          "priority": "الأولوية",
+          "dueDate": "تاريخ الاستحقاق",
+          "assignedSpecialist": "المختص المسند إليه",
+          "status": "حالة التنفيذ",
+          "actions": "الإجراءات"
+        },
+        "fields": {
+          "titleEn": "عنوان المهمة (بالإنجليزية)",
+          "titleAr": "عنوان المهمة (بالعربية)",
+          "relatedEntityType": "نوع السجل المرتبط",
+          "relatedEntity": "سجل CRM المرتبط",
+          "relatedCode": "رمز السجل المرتبط",
+          "company": "الشركة العميلة",
+          "priority": "أولوية المهمة",
+          "taskStatus": "حالة التنفيذ",
+          "dueDate": "تاريخ الاستحقاق المستهدف",
+          "assignedSpecialist": "المختص المسند إليه",
+          "department": "الإدارة",
+          "createdBy": "أنشئ بواسطة",
+          "createdDate": "تاريخ الإنشاء",
+          "completedAt": "تاريخ الإنجاز",
+          "notes": "ملاحظات وتعليمات التنفيذ"
+        },
+        "actions": {
+          "createTask": "مهمة تشغيلية جديدة",
+          "markCompleted": "تحديد كمكتملة",
+          "openRelatedRecord": "فتح السجل المرتبط"
+        },
+        "viewDrawer": {
+          "subtitle": "أدوات التحكم في تنفيذ المهمة التشغيلية وإسناد المختص والسجل المرتبط",
+          "quickExecutionTitle": "التحكم السريع في الإسناد والحالة",
+          "relatedEntitySection": "سجل CRM المرتبط",
+          "scheduleAndOwnershipSection": "بيانات الجدولة والمسؤولية"
+        },
+        "formDrawer": {
+          "createTitle": "إنشاء مهمة تشغيلية",
+          "editTitle": "تعديل المهمة التشغيلية",
+          "subtitle": "تحديد مخرجات المهمة والسجل المرتبط وتاريخ الاستحقاق والمختص المسؤول.",
+          "titleEnPlaceholder": "مثال: Verify ZATCA VAT Certificate & Commercial Registration",
+          "titleArPlaceholder": "مثال: التحقق من شهادة ضريبة القيمة المضافة والسجل التجاري",
+          "selectRelatedEntity": "اختر سجل CRM...",
+          "notesPlaceholder": "أدخل خطوات التنفيذ التفصيلية أو متطلبات العميل...",
+          "createButton": "إنشاء المهمة",
+          "saveButton": "حفظ التغييرات"
+        },
+        "deleteModal": {
+          "title": "حذف المهمة التشغيلية",
+          "subtitle": "تأكيد الحذف النهائي لهذه المهمة التشغيلية",
+          "warning": "هل أنت متأكد من رغبتك في حذف هذه المهمة التشغيلية؟ سيتم توثيق هذا الإجراء في سجل تدقيق CRM."
+        },
+        "empty": {
+          "title": "لا توجد مهام تشغيلية مطابقة لمعايير التصفية",
+          "description": "جرّب مسح عوامل التصفية أو إنشاء مهمة تشغيلية جديدة."
+        },
+        "feedback": {
+          "created": "تم إنشاء المهمة التشغيلية ({{code}}) بنجاح.",
+          "updated": "تم تحديث المهمة التشغيلية ({{code}}) بنجاح.",
+          "statusUpdated": "تم تحديث حالة المهمة ({{code}}) إلى {{status}}.",
+          "assigned": "تم تحديث إسناد المختص للمهمة ({{code}}).",
+          "deleted": "تم حذف المهمة التشغيلية ({{code}})."
+        }
+      },
+      "auditTrails": {
+        "title": "سجلات تدقيق CRM",
+        "subtitle": "السجل الزمني الموثق لجميع عمليات الإنشاء والتحديث والتحويل وقرارات الاعتماد في النظام.",
+        "actions": {
+          "Created": "إنشاء",
+          "Updated": "تحديث",
+          "Deleted": "حذف",
+          "Status Changed": "تغيير الحالة",
+          "Converted": "تحويل",
+          "Approved": "اعتماد",
+          "Rejected": "رفض",
+          "Assigned": "إسناد",
+          "Deactivated": "تعطيل",
+          "Payment Recorded": "تسجيل دفعة",
+          "CREATED": "إنشاء",
+          "UPDATED": "تحديث",
+          "DELETED": "حذف",
+          "STATUS_CHANGED": "تغيير الحالة",
+          "APPROVED": "اعتماد",
+          "REJECTED": "رفض",
+          "inspect": "فحص",
+          "refresh": "تحديث السجل"
+        },
+        "resourceTypes": {
+          "Lead": "عميل محتمل",
+          "Company": "شركة",
+          "Contact": "جهة اتصال",
+          "Owner": "مالك / شريك",
+          "Deal": "صفقة",
+          "Quotation": "عرض سعر",
+          "Contract": "عقد",
+          "Invoice": "فاتورة",
+          "Approval Task": "مهمة اعتماد",
+          "Operational Task": "مهمة تشغيلية",
+          "Lead Source": "مصدر عميل",
+          "Lead Status": "حالة عميل",
+          "Sector": "قطاع",
+          "Tax": "ضريبة",
+          "Organizational Type": "نوع تنظيمي",
+          "Ownership Type": "نوع ملكية"
+        },
+        "kpis": {
+          "totalEvents": "إجمالي الأحداث المسجلة",
+          "creationsAndConversions": "عمليات الإنشاء والتحويل",
+          "approvalsAndTransitions": "الاعتمادات وتغييرات الحالة",
+          "rejectionsAndDeletions": "الرفض والحذف والتعطيل"
+        },
+        "filters": {
+          "allEvents": "جميع أنواع العمليات",
+          "searchPlaceholder": "ابحث برمز الحدث أو رمز السجل أو المستخدم أو الملخص...",
+          "allResourceTypes": "جميع أنواع السجلات",
+          "allActors": "جميع المستخدمين",
+          "dateFrom": "من تاريخ",
+          "dateTo": "إلى تاريخ"
+        },
+        "table": {
+          "eventCode": "رمز الحدث",
+          "timestamp": "التاريخ والوقت",
+          "action": "العملية",
+          "resource": "السجل المستهدف",
+          "eventSummary": "ملخص الحدث",
+          "performedBy": "نُفذ بواسطة",
+          "actions": "الإجراءات"
+        },
+        "fields": {
+          "resourceType": "نوع السجل",
+          "resourceCode": "رمز السجل",
+          "resourceNameEn": "اسم السجل (بالإنجليزية)",
+          "resourceNameAr": "اسم السجل (بالعربية)",
+          "actor": "المنفذ",
+          "actorRole": "الدور الوظيفي",
+          "actorEmail": "البريد الإلكتروني"
+        },
+        "viewDrawer": {
+          "subtitle": "الفحص الكامل لحدث التدقيق وبيانات المنفذ ومقارنة الحالة قبل وبعد التعديل",
+          "summarySection": "ملخص الحدث",
+          "resourceSection": "سجل CRM المستهدف",
+          "openResourceModule": "فتح الوحدة",
+          "actorSection": "بيانات المنفذ والجلسة",
+          "statePayloadSection": "تفاصيل التغيير في الحالة",
+          "previousState": "الحالة السابقة",
+          "newState": "الحالة الجديدة",
+          "bilingualLogSection": "سجل التدقيق ثنائي اللغة"
+        },
+        "empty": {
+          "title": "لا توجد أحداث تدقيق مطابقة لمعايير التصفية",
+          "description": "جرّب توسيع النطاق الزمني أو إعادة تعيين تصفية العمليات والسجلات."
+        }
+      }
     }
   }
 }
+

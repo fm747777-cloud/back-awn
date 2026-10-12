@@ -15,6 +15,7 @@ import type {
     CrmApprovalTaskStatus,
     CrmOperationalTaskInput,
     CrmOperationalTaskStatus,
+    CrmSalesPerformanceDashboardFilter,
 } from '../../../schemas/crmSchema';
 
 export const CRM_WORKFLOW_QUERY_KEYS = {
@@ -42,6 +43,8 @@ export const CRM_WORKFLOW_QUERY_KEYS = {
     auditTrailMetrics: ['crm', 'auditTrails', 'metrics'] as const,
     auditTrailResourceTypes: ['crm', 'auditTrails', 'resourceTypes'] as const,
     auditTrailActors: ['crm', 'auditTrails', 'actors'] as const,
+    salesPerformanceDashboard: (params?: CrmSalesPerformanceDashboardFilter) =>
+        ['crm', 'dashboards', 'salesPerformance', params] as const,
 };
 
 export function useCrmApprovalTasks(params?: CrmApprovalTaskQueryParams) {
@@ -239,3 +242,13 @@ export function useCrmAuditTrailActors() {
         queryFn: () => crmApi.auditTrails.getActors(),
     });
 }
+
+export function useCrmSalesPerformanceDashboardQuery(
+    params?: CrmSalesPerformanceDashboardFilter
+) {
+    return useQuery({
+        queryKey: CRM_WORKFLOW_QUERY_KEYS.salesPerformanceDashboard(params),
+        queryFn: () => crmApi.getSalesPerformanceDashboard(params),
+    });
+}
+

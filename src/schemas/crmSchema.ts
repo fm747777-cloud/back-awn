@@ -1207,3 +1207,183 @@ export const crmAuditTrailEntrySchema = z.object({
 
 export type CrmAuditTrailEntry = z.infer<typeof crmAuditTrailEntrySchema>;
 export type CrmAuditTrailRecord = CrmAuditTrailEntry;
+
+// ============================================================================
+// 5. PHASE 2F-A: SALES PERFORMANCE DASHBOARD SCHEMAS
+// ============================================================================
+
+export const crmSalesPerformanceDashboardFilterSchema = z.object({
+    dateFrom: crmOptionalDateStringSchema,
+    dateTo: crmOptionalDateStringSchema,
+    assignedEmployeeId: z.string().trim().optional().default('all'),
+    sectorId: z.string().trim().optional().default('all'),
+    companyId: z.string().trim().optional().default('all'),
+});
+
+export type CrmSalesPerformanceDashboardFilter = z.input<
+    typeof crmSalesPerformanceDashboardFilterSchema
+>;
+
+export const crmSalesPerformanceKpisSchema = z.object({
+    totalDeals: z.number().int().min(0),
+    openDealsCount: z.number().int().min(0),
+    wonDealsCount: z.number().int().min(0),
+    lostDealsCount: z.number().int().min(0),
+    winRate: crmPercentageSchema,
+    totalPipelineValue: crmNonNegativeAmountSchema,
+    openPipelineValue: crmNonNegativeAmountSchema,
+    weightedPipelineValue: crmNonNegativeAmountSchema,
+    wonRevenue: crmNonNegativeAmountSchema,
+    averageDealSize: crmNonNegativeAmountSchema,
+    averageWonDealSize: crmNonNegativeAmountSchema,
+    totalLeads: z.number().int().min(0),
+    qualifiedLeadsCount: z.number().int().min(0),
+    convertedLeadsCount: z.number().int().min(0),
+    leadConversionRate: crmPercentageSchema,
+    totalQuotations: z.number().int().min(0),
+    acceptedQuotationsCount: z.number().int().min(0),
+    quotationAcceptanceRate: crmPercentageSchema,
+    totalQuotedValue: crmNonNegativeAmountSchema,
+    acceptedQuotedValue: crmNonNegativeAmountSchema,
+    totalContracts: z.number().int().min(0),
+    activeContractsCount: z.number().int().min(0),
+    totalContractedValue: crmNonNegativeAmountSchema,
+    activeContractedValue: crmNonNegativeAmountSchema,
+    totalInvoices: z.number().int().min(0),
+    totalInvoicedAmount: crmNonNegativeAmountSchema,
+    totalCollectedAmount: crmNonNegativeAmountSchema,
+    totalOutstandingAmount: crmNonNegativeAmountSchema,
+    overdueAmount: crmNonNegativeAmountSchema,
+    collectionRate: crmPercentageSchema,
+});
+
+export type CrmSalesPerformanceKpis = z.infer<typeof crmSalesPerformanceKpisSchema>;
+
+export const crmSalesRepPerformanceItemSchema = z.object({
+    employeeId: z.string().trim().min(1),
+    employeeCode: z.string().trim().min(1),
+    nameEn: z.string().trim().min(1),
+    nameAr: z.string().trim().min(1),
+    roleEn: z.string().trim().min(1),
+    roleAr: z.string().trim().min(1),
+    leadsCount: z.number().int().min(0),
+    convertedLeadsCount: z.number().int().min(0),
+    leadConversionRate: crmPercentageSchema,
+    dealsCount: z.number().int().min(0),
+    openDealsCount: z.number().int().min(0),
+    wonDealsCount: z.number().int().min(0),
+    lostDealsCount: z.number().int().min(0),
+    winRate: crmPercentageSchema,
+    pipelineValue: crmNonNegativeAmountSchema,
+    weightedPipelineValue: crmNonNegativeAmountSchema,
+    wonValue: crmNonNegativeAmountSchema,
+    quotationsCount: z.number().int().min(0),
+    acceptedQuotationsCount: z.number().int().min(0),
+    quotedValue: crmNonNegativeAmountSchema,
+    contractsCount: z.number().int().min(0),
+    contractedValue: crmNonNegativeAmountSchema,
+    invoicedAmount: crmNonNegativeAmountSchema,
+    collectedAmount: crmNonNegativeAmountSchema,
+    outstandingAmount: crmNonNegativeAmountSchema,
+    collectionRate: crmPercentageSchema,
+});
+
+export type CrmSalesRepPerformanceItem = z.infer<
+    typeof crmSalesRepPerformanceItemSchema
+>;
+
+export const crmSalesStageBreakdownItemSchema = z.object({
+    stage: crmDealStageSchema,
+    dealsCount: z.number().int().min(0),
+    totalValue: crmNonNegativeAmountSchema,
+    weightedValue: crmNonNegativeAmountSchema,
+    averageProbability: crmPercentageSchema,
+    shareOfPipeline: crmPercentageSchema,
+});
+
+export type CrmSalesStageBreakdownItem = z.infer<
+    typeof crmSalesStageBreakdownItemSchema
+>;
+
+export const crmSalesTrendPointSchema = z.object({
+    period: z.string().trim().min(1),
+    dealsCreatedCount: z.number().int().min(0),
+    wonDealsCount: z.number().int().min(0),
+    pipelineAddedValue: crmNonNegativeAmountSchema,
+    wonDealValue: crmNonNegativeAmountSchema,
+    quotedValue: crmNonNegativeAmountSchema,
+    contractedValue: crmNonNegativeAmountSchema,
+    invoicedAmount: crmNonNegativeAmountSchema,
+    collectedAmount: crmNonNegativeAmountSchema,
+});
+
+export type CrmSalesTrendPoint = z.infer<typeof crmSalesTrendPointSchema>;
+
+export const crmCompanySalesPerformanceItemSchema = z.object({
+    companyId: z.string().trim().min(1),
+    companyCode: z.string().trim().min(1),
+    companyNameEn: z.string().trim().min(1),
+    companyNameAr: z.string().trim().min(1),
+    sectorId: z.string().trim().optional(),
+    sectorNameEn: z.string().trim().optional(),
+    sectorNameAr: z.string().trim().optional(),
+    onboardingStatus: crmCompanyOnboardingStatusSchema,
+    assignedEmployeeId: z.string().trim().optional(),
+    assignedEmployeeNameEn: z.string().trim().optional(),
+    assignedEmployeeNameAr: z.string().trim().optional(),
+    dealsCount: z.number().int().min(0),
+    wonDealsCount: z.number().int().min(0),
+    pipelineValue: crmNonNegativeAmountSchema,
+    wonValue: crmNonNegativeAmountSchema,
+    quotedValue: crmNonNegativeAmountSchema,
+    contractedValue: crmNonNegativeAmountSchema,
+    invoicedAmount: crmNonNegativeAmountSchema,
+    collectedAmount: crmNonNegativeAmountSchema,
+    outstandingAmount: crmNonNegativeAmountSchema,
+    collectionRate: crmPercentageSchema,
+});
+
+export type CrmCompanySalesPerformanceItem = z.infer<
+    typeof crmCompanySalesPerformanceItemSchema
+>;
+
+export const crmSectorSalesPerformanceItemSchema = z.object({
+    sectorId: z.string().trim().min(1),
+    sectorCode: z.string().trim().min(1),
+    sectorNameEn: z.string().trim().min(1),
+    sectorNameAr: z.string().trim().min(1),
+    companiesCount: z.number().int().min(0),
+    leadsCount: z.number().int().min(0),
+    dealsCount: z.number().int().min(0),
+    wonDealsCount: z.number().int().min(0),
+    pipelineValue: crmNonNegativeAmountSchema,
+    wonValue: crmNonNegativeAmountSchema,
+    invoicedAmount: crmNonNegativeAmountSchema,
+    collectedAmount: crmNonNegativeAmountSchema,
+});
+
+export type CrmSectorSalesPerformanceItem = z.infer<
+    typeof crmSectorSalesPerformanceItemSchema
+>;
+
+export const crmSalesPerformanceDashboardSchema = z.object({
+    filters: z.object({
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        assignedEmployeeId: z.string(),
+        sectorId: z.string(),
+        companyId: z.string(),
+    }),
+    generatedAt: z.string().trim().min(1),
+    kpis: crmSalesPerformanceKpisSchema,
+    repPerformance: z.array(crmSalesRepPerformanceItemSchema),
+    stageBreakdown: z.array(crmSalesStageBreakdownItemSchema),
+    monthlyTrends: z.array(crmSalesTrendPointSchema),
+    companyPerformance: z.array(crmCompanySalesPerformanceItemSchema),
+    sectorPerformance: z.array(crmSectorSalesPerformanceItemSchema),
+});
+
+export type CrmSalesPerformanceDashboardData = z.infer<
+    typeof crmSalesPerformanceDashboardSchema
+>;
+

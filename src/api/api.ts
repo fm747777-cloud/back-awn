@@ -33,6 +33,9 @@ import {
     crmApprovalTaskDecisionInputSchema,
     crmOperationalTaskInputSchema,
     crmOperationalTaskSchema,
+    crmSalesPerformanceDashboardFilterSchema,
+    crmSalesPerformanceDashboardSchema,
+    CRM_DEAL_STAGE_VALUES,
     calculateCrmQuotationTotals,
     calculateCrmInvoiceAmounts,
     roundCrmCurrency,
@@ -91,6 +94,14 @@ import {
     type CrmOperationalTaskRecord,
     type CrmAuditTrailEntry,
     type CrmAuditAction,
+    type CrmSalesPerformanceDashboardFilter,
+    type CrmSalesPerformanceDashboardData,
+    type CrmSalesPerformanceKpis,
+    type CrmSalesRepPerformanceItem,
+    type CrmSalesStageBreakdownItem,
+    type CrmSalesTrendPoint,
+    type CrmCompanySalesPerformanceItem,
+    type CrmSectorSalesPerformanceItem,
 } from "../schemas/crmSchema";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -7060,6 +7071,57 @@ export const crmApi = {
             setLocal(CRM_STORAGE_KEYS.OWNERS, nextOwnersList);
             setLocal(CRM_STORAGE_KEYS.COMPANIES, [newCompany, ...companies]);
 
+            if (newCompany.onboardingStatus === 'under_review') {
+                const approvalTasks = readOrInitializeCrmCollection(
+                    CRM_STORAGE_KEYS.APPROVAL_TASKS,
+                    initialCrmApprovalTasks
+                );
+                const todayIso = new Date().toISOString().split('T')[0];
+                const newTask: CrmApprovalTaskRecord = {
+                    id: generateDeterministicCrmId(approvalTasks, 'crm-apt'),
+                    code: generateNextCrmCode(approvalTasks, 'APT'),
+                    serialNumber:
+                        approvalTasks.reduce(
+                            (max, item) => Math.max(max, item.serialNumber || 0),
+                            0
+                        ) + 1,
+                    titleEn: `Approve Pre-Onboarding: ${newCompany.nameEn}`,
+                    titleAr: `اعتماد تأهيل الشركة: ${newCompany.nameAr}`,
+                    targetEntityType: 'Company',
+                    targetEntityId: newCompany.id,
+                    targetEntityCode: newCompany.code,
+                    targetEntityNameEn: newCompany.nameEn,
+                    targetEntityNameAr: newCompany.nameAr,
+                    module: 'Company',
+                    companyId: newCompany.id,
+                    companyNameEn: newCompany.nameEn,
+                    companyNameAr: newCompany.nameAr,
+                    stageNameEn: 'Corporate Pre-Onboarding Compliance Review',
+                    stageNameAr: 'مراجعة الالتزام والتأهيل المسبق للشركة',
+                    priority: 'High',
+                    assignedApproverId: 'emp-1',
+                    assignedApproverNameEn: 'Karim Wagdi',
+                    assignedApproverNameAr: 'كريم وجدي',
+                    departmentEn: 'Commercial & Compliance',
+                    departmentAr: 'الإدارة التجارية والالتزام',
+                    designationEn: 'Head of Commercial',
+                    designationAr: 'مدير الإدارة التجارية',
+                    requestedByNameEn:
+                        newCompany.assignedEmployeeNameEn || 'Karim Wagdi',
+                    requestedByNameAr:
+                        newCompany.assignedEmployeeNameAr || 'كريم وجدي',
+                    requestedByEmail: 'sales@awn.sa',
+                    dueDate: todayIso,
+                    approvalStatus: 'Pending',
+                    createdAt: todayIso,
+                    createdBy: 'Karim Wagdi',
+                };
+                setLocal(CRM_STORAGE_KEYS.APPROVAL_TASKS, [
+                    newTask,
+                    ...approvalTasks,
+                ]);
+            }
+
             recordCrmAuditEvent({
                 action: 'CREATED',
                 resourceType: 'Company',
@@ -7349,6 +7411,89 @@ export const crmApi = {
                         : inv
                 )
             );
+        }
+
+        if (previous.onboardingStatus !== updatedRecord.onboardingStatus) {
+            const approvalTasks = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.APPROVAL_TASKS,
+                initialCrmApprovalTasks
+            );
+            const existingIdx = approvalTasks.findIndex(
+                (t) =>
+                    t.targetEntityType === 'Company' &&
+                    t.targetEntityId === updatedRecord.id
+            );
+            const todayIso = new Date().toISOString().split('T')[0];
+
+            if (updatedRecord.onboardingStatus === 'under_review') {
+                if (existingIdx === -1) {
+                    const newTask: CrmApprovalTaskRecord = {
+                        id: generateDeterministicCrmId(approvalTasks, 'crm-apt'),
+                        code: generateNextCrmCode(approvalTasks, 'APT'),
+                        serialNumber:
+                            approvalTasks.reduce(
+                                (max, item) =>
+                                    Math.max(max, item.serialNumber || 0),
+                                0
+                            ) + 1,
+                        titleEn: `Approve Pre-Onboarding: ${updatedRecord.nameEn}`,
+                        titleAr: `اعتماد تأهيل الشركة: ${updatedRecord.nameAr}`,
+                        targetEntityType: 'Company',
+                        targetEntityId: updatedRecord.id,
+                        targetEntityCode: updatedRecord.code,
+                        targetEntityNameEn: updatedRecord.nameEn,
+                        targetEntityNameAr: updatedRecord.nameAr,
+                        module: 'Company',
+                        companyId: updatedRecord.id,
+                        companyNameEn: updatedRecord.nameEn,
+                        companyNameAr: updatedRecord.nameAr,
+                        stageNameEn: 'Corporate Pre-Onboarding Compliance Review',
+                        stageNameAr: 'مراجعة الالتزام والتأهيل المسبق للشركة',
+                        priority: 'High',
+                        assignedApproverId: 'emp-1',
+                        assignedApproverNameEn: 'Karim Wagdi',
+                        assignedApproverNameAr: 'كريم وجدي',
+                        departmentEn: 'Commercial & Compliance',
+                        departmentAr: 'الإدارة التجارية والالتزام',
+                        designationEn: 'Head of Commercial',
+                        designationAr: 'مدير الإدارة التجارية',
+                        requestedByNameEn:
+                            updatedRecord.assignedEmployeeNameEn ||
+                            'Karim Wagdi',
+                        requestedByNameAr:
+                            updatedRecord.assignedEmployeeNameAr || 'كريم وجدي',
+                        requestedByEmail: 'sales@awn.sa',
+                        dueDate: todayIso,
+                        approvalStatus: 'Pending',
+                        createdAt: todayIso,
+                        createdBy: 'Karim Wagdi',
+                    };
+                    setLocal(CRM_STORAGE_KEYS.APPROVAL_TASKS, [
+                        newTask,
+                        ...approvalTasks,
+                    ]);
+                } else {
+                    const nextTasks = [...approvalTasks];
+                    nextTasks[existingIdx] = {
+                        ...nextTasks[existingIdx],
+                        approvalStatus: 'Pending',
+                    };
+                    setLocal(CRM_STORAGE_KEYS.APPROVAL_TASKS, nextTasks);
+                }
+            } else if (
+                updatedRecord.onboardingStatus === 'active' &&
+                existingIdx !== -1
+            ) {
+                const nextTasks = [...approvalTasks];
+                nextTasks[existingIdx] = {
+                    ...nextTasks[existingIdx],
+                    approvalStatus: 'Approved',
+                    decidedAt: new Date().toISOString(),
+                    decidedBy: 'Karim Wagdi',
+                    decidedByAr: 'كريم وجدي',
+                };
+                setLocal(CRM_STORAGE_KEYS.APPROVAL_TASKS, nextTasks);
+            }
         }
 
         const isStatusChange =
@@ -12089,13 +12234,19 @@ export const crmApi = {
             const compIdx = companies.findIndex(
                 (c) => c.id === updatedRecord.targetEntityId
             );
-            if (compIdx !== -1 && approvalStatus === 'Approved') {
+            if (compIdx !== -1) {
+                const nextOnboardingStatus: CrmCompanyOnboardingStatus =
+                    approvalStatus === 'Approved' ? 'active' : 'pre_onboarding';
                 const nextCompanies = [...companies];
-                nextCompanies[compIdx] = {
-                    ...nextCompanies[compIdx],
-                    onboardingStatus: 'active',
-                    updatedAt: decidedAt.split('T')[0],
-                };
+                nextCompanies[compIdx] = validateWithSchema(
+                    crmCompanySchema,
+                    {
+                        ...nextCompanies[compIdx],
+                        onboardingStatus: nextOnboardingStatus,
+                        updatedAt: decidedAt.split('T')[0],
+                    },
+                    'Company'
+                );
                 setLocal(CRM_STORAGE_KEYS.COMPANIES, nextCompanies);
             }
         }
@@ -12780,6 +12931,849 @@ export const crmApi = {
         getResourceTypes: () => crmApi.getAuditTrailResourceTypes(),
         getActors: () => crmApi.getAuditTrailActors(),
         record: recordCrmAuditEvent,
+    },
+
+    // ========================================================================
+    // 6. PHASE 2F-A: SALES PERFORMANCE DASHBOARD
+    // ========================================================================
+    getSalesPerformanceDashboard: async (
+        params?: CrmSalesPerformanceDashboardFilter
+    ): Promise<CrmSalesPerformanceDashboardData> => {
+        const parsedFilters =
+            crmSalesPerformanceDashboardFilterSchema.safeParse(params || {});
+        const normalizedFilters = parsedFilters.success
+            ? {
+                  dateFrom: parsedFilters.data.dateFrom || undefined,
+                  dateTo: parsedFilters.data.dateTo || undefined,
+                  assignedEmployeeId:
+                      parsedFilters.data.assignedEmployeeId || 'all',
+                  sectorId: parsedFilters.data.sectorId || 'all',
+                  companyId: parsedFilters.data.companyId || 'all',
+              }
+            : {
+                  dateFrom: undefined,
+                  dateTo: undefined,
+                  assignedEmployeeId: 'all',
+                  sectorId: 'all',
+                  companyId: 'all',
+              };
+
+        if (isCrmRemoteBackendActive()) {
+            const response = await axiosClient.get(
+                '/crm/dashboards/sales-performance',
+                { params: normalizedFilters }
+            );
+            return response.data;
+        }
+
+        const allLeads = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.LEADS,
+            initialCrmLeads
+        ).filter((item) => item.status !== 'inactive');
+
+        const allCompanies = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.COMPANIES,
+            initialCrmCompanies
+        ).filter((item) => item.status !== 'inactive');
+
+        const allSectors = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.SECTORS,
+            initialCrmSectors
+        ).filter((item) => item.status !== 'inactive');
+
+        const allDeals = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.DEALS,
+            initialCrmDeals
+        ).filter((item) => item.status !== 'inactive');
+
+        const allQuotations = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.QUOTATIONS,
+            initialCrmQuotations
+        ).filter((item) => item.status !== 'inactive');
+
+        const allContracts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTRACTS,
+            initialCrmContracts
+        ).filter((item) => item.status !== 'inactive');
+
+        const allInvoices = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.INVOICES,
+            initialCrmInvoices
+        ).filter((item) => item.status !== 'inactive');
+
+        const companyMap = new Map<string, CrmCompanyRecord>();
+        allCompanies.forEach((comp) => companyMap.set(comp.id, comp));
+
+        const dealMap = new Map<string, CrmDealRecord>();
+        allDeals.forEach((deal) => dealMap.set(deal.id, deal));
+
+        const sectorMap = new Map<string, CrmSectorRecord>();
+        allSectors.forEach((sec) => sectorMap.set(sec.id, sec));
+
+        const resolveSectorId = (
+            directSectorId?: string,
+            companyId?: string,
+            dealId?: string
+        ): string | undefined => {
+            if (directSectorId) return directSectorId;
+            if (dealId && dealMap.get(dealId)?.sectorId) {
+                return dealMap.get(dealId)?.sectorId;
+            }
+            if (companyId && companyMap.get(companyId)?.sectorId) {
+                return companyMap.get(companyId)?.sectorId;
+            }
+            return undefined;
+        };
+
+        const isWithinDateBounds = (rawDate?: string): boolean => {
+            if (!normalizedFilters.dateFrom && !normalizedFilters.dateTo) {
+                return true;
+            }
+            if (!rawDate) return false;
+            const dateOnly = rawDate.trim().slice(0, 10);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return false;
+            if (
+                normalizedFilters.dateFrom &&
+                dateOnly < normalizedFilters.dateFrom
+            ) {
+                return false;
+            }
+            if (
+                normalizedFilters.dateTo &&
+                dateOnly > normalizedFilters.dateTo
+            ) {
+                return false;
+            }
+            return true;
+        };
+
+        const matchesEmployee = (empId?: string): boolean =>
+            normalizedFilters.assignedEmployeeId === 'all' ||
+            empId === normalizedFilters.assignedEmployeeId;
+
+        const matchesCompany = (compId?: string): boolean =>
+            normalizedFilters.companyId === 'all' ||
+            compId === normalizedFilters.companyId;
+
+        const matchesSector = (secId?: string): boolean =>
+            normalizedFilters.sectorId === 'all' ||
+            secId === normalizedFilters.sectorId;
+
+        const filteredLeads = allLeads.filter(
+            (lead) =>
+                matchesEmployee(lead.assignedEmployeeId) &&
+                matchesCompany(lead.companyId) &&
+                matchesSector(resolveSectorId(lead.sectorId, lead.companyId)) &&
+                isWithinDateBounds(lead.createdAt)
+        );
+
+        const filteredDeals = allDeals.filter(
+            (deal) =>
+                matchesEmployee(deal.assignedEmployeeId) &&
+                matchesCompany(deal.companyId) &&
+                matchesSector(resolveSectorId(deal.sectorId, deal.companyId)) &&
+                isWithinDateBounds(deal.wonAt || deal.createdAt)
+        );
+
+        const filteredQuotations = allQuotations.filter(
+            (qt) =>
+                matchesEmployee(qt.assignedEmployeeId) &&
+                matchesCompany(qt.companyId) &&
+                matchesSector(
+                    resolveSectorId(undefined, qt.companyId, qt.dealId)
+                ) &&
+                isWithinDateBounds(qt.issueDate || qt.createdAt)
+        );
+
+        const filteredContracts = allContracts.filter(
+            (con) =>
+                matchesEmployee(con.assignedEmployeeId) &&
+                matchesCompany(con.companyId) &&
+                matchesSector(
+                    resolveSectorId(undefined, con.companyId, con.dealId)
+                ) &&
+                isWithinDateBounds(
+                    con.signedDate || con.startDate || con.createdAt
+                )
+        );
+
+        const filteredInvoices = allInvoices.filter(
+            (inv) =>
+                inv.invoiceStatus !== 'cancelled' &&
+                matchesEmployee(inv.assignedEmployeeId) &&
+                matchesCompany(inv.companyId) &&
+                matchesSector(
+                    resolveSectorId(undefined, inv.companyId, inv.dealId)
+                ) &&
+                isWithinDateBounds(inv.issueDate || inv.createdAt)
+        );
+
+        const dealLinkedLeadIds = new Set(
+            allDeals.map((d) => d.leadId).filter(Boolean) as string[]
+        );
+
+        // 1. Compute KPIs
+        const totalDeals = filteredDeals.length;
+        const wonDeals = filteredDeals.filter((d) => d.stage === 'won');
+        const lostDeals = filteredDeals.filter((d) => d.stage === 'lost');
+        const openDeals = filteredDeals.filter(
+            (d) => d.stage !== 'won' && d.stage !== 'lost'
+        );
+
+        const wonDealsCount = wonDeals.length;
+        const lostDealsCount = lostDeals.length;
+        const openDealsCount = openDeals.length;
+        const winRate =
+            totalDeals > 0
+                ? roundCrmCurrency((wonDealsCount / totalDeals) * 100)
+                : 0;
+
+        const totalPipelineValue = roundCrmCurrency(
+            filteredDeals.reduce((sum, d) => sum + (d.expectedValue || 0), 0)
+        );
+        const openPipelineValue = roundCrmCurrency(
+            openDeals.reduce((sum, d) => sum + (d.expectedValue || 0), 0)
+        );
+        const wonRevenue = roundCrmCurrency(
+            wonDeals.reduce((sum, d) => sum + (d.expectedValue || 0), 0)
+        );
+        const weightedPipelineValue = roundCrmCurrency(
+            filteredDeals.reduce((sum, d) => {
+                if (d.stage === 'lost') return sum;
+                if (d.stage === 'won') return sum + (d.expectedValue || 0);
+                return (
+                    sum +
+                    (d.expectedValue || 0) * ((d.probability ?? 0) / 100)
+                );
+            }, 0)
+        );
+
+        const averageDealSize =
+            totalDeals > 0
+                ? roundCrmCurrency(totalPipelineValue / totalDeals)
+                : 0;
+        const averageWonDealSize =
+            wonDealsCount > 0
+                ? roundCrmCurrency(wonRevenue / wonDealsCount)
+                : 0;
+
+        const totalLeads = filteredLeads.length;
+        const convertedLeadsCount = filteredLeads.filter(
+            (l) =>
+                l.leadStatusId === 'crm-lst-4' || dealLinkedLeadIds.has(l.id)
+        ).length;
+        const qualifiedLeadsCount = filteredLeads.filter(
+            (l) =>
+                l.leadStatusId === 'crm-lst-3' ||
+                l.leadStatusId === 'crm-lst-4' ||
+                dealLinkedLeadIds.has(l.id)
+        ).length;
+        const leadConversionRate =
+            totalLeads > 0
+                ? roundCrmCurrency((convertedLeadsCount / totalLeads) * 100)
+                : 0;
+
+        const totalQuotations = filteredQuotations.length;
+        const acceptedQuotations = filteredQuotations.filter(
+            (q) => q.quotationStatus === 'accepted'
+        );
+        const acceptedQuotationsCount = acceptedQuotations.length;
+        const quotationAcceptanceRate =
+            totalQuotations > 0
+                ? roundCrmCurrency(
+                      (acceptedQuotationsCount / totalQuotations) * 100
+                  )
+                : 0;
+        const totalQuotedValue = roundCrmCurrency(
+            filteredQuotations.reduce((sum, q) => sum + (q.grandTotal || 0), 0)
+        );
+        const acceptedQuotedValue = roundCrmCurrency(
+            acceptedQuotations.reduce((sum, q) => sum + (q.grandTotal || 0), 0)
+        );
+
+        const totalContracts = filteredContracts.length;
+        const activeContracts = filteredContracts.filter(
+            (c) => c.contractStatus === 'active'
+        );
+        const activeContractsCount = activeContracts.length;
+        const totalContractedValue = roundCrmCurrency(
+            filteredContracts.reduce((sum, c) => sum + (c.totalValue || 0), 0)
+        );
+        const activeContractedValue = roundCrmCurrency(
+            activeContracts.reduce((sum, c) => sum + (c.totalValue || 0), 0)
+        );
+
+        const totalInvoices = filteredInvoices.length;
+        const totalInvoicedAmount = roundCrmCurrency(
+            filteredInvoices.reduce((sum, i) => sum + (i.totalAmount || 0), 0)
+        );
+        const totalCollectedAmount = roundCrmCurrency(
+            filteredInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0)
+        );
+        const totalOutstandingAmount = roundCrmCurrency(
+            filteredInvoices.reduce(
+                (sum, i) => sum + (i.remainingAmount || 0),
+                0
+            )
+        );
+        const overdueAmount = roundCrmCurrency(
+            filteredInvoices
+                .filter((i) => i.invoiceStatus === 'overdue')
+                .reduce((sum, i) => sum + (i.remainingAmount || 0), 0)
+        );
+        const collectionRate =
+            totalInvoicedAmount > 0
+                ? Math.min(
+                      100,
+                      roundCrmCurrency(
+                          (totalCollectedAmount / totalInvoicedAmount) * 100
+                      )
+                  )
+                : 0;
+
+        const kpis: CrmSalesPerformanceKpis = {
+            totalDeals,
+            openDealsCount,
+            wonDealsCount,
+            lostDealsCount,
+            winRate,
+            totalPipelineValue,
+            openPipelineValue,
+            weightedPipelineValue,
+            wonRevenue,
+            averageDealSize,
+            averageWonDealSize,
+            totalLeads,
+            qualifiedLeadsCount,
+            convertedLeadsCount,
+            leadConversionRate,
+            totalQuotations,
+            acceptedQuotationsCount,
+            quotationAcceptanceRate,
+            totalQuotedValue,
+            acceptedQuotedValue,
+            totalContracts,
+            activeContractsCount,
+            totalContractedValue,
+            activeContractedValue,
+            totalInvoices,
+            totalInvoicedAmount,
+            totalCollectedAmount,
+            totalOutstandingAmount,
+            overdueAmount,
+            collectionRate,
+        };
+
+        // 2. Sales Representative Performance Breakdown
+        const candidateEmployees =
+            normalizedFilters.assignedEmployeeId === 'all'
+                ? CRM_SALES_EMPLOYEES
+                : CRM_SALES_EMPLOYEES.filter(
+                      (emp) => emp.id === normalizedFilters.assignedEmployeeId
+                  );
+
+        const repPerformance: CrmSalesRepPerformanceItem[] =
+            candidateEmployees.map((emp) => {
+                const empLeads = filteredLeads.filter(
+                    (l) => l.assignedEmployeeId === emp.id
+                );
+                const empConvertedLeads = empLeads.filter(
+                    (l) =>
+                        l.leadStatusId === 'crm-lst-4' ||
+                        dealLinkedLeadIds.has(l.id)
+                );
+                const empDeals = filteredDeals.filter(
+                    (d) => d.assignedEmployeeId === emp.id
+                );
+                const empWonDeals = empDeals.filter((d) => d.stage === 'won');
+                const empLostDeals = empDeals.filter((d) => d.stage === 'lost');
+                const empOpenDeals = empDeals.filter(
+                    (d) => d.stage !== 'won' && d.stage !== 'lost'
+                );
+
+                const empPipelineValue = roundCrmCurrency(
+                    empDeals.reduce((sum, d) => sum + (d.expectedValue || 0), 0)
+                );
+                const empWeightedValue = roundCrmCurrency(
+                    empDeals.reduce((sum, d) => {
+                        if (d.stage === 'lost') return sum;
+                        if (d.stage === 'won')
+                            return sum + (d.expectedValue || 0);
+                        return (
+                            sum +
+                            (d.expectedValue || 0) * ((d.probability ?? 0) / 100)
+                        );
+                    }, 0)
+                );
+                const empWonValue = roundCrmCurrency(
+                    empWonDeals.reduce(
+                        (sum, d) => sum + (d.expectedValue || 0),
+                        0
+                    )
+                );
+
+                const empQuotations = filteredQuotations.filter(
+                    (q) => q.assignedEmployeeId === emp.id
+                );
+                const empAcceptedQuotations = empQuotations.filter(
+                    (q) => q.quotationStatus === 'accepted'
+                );
+                const empQuotedValue = roundCrmCurrency(
+                    empQuotations.reduce(
+                        (sum, q) => sum + (q.grandTotal || 0),
+                        0
+                    )
+                );
+
+                const empContracts = filteredContracts.filter(
+                    (c) => c.assignedEmployeeId === emp.id
+                );
+                const empContractedValue = roundCrmCurrency(
+                    empContracts.reduce(
+                        (sum, c) => sum + (c.totalValue || 0),
+                        0
+                    )
+                );
+
+                const empInvoices = filteredInvoices.filter(
+                    (inv) => inv.assignedEmployeeId === emp.id
+                );
+                const empInvoicedAmount = roundCrmCurrency(
+                    empInvoices.reduce(
+                        (sum, inv) => sum + (inv.totalAmount || 0),
+                        0
+                    )
+                );
+                const empCollectedAmount = roundCrmCurrency(
+                    empInvoices.reduce(
+                        (sum, inv) => sum + (inv.paidAmount || 0),
+                        0
+                    )
+                );
+                const empOutstandingAmount = roundCrmCurrency(
+                    empInvoices.reduce(
+                        (sum, inv) => sum + (inv.remainingAmount || 0),
+                        0
+                    )
+                );
+
+                return {
+                    employeeId: emp.id,
+                    employeeCode: emp.code,
+                    nameEn: emp.nameEn,
+                    nameAr: emp.nameAr,
+                    roleEn: emp.roleEn,
+                    roleAr: emp.roleAr,
+                    leadsCount: empLeads.length,
+                    convertedLeadsCount: empConvertedLeads.length,
+                    leadConversionRate:
+                        empLeads.length > 0
+                            ? roundCrmCurrency(
+                                  (empConvertedLeads.length / empLeads.length) *
+                                      100
+                              )
+                            : 0,
+                    dealsCount: empDeals.length,
+                    openDealsCount: empOpenDeals.length,
+                    wonDealsCount: empWonDeals.length,
+                    lostDealsCount: empLostDeals.length,
+                    winRate:
+                        empDeals.length > 0
+                            ? roundCrmCurrency(
+                                  (empWonDeals.length / empDeals.length) * 100
+                              )
+                            : 0,
+                    pipelineValue: empPipelineValue,
+                    weightedPipelineValue: empWeightedValue,
+                    wonValue: empWonValue,
+                    quotationsCount: empQuotations.length,
+                    acceptedQuotationsCount: empAcceptedQuotations.length,
+                    quotedValue: empQuotedValue,
+                    contractsCount: empContracts.length,
+                    contractedValue: empContractedValue,
+                    invoicedAmount: empInvoicedAmount,
+                    collectedAmount: empCollectedAmount,
+                    outstandingAmount: empOutstandingAmount,
+                    collectionRate:
+                        empInvoicedAmount > 0
+                            ? Math.min(
+                                  100,
+                                  roundCrmCurrency(
+                                      (empCollectedAmount / empInvoicedAmount) *
+                                          100
+                                  )
+                              )
+                            : 0,
+                };
+            });
+
+        // 3. Deal Stage Breakdown
+        const stageBreakdown: CrmSalesStageBreakdownItem[] =
+            CRM_DEAL_STAGE_VALUES.map((stage) => {
+                const stageDeals = filteredDeals.filter(
+                    (d) => d.stage === stage
+                );
+                const stageTotalValue = roundCrmCurrency(
+                    stageDeals.reduce(
+                        (sum, d) => sum + (d.expectedValue || 0),
+                        0
+                    )
+                );
+                const stageWeightedValue = roundCrmCurrency(
+                    stageDeals.reduce((sum, d) => {
+                        if (stage === 'lost') return sum;
+                        if (stage === 'won')
+                            return sum + (d.expectedValue || 0);
+                        return (
+                            sum +
+                            (d.expectedValue || 0) * ((d.probability ?? 0) / 100)
+                        );
+                    }, 0)
+                );
+                const avgProb =
+                    stageDeals.length > 0
+                        ? roundCrmCurrency(
+                              stageDeals.reduce(
+                                  (sum, d) => sum + (d.probability ?? 0),
+                                  0
+                              ) / stageDeals.length
+                          )
+                        : CRM_DEAL_STAGE_DEFAULT_PROBABILITY[stage];
+                const shareOfPipeline =
+                    totalPipelineValue > 0
+                        ? roundCrmCurrency(
+                              (stageTotalValue / totalPipelineValue) * 100
+                          )
+                        : 0;
+
+                return {
+                    stage,
+                    dealsCount: stageDeals.length,
+                    totalValue: stageTotalValue,
+                    weightedValue: stageWeightedValue,
+                    averageProbability: avgProb,
+                    shareOfPipeline,
+                };
+            });
+
+        // 4. Monthly Commercial & Revenue Trends (derived from actual record dates)
+        const monthBuckets = new Map<
+            string,
+            {
+                dealsCreatedCount: number;
+                wonDealsCount: number;
+                pipelineAddedValue: number;
+                wonDealValue: number;
+                quotedValue: number;
+                contractedValue: number;
+                invoicedAmount: number;
+                collectedAmount: number;
+            }
+        >();
+
+        const ensureBucket = (ym: string) => {
+            if (!monthBuckets.has(ym)) {
+                monthBuckets.set(ym, {
+                    dealsCreatedCount: 0,
+                    wonDealsCount: 0,
+                    pipelineAddedValue: 0,
+                    wonDealValue: 0,
+                    quotedValue: 0,
+                    contractedValue: 0,
+                    invoicedAmount: 0,
+                    collectedAmount: 0,
+                });
+            }
+            return monthBuckets.get(ym)!;
+        };
+
+        const toYearMonth = (dateStr?: string): string | null => {
+            if (!dateStr) return null;
+            const trimmed = dateStr.trim().slice(0, 7);
+            return /^\d{4}-\d{2}$/.test(trimmed) ? trimmed : null;
+        };
+
+        filteredDeals.forEach((deal) => {
+            const createdYm = toYearMonth(deal.createdAt);
+            if (createdYm) {
+                const bucket = ensureBucket(createdYm);
+                bucket.dealsCreatedCount += 1;
+                bucket.pipelineAddedValue = roundCrmCurrency(
+                    bucket.pipelineAddedValue + (deal.expectedValue || 0)
+                );
+            }
+            if (deal.stage === 'won') {
+                const wonYm = toYearMonth(
+                    deal.wonAt || deal.expectedCloseDate || deal.createdAt
+                );
+                if (wonYm) {
+                    const bucket = ensureBucket(wonYm);
+                    bucket.wonDealsCount += 1;
+                    bucket.wonDealValue = roundCrmCurrency(
+                        bucket.wonDealValue + (deal.expectedValue || 0)
+                    );
+                }
+            }
+        });
+
+        filteredQuotations.forEach((qt) => {
+            const ym = toYearMonth(qt.issueDate || qt.createdAt);
+            if (ym) {
+                const bucket = ensureBucket(ym);
+                bucket.quotedValue = roundCrmCurrency(
+                    bucket.quotedValue + (qt.grandTotal || 0)
+                );
+            }
+        });
+
+        filteredContracts.forEach((con) => {
+            const ym = toYearMonth(
+                con.signedDate || con.startDate || con.createdAt
+            );
+            if (ym) {
+                const bucket = ensureBucket(ym);
+                bucket.contractedValue = roundCrmCurrency(
+                    bucket.contractedValue + (con.totalValue || 0)
+                );
+            }
+        });
+
+        filteredInvoices.forEach((inv) => {
+            const issueYm = toYearMonth(inv.issueDate || inv.createdAt);
+            if (issueYm) {
+                const bucket = ensureBucket(issueYm);
+                bucket.invoicedAmount = roundCrmCurrency(
+                    bucket.invoicedAmount + (inv.totalAmount || 0)
+                );
+            }
+            if ((inv.paidAmount || 0) > 0) {
+                const paidYm = toYearMonth(
+                    inv.paidAt || inv.issueDate || inv.createdAt
+                );
+                if (paidYm) {
+                    const bucket = ensureBucket(paidYm);
+                    bucket.collectedAmount = roundCrmCurrency(
+                        bucket.collectedAmount + (inv.paidAmount || 0)
+                    );
+                }
+            }
+        });
+
+        const monthlyTrends: CrmSalesTrendPoint[] = Array.from(
+            monthBuckets.entries()
+        )
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([period, metrics]) => ({
+                period,
+                ...metrics,
+            }));
+
+        // 5. Company Commercial Performance Breakdown
+        const filteredCompanies = allCompanies.filter(
+            (comp) =>
+                matchesCompany(comp.id) &&
+                matchesSector(comp.sectorId) &&
+                (normalizedFilters.assignedEmployeeId === 'all' ||
+                    comp.assignedEmployeeId ===
+                        normalizedFilters.assignedEmployeeId ||
+                    filteredDeals.some((d) => d.companyId === comp.id) ||
+                    filteredInvoices.some((inv) => inv.companyId === comp.id))
+        );
+
+        const companyPerformance: CrmCompanySalesPerformanceItem[] =
+            filteredCompanies
+                .map((comp) => {
+                    const compDeals = filteredDeals.filter(
+                        (d) => d.companyId === comp.id
+                    );
+                    const compWonDeals = compDeals.filter(
+                        (d) => d.stage === 'won'
+                    );
+                    const compPipelineValue = roundCrmCurrency(
+                        compDeals.reduce(
+                            (sum, d) => sum + (d.expectedValue || 0),
+                            0
+                        )
+                    );
+                    const compWonValue = roundCrmCurrency(
+                        compWonDeals.reduce(
+                            (sum, d) => sum + (d.expectedValue || 0),
+                            0
+                        )
+                    );
+                    const compQuotations = filteredQuotations.filter(
+                        (q) => q.companyId === comp.id
+                    );
+                    const compQuotedValue = roundCrmCurrency(
+                        compQuotations.reduce(
+                            (sum, q) => sum + (q.grandTotal || 0),
+                            0
+                        )
+                    );
+                    const compContracts = filteredContracts.filter(
+                        (c) => c.companyId === comp.id
+                    );
+                    const compContractedValue = roundCrmCurrency(
+                        compContracts.reduce(
+                            (sum, c) => sum + (c.totalValue || 0),
+                            0
+                        )
+                    );
+                    const compInvoices = filteredInvoices.filter(
+                        (inv) => inv.companyId === comp.id
+                    );
+                    const compInvoiced = roundCrmCurrency(
+                        compInvoices.reduce(
+                            (sum, inv) => sum + (inv.totalAmount || 0),
+                            0
+                        )
+                    );
+                    const compCollected = roundCrmCurrency(
+                        compInvoices.reduce(
+                            (sum, inv) => sum + (inv.paidAmount || 0),
+                            0
+                        )
+                    );
+                    const compOutstanding = roundCrmCurrency(
+                        compInvoices.reduce(
+                            (sum, inv) => sum + (inv.remainingAmount || 0),
+                            0
+                        )
+                    );
+                    const sec = comp.sectorId
+                        ? sectorMap.get(comp.sectorId)
+                        : undefined;
+
+                    return {
+                        companyId: comp.id,
+                        companyCode: comp.code,
+                        companyNameEn: comp.nameEn,
+                        companyNameAr: comp.nameAr,
+                        sectorId: comp.sectorId,
+                        sectorNameEn: comp.sectorNameEn || sec?.nameEn,
+                        sectorNameAr: comp.sectorNameAr || sec?.nameAr,
+                        onboardingStatus: comp.onboardingStatus,
+                        assignedEmployeeId: comp.assignedEmployeeId,
+                        assignedEmployeeNameEn: comp.assignedEmployeeNameEn,
+                        assignedEmployeeNameAr: comp.assignedEmployeeNameAr,
+                        dealsCount: compDeals.length,
+                        wonDealsCount: compWonDeals.length,
+                        pipelineValue: compPipelineValue,
+                        wonValue: compWonValue,
+                        quotedValue: compQuotedValue,
+                        contractedValue: compContractedValue,
+                        invoicedAmount: compInvoiced,
+                        collectedAmount: compCollected,
+                        outstandingAmount: compOutstanding,
+                        collectionRate:
+                            compInvoiced > 0
+                                ? Math.min(
+                                      100,
+                                      roundCrmCurrency(
+                                          (compCollected / compInvoiced) * 100
+                                      )
+                                  )
+                                : 0,
+                    };
+                })
+                .sort(
+                    (a, b) =>
+                        b.pipelineValue - a.pipelineValue ||
+                        b.invoicedAmount - a.invoicedAmount
+                );
+
+        // 6. Sector Performance Breakdown
+        const candidateSectors =
+            normalizedFilters.sectorId === 'all'
+                ? allSectors
+                : allSectors.filter(
+                      (s) => s.id === normalizedFilters.sectorId
+                  );
+
+        const sectorPerformance: CrmSectorSalesPerformanceItem[] =
+            candidateSectors
+                .map((sec) => {
+                    const secCompanies = filteredCompanies.filter(
+                        (c) => c.sectorId === sec.id
+                    );
+                    const secLeads = filteredLeads.filter(
+                        (l) =>
+                            resolveSectorId(l.sectorId, l.companyId) === sec.id
+                    );
+                    const secDeals = filteredDeals.filter(
+                        (d) =>
+                            resolveSectorId(d.sectorId, d.companyId) === sec.id
+                    );
+                    const secWonDeals = secDeals.filter(
+                        (d) => d.stage === 'won'
+                    );
+                    const secInvoices = filteredInvoices.filter(
+                        (inv) =>
+                            resolveSectorId(
+                                undefined,
+                                inv.companyId,
+                                inv.dealId
+                            ) === sec.id
+                    );
+
+                    return {
+                        sectorId: sec.id,
+                        sectorCode: sec.code,
+                        sectorNameEn: sec.nameEn,
+                        sectorNameAr: sec.nameAr,
+                        companiesCount: secCompanies.length,
+                        leadsCount: secLeads.length,
+                        dealsCount: secDeals.length,
+                        wonDealsCount: secWonDeals.length,
+                        pipelineValue: roundCrmCurrency(
+                            secDeals.reduce(
+                                (sum, d) => sum + (d.expectedValue || 0),
+                                0
+                            )
+                        ),
+                        wonValue: roundCrmCurrency(
+                            secWonDeals.reduce(
+                                (sum, d) => sum + (d.expectedValue || 0),
+                                0
+                            )
+                        ),
+                        invoicedAmount: roundCrmCurrency(
+                            secInvoices.reduce(
+                                (sum, inv) => sum + (inv.totalAmount || 0),
+                                0
+                            )
+                        ),
+                        collectedAmount: roundCrmCurrency(
+                            secInvoices.reduce(
+                                (sum, inv) => sum + (inv.paidAmount || 0),
+                                0
+                            )
+                        ),
+                    };
+                })
+                .sort((a, b) => b.pipelineValue - a.pipelineValue);
+
+        const responsePayload: CrmSalesPerformanceDashboardData = {
+            filters: normalizedFilters,
+            generatedAt: new Date().toISOString(),
+            kpis,
+            repPerformance,
+            stageBreakdown,
+            monthlyTrends,
+            companyPerformance,
+            sectorPerformance,
+        };
+
+        return validateWithSchema(
+            crmSalesPerformanceDashboardSchema,
+            responsePayload,
+            'Sales Performance Dashboard'
+        );
+    },
+
+    dashboards: {
+        getSalesPerformance: (params?: CrmSalesPerformanceDashboardFilter) =>
+            crmApi.getSalesPerformanceDashboard(params),
     },
 };
 

@@ -533,16 +533,19 @@ export const CompaniesPage: React.FC = () => {
                             {t('crm.customer.companies.allOnboarding')}
                         </option>
                         <option value="draft">
-                            {t('crm.customer.companies.onboardingDraft')}
+                            {t('crm.customer.companies.onboardingStatuses.draft')}
                         </option>
                         <option value="pre_onboarding">
-                            {t('crm.customer.companies.onboardingPre')}
+                            {t('crm.customer.companies.onboardingStatuses.pre_onboarding')}
                         </option>
-                        <option value="pending_approval">
-                            {t('crm.customer.companies.onboardingPending')}
+                        <option value="under_review">
+                            {t('crm.customer.companies.onboardingStatuses.under_review')}
                         </option>
-                        <option value="completed">
-                            {t('crm.customer.companies.onboardingCompleted')}
+                        <option value="active">
+                            {t('crm.customer.companies.onboardingStatuses.active')}
+                        </option>
+                        <option value="inactive">
+                            {t('crm.customer.companies.onboardingStatuses.inactive')}
                         </option>
                     </select>
 
@@ -710,10 +713,19 @@ export const CompaniesPage: React.FC = () => {
                                                         comp.onboardingStatus ===
                                                         'active'
                                                             ? 'bg-[#E9F5EE] text-[#2E6B4E] border-[#2E6B4E]/20'
-                                                            : 'bg-[#FDF3E7] text-[#B45309] border-[#B45309]/20'
+                                                            : comp.onboardingStatus ===
+                                                                'inactive'
+                                                              ? 'bg-[#FCECE9] text-[#A63A3A] border-[#A63A3A]/20'
+                                                              : 'bg-[#FDF3E7] text-[#B45309] border-[#B45309]/20'
                                                     }`}
                                                 >
-                                                    {comp.onboardingStatus}
+                                                    {t(
+                                                        `crm.customer.companies.onboardingStatuses.${comp.onboardingStatus}`,
+                                                        {
+                                                            defaultValue:
+                                                                comp.onboardingStatus,
+                                                        }
+                                                    )}
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-4">
