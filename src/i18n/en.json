@@ -149,6 +149,10 @@
     "organizationalTypes": "Organizational Types",
     "ownershipTypes": "Ownership Types",
     "auditTrails": "Audit Trails",
+    "overviewAndCommercial": "Overview & Commercial",
+    "operationsAndServiceDelivery": "Operations & Service Delivery",
+    "organizationAndResources": "Organization & Resources",
+    "governanceAndSupport": "Governance & Support",
     "accountSettings": "Account Settings",
     "expandSidebar": "Expand Sidebar",
     "collapseSidebar": "Collapse Sidebar",
@@ -6050,6 +6054,511 @@
           "title": "No audit trail events match your filter criteria",
           "description": "Try expanding the date range or resetting your action and resource filters."
         }
+      }
+    }
+  },
+  "customer": {
+    "moduleTitle": "Customer Portal (CUSTOMER)",
+    "phaseBadge": "Foundation Ready",
+    "routeLabel": "Route Path",
+    "groupLabel": "Navigation Group",
+    "upcomingPhaseLabel": "Scheduled Implementation Phase",
+    "goToDashboard": "Customer Dashboard",
+    "foundationNoticeTitle": "Phase 1 Foundation & Routing Active",
+    "foundationNoticeDesc": "This CUSTOMER module route, sidebar group navigation, and bilingual localization foundation are registered and ready for upcoming feature implementation phases.",
+    "groups": {
+      "overviewAndCommercial": "Overview & Commercial",
+      "operationsAndServiceDelivery": "Operations & Service Delivery",
+      "organizationAndResources": "Organization & Resources",
+      "governanceAndSupport": "Governance & Support",
+      "auditTrail": "Audit Trail"
+    },
+    "pages": {
+      "dashboard": {
+        "title": "Customer Dashboard",
+        "subtitle": "Unified 360° executive overview of customer commercial accounts, service delivery, workforce, and governance.",
+        "phase": "Phase 1 — Customer Foundation & Dashboard",
+        "kpis": {
+          "activeAccounts": "Active Customer Accounts",
+          "activeAccountsSub": "+12% growth this quarter",
+          "activeContracts": "Active Contracts & Plans",
+          "activeContractsSub": "SAR 4.2M contracted volume",
+          "inflightRequests": "In-Flight Service Requests",
+          "inflightRequestsSub": "94.8% SLA adherence",
+          "pendingGovernance": "Pending Actions & Tasks",
+          "pendingGovernanceSub": "4 approvals & 4 open tickets"
+        },
+        "sections": {
+          "recentActivityTitle": "Recent Customer Activity",
+          "recentActivitySubtitle": "Real-time updates across commercial, operational, and support channels",
+          "quickLinksTitle": "Quick Navigation & Portals",
+          "quickLinksSubtitle": "Direct shortcuts to primary customer operational and commercial management sections",
+          "accountSummaryTitle": "Customer Portfolio Snapshot",
+          "accountSummarySubtitle": "Key status distribution across client segments",
+          "viewAll": "Open Section",
+          "liveIndicator": "Live Feed",
+          "filterAll": "All",
+          "filterCommercial": "Commercial",
+          "filterOperations": "Operations",
+          "filterSupport": "Support"
+        },
+        "quickLinks": {
+          "companiesDesc": "Access customer directory, commercial status, and onboarding records",
+          "dealsDesc": "Track active commercial pipelines, negotiations, and awarded values",
+          "contractsDesc": "Review legally binding agreements, SLA terms, and renewal cycles",
+          "requestsDesc": "Monitor in-flight client service requests and portal submissions",
+          "contactsDesc": "Authorized signatories, liaison officers, and contact directory",
+          "employeesDesc": "Manage sponsored workforce, residency compliance, and contracts",
+          "ticketsDesc": "Handle customer escalations, inquiries, and SLA resolutions",
+          "auditTrailDesc": "Inspect verifiable chronological audit records and governance logs"
+        }
+      },
+      "companies": {
+        "title": "Companies",
+        "subtitle": "Corporate customer directory, commercial registrations, legal entity details, and onboarding profiles.",
+        "phase": "Phase 2 — Overview & Commercial",
+        "searchPlaceholder": "Search by company name, CR number, or code...",
+        "addCompany": "Add Company",
+        "statusAll": "All Statuses",
+        "statusActive": "Active",
+        "statusPending": "Pending",
+        "statusInactive": "Inactive",
+        "sectorAll": "All Sectors",
+        "totalCompanies": "Total Companies",
+        "activeCompanies": "Active Accounts",
+        "pendingCompanies": "Pending Review",
+        "inactiveCompanies": "Inactive",
+        "table": {
+          "company": "Company Name & Code",
+          "crNumber": "CR & Location",
+          "sector": "Sector",
+          "operations": "Contracts / Requests",
+          "status": "Status",
+          "actions": "Actions",
+          "viewDetails": "View Profile",
+          "activate": "Activate",
+          "deactivate": "Deactivate"
+        },
+        "details": {
+          "title": "Company Profile",
+          "registrationDetails": "Commercial Registration & Legal Details",
+          "primaryContact": "Primary Authorized Contact",
+          "operations": "Active Services & Operations",
+          "taxNumber": "Tax / VAT ID",
+          "establishedYear": "Established Year",
+          "close": "Close",
+          "activate": "Activate Account",
+          "deactivate": "Deactivate Account"
+        },
+        "modal": {
+          "addTitle": "Register New Customer Company",
+          "addSubtitle": "Create and onboard a client corporate profile",
+          "nameEn": "Company Name (English)",
+          "nameAr": "Company Name (Arabic)",
+          "cr": "CR Number (10 digits)",
+          "tax": "VAT Number (15 digits)",
+          "sector": "Business Sector",
+          "city": "City / Location",
+          "contactName": "Contact Person Name",
+          "contactPhone": "Phone Number",
+          "contactEmail": "Email Address",
+          "save": "Register Company",
+          "cancel": "Cancel"
+        },
+        "feedback": {
+          "companyAdded": "Company registered successfully in directory.",
+          "statusUpdated": "Company status updated successfully.",
+          "noResults": "No companies match the current search filters.",
+          "resetFilters": "Reset Filters"
+        }
+      },
+      "deals": {
+        "title": "Deals",
+        "subtitle": "Customer commercial engagements, active opportunity pipelines, and awarded account values.",
+        "phase": "Phase 2 — Overview & Commercial",
+        "searchPlaceholder": "Search deals by name, company, or code...",
+        "addDeal": "New Deal",
+        "statusAll": "All Statuses",
+        "statusOpen": "Open",
+        "statusWon": "Won",
+        "statusLost": "Lost",
+        "stageAll": "All Stages",
+        "stages": {
+          "discovery": "Discovery & Qualification",
+          "proposal": "Proposal & Quotation",
+          "negotiation": "Negotiation & Review",
+          "closed_won": "Closed Won",
+          "closed_lost": "Closed Lost"
+        },
+        "kpis": {
+          "totalDeals": "Total Deals",
+          "pipelineValue": "Open Pipeline",
+          "wonValue": "Won Contracts Value",
+          "winRate": "Win Rate"
+        },
+        "table": {
+          "deal": "Deal Name & Code",
+          "company": "Customer Company",
+          "value": "Value (SAR)",
+          "stage": "Stage",
+          "expectedClose": "Expected Close",
+          "status": "Status",
+          "actions": "Actions",
+          "view": "View Details",
+          "edit": "Edit Deal"
+        },
+        "modal": {
+          "addTitle": "Create New Commercial Deal",
+          "editTitle": "Edit Commercial Deal",
+          "addSubtitle": "Track customer commercial opportunity and pipeline value",
+          "editSubtitle": "Update commercial milestones, probability, and values",
+          "nameEn": "Deal Name (English)",
+          "nameAr": "Deal Name (Arabic)",
+          "company": "Customer Company",
+          "value": "Deal Value (SAR)",
+          "stage": "Pipeline Stage",
+          "status": "Commercial Status",
+          "expectedClose": "Expected Close Date",
+          "probability": "Probability (%)",
+          "notes": "Commercial Notes",
+          "save": "Save Deal",
+          "cancel": "Cancel"
+        },
+        "details": {
+          "title": "Deal Details",
+          "commercialTerms": "Commercial Summary",
+          "timeline": "Timeline & Status",
+          "close": "Close",
+          "edit": "Edit Deal"
+        },
+        "feedback": {
+          "dealAdded": "Deal created and saved successfully.",
+          "dealUpdated": "Deal details updated successfully.",
+          "noResults": "No commercial deals match the current filters.",
+          "resetFilters": "Reset Filters"
+        }
+      },
+      "quotations": {
+        "title": "Quotations",
+        "subtitle": "Customer commercial proposals, itemized service pricing, discounts, and VAT breakdowns.",
+        "phase": "Phase 2 — Overview & Commercial",
+        "searchPlaceholder": "Search quotations by number, company, or subject...",
+        "addQuotation": "New Quotation",
+        "statusAll": "All Statuses",
+        "statusDraft": "Draft",
+        "statusSent": "Sent / Under Review",
+        "statusAccepted": "Accepted",
+        "statusRejected": "Rejected",
+        "statusExpired": "Expired",
+        "kpis": {
+          "totalQuotations": "Total Quotations",
+          "totalValue": "Total Quoted Value",
+          "acceptedValue": "Accepted Proposals",
+          "acceptanceRate": "Acceptance Rate"
+        },
+        "table": {
+          "quotationNumber": "Quotation # & Title",
+          "company": "Customer Company",
+          "issueDate": "Issue Date",
+          "expiryDate": "Valid Until",
+          "subtotal": "Subtotal (SAR)",
+          "tax": "VAT (15%)",
+          "total": "Total (SAR)",
+          "status": "Status",
+          "actions": "Actions",
+          "view": "View Details",
+          "edit": "Edit Quotation"
+        },
+        "modal": {
+          "addTitle": "Create New Quotation",
+          "editTitle": "Edit Quotation",
+          "addSubtitle": "Issue itemized pricing and service proposal for client account",
+          "editSubtitle": "Update quotation terms, line amounts, or validity dates",
+          "titleEn": "Proposal Title (English)",
+          "titleAr": "Proposal Title (Arabic)",
+          "company": "Customer Company",
+          "issueDate": "Issue Date",
+          "expiryDate": "Expiry Date",
+          "subtotal": "Subtotal (SAR)",
+          "discount": "Discount (SAR)",
+          "status": "Status",
+          "notes": "Proposal Notes & Scope",
+          "save": "Save Quotation",
+          "cancel": "Cancel"
+        },
+        "details": {
+          "title": "Quotation Details",
+          "financialSummary": "Financial Breakdown",
+          "validity": "Validity & Dates",
+          "close": "Close",
+          "edit": "Edit Quotation",
+          "accept": "Mark Accepted",
+          "reject": "Mark Rejected"
+        },
+        "feedback": {
+          "quotationAdded": "Quotation created and saved successfully.",
+          "quotationUpdated": "Quotation updated successfully.",
+          "noResults": "No quotations match the current search filters.",
+          "resetFilters": "Reset Filters"
+        }
+      },
+      "contracts": {
+        "title": "Contracts",
+        "subtitle": "Executed customer service agreements, SLA commitments, validity terms, and renewal schedules.",
+        "phase": "Phase 2 — Overview & Commercial",
+        "searchPlaceholder": "Search contracts by number, company, quotation, or title...",
+        "addContract": "New Contract",
+        "statusAll": "All Statuses",
+        "statusDraft": "Draft",
+        "statusPendingSignature": "Pending Signature",
+        "statusActive": "Active",
+        "statusExpired": "Expired",
+        "statusTerminated": "Terminated",
+        "kpis": {
+          "totalContracts": "Total Contracts",
+          "totalValue": "Total Portfolio Value",
+          "activeContracts": "Active Contracts",
+          "pendingSignature": "Pending Signature"
+        },
+        "table": {
+          "contractNumber": "Contract # & Agreement",
+          "company": "Customer Company",
+          "linkedQuotation": "Linked Quotation",
+          "period": "Term Period",
+          "contractValue": "Contract Value (SAR)",
+          "status": "Status",
+          "actions": "Actions",
+          "view": "View Agreement Details",
+          "edit": "Edit Contract"
+        },
+        "modal": {
+          "addTitle": "Create New Contract",
+          "editTitle": "Edit Contract",
+          "addSubtitle": "Issue executed customer service contract and link agreed terms",
+          "editSubtitle": "Update contract values, tenure dates, or legal status",
+          "titleEn": "Agreement Title (English)",
+          "titleAr": "Agreement Title (Arabic)",
+          "company": "Customer Company",
+          "linkedQuotation": "Linked Quotation Proposal",
+          "startDate": "Start Date",
+          "endDate": "End Date",
+          "contractValue": "Total Contract Value (SAR)",
+          "status": "Contract Status",
+          "notes": "SLA Inclusions & Special Clauses",
+          "save": "Save Contract",
+          "cancel": "Cancel"
+        },
+        "details": {
+          "title": "Contract Details",
+          "close": "Close",
+          "activate": "Activate Contract",
+          "sendForSignature": "Send for Signature",
+          "terminate": "Terminate Agreement"
+        },
+        "feedback": {
+          "contractAdded": "Contract created and registered successfully.",
+          "contractUpdated": "Contract updated successfully.",
+          "noResults": "No contracts match the current search filters.",
+          "resetFilters": "Reset Filters"
+        }
+      },
+      "invoices": {
+        "title": "Invoices",
+        "subtitle": "Customer tax invoices, billing schedules, payment settlements, and outstanding balances.",
+        "phase": "Phase 2 — Overview & Commercial",
+        "searchPlaceholder": "Search invoices by number, company, or linked contract...",
+        "addInvoice": "New Invoice",
+        "statusAll": "All Statuses",
+        "statusDraft": "Draft",
+        "statusIssued": "Issued",
+        "statusPartiallyPaid": "Partially Paid",
+        "statusPaid": "Paid",
+        "statusOverdue": "Overdue",
+        "statusCancelled": "Cancelled",
+        "kpis": {
+          "totalInvoices": "Total Invoices",
+          "outstandingBalance": "Outstanding Balance",
+          "paidInvoices": "Paid Invoices",
+          "overdueInvoices": "Overdue Invoices"
+        },
+        "table": {
+          "invoiceNumber": "Invoice # & Title",
+          "company": "Customer Company",
+          "linkedContract": "Linked Contract",
+          "dates": "Issue → Due Date",
+          "total": "Total (SAR)",
+          "paidAmount": "Paid Amount",
+          "balanceDue": "Balance Due",
+          "status": "Status",
+          "actions": "Actions",
+          "view": "View Invoice Details",
+          "edit": "Edit Invoice"
+        },
+        "modal": {
+          "addTitle": "Create New Invoice",
+          "editTitle": "Edit Invoice",
+          "addSubtitle": "Issue compliant tax invoice and link commercial contracts",
+          "editSubtitle": "Modify invoice line items, dates, discounts, or settlement status",
+          "titleEn": "Invoice Description (English)",
+          "titleAr": "Invoice Description (Arabic)",
+          "company": "Customer Company",
+          "linkedContract": "Linked Customer Contract",
+          "issueDate": "Issue Date",
+          "dueDate": "Due Date",
+          "subtotal": "Subtotal (SAR)",
+          "discount": "Discount (SAR)",
+          "taxAmount": "VAT",
+          "paidAmount": "Paid Amount to Date (SAR)",
+          "status": "Invoice Status",
+          "notes": "Billing Notes & Wire Instructions",
+          "save": "Save Invoice",
+          "cancel": "Cancel"
+        },
+        "details": {
+          "title": "Invoice Details",
+          "breakdown": "Financial Ledger Breakdown",
+          "close": "Close",
+          "recordPayment": "Record Payment",
+          "recordPaymentDesc": "Apply collected wire transfer or check settlement against the open balance.",
+          "paymentAmount": "Payment Amount (SAR)",
+          "payFullBalance": "Full Balance",
+          "confirmPayment": "Confirm Settlement",
+          "paymentRecordedSuccess": "Payment settled and balance updated successfully.",
+          "invalidPaymentAmount": "Please enter a valid positive payment amount.",
+          "paymentExceedsBalance": "Payment amount cannot exceed the open balance due."
+        },
+        "feedback": {
+          "invoiceAdded": "Commercial invoice registered and saved successfully.",
+          "invoiceUpdated": "Invoice details updated successfully.",
+          "noResults": "No invoices match the current search filters.",
+          "resetFilters": "Reset Filters"
+        }
+      },
+      "services": {
+        "title": "Services",
+        "subtitle": "Subscribed government and enterprise administrative services delivered to customer accounts.",
+        "phase": "Phase 3 — Operations & Service Delivery",
+        "searchPlaceholder": "Search services by code, title, or scope...",
+        "addService": "New Service",
+        "statusAll": "All Statuses",
+        "statusActive": "Active",
+        "statusInactive": "Inactive",
+        "categoryAll": "All Categories",
+        "hours": "hrs",
+        "kpis": {
+          "totalServices": "Total Services",
+          "activeServices": "Active Services",
+          "inactiveServices": "Inactive Services",
+          "serviceCategories": "Service Categories"
+        },
+        "table": {
+          "code": "Service Code",
+          "serviceName": "Service Name & Scope",
+          "category": "Category",
+          "sla": "Standard SLA",
+          "defaultPrice": "Default Rate (SAR)",
+          "status": "Status",
+          "actions": "Actions",
+          "view": "View Service Details",
+          "edit": "Edit Service"
+        },
+        "actions": {
+          "activate": "Activate Service",
+          "deactivate": "Deactivate Service"
+        },
+        "modal": {
+          "addTitle": "Register New Service",
+          "editTitle": "Edit Service Definition",
+          "addSubtitle": "Create standard operational or government service with baseline SLA and rates",
+          "editSubtitle": "Modify service nomenclature, categories, turnaround SLAs, or pricing",
+          "nameEn": "Service Name (English)",
+          "nameAr": "Service Name (Arabic)",
+          "descriptionEn": "Service Scope (English)",
+          "descriptionAr": "Service Scope (Arabic)",
+          "save": "Save Service",
+          "cancel": "Cancel"
+        },
+        "details": {
+          "title": "Service Details",
+          "close": "Close"
+        },
+        "feedback": {
+          "serviceAdded": "Service created and added to directory successfully.",
+          "serviceUpdated": "Service definition updated successfully.",
+          "statusToggled": "Service status updated successfully.",
+          "noResults": "No services match the current search filters.",
+          "resetFilters": "Reset Filters"
+        }
+      },
+      "servicePackages": {
+        "title": "Service Packages",
+        "subtitle": "Bundled service packages and recurring subscription plans assigned to customer accounts.",
+        "phase": "Phase 3 — Operations & Service Delivery"
+      },
+      "requests": {
+        "title": "Requests",
+        "subtitle": "Customer service execution requests, submission tracking, and government portal progress.",
+        "phase": "Phase 3 — Operations & Service Delivery"
+      },
+      "operationalTasks": {
+        "title": "Operational Tasks",
+        "subtitle": "Customer delivery tasks, document collection checklists, and SLA execution milestones.",
+        "phase": "Phase 3 — Operations & Service Delivery"
+      },
+      "contacts": {
+        "title": "Contacts",
+        "subtitle": "Authorized customer points of contact, signatory representatives, and communication channels.",
+        "phase": "Phase 4 — Organization & Resources"
+      },
+      "owners": {
+        "title": "Owners",
+        "subtitle": "Customer company shareholders, beneficial owners, capital shares, and identity records.",
+        "phase": "Phase 4 — Organization & Resources"
+      },
+      "branches": {
+        "title": "Branches",
+        "subtitle": "Customer company headquarters, regional branches, commercial registration locations, and municipal licenses.",
+        "phase": "Phase 4 — Organization & Resources"
+      },
+      "departments": {
+        "title": "Departments",
+        "subtitle": "Customer organizational units, functional departments, and department leadership assignments.",
+        "phase": "Phase 4 — Organization & Resources"
+      },
+      "employees": {
+        "title": "Employees",
+        "subtitle": "Customer sponsored workforce, residency/Iqama compliance, employment contracts, and GOSI records.",
+        "phase": "Phase 4 — Organization & Resources"
+      },
+      "assets": {
+        "title": "Assets",
+        "subtitle": "Customer registered operational assets, fleet vehicles, equipment permits, and compliance status.",
+        "phase": "Phase 4 — Organization & Resources"
+      },
+      "documents": {
+        "title": "Documents",
+        "subtitle": "Customer official certificates, commercial licenses, statutory filings, and expiration tracking.",
+        "phase": "Phase 5 — Governance & Support"
+      },
+      "approvalTasks": {
+        "title": "Approval Tasks",
+        "subtitle": "Pending customer governance approvals for commercial agreements, requests, and asset operations.",
+        "phase": "Phase 5 — Governance & Support"
+      },
+      "workflows": {
+        "title": "Workflows",
+        "subtitle": "Automated approval chains, status transitions, and SLA escalation rules for customer operations.",
+        "phase": "Phase 5 — Governance & Support"
+      },
+      "tickets": {
+        "title": "Tickets",
+        "subtitle": "Customer support inquiries, incident escalations, and SLA resolution tracking.",
+        "phase": "Phase 5 — Governance & Support"
+      },
+      "auditTrail": {
+        "title": "Audit Trail",
+        "subtitle": "Chronological governance and compliance log of all customer account activities and modifications.",
+        "phase": "Phase 5 — Audit Trail"
       }
     }
   }

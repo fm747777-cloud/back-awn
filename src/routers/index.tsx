@@ -9,7 +9,6 @@ const HomePage = () => import('../pages/HomePage').then((m) => ({ Component: m.H
 const ServicesPage = () => import('../pages/ServicePage').then((m) => ({ Component: m.ServicesPage }));
 const LoginPage = () => import('../pages/LoginPage').then((m) => ({ Component: m.LoginPage }));
 const SettingsPage = () => import('../pages/SettingsPage').then((m) => ({ Component: m.SettingsPage }));
-const PlaceholderModulePage = () => import('../pages/PlaceholderModulePage').then((m) => ({ Component: m.PlaceholderModulePage }));
 
 // Ticketing Module
 const TicketingPage = () => import('../pages/TicketingPage').then((m) => ({ Component: m.TicketingPage }));
@@ -92,6 +91,30 @@ const TaxPage = () => import('../pages/crm/TaxPage').then((m) => ({ Component: m
 const OrganizationalTypesPage = () => import('../pages/crm/OrganizationalTypesPage').then((m) => ({ Component: m.OrganizationalTypesPage }));
 const OwnershipTypesPage = () => import('../pages/crm/OwnershipTypesPage').then((m) => ({ Component: m.OwnershipTypesPage }));
 const CrmAuditTrailsPage = () => import('../pages/crm/CrmAuditTrailsPage').then((m) => ({ Component: m.CrmAuditTrailsPage }));
+
+// CUSTOMER Module
+const CustomerPage = () => import('../pages/CustomerPage').then((m) => ({ Component: m.CustomerPage }));
+const CustomerDashboardPage = () => import('../pages/customer/CustomerDashboardPage').then((m) => ({ Component: m.CustomerDashboardPage }));
+const CustomerCompaniesPage = () => import('../pages/customer/CustomerCompaniesPage').then((m) => ({ Component: m.CustomerCompaniesPage }));
+const CustomerDealsPage = () => import('../pages/customer/CustomerDealsPage').then((m) => ({ Component: m.CustomerDealsPage }));
+const CustomerQuotationsPage = () => import('../pages/customer/CustomerQuotationsPage').then((m) => ({ Component: m.CustomerQuotationsPage }));
+const CustomerContractsPage = () => import('../pages/customer/CustomerContractsPage').then((m) => ({ Component: m.CustomerContractsPage }));
+const CustomerInvoicesPage = () => import('../pages/customer/CustomerInvoicesPage').then((m) => ({ Component: m.CustomerInvoicesPage }));
+const CustomerServicesPage = () => import('../pages/customer/CustomerServicesPage').then((m) => ({ Component: m.CustomerServicesPage }));
+const CustomerServicePackagesPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerServicePackagesPage }));
+const CustomerRequestsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerRequestsPage }));
+const CustomerOperationalTasksPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerOperationalTasksPage }));
+const CustomerContactsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerContactsPage }));
+const CustomerOwnersPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerOwnersPage }));
+const CustomerBranchesPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerBranchesPage }));
+const CustomerDepartmentsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerDepartmentsPage }));
+const CustomerEmployeesPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerEmployeesPage }));
+const CustomerAssetsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerAssetsPage }));
+const CustomerDocumentsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerDocumentsPage }));
+const CustomerApprovalTasksPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerApprovalTasksPage }));
+const CustomerWorkflowsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerWorkflowsPage }));
+const CustomerTicketsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerTicketsPage }));
+const CustomerAuditTrailPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerAuditTrailPage }));
 
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));
@@ -401,7 +424,97 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: '/customer',
-                        lazy: PlaceholderModulePage,
+                        lazy: CustomerPage,
+                        children: [
+                            {
+                                index: true,
+                                element: <Navigate to="/customer/dashboard" replace />,
+                            },
+                            {
+                                path: 'dashboard',
+                                lazy: CustomerDashboardPage,
+                            },
+                            {
+                                path: 'companies',
+                                lazy: CustomerCompaniesPage,
+                            },
+                            {
+                                path: 'deals',
+                                lazy: CustomerDealsPage,
+                            },
+                            {
+                                path: 'quotations',
+                                lazy: CustomerQuotationsPage,
+                            },
+                            {
+                                path: 'contracts',
+                                lazy: CustomerContractsPage,
+                            },
+                            {
+                                path: 'invoices',
+                                lazy: CustomerInvoicesPage,
+                            },
+                            {
+                                path: 'services',
+                                lazy: CustomerServicesPage,
+                            },
+                            {
+                                path: 'service-packages',
+                                lazy: CustomerServicePackagesPage,
+                            },
+                            {
+                                path: 'requests',
+                                lazy: CustomerRequestsPage,
+                            },
+                            {
+                                path: 'operational-tasks',
+                                lazy: CustomerOperationalTasksPage,
+                            },
+                            {
+                                path: 'contacts',
+                                lazy: CustomerContactsPage,
+                            },
+                            {
+                                path: 'owners',
+                                lazy: CustomerOwnersPage,
+                            },
+                            {
+                                path: 'branches',
+                                lazy: CustomerBranchesPage,
+                            },
+                            {
+                                path: 'departments',
+                                lazy: CustomerDepartmentsPage,
+                            },
+                            {
+                                path: 'employees',
+                                lazy: CustomerEmployeesPage,
+                            },
+                            {
+                                path: 'assets',
+                                lazy: CustomerAssetsPage,
+                            },
+                            {
+                                path: 'documents',
+                                lazy: CustomerDocumentsPage,
+                            },
+                            {
+                                path: 'approval-tasks',
+                                lazy: CustomerApprovalTasksPage,
+                            },
+                            {
+                                path: 'workflows',
+                                lazy: CustomerWorkflowsPage,
+                            },
+                            {
+                                path: 'tickets',
+                                lazy: CustomerTicketsPage,
+                            },
+                            {
+                                path: 'audit-trail',
+                                lazy: CustomerAuditTrailPage,
+                            },
+                        ],
                     },
                     {
                         path: '/ticketing',

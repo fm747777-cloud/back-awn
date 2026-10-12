@@ -258,6 +258,55 @@ export const CRM_SIDEBAR_GROUPS: MenuGroup[] = [
     },
 ];
 
+export const CUSTOMER_SIDEBAR_GROUPS: MenuGroup[] = [
+    {
+        title: 'Overview & Commercial',
+        items: [
+            { label: 'Dashboard', path: '/customer/dashboard', icon: LayoutDashboard },
+            { label: 'Companies', path: '/customer/companies', icon: Building2 },
+            { label: 'Deals', path: '/customer/deals', icon: Briefcase },
+            { label: 'Quotations', path: '/customer/quotations', icon: FileText },
+            { label: 'Contracts', path: '/customer/contracts', icon: FileCheck },
+            { label: 'Invoices', path: '/customer/invoices', icon: Receipt },
+        ],
+    },
+    {
+        title: 'Operations & Service Delivery',
+        items: [
+            { label: 'Services', path: '/customer/services', icon: Layers },
+            { label: 'Service Packages', path: '/customer/service-packages', icon: PackageCheck },
+            { label: 'Requests', path: '/customer/requests', icon: ClipboardList },
+            { label: 'Operational Tasks', path: '/customer/operational-tasks', icon: CheckSquare },
+        ],
+    },
+    {
+        title: 'Organization & Resources',
+        items: [
+            { label: 'Contacts', path: '/customer/contacts', icon: Users },
+            { label: 'Owners', path: '/customer/owners', icon: UserCheck },
+            { label: 'Branches', path: '/customer/branches', icon: MapPin },
+            { label: 'Departments', path: '/customer/departments', icon: FolderKanban },
+            { label: 'Employees', path: '/customer/employees', icon: UserPlus },
+            { label: 'Assets', path: '/customer/assets', icon: Grid },
+        ],
+    },
+    {
+        title: 'Governance & Support',
+        items: [
+            { label: 'Documents', path: '/customer/documents', icon: FileText },
+            { label: 'Approval Tasks', path: '/customer/approval-tasks', icon: ShieldCheck },
+            { label: 'Workflows', path: '/customer/workflows', icon: GitBranch },
+            { label: 'Tickets', path: '/customer/tickets', icon: Ticket },
+        ],
+    },
+    {
+        title: 'Audit Trail',
+        items: [
+            { label: 'Audit Trail', path: '/customer/audit-trail', icon: History },
+        ],
+    },
+];
+
 interface SidebarState {
     collapsed: boolean;
     menuGroups: MenuGroup[];
@@ -295,15 +344,7 @@ export const getMenuGroupsForPath = (
         return DEFAULT_SIDEBAR_GROUPS;
     }
     if (pathname.startsWith('/customer')) {
-        const basePath = `/${pathname.replace(/^\/+/, '').split('/')[0]}`;
-        return [
-            {
-                title: 'Main',
-                items: [
-                    { label: 'Dashboard', path: basePath, icon: LayoutDashboard },
-                ],
-            },
-        ];
+        return CUSTOMER_SIDEBAR_GROUPS;
     }
     return fallbackGroups;
 };
