@@ -101,20 +101,20 @@ const CustomerQuotationsPage = () => import('../pages/customer/CustomerQuotation
 const CustomerContractsPage = () => import('../pages/customer/CustomerContractsPage').then((m) => ({ Component: m.CustomerContractsPage }));
 const CustomerInvoicesPage = () => import('../pages/customer/CustomerInvoicesPage').then((m) => ({ Component: m.CustomerInvoicesPage }));
 const CustomerServicesPage = () => import('../pages/customer/CustomerServicesPage').then((m) => ({ Component: m.CustomerServicesPage }));
-const CustomerServicePackagesPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerServicePackagesPage }));
-const CustomerRequestsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerRequestsPage }));
-const CustomerOperationalTasksPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerOperationalTasksPage }));
-const CustomerContactsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerContactsPage }));
-const CustomerOwnersPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerOwnersPage }));
-const CustomerBranchesPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerBranchesPage }));
-const CustomerDepartmentsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerDepartmentsPage }));
-const CustomerEmployeesPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerEmployeesPage }));
-const CustomerAssetsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerAssetsPage }));
-const CustomerDocumentsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerDocumentsPage }));
-const CustomerApprovalTasksPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerApprovalTasksPage }));
-const CustomerWorkflowsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerWorkflowsPage }));
-const CustomerTicketsPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerTicketsPage }));
-const CustomerAuditTrailPage = () => import('../pages/customer/CustomerSectionPlaceholderPage').then((m) => ({ Component: m.CustomerAuditTrailPage }));
+const CustomerServicePackagesPage = () => import('../pages/customer/CustomerServicePackagesPage').then((m) => ({ Component: m.CustomerServicePackagesPage }));
+const CustomerRequestsPage = () => import('../pages/customer/CustomerRequestsPage').then((m) => ({ Component: m.CustomerRequestsPage }));
+const CustomerOperationalTasksPage = () => import('../pages/customer/CustomerOperationalTasksPage').then((m) => ({ Component: m.CustomerOperationalTasksPage }));
+const CustomerContactsPage = () => import('../pages/customer/CustomerContactsPage').then((m) => ({ Component: m.CustomerContactsPage }));
+const CustomerOwnersPage = () => import('../pages/customer/CustomerOwnersPage').then((m) => ({ Component: m.CustomerOwnersPage }));
+const CustomerBranchesPage = () => import('../pages/customer/CustomerBranchesPage').then((m) => ({ Component: m.CustomerBranchesPage }));
+const CustomerDepartmentsPage = () => import('../pages/customer/CustomerDepartmentsPage').then((m) => ({ Component: m.CustomerDepartmentsPage }));
+const CustomerEmployeesPage = () => import('../pages/customer/CustomerEmployeesPage').then((m) => ({ Component: m.CustomerEmployeesPage }));
+const CustomerAssetsPage = () => import('../pages/customer/CustomerAssetsPage').then((m) => ({ Component: m.CustomerAssetsPage }));
+const CustomerDocumentsPage = () => import('../pages/customer/CustomerDocumentsPage').then((m) => ({ Component: m.CustomerDocumentsPage }));
+const CustomerApprovalTasksPage = () => import('../pages/customer/CustomerApprovalTasksPage').then((m) => ({ Component: m.CustomerApprovalTasksPage }));
+const CustomerWorkflowsPage = () => import('../pages/customer/CustomerWorkflowsPage').then((m) => ({ Component: m.CustomerWorkflowsPage }));
+const CustomerTicketsPage = () => import('../pages/customer/CustomerTicketsPage').then((m) => ({ Component: m.CustomerTicketsPage }));
+const CustomerAuditTrailPage = () => import('../pages/customer/CustomerAuditTrailPage').then((m) => ({ Component: m.CustomerAuditTrailPage }));
 
 // Tabs
 const ServicesDashboardTab = () => import('../components/Service/ServicesDashboardTab').then((m) => ({ Component: m.ServicesDashboardTab }));

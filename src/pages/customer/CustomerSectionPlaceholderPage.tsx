@@ -4,23 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
 import {
     LayoutDashboard,
-    FileText,
-    FileCheck,
-    Receipt,
-    Layers,
-    PackageCheck,
-    ClipboardList,
-    CheckSquare,
-    Users,
-    UserCheck,
-    MapPin,
-    FolderKanban,
-    UserPlus,
-    Grid,
     ShieldCheck,
-    GitBranch,
-    Ticket,
-    History,
     CalendarClock,
     FolderGit2,
 } from 'lucide-react';
@@ -191,154 +175,42 @@ export { CustomerInvoicesPage } from './CustomerInvoicesPage';
 
 export { CustomerServicesPage } from './CustomerServicesPage';
 
-export const CustomerServicePackagesPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="servicePackages"
-        groupKey="operationsAndServiceDelivery"
-        routePath="/customer/service-packages"
-        code="CST-PKG"
-        icon={PackageCheck}
-    />
-);
+export { CustomerServicePackagesPage } from './CustomerServicePackagesPage';
 
-export const CustomerRequestsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="requests"
-        groupKey="operationsAndServiceDelivery"
-        routePath="/customer/requests"
-        code="CST-REQ"
-        icon={ClipboardList}
-    />
-);
+export { CustomerRequestsPage } from './CustomerRequestsPage';
 
-export const CustomerOperationalTasksPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="operationalTasks"
-        groupKey="operationsAndServiceDelivery"
-        routePath="/customer/operational-tasks"
-        code="CST-OPT"
-        icon={CheckSquare}
-    />
-);
+export { CustomerOperationalTasksPage } from './CustomerOperationalTasksPage';
 
 // ============================================================================
 // 3. Organization & Resources (6 routes)
 // ============================================================================
 
-export const CustomerContactsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="contacts"
-        groupKey="organizationAndResources"
-        routePath="/customer/contacts"
-        code="CST-CTC"
-        icon={Users}
-    />
-);
+export { CustomerContactsPage } from './CustomerContactsPage';
 
-export const CustomerOwnersPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="owners"
-        groupKey="organizationAndResources"
-        routePath="/customer/owners"
-        code="CST-OWN"
-        icon={UserCheck}
-    />
-);
+export { CustomerOwnersPage } from './CustomerOwnersPage';
 
-export const CustomerBranchesPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="branches"
-        groupKey="organizationAndResources"
-        routePath="/customer/branches"
-        code="CST-BRN"
-        icon={MapPin}
-    />
-);
+export { CustomerBranchesPage } from './CustomerBranchesPage';
 
-export const CustomerDepartmentsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="departments"
-        groupKey="organizationAndResources"
-        routePath="/customer/departments"
-        code="CST-DEP"
-        icon={FolderKanban}
-    />
-);
+export { CustomerDepartmentsPage } from './CustomerDepartmentsPage';
 
-export const CustomerEmployeesPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="employees"
-        groupKey="organizationAndResources"
-        routePath="/customer/employees"
-        code="CST-EMP"
-        icon={UserPlus}
-    />
-);
+export { CustomerEmployeesPage } from './CustomerEmployeesPage';
 
-export const CustomerAssetsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="assets"
-        groupKey="organizationAndResources"
-        routePath="/customer/assets"
-        code="CST-AST"
-        icon={Grid}
-    />
-);
+export { CustomerAssetsPage } from './CustomerAssetsPage';
 
 // ============================================================================
 // 4. Governance & Support (4 routes)
 // ============================================================================
 
-export const CustomerDocumentsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="documents"
-        groupKey="governanceAndSupport"
-        routePath="/customer/documents"
-        code="CST-DOC"
-        icon={FileText}
-    />
-);
+export { CustomerDocumentsPage } from './CustomerDocumentsPage';
 
-export const CustomerApprovalTasksPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="approvalTasks"
-        groupKey="governanceAndSupport"
-        routePath="/customer/approval-tasks"
-        code="CST-APR"
-        icon={ShieldCheck}
-    />
-);
+export { CustomerApprovalTasksPage } from './CustomerApprovalTasksPage';
 
-export const CustomerWorkflowsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="workflows"
-        groupKey="governanceAndSupport"
-        routePath="/customer/workflows"
-        code="CST-WFL"
-        icon={GitBranch}
-    />
-);
+export { CustomerWorkflowsPage } from './CustomerWorkflowsPage';
 
-export const CustomerTicketsPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="tickets"
-        groupKey="governanceAndSupport"
-        routePath="/customer/tickets"
-        code="CST-TCK"
-        icon={Ticket}
-    />
-);
+export { CustomerTicketsPage } from './CustomerTicketsPage';
 
 // ============================================================================
 // 5. Audit Trail (1 route)
 // ============================================================================
 
-export const CustomerAuditTrailPage: React.FC = () => (
-    <CustomerSectionPlaceholder
-        pageKey="auditTrail"
-        groupKey="auditTrail"
-        routePath="/customer/audit-trail"
-        code="CST-AUD"
-        icon={History}
-    />
-);
+export { CustomerAuditTrailPage } from './CustomerAuditTrailPage';
