@@ -18,6 +18,14 @@ const GROUP_TITLE_KEYS: Record<string, string> = {
     'Audit Trail': 'nav.auditTrailGroup',
     'Asset Management': 'nav.assetManagement',
     'ASSET MANAGEMENT': 'nav.assetManagement',
+    'Overview & Commercial': 'nav.overviewAndCommercial',
+    'OVERVIEW & COMMERCIAL': 'nav.overviewAndCommercial',
+    'Operations & Service Delivery': 'nav.operationsAndServiceDelivery',
+    'OPERATIONS & SERVICE DELIVERY': 'nav.operationsAndServiceDelivery',
+    'Organization & Resources': 'nav.organizationAndResources',
+    'ORGANIZATION & RESOURCES': 'nav.organizationAndResources',
+    'Governance & Support': 'nav.governanceAndSupport',
+    'GOVERNANCE & SUPPORT': 'nav.governanceAndSupport',
 };
 
 const ITEM_LABEL_KEYS: Record<string, string> = {
