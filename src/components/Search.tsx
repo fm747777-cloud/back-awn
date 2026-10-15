@@ -154,11 +154,10 @@ const Search = ({
                         <button
                             type="button"
                             onClick={onToggleFilters}
-                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer shrink-0 shadow-2xs ${
-                                isFiltersOpen || hasActiveFilters
+                            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer shrink-0 shadow-2xs ${isFiltersOpen || hasActiveFilters
                                     ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
                                     : 'bg-white border-[#DCD6CD] hover:border-[#BFAB93] text-[#595550] hover:text-[#0D0D0D] hover:bg-[#F8F6F2]'
-                            }`}
+                                }`}
                         >
                             <Filter size={14} className={isFiltersOpen || hasActiveFilters ? 'text-[#BFAB93]' : 'text-[#857E74]'} />
                             <span>{isFiltersOpen ? t('ticketing.filters.hideFilters') : t('ticketing.filters.showFilters')}</span>

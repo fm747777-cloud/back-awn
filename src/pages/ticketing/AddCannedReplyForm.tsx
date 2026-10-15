@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 export interface CannedReply {
     id: string;
+    codeName: string
     subject: string;
     message: string;
     createdAt?: string;

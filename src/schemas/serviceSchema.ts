@@ -60,8 +60,9 @@ export const addServiceSchema = z.object({
     sadad_payment_available: z.boolean(),
     other_payment_method_id: z.string().optional(),
     service_fees: z.string().optional(),
-    input_documents: z.array(z.string()).optional(),
-    output_documents: z.array(z.string()).optional(),
+    serviceDoc_ids: z.array(z.string()).optional(),
+    // input_documents: z.array(z.string()).optional(),
+    // output_documents: z.array(z.string()).optional(),
     process_description: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.service_validity === 'recurring' && (!data.service_period || data.service_period.trim() === '')) {

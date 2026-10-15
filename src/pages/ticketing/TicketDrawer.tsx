@@ -1,4 +1,3 @@
-
 import React, { useMemo, useRef, useState } from 'react';
 import { X, ChevronDown, LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +9,7 @@ import { focusAndScrollToFirstError } from '../../utils/formValidation';
 
 import { taskSchema, TaskPriority, TaskComeFrom, type CreateTaskDto } from '../../schemas/ticketSchema';
 
-import { companyBranchApi, companyUserApi, serviceApi } from '../../api/api';
+import { companyBranchApi, companyUserApi, serviceApi, userApi } from '../../api/api';
 import { axiosClient } from '../../api/axiosClient';
 
 export type TicketDrawerMode = 'create' | 'edit' | 'view';
@@ -237,7 +236,7 @@ export const TicketDrawer: React.FC<TicketDrawerProps> = ({
     const usersQuery = useQuery({
         queryKey: ['task-drawer', 'users'],
         queryFn: () =>
-            companyBranchApi.getCompaniesBranchs({ page: 1, limit: 100 }),
+            userApi.getUsers({ page: 1, limit: 100 }),
         enabled: isOpen,
         staleTime: 60_000,
     });
