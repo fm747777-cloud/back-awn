@@ -12,7 +12,10 @@
     "verify:ums:4g": "npx tsx scripts/verify-ums-phase4g.ts",
     "verify:crm:2b": "npx tsx scripts/verify-crm-phase2b.ts",
     "verify:crm:2c": "npx tsx scripts/verify-crm-phase2c.ts",
-    "verify:crm:2d": "npx tsx scripts/verify-crm-phase2d.ts"
+    "verify:crm:2d": "npx tsx scripts/verify-crm-phase2d.ts",
+    "verify:crm:2g": "npx tsx scripts/verify-crm-phase2g.ts",
+    "verify:crm:invoices": "npx tsx scripts/verify-crm-phase2-invoices.ts",
+    "verify:crm:workflow": "npx tsx scripts/verify-crm-lead-to-invoice-workflow.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

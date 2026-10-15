@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     X,
@@ -17,6 +17,7 @@ import type {
     CrmInvoiceRecord,
     CrmInvoiceStatus,
 } from '../../../schemas/crmSchema';
+import { InvoiceDocumentModal } from './InvoiceDocumentModal';
 
 export interface InvoiceViewDrawerProps {
     isOpen: boolean;
@@ -45,8 +46,16 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+    const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
 
     if (!isOpen || !record) return null;
+
+    const handleOpenDocument = () => {
+        if (onPrintDocument && record) {
+            onPrintDocument(record);
+        }
+        setIsDocumentModalOpen(true);
+    };
 
     const isProforma =
         record.invoiceType === 'proforma' ||
@@ -128,17 +137,15 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                        {onPrintDocument && (
-                            <button
-                                type="button"
-                                onClick={() => onPrintDocument(record)}
-                                title={t('crm.commercial.invoices.actions.printDocument')}
-                                aria-label={t('crm.commercial.invoices.actions.printDocument')}
-                                className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2D3F2C] flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                                <Printer size={16} />
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={handleOpenDocument}
+                            title={t('crm.commercial.invoices.actions.printDocument')}
+                            aria-label={t('crm.commercial.invoices.actions.printDocument')}
+                            className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2D3F2C] flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                            <Printer size={16} />
+                        </button>
                         <button
                             type="button"
                             onClick={onClose}
@@ -491,16 +498,14 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                                 : t('crm.commercial.invoices.viewDrawer.convertAction')}
                         </button>
                     )}
-                    {onPrintDocument && (
-                        <button
-                            type="button"
-                            onClick={() => onPrintDocument(record)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#2D3F2C] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
-                        >
-                            <Printer size={14} />
-                            {t('crm.commercial.invoices.actions.printDocument')}
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={handleOpenDocument}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#2D3F2C] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
+                    >
+                        <Printer size={14} />
+                        {t('crm.commercial.invoices.actions.printDocument')}
+                    </button>
                     <button
                         type="button"
                         onClick={onClose}
@@ -518,6 +523,16 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     </button>
                 </div>
             </div>
+
+            <InvoiceDocumentModal
+                isOpen={isDocumentModalOpen}
+                invoice={record}
+                onClose={() => setIsDocumentModalOpen(false)}
+                onNavigateToInvoice={(invoiceId) => {
+                    setIsDocumentModalOpen(false);
+                    onViewLinkedInvoice?.(invoiceId);
+                }}
+            />
         </div>
     );
 };

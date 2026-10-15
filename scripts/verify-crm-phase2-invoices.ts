@@ -24,7 +24,6 @@ import {
     crmInvoiceInputSchema,
     generateCrmInvoiceNumberAndCode,
     CRM_INVOICE_TYPE_VALUES,
-    type CrmInvoiceType,
 } from '../src/schemas/crmSchema';
 import { crmApi } from '../src/api/api';
 

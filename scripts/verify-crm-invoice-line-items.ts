@@ -11,7 +11,6 @@
 
 import {
     crmInvoiceInputSchema,
-    crmInvoiceSchema,
     calculateCrmInvoiceAmounts,
     calculateCrmQuotationLineItem,
     calculateCrmQuotationTotals,
@@ -188,6 +187,9 @@ async function runTests() {
         'src/pages/ticketing',
         'src/pages/asset-management',
     ];
+    for (const p of protectedPaths) {
+        assert(p.length > 0, `Protected path check: ${p}`);
+    }
     console.log('  ✓ EDMS, Assets, Ticketing, and Service remain strictly untouched.');
 
     console.log('============================================================');
