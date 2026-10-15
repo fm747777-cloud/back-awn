@@ -1017,12 +1017,67 @@ export function calculateCrmInvoiceAmounts(input: {
     };
 }
 
+export const CRM_INVOICE_TYPE_VALUES = ['proforma', 'final_tax'] as const;
+export const crmInvoiceTypeSchema = z.enum(CRM_INVOICE_TYPE_VALUES);
+export type CrmInvoiceType = z.infer<typeof crmInvoiceTypeSchema>;
+
+export function generateCrmInvoiceNumberAndCode(
+    type: CrmInvoiceType,
+    existingList: Array<{ code?: string; invoiceNumber?: string; invoiceType?: string }>,
+    currentYear: number = new Date().getFullYear()
+): { invoiceNumber: string; code: string } {
+    const isProforma = type === 'proforma';
+    const prefix = isProforma ? 'PI' : 'INV';
+
+    const matchingRecords = existingList.filter((inv) => {
+        const invType =
+            inv.invoiceType ||
+            (inv.code?.startsWith('PI-') || inv.invoiceNumber?.startsWith('PI-')
+                ? 'proforma'
+                : 'final_tax');
+        return invType === type;
+    });
+
+    let maxNum = 0;
+    for (const record of matchingRecords) {
+        if (record.invoiceNumber) {
+            const numMatch =
+                record.invoiceNumber.match(/(?:PI|INV)-\d{4}-(\d+)/i) ||
+                record.invoiceNumber.match(/(?:PI|INV)-(\d+)/i);
+            if (numMatch && numMatch[1]) {
+                const parsed = parseInt(numMatch[1], 10);
+                if (!isNaN(parsed) && parsed > maxNum) maxNum = parsed;
+            }
+        }
+        if (record.code) {
+            const codeMatch = record.code.match(/(?:PI|INV)-(\d+)/i);
+            if (codeMatch && codeMatch[1]) {
+                const parsed = parseInt(codeMatch[1], 10);
+                if (!isNaN(parsed) && parsed > maxNum) maxNum = parsed;
+            }
+        }
+    }
+
+    const nextSeq = maxNum + 1;
+    const seqStr = String(nextSeq).padStart(3, '0');
+    return {
+        code: `${prefix}-${seqStr}`,
+        invoiceNumber: `${prefix}-${currentYear}-${seqStr}`,
+    };
+}
+
 export const crmInvoiceLineItemSchema = crmQuotationLineItemSchema;
 export type CrmInvoiceLineItem = CrmQuotationLineItem;
 export type CrmInvoiceLineItemInput = CrmQuotationLineItemInput;
 
 export const crmInvoiceInputSchema = z.object({
     invoiceNumber: z.string().trim().max(100).optional(),
+    invoiceType: crmInvoiceTypeSchema.default('final_tax'),
+    sourceProformaInvoiceId: z.string().trim().optional(),
+    sourceProformaInvoiceNumber: z.string().trim().optional(),
+    convertedToInvoiceId: z.string().trim().optional(),
+    convertedToInvoiceNumber: z.string().trim().optional(),
+    convertedAt: crmOptionalDateStringSchema,
     titleEn: z.string().trim().min(1, 'Invoice title is required').max(200),
     titleAr: z.string().trim().max(200).optional(),
     companyId: z.string().trim().min(1, 'Company is required'),

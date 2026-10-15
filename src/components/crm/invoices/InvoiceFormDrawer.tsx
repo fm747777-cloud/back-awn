@@ -138,6 +138,12 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
         });
         return {
             invoiceNumber: '',
+            invoiceType: 'final_tax',
+            sourceProformaInvoiceId: undefined,
+            sourceProformaInvoiceNumber: undefined,
+            convertedToInvoiceId: undefined,
+            convertedToInvoiceNumber: undefined,
+            convertedAt: undefined,
             titleEn: '',
             titleAr: '',
             dealId: '',
@@ -204,6 +210,17 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                 setTaxRate(computed.taxRate);
                 setFormState({
                     invoiceNumber: initialData.invoiceNumber,
+                    invoiceType:
+                        initialData.invoiceType ||
+                        (initialData.code?.startsWith('PI-') ||
+                        initialData.invoiceNumber?.startsWith('PI-')
+                            ? 'proforma'
+                            : 'final_tax'),
+                    sourceProformaInvoiceId: initialData.sourceProformaInvoiceId,
+                    sourceProformaInvoiceNumber: initialData.sourceProformaInvoiceNumber,
+                    convertedToInvoiceId: initialData.convertedToInvoiceId,
+                    convertedToInvoiceNumber: initialData.convertedToInvoiceNumber,
+                    convertedAt: initialData.convertedAt,
                     titleEn: initialData.titleEn,
                     titleAr: initialData.titleAr || '',
                     dealId: initialData.dealId || '',
@@ -239,6 +256,12 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                 setTaxRate(freshComputed.taxRate);
                 setFormState({
                     invoiceNumber: '',
+                    invoiceType: 'final_tax',
+                    sourceProformaInvoiceId: undefined,
+                    sourceProformaInvoiceNumber: undefined,
+                    convertedToInvoiceId: undefined,
+                    convertedToInvoiceNumber: undefined,
+                    convertedAt: undefined,
                     titleEn: '',
                     titleAr: '',
                     dealId: '',
@@ -462,6 +485,12 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
         });
         const parsed = crmInvoiceInputSchema.safeParse({
             ...formState,
+            invoiceType: formState.invoiceType || 'final_tax',
+            sourceProformaInvoiceId: formState.sourceProformaInvoiceId || undefined,
+            sourceProformaInvoiceNumber: formState.sourceProformaInvoiceNumber || undefined,
+            convertedToInvoiceId: formState.convertedToInvoiceId || undefined,
+            convertedToInvoiceNumber: formState.convertedToInvoiceNumber || undefined,
+            convertedAt: formState.convertedAt || undefined,
             invoiceNumber: formState.invoiceNumber?.trim() || undefined,
             dealId: formState.dealId?.trim() || undefined,
             quotationId: formState.quotationId?.trim() || undefined,
@@ -519,12 +548,18 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                         </div>
                         <div className="min-w-0">
                             <span
-                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold ${
+                                    formState.invoiceType === 'proforma'
+                                        ? 'bg-[#F3EEFA] text-[#5B21B6] border border-[#DDD6FE]'
+                                        : 'bg-white text-[#2D3F2C] border border-[#E5E0D8]'
+                                }`}
                                 dir="ltr"
                             >
                                 {mode === 'edit' && initialData
                                     ? initialData.invoiceNumber
-                                    : t('crm.commercial.invoices.badge')}
+                                    : formState.invoiceType === 'proforma'
+                                      ? 'PI — Proforma'
+                                      : 'INV — Final Tax'}
                             </span>
                             <h2
                                 id="invoice-form-drawer-title"
@@ -572,6 +607,58 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                             <span>{serverError}</span>
                         </div>
                     )}
+
+                    {/* Invoice Classification (Proforma vs Final Tax Invoice) */}
+                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-2.5">
+                        <label className="block text-xs font-bold text-[#0D0D0D]">
+                            {t('crm.commercial.invoices.form.invoiceTypeLabel')}
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => handleChange('invoiceType', 'final_tax')}
+                                className={`p-3 rounded-xl border text-start transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                                    (formState.invoiceType || 'final_tax') === 'final_tax'
+                                        ? 'bg-white border-[#2D3F2C] shadow-xs ring-1 ring-[#2D3F2C]'
+                                        : 'bg-white/60 border-[#E5E0D8] hover:bg-white hover:border-[#BFAB93]'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-bold text-[#0D0D0D]">
+                                        {t('crm.commercial.invoices.form.typeFinalTax')}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                        INV-YYYY-XXX
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-[#6E6862] leading-relaxed">
+                                    {t('crm.commercial.invoices.form.typeFinalTaxDesc')}
+                                </p>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleChange('invoiceType', 'proforma')}
+                                className={`p-3 rounded-xl border text-start transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
+                                    formState.invoiceType === 'proforma'
+                                        ? 'bg-white border-[#7C3AED] shadow-xs ring-1 ring-[#7C3AED]'
+                                        : 'bg-white/60 border-[#E5E0D8] hover:bg-white hover:border-[#BFAB93]'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-bold text-[#0D0D0D]">
+                                        {t('crm.commercial.invoices.form.typeProforma')}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#F3EEFA] text-[#5B21B6] border border-[#DDD6FE]">
+                                        PI-YYYY-XXX
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-[#6E6862] leading-relaxed">
+                                    {t('crm.commercial.invoices.form.typeProformaDesc')}
+                                </p>
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Section 1: Invoice Identity & Commercial Links */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-4">

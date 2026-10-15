@@ -28,6 +28,7 @@ import {
     crmContractSchema,
     crmInvoiceInputSchema,
     crmInvoiceSchema,
+    generateCrmInvoiceNumberAndCode,
     crmApprovalTaskInputSchema,
     crmApprovalTaskSchema,
     crmApprovalTaskDecisionInputSchema,
@@ -80,6 +81,7 @@ import {
     type CrmBillingCycle,
     type CrmInvoiceInput,
     type CrmInvoiceRecord,
+    type CrmInvoiceType,
     type CrmInvoiceStatus,
     type CrmInvoicePaymentMethod,
     type CrmTaskPriority,
@@ -1986,6 +1988,7 @@ export interface CrmContractQueryParams extends CrmListQueryParams {
 }
 
 export interface CrmInvoiceQueryParams extends CrmListQueryParams {
+    invoiceType?: CrmInvoiceType | 'all';
     invoiceStatus?: CrmInvoiceStatus | 'all';
     companyId?: string;
     dealId?: string;
@@ -3719,6 +3722,7 @@ const initialCrmQuotations: CrmQuotationRecord[] = [
 const initialCrmInvoices: CrmInvoiceRecord[] = [
     {
         id: 'crm-inv-1',
+        invoiceType: 'final_tax',
         code: 'INV-001',
         invoiceNumber: 'INV-2026-001',
         titleEn: 'Annual Corporate Retainer Invoice #1',
@@ -3793,6 +3797,7 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
     },
     {
         id: 'crm-inv-2',
+        invoiceType: 'final_tax',
         code: 'INV-002',
         invoiceNumber: 'INV-2026-002',
         titleEn: 'Afaq Regional HQ Mobilization & Q1 Compliance Invoice',
@@ -3889,6 +3894,7 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
     },
     {
         id: 'crm-inv-3',
+        invoiceType: 'final_tax',
         code: 'INV-003',
         invoiceNumber: 'INV-2026-003',
         titleEn: 'Dar Al-Omran Branch Municipal Audit Advance Invoice',
@@ -10960,6 +10966,19 @@ export const crmApi = {
                 return false;
             }
             if (
+                params.invoiceType &&
+                params.invoiceType !== 'all'
+            ) {
+                const itemType =
+                    item.invoiceType ||
+                    (item.code?.startsWith('PI-') || item.invoiceNumber?.startsWith('PI-')
+                        ? 'proforma'
+                        : 'final_tax');
+                if (itemType !== params.invoiceType) {
+                    return false;
+                }
+            }
+            if (
                 params.invoiceStatus &&
                 params.invoiceStatus !== 'all' &&
                 item.invoiceStatus !== params.invoiceStatus
@@ -11005,6 +11024,9 @@ export const crmApi = {
             return (
                 item.code.toLowerCase().includes(search) ||
                 (item.invoiceNumber || '').toLowerCase().includes(search) ||
+                (item.sourceProformaInvoiceNumber || '').toLowerCase().includes(search) ||
+                (item.convertedToInvoiceNumber || '').toLowerCase().includes(search) ||
+                (item.invoiceType || '').toLowerCase().includes(search) ||
                 item.titleEn.toLowerCase().includes(search) ||
                 (item.titleAr || '').toLowerCase().includes(search) ||
                 (item.companyNameEn || '').toLowerCase().includes(search) ||
@@ -11253,15 +11275,17 @@ export const crmApi = {
             initialCrmInvoices
         );
         const todayIso = new Date().toISOString().split('T')[0];
-        const nextCode = generateNextCrmCode(list, 'INV');
-        const seqSuffix = nextCode.replace(/\D+/g, '').padStart(3, '0');
+        const targetType: CrmInvoiceType = validated.invoiceType || 'final_tax';
+        const generated = generateCrmInvoiceNumberAndCode(targetType, list);
+        const nextCode = generated.code;
         const resolvedInvoiceNumber =
-            validated.invoiceNumber?.trim() || `INV-2026-${seqSuffix}`;
+            validated.invoiceNumber?.trim() || generated.invoiceNumber;
 
         const newRecord: CrmInvoiceRecord = validateWithSchema(
             crmInvoiceSchema,
             {
                 ...validated,
+                invoiceType: targetType,
                 invoiceNumber: resolvedInvoiceNumber,
                 companyId: company.id,
                 companyNameEn: company.nameEn,
@@ -11298,6 +11322,9 @@ export const crmApi = {
 
         setLocal(CRM_STORAGE_KEYS.INVOICES, [newRecord, ...list]);
 
+        const typeLabelEn = targetType === 'proforma' ? 'Proforma Invoice' : 'Invoice';
+        const typeLabelAr = targetType === 'proforma' ? 'الفاتورة الشكلية' : 'الفاتورة';
+
         recordCrmAuditEvent({
             action: 'CREATED',
             resourceType: 'Invoice',
@@ -11305,8 +11332,8 @@ export const crmApi = {
             resourceCode: newRecord.code,
             resourceNameEn: newRecord.titleEn,
             resourceNameAr: newRecord.titleAr || newRecord.titleEn,
-            detailsEn: `Created Invoice "${newRecord.titleEn}" (${newRecord.invoiceNumber}) for ${newRecord.companyNameEn} — Total SAR ${newRecord.totalAmount.toLocaleString()} (Balance Due: SAR ${newRecord.balanceDue.toLocaleString()}).`,
-            detailsAr: `تم إنشاء الفاتورة "${newRecord.titleAr || newRecord.titleEn}" (${newRecord.invoiceNumber}) لشركة ${newRecord.companyNameAr || newRecord.companyNameEn} — الإجمالي ${newRecord.totalAmount.toLocaleString()} ر.س.`,
+            detailsEn: `Created ${typeLabelEn} "${newRecord.titleEn}" (${newRecord.invoiceNumber}) for ${newRecord.companyNameEn} — Total SAR ${newRecord.totalAmount.toLocaleString()} (Balance Due: SAR ${newRecord.balanceDue.toLocaleString()}).`,
+            detailsAr: `تم إنشاء ${typeLabelAr} "${newRecord.titleAr || newRecord.titleEn}" (${newRecord.invoiceNumber}) لشركة ${newRecord.companyNameAr || newRecord.companyNameEn} — الإجمالي ${newRecord.totalAmount.toLocaleString()} ر.س.`,
             newState: newRecord,
         });
 
@@ -11456,6 +11483,27 @@ export const crmApi = {
         const updatedRecord: CrmInvoiceRecord = {
             ...previous,
             ...merged,
+            invoiceType: data.invoiceType || previous.invoiceType || 'final_tax',
+            sourceProformaInvoiceId:
+                data.sourceProformaInvoiceId !== undefined
+                    ? data.sourceProformaInvoiceId
+                    : previous.sourceProformaInvoiceId,
+            sourceProformaInvoiceNumber:
+                data.sourceProformaInvoiceNumber !== undefined
+                    ? data.sourceProformaInvoiceNumber
+                    : previous.sourceProformaInvoiceNumber,
+            convertedToInvoiceId:
+                data.convertedToInvoiceId !== undefined
+                    ? data.convertedToInvoiceId
+                    : previous.convertedToInvoiceId,
+            convertedToInvoiceNumber:
+                data.convertedToInvoiceNumber !== undefined
+                    ? data.convertedToInvoiceNumber
+                    : previous.convertedToInvoiceNumber,
+            convertedAt:
+                data.convertedAt !== undefined
+                    ? data.convertedAt
+                    : previous.convertedAt,
             invoiceNumber:
                 merged.invoiceNumber?.trim() || previous.invoiceNumber,
             companyId: company.id,
@@ -11637,6 +11685,122 @@ export const crmApi = {
         return { success: true, deletedId: id };
     },
 
+    convertProformaToFinalInvoice: async (
+        proformaId: string,
+        overrides: Partial<CrmInvoiceInput> = {}
+    ): Promise<{ proforma: CrmInvoiceRecord; finalInvoice: CrmInvoiceRecord }> => {
+        const proforma = await crmApi.getInvoiceById(proformaId);
+        const proformaType =
+            proforma.invoiceType ||
+            (proforma.code?.startsWith('PI-') || proforma.invoiceNumber?.startsWith('PI-')
+                ? 'proforma'
+                : 'final_tax');
+
+        if (proformaType !== 'proforma') {
+            throw new CrmApiError({
+                message: `Invoice '${proforma.invoiceNumber}' is not a Proforma Invoice and cannot be converted.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        if (proforma.convertedToInvoiceId) {
+            throw new CrmApiError({
+                message: `Proforma Invoice '${proforma.invoiceNumber}' has already been converted to Final Tax Invoice '${proforma.convertedToInvoiceNumber || proforma.convertedToInvoiceId}'.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.INVOICES,
+            initialCrmInvoices
+        );
+        const existingFinal = list.find(
+            (inv) => inv.sourceProformaInvoiceId === proforma.id
+        );
+        if (existingFinal) {
+            throw new CrmApiError({
+                message: `A Final Tax Invoice (${existingFinal.invoiceNumber}) already exists for Proforma Invoice '${proforma.invoiceNumber}'.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        const todayIso = new Date().toISOString().split('T')[0];
+        const due = new Date();
+        due.setDate(due.getDate() + 30);
+        const dueIso = due.toISOString().split('T')[0];
+
+        const targetIssueDate = overrides.issueDate || todayIso;
+        let targetDueDate = overrides.dueDate || proforma.dueDate || dueIso;
+        if (Date.parse(targetDueDate) < Date.parse(targetIssueDate)) {
+            const fallbackDue = new Date(targetIssueDate);
+            fallbackDue.setDate(fallbackDue.getDate() + 30);
+            targetDueDate = fallbackDue.toISOString().split('T')[0];
+        }
+
+        const createdFinal = await crmApi.createInvoice({
+            titleEn: overrides.titleEn || proforma.titleEn,
+            titleAr: overrides.titleAr || proforma.titleAr,
+            companyId: proforma.companyId,
+            dealId: proforma.dealId,
+            quotationId: proforma.quotationId,
+            contractId: proforma.contractId,
+            contractNumber: proforma.contractNumber,
+            contactId: proforma.contactId,
+            contactName: proforma.contactName,
+            assignedEmployeeId: proforma.assignedEmployeeId,
+            issueDate: targetIssueDate,
+            dueDate: targetDueDate,
+            lineItems: overrides.lineItems || proforma.lineItems,
+            subtotal: overrides.subtotal ?? proforma.subtotal,
+            discountTotal: overrides.discountTotal ?? proforma.discountTotal,
+            discountAmount: overrides.discountAmount ?? proforma.discountAmount,
+            taxId: overrides.taxId ?? proforma.taxId,
+            taxRate: overrides.taxRate ?? proforma.taxRate,
+            taxAmount: overrides.taxAmount ?? proforma.taxAmount,
+            vatId: overrides.vatId ?? proforma.vatId,
+            vatRate: overrides.vatRate ?? proforma.vatRate,
+            vatAmount: overrides.vatAmount ?? proforma.vatAmount,
+            totalAmount: overrides.totalAmount ?? proforma.totalAmount,
+            paidAmount: 0,
+            remainingAmount: overrides.totalAmount ?? proforma.totalAmount,
+            balanceDue: overrides.totalAmount ?? proforma.totalAmount,
+            currency: proforma.currency || 'SAR',
+            invoiceStatus: overrides.invoiceStatus || 'issued',
+            invoiceType: 'final_tax',
+            sourceProformaInvoiceId: proforma.id,
+            sourceProformaInvoiceNumber: proforma.invoiceNumber,
+            notes:
+                overrides.notes ||
+                proforma.notes ||
+                `Converted from Proforma Invoice ${proforma.invoiceNumber}.`,
+            status: 'active',
+        });
+
+        const updatedProforma = await crmApi.updateInvoice(proforma.id, {
+            convertedToInvoiceId: createdFinal.id,
+            convertedToInvoiceNumber: createdFinal.invoiceNumber,
+            convertedAt: todayIso,
+        });
+
+        recordCrmAuditEvent({
+            action: 'STATUS_CHANGED',
+            resourceType: 'Invoice',
+            resourceId: proforma.id,
+            resourceCode: proforma.code,
+            resourceNameEn: proforma.titleEn,
+            resourceNameAr: proforma.titleAr || proforma.titleEn,
+            detailsEn: `Converted Proforma Invoice "${proforma.invoiceNumber}" to Final Tax Invoice "${createdFinal.invoiceNumber}".`,
+            detailsAr: `تم تحويل الفاتورة الشكلية "${proforma.invoiceNumber}" إلى فاتورة ضريبية نهائية "${createdFinal.invoiceNumber}".`,
+            previousState: proforma,
+            newState: updatedProforma,
+        });
+
+        return { proforma: updatedProforma, finalInvoice: createdFinal };
+    },
+
     // ------------------------------------------------------------------------
     // Commercial Entity Referential Integrity & Safe Deactivation Helpers
     // ------------------------------------------------------------------------
@@ -11808,6 +11972,10 @@ export const crmApi = {
             contractId: string,
             overrides?: Partial<CrmInvoiceInput>
         ) => crmApi.generateInvoiceFromContract(contractId, overrides),
+        convertProformaToFinal: (
+            id: string,
+            overrides?: Partial<CrmInvoiceInput>
+        ) => crmApi.convertProformaToFinalInvoice(id, overrides),
         update: (id: string, data: Partial<CrmInvoiceInput>) =>
             crmApi.updateInvoice(id, data),
         recordPayment: (
