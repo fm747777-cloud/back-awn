@@ -75,10 +75,10 @@ export const ServicesListTab = () => {
                 ),
             },
             {
-                accessorKey: 'code',
-                header: t('services.serviceCode'),
+                accessorKey: 'codeName',
+                header: t('common.codeName'),
                 cell: (info: any) => (
-                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]" dir="ltr">
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
                         {info.getValue()}
                     </span>
                 ),
@@ -189,10 +189,10 @@ export const ServicesListTab = () => {
                         displayName === 'N/A'
                             ? t('common.notAvailable')
                             : displayName === 'System Admin'
-                              ? t('common.systemAdmin')
-                              : displayName === 'Admin User'
-                                ? t('common.adminUser')
-                                : displayName;
+                                ? t('common.systemAdmin')
+                                : displayName === 'Admin User'
+                                    ? t('common.adminUser')
+                                    : displayName;
                     return (
                         <div className="flex flex-col">
                             <span className="font-medium text-[#0D0D0D]">
@@ -213,16 +213,14 @@ export const ServicesListTab = () => {
                     const isInactive = rawStatus.toLowerCase() === 'inactive';
                     return (
                         <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                                isInactive
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${isInactive
                                     ? 'bg-[#595550]/10 text-[#595550] border-[#595550]/20'
                                     : 'bg-[#2D3F2C]/10 text-[#2D3F2C] border-[#2D3F2C]/20'
-                            }`}
+                                }`}
                         >
                             <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                    isInactive ? 'bg-[#857E74]' : 'bg-[#2D3F2C]'
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full ${isInactive ? 'bg-[#857E74]' : 'bg-[#2D3F2C]'
+                                    }`}
                             />
                             {isInactive ? t('common.inactive') : t('common.active')}
                         </span>

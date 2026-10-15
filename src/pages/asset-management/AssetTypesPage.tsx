@@ -1,1792 +1,712 @@
-import React, { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-    Layers,
-    CheckCircle2,
-    Grid,
-    FileText,
-    Search,
-    X,
-    RotateCcw,
-    Download,
-    Plus,
-    Eye,
-    Pencil,
-    Power,
-    Trash2,
-    ChevronLeft,
-    ChevronRight,
-    Calendar,
-    User,
-    AlertTriangle,
-    XCircle,
-    Check,
-    Box,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Edit2, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-    loadAssetTypes,
-    saveAssetTypes,
-    loadAssetCategories,
-    generateNextAssetTypeId,
-    formatAssetDateToday,
-    recordAssetAuditEvent,
-    getAvailableAssetTemplateOptions,
-    getAllKnownAssetTemplates,
-    ASSET_PAGE_SIZE_OPTIONS,
-    ASSET_SUBTYPE_OPTIONS,
-    type AssetTypeRecord,
-    type AssetCategoryRecord,
-    type AssetTemplateOption,
-    type AssetRecordLifecycleStatus,
-} from './assetManagementMockData';
+import { useTranslation } from 'react-i18next';
+import { DataTable } from '../../components/DataTable';
+import AssetTypeForm, { type AssetType, type AssetTypeFormData } from './AssetTypeForm';
+import AssetTypeDetails, { type Option } from './AssetTypeDetails';
+import { assetApi, serviceApi } from '../../api/api';
 
-interface TypeFormState {
-    nameEn: string;
-    nameAr: string;
-    categoryId: string;
-    subTypeEn: string;
-    subTypeAr: string;
-    templatesEn: string[];
-    descriptionEn: string;
-    descriptionAr: string;
-    status: 'Active' | 'Inactive';
-}
+const extractItems = <T,>(response: any): T[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.results)) return response.results;
+    if (Array.isArray(response?.data?.items)) return response.data.items;
+    if (Array.isArray(response?.data?.data)) return response.data.data;
 
-export const AssetTypesPage: React.FC = () => {
-    const { t, i18n } = useTranslation();
-    const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+    return [];
+};
 
-    const [records, setRecords] = useState<AssetTypeRecord[]>(() => loadAssetTypes());
-    const [categories, setCategories] = useState<AssetCategoryRecord[]>(() =>
-        loadAssetCategories()
+const extractCount = (response: any, fallback: number): number =>
+    response?.count ??
+    response?.total ??
+    response?.meta?.totalItems ??
+    response?.meta?.total ??
+    response?.data?.total ??
+    response?.data?.count ??
+    fallback;
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+    const err = error as {
+        response?: { data?: { message?: string | string[] } };
+        message?: string;
+    };
+
+    const message = err?.response?.data?.message ?? err?.message;
+
+    return Array.isArray(message)
+        ? message.join(', ')
+        : message || fallback;
+};
+
+const getPackageName = (item: any): string => {
+    if (typeof item === 'string') return item;
+
+    return (
+        item?.package_name ??
+        item?.packageName ??
+        item?.name ??
+        item?.title ??
+        item?.id ??
+        ''
     );
-    const availableTemplates = useMemo(() => getAvailableAssetTemplateOptions(), []);
-    const allKnownTemplates = useMemo(() => getAllKnownAssetTemplates(), []);
+};
 
-    // Search, Filters & Pagination State
-    const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-    const [subTypeFilter, setSubTypeFilter] = useState<string>('ALL');
-    const [statusFilter, setStatusFilter] = useState<string>('ALL');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+const getLinkedPackages = (
+    item: AssetType,
+    allPackages: Option[],
+): Option[] => {
+    const raw = item as any;
 
-    // Drawers & Modals State
-    const [viewingRecord, setViewingRecord] = useState<AssetTypeRecord | null>(null);
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [editingRecord, setEditingRecord] = useState<AssetTypeRecord | null>(null);
-    const [deletingRecord, setDeletingRecord] = useState<AssetTypeRecord | null>(null);
+    const related =
+        raw.servicePackage ??
+        raw.servicePackages ??
+        raw.service_packages ??
+        raw.servicePackagesList ??
+        raw.service_packages_list ??
+        raw.service_package ??
+        [];
 
-    const defaultCategoryId =
-        categories.find((c) => c.status === 'Active')?.id ||
-        categories[0]?.id ||
-        'ASTCAT001';
+    const relations = Array.isArray(related)
+        ? related
+        : related
+            ? [related]
+            : [];
 
-    const [formState, setFormState] = useState<TypeFormState>({
-        nameEn: '',
-        nameAr: '',
-        categoryId: defaultCategoryId,
-        subTypeEn: 'General Asset',
-        subTypeAr: 'أصل عام',
-        templatesEn: [],
-        descriptionEn: '',
-        descriptionAr: '',
-        status: 'Active',
-    });
-    const [customTemplateInput, setCustomTemplateInput] = useState('');
-    const [formError, setFormError] = useState<string | null>(null);
-
-    const persistRecords = (next: AssetTypeRecord[]) => {
-        setRecords(next);
-        saveAssetTypes(next);
-    };
-
-    const filterCategories = useMemo(() => {
-        const map = new Map<
-            string,
-            { id: string; nameEn: string; nameAr: string; status: AssetRecordLifecycleStatus }
-        >();
-        for (const cat of categories) {
-            map.set(cat.id, {
-                id: cat.id,
-                nameEn: cat.nameEn,
-                nameAr: cat.nameAr,
-                status: cat.status,
-            });
-        }
-        for (const rec of records) {
-            if (rec.categoryId && !map.has(rec.categoryId)) {
-                map.set(rec.categoryId, {
-                    id: rec.categoryId,
-                    nameEn: rec.categoryNameEn || 'Category Asset',
-                    nameAr: rec.categoryNameAr || 'تصنيف الأصل',
-                    status: 'Inactive',
-                });
-            }
-        }
-        return Array.from(map.values());
-    }, [categories, records]);
-
-    const drawerCategories = useMemo(() => {
-        const list = [...filterCategories];
-        if (list.length === 0) {
-            list.push({
-                id: 'ASTCAT001',
-                nameEn: 'Category Asset',
-                nameAr: 'تصنيف الأصل',
-                status: 'Active',
-            });
-        }
-        if (formState.categoryId && !list.some((c) => c.id === formState.categoryId)) {
-            list.push({
-                id: formState.categoryId,
-                nameEn: editingRecord?.categoryNameEn || 'Category Asset',
-                nameAr: editingRecord?.categoryNameAr || 'تصنيف الأصل',
-                status: 'Inactive',
-            });
-        }
-        return list;
-    }, [filterCategories, formState.categoryId, editingRecord]);
-
-    const drawerTemplates = useMemo<AssetTemplateOption[]>(() => {
-        const map = new Map<string, AssetTemplateOption>();
-        for (const tpl of availableTemplates) {
-            map.set(tpl.nameEn.toLowerCase(), tpl);
-        }
-        formState.templatesEn.forEach((tplName, idx) => {
-            const key = tplName.trim().toLowerCase();
-            if (key && !map.has(key)) {
-                const known = allKnownTemplates.find(
-                    (k) => k.nameEn.toLowerCase() === key
+    const linked: Option[] = relations
+        .map((pkg: any): Option | null => {
+            if (typeof pkg === 'string') {
+                return (
+                    allPackages.find((p) => p.id === pkg) ?? {
+                        id: pkg,
+                        name: pkg,
+                    }
                 );
-                const fallbackAr =
-                    known?.nameAr ||
-                    (editingRecord &&
-                    editingRecord.templatesEn[idx]?.toLowerCase() === key
-                        ? editingRecord.templatesAr[idx]
-                        : undefined) ||
-                    tplName;
-                map.set(key, {
-                    nameEn: tplName.trim(),
-                    nameAr: fallbackAr,
-                    code: known?.code,
-                    status: known?.status || 'Inactive',
-                });
             }
-        });
-        return Array.from(map.values());
-    }, [availableTemplates, allKnownTemplates, formState.templatesEn, editingRecord]);
 
-    const kpis = useMemo(() => {
-        const total = records.length;
-        const active = records.filter((r) => r.status === 'Active').length;
-        const uniqueCategories = new Set(records.map((r) => r.categoryId)).size;
-        const totalLinkedTemplates = new Set(records.flatMap((r) => r.templatesEn)).size;
-        return {
-            total,
-            active,
-            uniqueCategories,
-            totalLinkedTemplates,
-        };
-    }, [records]);
-
-    const subTypeFilterOptions = useMemo(() => {
-        const map = new Map<string, { valueEn: string; valueAr: string }>();
-        for (const opt of ASSET_SUBTYPE_OPTIONS) {
-            map.set(opt.valueEn.toLowerCase(), opt);
-        }
-        for (const rec of records) {
-            const key = rec.subTypeEn.toLowerCase();
-            if (key && !map.has(key)) {
-                map.set(key, {
-                    valueEn: rec.subTypeEn,
-                    valueAr: rec.subTypeAr || rec.subTypeEn,
-                });
-            }
-        }
-        return Array.from(map.values());
-    }, [records]);
-
-    const filteredRecords = useMemo(() => {
-        const q = searchQuery.trim().toLowerCase();
-        return records.filter((item) => {
-            if (categoryFilter !== 'ALL' && item.categoryId !== categoryFilter) {
-                return false;
-            }
-            if (
-                subTypeFilter !== 'ALL' &&
-                item.subTypeEn.toLowerCase() !== subTypeFilter.toLowerCase()
-            ) {
-                return false;
-            }
-            if (statusFilter !== 'ALL' && item.status !== statusFilter) {
-                return false;
-            }
-            if (!q) return true;
-            const templatesStr = [...item.templatesEn, ...item.templatesAr]
-                .join(' ')
-                .toLowerCase();
-            return (
-                item.id.toLowerCase().includes(q) ||
-                item.nameEn.toLowerCase().includes(q) ||
-                item.nameAr.toLowerCase().includes(q) ||
-                item.categoryNameEn.toLowerCase().includes(q) ||
-                item.categoryNameAr.toLowerCase().includes(q) ||
-                item.subTypeEn.toLowerCase().includes(q) ||
-                item.subTypeAr.toLowerCase().includes(q) ||
-                item.descriptionEn.toLowerCase().includes(q) ||
-                item.descriptionAr.toLowerCase().includes(q) ||
-                templatesStr.includes(q) ||
-                item.creatorNameEn.toLowerCase().includes(q) ||
-                item.creatorNameAr.toLowerCase().includes(q) ||
-                item.createDate.toLowerCase().includes(q)
+            const id = String(
+                pkg?.id ??
+                pkg?.service_package_id ??
+                pkg?.servicePackageId ??
+                '',
             );
-        });
-    }, [records, searchQuery, categoryFilter, subTypeFilter, statusFilter]);
 
-    const totalRecords = filteredRecords.length;
-    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
-    const safeCurrentPage = Math.min(currentPage, totalPages);
+            if (!id) return null;
 
-    const paginatedRecords = useMemo(() => {
-        const start = (safeCurrentPage - 1) * pageSize;
-        return filteredRecords.slice(start, start + pageSize);
-    }, [filteredRecords, safeCurrentPage, pageSize]);
-
-    const hasActiveFilters =
-        searchQuery.trim().length > 0 ||
-        categoryFilter !== 'ALL' ||
-        subTypeFilter !== 'ALL' ||
-        statusFilter !== 'ALL';
-
-    const handleResetFilters = () => {
-        setSearchQuery('');
-        setCategoryFilter('ALL');
-        setSubTypeFilter('ALL');
-        setStatusFilter('ALL');
-        setCurrentPage(1);
-    };
-
-    // Selection Handlers
-    const currentPageIds = useMemo(() => paginatedRecords.map((r) => r.id), [paginatedRecords]);
-    const isAllCurrentPageSelected =
-        currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.includes(id));
-
-    const handleToggleSelectAll = () => {
-        if (isAllCurrentPageSelected) {
-            setSelectedIds((prev) => prev.filter((id) => !currentPageIds.includes(id)));
-        } else {
-            setSelectedIds((prev) => Array.from(new Set([...prev, ...currentPageIds])));
-        }
-    };
-
-    const handleToggleSelectOne = (id: string) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
-    };
-
-    // Activate / Deactivate Single Record
-    const handleToggleStatus = (record: AssetTypeRecord) => {
-        const nextStatus: AssetRecordLifecycleStatus =
-            record.status === 'Active' ? 'Inactive' : 'Active';
-        const nextList = records.map((r) =>
-            r.id === record.id ? { ...r, status: nextStatus } : r
-        );
-        persistRecords(nextList);
-
-        if (viewingRecord?.id === record.id) {
-            setViewingRecord({ ...record, status: nextStatus });
-        }
-
-        recordAssetAuditEvent({
-            action: nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-            resource: 'Asset Type',
-            recordId: record.id,
-            resourceData: `${record.nameEn} (${record.id})`,
-            resourceDataAr: `${record.nameAr} (${record.id})`,
-            remarks: `${nextStatus === 'Active' ? 'Activated' : 'Deactivated'} asset type "${record.nameEn}" (${record.id}).`,
-            remarksAr: `تم ${nextStatus === 'Active' ? 'تفعيل' : 'تعطيل'} نوع الأصل "${record.nameAr}" (${record.id}).`,
-        });
-
-        const localizedStatus =
-            nextStatus === 'Active'
-                ? t('assetManagement.common.active')
-                : t('assetManagement.common.inactive');
-        toast.success(
-            t('assetManagement.types.feedback.statusUpdated', {
-                name: isRtl ? record.nameAr : record.nameEn,
-                status: localizedStatus,
-            })
-        );
-    };
-
-    // Bulk Activate / Deactivate
-    const handleBulkStatusChange = (targetStatus: 'Active' | 'Inactive') => {
-        if (selectedIds.length === 0) return;
-        const affected = records.filter(
-            (r) => selectedIds.includes(r.id) && r.status !== targetStatus
-        );
-        const nextList = records.map((r) =>
-            selectedIds.includes(r.id) ? { ...r, status: targetStatus } : r
-        );
-        persistRecords(nextList);
-
-        for (const item of affected) {
-            recordAssetAuditEvent({
-                action: targetStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-                resource: 'Asset Type',
-                recordId: item.id,
-                resourceData: `${item.nameEn} (${item.id})`,
-                resourceDataAr: `${item.nameAr} (${item.id})`,
-                remarks: `Bulk ${targetStatus === 'Active' ? 'activated' : 'deactivated'} asset type "${item.nameEn}" (${item.id}).`,
-                remarksAr: `تم ${targetStatus === 'Active' ? 'تفعيل' : 'تعطيل'} نوع الأصل "${item.nameAr}" (${item.id}) ضمن إجراء جماعي.`,
-            });
-        }
-
-        const localizedStatus =
-            targetStatus === 'Active'
-                ? t('assetManagement.common.active')
-                : t('assetManagement.common.inactive');
-        toast.success(
-            t('assetManagement.types.feedback.bulkStatusUpdated', {
-                count: selectedIds.length,
-                status: localizedStatus,
-            })
-        );
-        setSelectedIds([]);
-    };
-
-    // Open Create / Edit Drawer
-    const openCreateDrawer = () => {
-        const latestCategories = loadAssetCategories();
-        setCategories(latestCategories);
-        const preferredCategory =
-            latestCategories.find((c) => c.status === 'Active') || latestCategories[0];
-        setEditingRecord(null);
-        setFormState({
-            nameEn: '',
-            nameAr: '',
-            categoryId: preferredCategory?.id || 'ASTCAT001',
-            subTypeEn: 'General Asset',
-            subTypeAr: 'أصل عام',
-            templatesEn: [],
-            descriptionEn: '',
-            descriptionAr: '',
-            status: 'Active',
-        });
-        setCustomTemplateInput('');
-        setFormError(null);
-        setIsCreateOpen(true);
-    };
-
-    const openEditDrawer = (record: AssetTypeRecord) => {
-        const latestCategories = loadAssetCategories();
-        setCategories(latestCategories);
-        setViewingRecord(null);
-        setIsCreateOpen(false);
-        setEditingRecord(record);
-        setFormState({
-            nameEn: record.nameEn,
-            nameAr: record.nameAr,
-            categoryId: record.categoryId,
-            subTypeEn: record.subTypeEn,
-            subTypeAr: record.subTypeAr,
-            templatesEn: [...record.templatesEn],
-            descriptionEn: record.descriptionEn,
-            descriptionAr: record.descriptionAr,
-            status: record.status === 'Inactive' ? 'Inactive' : 'Active',
-        });
-        setCustomTemplateInput('');
-        setFormError(null);
-    };
-
-    const closeFormDrawer = () => {
-        setIsCreateOpen(false);
-        setEditingRecord(null);
-        setFormError(null);
-    };
-
-    const handleToggleTemplateSelection = (templateNameEn: string) => {
-        setFormState((prev) => {
-            const exists = prev.templatesEn.some(
-                (tName) => tName.toLowerCase() === templateNameEn.toLowerCase()
-            );
             return {
-                ...prev,
-                templatesEn: exists
-                    ? prev.templatesEn.filter(
-                          (tName) => tName.toLowerCase() !== templateNameEn.toLowerCase()
-                      )
-                    : [...prev.templatesEn, templateNameEn],
+                id,
+                name:
+                    getPackageName(pkg) ||
+                    allPackages.find((p) => p.id === id)?.name ||
+                    id,
             };
-        });
-    };
+        })
+        .filter((pkg): pkg is Option => pkg !== null);
 
-    const handleAddCustomTemplate = () => {
-        const trimmed = customTemplateInput.trim();
-        if (!trimmed) return;
-        const alreadySelected = formState.templatesEn.some(
-            (tName) => tName.toLowerCase() === trimmed.toLowerCase()
-        );
-        if (!alreadySelected) {
-            setFormState((prev) => ({
-                ...prev,
-                templatesEn: [...prev.templatesEn, trimmed],
-            }));
-        }
-        setCustomTemplateInput('');
-    };
+    const ids = Array.isArray(raw.service_package_ids)
+        ? raw.service_package_ids
+        : [];
 
-    const handleSubTypeSelectChange = (valueEn: string) => {
-        const matched = ASSET_SUBTYPE_OPTIONS.find(
-            (opt) => opt.valueEn.toLowerCase() === valueEn.toLowerCase()
-        );
-        setFormState((prev) => ({
-            ...prev,
-            subTypeEn: valueEn,
-            subTypeAr: matched?.valueAr || valueEn,
-        }));
-    };
+    linked.push(
+        ...ids
+            .map((value: any) => {
+                const id =
+                    typeof value === 'string'
+                        ? value
+                        : String(value?.id ?? '');
 
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmedNameEn = formState.nameEn.trim();
-        const trimmedNameAr = formState.nameAr.trim() || trimmedNameEn;
-        const trimmedSubTypeEn = formState.subTypeEn.trim() || 'General Asset';
-        const matchedSubType = ASSET_SUBTYPE_OPTIONS.find(
-            (opt) => opt.valueEn.toLowerCase() === trimmedSubTypeEn.toLowerCase()
-        );
-        const trimmedSubTypeAr =
-            formState.subTypeAr.trim() || matchedSubType?.valueAr || trimmedSubTypeEn;
-        const trimmedDescEn = formState.descriptionEn.trim();
-        const trimmedDescAr = formState.descriptionAr.trim() || trimmedDescEn;
+                if (!id) return null;
 
-        if (!trimmedNameEn) {
-            setFormError(t('assetManagement.types.validation.nameRequired'));
-            return;
-        }
-        if (!formState.categoryId) {
-            setFormError(t('assetManagement.types.validation.categoryRequired'));
-            return;
-        }
-
-        const isDuplicate = records.some(
-            (r) =>
-                r.id !== editingRecord?.id &&
-                r.nameEn.trim().toLowerCase() === trimmedNameEn.toLowerCase()
-        );
-        if (isDuplicate) {
-            setFormError(
-                t(
-                    'assetManagement.types.validation.nameDuplicate',
-                    'An asset type with this name already exists.'
-                )
-            );
-            return;
-        }
-
-        const selectedCategory =
-            categories.find((c) => c.id === formState.categoryId) ||
-            drawerCategories.find((c) => c.id === formState.categoryId);
-        const categoryNameEn =
-            selectedCategory?.nameEn ||
-            (editingRecord && editingRecord.categoryId === formState.categoryId
-                ? editingRecord.categoryNameEn
-                : 'Category Asset');
-        const categoryNameAr =
-            selectedCategory?.nameAr ||
-            (editingRecord && editingRecord.categoryId === formState.categoryId
-                ? editingRecord.categoryNameAr
-                : 'تصنيف الأصل');
-
-        const templatesEn = formState.templatesEn;
-        const templatesAr = templatesEn.map((tplName, idx) => {
-            const found =
-                drawerTemplates.find(
-                    (opt) => opt.nameEn.toLowerCase() === tplName.toLowerCase()
-                ) ||
-                allKnownTemplates.find(
-                    (opt) => opt.nameEn.toLowerCase() === tplName.toLowerCase()
+                return (
+                    allPackages.find((pkg) => pkg.id === id) ?? {
+                        id,
+                        name: id,
+                    }
                 );
-            if (found) return found.nameAr;
-            if (
-                editingRecord &&
-                editingRecord.templatesEn[idx]?.toLowerCase() === tplName.toLowerCase() &&
-                editingRecord.templatesAr[idx]
-            ) {
-                return editingRecord.templatesAr[idx];
-            }
-            return tplName;
-        });
-
-        if (editingRecord) {
-            const updated: AssetTypeRecord = {
-                ...editingRecord,
-                nameEn: trimmedNameEn,
-                nameAr: trimmedNameAr,
-                categoryId: formState.categoryId,
-                categoryNameEn,
-                categoryNameAr,
-                subTypeEn: trimmedSubTypeEn,
-                subTypeAr: trimmedSubTypeAr,
-                templatesEn,
-                templatesAr,
-                descriptionEn: trimmedDescEn,
-                descriptionAr: trimmedDescAr,
-                status: formState.status,
-            };
-            const nextList = records.map((r) => (r.id === editingRecord.id ? updated : r));
-            persistRecords(nextList);
-
-            recordAssetAuditEvent({
-                action: 'UPDATED',
-                resource: 'Asset Type',
-                recordId: updated.id,
-                resourceData: `${updated.nameEn} (${updated.id})`,
-                resourceDataAr: `${updated.nameAr} (${updated.id})`,
-                remarks: `Updated asset type "${updated.nameEn}" (${updated.id}) [Category: ${updated.categoryNameEn}, Subtype: ${updated.subTypeEn}, Templates: ${updated.templatesEn.join(', ') || 'None'}].`,
-                remarksAr: `تم تحديث نوع الأصل "${updated.nameAr}" (${updated.id}) [التصنيف: ${updated.categoryNameAr}، النوع الفرعي: ${updated.subTypeAr}].`,
-            });
-
-            toast.success(
-                t('assetManagement.types.feedback.updated', {
-                    name: isRtl ? updated.nameAr : updated.nameEn,
-                })
-            );
-        } else {
-            const newId = generateNextAssetTypeId(records);
-            const created: AssetTypeRecord = {
-                id: newId,
-                nameEn: trimmedNameEn,
-                nameAr: trimmedNameAr,
-                categoryId: formState.categoryId,
-                categoryNameEn,
-                categoryNameAr,
-                subTypeEn: trimmedSubTypeEn,
-                subTypeAr: trimmedSubTypeAr,
-                templatesEn,
-                templatesAr,
-                descriptionEn: trimmedDescEn,
-                descriptionAr: trimmedDescAr,
-                creatorNameEn: 'Khalifah Alsharabi',
-                creatorNameAr: 'خليفة الشرعبي',
-                creatorEmail: 'k.alsharabi@awn.sa',
-                createDate: formatAssetDateToday(),
-                status: formState.status,
-            };
-            const nextList = [created, ...records];
-            persistRecords(nextList);
-
-            recordAssetAuditEvent({
-                action: 'CREATED',
-                resource: 'Asset Type',
-                recordId: created.id,
-                resourceData: `${created.nameEn} (${created.id})`,
-                resourceDataAr: `${created.nameAr} (${created.id})`,
-                remarks: `Created asset type "${created.nameEn}" (${created.id}) under ${created.categoryNameEn} (${created.categoryId}).`,
-                remarksAr: `تم إنشاء نوع الأصل "${created.nameAr}" (${created.id}) ضمن ${created.categoryNameAr} (${created.categoryId}).`,
-            });
-
-            toast.success(
-                t('assetManagement.types.feedback.created', {
-                    name: isRtl ? created.nameAr : created.nameEn,
-                })
-            );
-        }
-
-        closeFormDrawer();
-    };
-
-    const handleConfirmDelete = () => {
-        if (!deletingRecord) return;
-        const target = deletingRecord;
-        const nextList = records.filter((r) => r.id !== target.id);
-        persistRecords(nextList);
-        setSelectedIds((prev) => prev.filter((id) => id !== target.id));
-        if (viewingRecord?.id === target.id) {
-            setViewingRecord(null);
-        }
-
-        recordAssetAuditEvent({
-            action: 'DELETED',
-            resource: 'Asset Type',
-            recordId: target.id,
-            resourceData: `${target.nameEn} (${target.id})`,
-            resourceDataAr: `${target.nameAr} (${target.id})`,
-            remarks: `Deleted asset type "${target.nameEn}" (${target.id}).`,
-            remarksAr: `تم حذف نوع الأصل "${target.nameAr}" (${target.id}).`,
-        });
-
-        toast.success(
-            t('assetManagement.types.feedback.deleted', {
-                name: isRtl ? target.nameAr : target.nameEn,
             })
-        );
-        setDeletingRecord(null);
+            .filter((pkg: Option | null): pkg is Option => pkg !== null),
+    );
+
+    return Array.from(
+        new Map(linked.map((pkg) => [pkg.id, pkg])).values(),
+    );
+};
+
+export const AssetTypePage: React.FC = () => {
+    const { i18n } = useTranslation();
+    const queryClient = useQueryClient();
+
+    const isRtl =
+        i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<AssetType | null>(null);
+    const [viewingItem, setViewingItem] = useState<AssetType | null>(null);
+    const [deleteItem, setDeleteItem] = useState<AssetType | null>(null);
+
+    const [searchValue, setSearchValue] = useState('');
+    const [pageIndex, setPageIndex] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+
+    const getError = useCallback(
+        (error: unknown, fallbackAr: string, fallbackEn: string) =>
+            getErrorMessage(error, isRtl ? fallbackAr : fallbackEn),
+        [isRtl],
+    );
+
+    const assetTypesQuery = useQuery({
+        queryKey: [
+            'asset-types',
+            pageIndex,
+            pageSize,
+            searchValue.trim(),
+        ],
+        queryFn: async () => {
+            const response = await assetApi.getAssetTypes({
+                page: pageIndex + 1,
+                limit: pageSize,
+                search: searchValue.trim() || undefined,
+            });
+
+            const items = extractItems<AssetType>(response);
+
+            return {
+                items,
+                count: extractCount(response, items.length),
+            };
+        },
+    });
+
+    const optionsQuery = useQuery({
+        queryKey: ['asset-type-form-options'],
+        queryFn: async () => {
+            const [categoriesResponse, packagesResponse] =
+                await Promise.all([
+                    assetApi.getAssetCategories({
+                        page: 1,
+                        limit: 1000,
+                    }),
+                    serviceApi.getServicePackages({
+                        page: 1,
+                        limit: 1000,
+                    }),
+                ]);
+
+            const categories: Option[] = extractItems<any>(
+                categoriesResponse,
+            ).map((item) => ({
+                id: String(item.id),
+                name:
+                    item.name ??
+                    item.nameAr ??
+                    item.nameEn ??
+                    String(item.id),
+            }));
+
+            const packages: Option[] = extractItems<any>(
+                packagesResponse,
+            ).map((item) => ({
+                id: String(item.id),
+                name: getPackageName(item) || String(item.id),
+            }));
+
+            return { categories, packages };
+        },
+    });
+
+    const records = assetTypesQuery.data?.items ?? [];
+    const count = assetTypesQuery.data?.count ?? 0;
+    const categories = optionsQuery.data?.categories ?? [];
+    const servicePackages = optionsQuery.data?.packages ?? [];
+
+    useEffect(() => {
+        if (assetTypesQuery.error) {
+            toast.error(
+                getError(
+                    assetTypesQuery.error,
+                    'فشل تحميل أنواع الأصول',
+                    'Failed to load asset types',
+                ),
+            );
+        }
+    }, [assetTypesQuery.error, getError]);
+
+    useEffect(() => {
+        if (optionsQuery.error) {
+            toast.error(
+                getError(
+                    optionsQuery.error,
+                    'فشل تحميل الأقسام والباقات',
+                    'Failed to load categories and packages',
+                ),
+            );
+        }
+    }, [optionsQuery.error, getError]);
+
+    const invalidateAssetTypes = () =>
+        queryClient.invalidateQueries({
+            queryKey: ['asset-types'],
+        });
+
+    const saveMutation = useMutation({
+        mutationFn: async ({
+            data,
+            item,
+        }: {
+            data: AssetTypeFormData;
+            item: AssetType | null;
+        }) => {
+            const payload = {
+                type: data.type,
+                name: data.name,
+                description: data.description || undefined,
+                assetsCategoryId: data.assetsCategoryId,
+                service_package_ids: data.service_package_ids,
+            };
+
+            if (item) {
+                return assetApi.updateAssetType(item.id, payload);
+            }
+
+            return assetApi.createAssetType(payload);
+        },
+
+        onSuccess: async (_response, variables) => {
+            toast.success(
+                variables.item
+                    ? isRtl
+                        ? 'تم تعديل نوع الأصل بنجاح'
+                        : 'Asset type updated successfully'
+                    : isRtl
+                        ? 'تم إنشاء نوع الأصل بنجاح'
+                        : 'Asset type created successfully',
+            );
+
+            setIsFormOpen(false);
+            setEditingItem(null);
+
+            await invalidateAssetTypes();
+        },
+
+        onError: (error) => {
+            toast.error(
+                getError(
+                    error,
+                    'فشل حفظ نوع الأصل',
+                    'Failed to save asset type',
+                ),
+            );
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (item: AssetType) =>
+            assetApi.deleteAssetType(item.id),
+
+        onSuccess: async () => {
+            toast.success(
+                isRtl
+                    ? 'تم حذف نوع الأصل بنجاح'
+                    : 'Asset type deleted successfully',
+            );
+
+            setDeleteItem(null);
+
+            if (records.length === 1 && pageIndex > 0) {
+                setPageIndex((previous) => previous - 1);
+            } else {
+                await invalidateAssetTypes();
+            }
+        },
+
+        onError: (error) => {
+            toast.error(
+                getError(
+                    error,
+                    'فشل حذف نوع الأصل',
+                    'Failed to delete asset type',
+                ),
+            );
+        },
+    });
+
+    const openCreateForm = () => {
+        setEditingItem(null);
+        setIsFormOpen(true);
     };
 
-    const handleExportCsv = () => {
+    const openEditForm = (item: AssetType) => {
+        setViewingItem(null);
+        setEditingItem(item);
+        setIsFormOpen(true);
+    };
+
+    const closeForm = () => {
+        if (saveMutation.isPending) return;
+
+        setIsFormOpen(false);
+        setEditingItem(null);
+    };
+
+    const closeDetails = useCallback(() => {
+        setViewingItem(null);
+    }, []);
+
+    const handleSubmit = (data: AssetTypeFormData) => {
+        saveMutation.mutate({
+            data,
+            item: editingItem,
+        });
+    };
+
+    const columns = useMemo<ColumnDef<any, any>[]>(
+        () => [
+            {
+                accessorKey: 'codeName',
+                header: isRtl ? 'المعرّف' : 'Code Name',
+                cell: ({ row }) => (
+                    <span
+                        className="block max-w-36 truncate font-mono text-xs"
+                        title={(row.original as any).codeName || ''}
+                    >
+                        {(row.original as any).codeName || '—'}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'type',
+                header: isRtl ? 'نوع الأصل' : 'Asset Type',
+                cell: ({ row }) => (
+                    <span className="inline-flex rounded-md bg-[#2D3F2C]/10 px-2 py-1 text-xs font-medium text-[#2D3F2C] dark:text-green-400">
+                        {row.original.type || '—'}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'name',
+                header: isRtl ? 'اسم نوع الأصل' : 'Name',
+                cell: ({ row }) => (
+                    <span className="block max-w-44 truncate font-medium">
+                        {row.original.name || '—'}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'description',
+                header: isRtl ? 'الوصف' : 'Description',
+                cell: ({ row }) => (
+                    <span
+                        className="block max-w-48 truncate"
+                        title={row.original.description || ''}
+                    >
+                        {row.original.description || '—'}
+                    </span>
+                ),
+            },
+            {
+                id: 'category',
+                header: isRtl ? 'قسم الأصل' : 'Asset Category',
+                cell: ({ row }) =>
+                    row.original.assetsCategory?.name ??
+                    (row.original as any).assets_category?.name ??
+                    categories.find(
+                        (category) =>
+                            category.id === row.original.assetsCategoryId,
+                    )?.name ??
+                    row.original.assetsCategoryId ??
+                    '—',
+            },
+            {
+                id: 'servicePackages',
+                header: isRtl ? 'باقات الخدمات' : 'Service Packages',
+                cell: ({ row }) => {
+                    const linked = getLinkedPackages(
+                        row.original,
+                        servicePackages,
+                    );
+
+                    if (!linked.length) {
+                        return (
+                            <span className="text-xs text-[#857E74]">
+                                —
+                            </span>
+                        );
+                    }
+
+                    return (
+                        <div className="flex max-w-52 flex-wrap gap-1.5">
+                            {linked.slice(0, 2).map((pkg) => (
+                                <span
+                                    key={pkg.id}
+                                    title={pkg.name}
+                                    className="max-w-32 truncate rounded-md border border-[#E5E0D8] bg-[#FAF8F5] px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-800"
+                                >
+                                    {pkg.name}
+                                </span>
+                            ))}
+
+                            {linked.length > 2 && (
+                                <span
+                                    title={linked
+                                        .map((pkg) => pkg.name)
+                                        .join(', ')}
+                                    className="rounded-md bg-[#2D3F2C]/10 px-2 py-1 text-xs font-medium text-[#2D3F2C] dark:text-green-400"
+                                >
+                                    +{linked.length - 2}
+                                </span>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'createdAt',
+                header: isRtl ? 'تاريخ الإنشاء' : 'Created Date',
+                cell: ({ row }) => {
+                    const value = row.original.createdAt;
+
+                    if (!value) return '—';
+
+                    const date = new Date(value);
+
+                    return Number.isNaN(date.getTime())
+                        ? '—'
+                        : date.toLocaleDateString(
+                            isRtl ? 'ar-EG' : 'en-GB',
+                        );
+                },
+            },
+            {
+                id: 'actions',
+                header: isRtl ? 'الإجراءات' : 'Actions',
+                enableSorting: false,
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setViewingItem(row.original)}
+                            title={isRtl ? 'عرض التفاصيل' : 'View details'}
+                            aria-label={isRtl ? 'عرض التفاصيل' : 'View details'}
+                            className="rounded-lg p-2 text-[#6E6862] transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-800"
+                        >
+                            <Eye size={16} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => openEditForm(row.original)}
+                            title={isRtl ? 'تعديل' : 'Edit'}
+                            aria-label={isRtl ? 'تعديل' : 'Edit'}
+                            className="rounded-lg p-2 text-[#6E6862] transition-colors hover:bg-[#F8F6F2] hover:text-[#2D3F2C] dark:hover:bg-slate-800"
+                        >
+                            <Edit2 size={16} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setDeleteItem(row.original)}
+                            title={isRtl ? 'حذف' : 'Delete'}
+                            aria-label={isRtl ? 'حذف' : 'Delete'}
+                            className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                ),
+            },
+        ],
+        [isRtl, categories, servicePackages],
+    );
+
+    const handleExport = useCallback(() => {
+        if (!records.length) {
+            toast.error(
+                isRtl ? 'لا توجد بيانات للتصدير' : 'No data to export',
+            );
+            return;
+        }
+
         const headers = [
-            'Type ID',
-            'Type Name (EN)',
-            'Type Name (AR)',
-            'Category',
-            'Asset Subtype',
-            'Description',
-            'Templates',
-            'Creator',
-            'Create Date',
-            'Status',
+            isRtl ? 'المعرّف' : 'Code Name',
+            isRtl ? 'نوع الأصل' : 'Asset Type',
+            isRtl ? 'اسم نوع الأصل' : 'Name',
+            isRtl ? 'الوصف' : 'Description',
+            isRtl ? 'قسم الأصل' : 'Asset Category',
+            isRtl ? 'باقات الخدمات' : 'Service Packages',
+            isRtl ? 'تاريخ الإنشاء' : 'Created Date',
         ];
-        const rows = filteredRecords.map((r) => [
-            r.id,
-            `"${r.nameEn.replace(/"/g, '""')}"`,
-            `"${r.nameAr.replace(/"/g, '""')}"`,
-            `"${isRtl ? r.categoryNameAr : r.categoryNameEn}"`,
-            `"${isRtl ? r.subTypeAr : r.subTypeEn}"`,
-            `"${(isRtl ? r.descriptionAr : r.descriptionEn).replace(/"/g, '""')}"`,
-            `"${(isRtl ? r.templatesAr : r.templatesEn).join('; ')}"`,
-            `"${isRtl ? r.creatorNameAr : r.creatorNameEn}"`,
-            r.createDate,
-            r.status,
-        ]);
-        const csvContent =
-            '\uFEFF' + [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+        const escapeCsv = (value: unknown): string => {
+            const normalized = String(value ?? '').replace(/"/g, '""');
+            return `"${normalized}"`;
+        };
+
+        const rows = records.map((item) => {
+            const linkedPackages = getLinkedPackages(item, servicePackages);
+
+            const categoryName =
+                item.assetsCategory?.name ??
+                (item as any).assets_category?.name ??
+                categories.find(
+                    (category) => category.id === item.assetsCategoryId,
+                )?.name ??
+                item.assetsCategoryId ??
+                '';
+
+            const createdAt = item.createdAt
+                ? new Date(item.createdAt)
+                : null;
+
+            const formattedDate =
+                createdAt && !Number.isNaN(createdAt.getTime())
+                    ? createdAt.toLocaleDateString(
+                        isRtl ? 'ar-EG' : 'en-GB',
+                    )
+                    : '';
+
+            return [
+                escapeCsv((item as any).codeName),
+                escapeCsv(item.type),
+                escapeCsv(item.name),
+                escapeCsv(item.description),
+                escapeCsv(categoryName),
+                escapeCsv(
+                    linkedPackages.map((pkg) => pkg.name).join(', '),
+                ),
+                escapeCsv(formattedDate),
+            ].join(',');
+        });
+
+        const csv =
+            '\uFEFF' +
+            [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+
+        const blob = new Blob([csv], {
+            type: 'text/csv;charset=utf-8;',
+        });
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
+
         link.href = url;
-        link.download = `awn-asset-types-${formatAssetDateToday()}.csv`;
+        link.download = 'asset-types.csv';
+
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
+
         URL.revokeObjectURL(url);
 
         toast.success(
-            t('assetManagement.common.exportedCsv', { count: filteredRecords.length })
+            isRtl ? 'تم تصدير البيانات بنجاح' : 'Export completed',
         );
-    };
+    }, [records, servicePackages, categories, isRtl]);
 
     return (
-        <div className="space-y-6 text-start">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
-                <div>
-                    <div className="flex items-center gap-2.5">
-                        <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D] dark:text-slate-100">
-                            {t('assetManagement.types.title')}
-                        </h1>
-                        <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] dark:bg-slate-800 text-[#2D3F2C] dark:text-emerald-400 border border-[#E5E0D8] dark:border-slate-700"
-                            dir="ltr"
-                        >
-                            AST-TYP
-                        </span>
-                    </div>
-                    <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-1 font-normal">
-                        {t('assetManagement.types.description')}
-                    </p>
-                </div>
+        <div className="w-full space-y-4">
+            <DataTable
+                columns={columns}
+                data={records}
+                count={count}
+                loading={assetTypesQuery.isLoading}
+                title={isRtl ? 'أنواع الأصول' : 'Asset Types'}
+                description={
+                    isRtl
+                        ? 'إدارة أنواع الأصول وربطها بالأقسام وباقات الخدمات'
+                        : 'Manage asset types, categories, and service packages'
+                }
+                searchPlaceholder={
+                    isRtl
+                        ? 'ابحث عن نوع أصل...'
+                        : 'Search asset types...'
+                }
+                searchValue={searchValue}
+                onSearchChange={(value) => {
+                    setSearchValue(value);
+                    setPageIndex(0);
+                }}
+                pageIndex={pageIndex}
+                pageSize={pageSize}
+                onPageChange={setPageIndex}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPageIndex(0);
+                }}
+                onAddNew={openCreateForm}
+                addNewLabel={
+                    isRtl ? 'إضافة نوع أصل' : 'Add Asset Type'
+                }
+                onExport={handleExport}
+            />
 
-                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    <button
-                        type="button"
-                        onClick={handleExportCsv}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 hover:bg-[#FAF8F5] dark:hover:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-medium text-[#0D0D0D] dark:text-slate-100 transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <Download size={14} className="text-[#857E74]" />
-                        <span>{t('assetManagement.common.exportCsv')}</span>
-                    </button>
+            <AssetTypeForm
+                isOpen={isFormOpen}
+                editingItem={editingItem}
+                isSubmitting={saveMutation.isPending}
+                categories={categories}
+                servicePackages={servicePackages}
+                onClose={closeForm}
+                onSubmit={handleSubmit}
+            />
 
-                    <button
-                        type="button"
-                        onClick={openCreateDrawer}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <Plus size={14} />
-                        <span>{t('assetManagement.types.actions.newType')}</span>
-                    </button>
-                </div>
-            </div>
+            <AssetTypeDetails
+                item={viewingItem}
+                packages={servicePackages}
+                isRtl={isRtl}
+                onClose={closeDetails}
+                onEdit={openEditForm}
+            />
 
-            {/* KPI Strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-slate-400">
-                            {t('assetManagement.types.kpis.totalTypes')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-emerald-400 flex items-center justify-center">
-                            <Layers className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#0D0D0D] dark:text-slate-100 tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.total}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-slate-400">
-                            {t('assetManagement.types.kpis.activeTypes')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#265938]/12 text-[#265938] dark:text-emerald-400 flex items-center justify-center">
-                            <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#265938] dark:text-emerald-400 tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.active}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-slate-400">
-                            {t('assetManagement.types.kpis.linkedCategories')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#6A7358]/15 text-[#6A7358] flex items-center justify-center">
-                            <Grid className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#0D0D0D] dark:text-slate-100 tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.uniqueCategories}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862] dark:text-slate-400">
-                            {t('assetManagement.types.kpis.linkedTemplates')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#8C6046]/12 text-[#8C6046] flex items-center justify-center">
-                            <FileText className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#0D0D0D] dark:text-slate-100 tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.totalLinkedTemplates}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Table Card */}
-            <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl shadow-2xs overflow-hidden">
-                {/* Search & Filters Bar */}
-                <div className="p-4 border-b border-[#E5E0D8] dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    <div className="relative flex-1 max-w-md">
-                        <Search
-                            size={15}
-                            className="absolute top-1/2 -translate-y-1/2 start-3 text-[#857E74] pointer-events-none"
-                        />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            placeholder={t('assetManagement.types.filters.searchPlaceholder')}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 placeholder:text-[#857E74] focus:outline-hidden focus:bg-white dark:focus:bg-slate-900 focus:border-[#2D3F2C] transition-colors"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setCurrentPage(1);
-                                }}
-                                className="absolute top-1/2 -translate-y-1/2 end-2.5 text-[#857E74] hover:text-[#0D0D0D] dark:hover:text-slate-100 cursor-pointer"
-                                aria-label={t('common.clear', 'Clear')}
-                            >
-                                <X size={13} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        <select
-                            value={categoryFilter}
-                            onChange={(e) => {
-                                setCategoryFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('assetManagement.types.filters.categoryLabel')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
-                        >
-                            <option value="ALL">
-                                {t('assetManagement.types.filters.allCategories')}
-                            </option>
-                            {filterCategories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                    {isRtl ? cat.nameAr : cat.nameEn} ({cat.id})
-                                </option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={subTypeFilter}
-                            onChange={(e) => {
-                                setSubTypeFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('assetManagement.types.filters.subTypeLabel')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
-                        >
-                            <option value="ALL">
-                                {t('assetManagement.types.filters.allSubTypes')}
-                            </option>
-                            {subTypeFilterOptions.map((opt) => (
-                                <option key={opt.valueEn} value={opt.valueEn}>
-                                    {isRtl ? opt.valueAr : opt.valueEn}
-                                </option>
-                            ))}
-                        </select>
-
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => {
-                                setStatusFilter(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('assetManagement.common.filterByStatus')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
-                        >
-                            <option value="ALL">{t('assetManagement.common.allStatuses')}</option>
-                            <option value="Active">{t('assetManagement.common.active')}</option>
-                            <option value="Inactive">{t('assetManagement.common.inactive')}</option>
-                        </select>
-
-                        {hasActiveFilters && (
-                            <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-[#FAF8F5] dark:hover:bg-slate-800 text-xs font-medium text-[#6E6862] dark:text-slate-300 hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                <RotateCcw size={13} />
-                                <span>{t('assetManagement.common.resetFilters')}</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Bulk Selection Action Bar */}
-                {selectedIds.length > 0 && (
-                    <div className="px-5 py-2.5 bg-[#2D3F2C]/8 border-b border-[#E5E0D8] dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-[#2D3F2C] dark:text-emerald-400">
-                            <span
-                                className="px-2 py-0.5 rounded-md bg-[#2D3F2C] text-[#FAF8F5] font-mono"
-                                dir="ltr"
-                            >
-                                {selectedIds.length}
-                            </span>
-                            <span>{t('assetManagement.common.selectedCount')}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleBulkStatusChange('Active')}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#265938] hover:bg-[#1f492e] text-[11px] font-semibold text-white transition-colors cursor-pointer"
-                            >
-                                <CheckCircle2 size={13} />
-                                <span>{t('assetManagement.common.activateSelected')}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleBulkStatusChange('Inactive')}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#857E74] hover:bg-[#6E6862] text-[11px] font-semibold text-white transition-colors cursor-pointer"
-                            >
-                                <XCircle size={13} />
-                                <span>{t('assetManagement.common.deactivateSelected')}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedIds([])}
-                                className="px-2.5 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[11px] font-medium text-[#6E6862] dark:text-slate-300 hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                {t('assetManagement.common.clearSelection')}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-start border-collapse">
-                        <thead>
-                            <tr className="bg-[#FAF8F5] dark:bg-slate-800/60 border-b border-[#E5E0D8] dark:border-slate-800">
-                                <th className="w-11 py-3.5 px-4 text-start">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllCurrentPageSelected}
-                                        onChange={handleToggleSelectAll}
-                                        aria-label={t('assetManagement.common.selectAll')}
-                                        className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                    />
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.id')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.name')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.category')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.assetSubtype')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.description')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.templates')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.creator')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.createDate')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-start">
-                                    {t('assetManagement.types.table.status')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 text-end">
-                                    {t('assetManagement.types.table.actions')}
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-[#E5E0D8] dark:divide-slate-800">
-                            {paginatedRecords.length === 0 ? (
-                                <tr>
-                                    <td colSpan={11} className="py-14 px-6 text-center">
-                                        <div className="max-w-sm mx-auto space-y-2">
-                                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 flex items-center justify-center mx-auto text-[#857E74]">
-                                                <Layers size={18} />
-                                            </div>
-                                            <p className="text-sm font-semibold text-[#0D0D0D] dark:text-slate-100">
-                                                {t('assetManagement.types.empty.title')}
-                                            </p>
-                                            <p className="text-xs text-[#6E6862] dark:text-slate-400">
-                                                {t('assetManagement.types.empty.description')}
-                                            </p>
-                                            {hasActiveFilters && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleResetFilters}
-                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] text-xs font-medium cursor-pointer"
-                                                >
-                                                    <RotateCcw size={12} />
-                                                    <span>
-                                                        {t('assetManagement.common.resetFilters')}
-                                                    </span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedRecords.map((record) => {
-                                    const isSelected = selectedIds.includes(record.id);
-                                    const isActive = record.status === 'Active';
-                                    const displayTemplates = isRtl
-                                        ? record.templatesAr
-                                        : record.templatesEn;
-                                    const displayDescription = isRtl
-                                        ? record.descriptionAr
-                                        : record.descriptionEn;
-
-                                    return (
-                                        <tr
-                                            key={record.id}
-                                            className={`transition-colors ${
-                                                isSelected
-                                                    ? 'bg-[#2D3F2C]/5'
-                                                    : 'hover:bg-[#FAF8F5]/70 dark:hover:bg-slate-800/40'
-                                            }`}
-                                        >
-                                            <td className="py-3.5 px-4">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleToggleSelectOne(record.id)}
-                                                    aria-label={`${t('assetManagement.common.selectRow')} ${record.id}`}
-                                                    className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                                />
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <span
-                                                    className="text-xs font-mono font-bold text-[#2D3F2C] dark:text-emerald-400 tabular-nums"
-                                                    dir="ltr"
-                                                >
-                                                    {record.id}
-                                                </span>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setViewingRecord(record)}
-                                                    className="text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 hover:text-[#2D3F2C] transition-colors text-start cursor-pointer"
-                                                >
-                                                    {isRtl ? record.nameAr : record.nameEn}
-                                                </button>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-200">
-                                                    <Grid size={12} className="text-[#2D3F2C] shrink-0" />
-                                                    <span>
-                                                        {isRtl
-                                                            ? record.categoryNameAr
-                                                            : record.categoryNameEn}
-                                                    </span>
-                                                </span>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#2D3F2C]/8 text-[#2D3F2C] dark:text-emerald-400 border border-[#2D3F2C]/20">
-                                                    <Box size={12} className="shrink-0" />
-                                                    <span>
-                                                        {isRtl ? record.subTypeAr : record.subTypeEn}
-                                                    </span>
-                                                </span>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <p className="text-xs text-[#6E6862] dark:text-slate-400 max-w-[200px] truncate">
-                                                    {displayDescription || '—'}
-                                                </p>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                {displayTemplates.length === 0 ? (
-                                                    <span className="text-[11px] text-[#857E74] italic">
-                                                        {t(
-                                                            'assetManagement.types.labels.noTemplates'
-                                                        )}
-                                                    </span>
-                                                ) : (
-                                                    <div className="flex flex-wrap items-center gap-1 max-w-[220px]">
-                                                        {displayTemplates.map((tpl, i) => (
-                                                            <span
-                                                                key={`${record.id}-tpl-${i}`}
-                                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#8C6046]/10 text-[#8C6046] border border-[#8C6046]/25"
-                                                            >
-                                                                <FileText size={11} />
-                                                                <span>{tpl}</span>
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6 rounded-full bg-[#2D3F2C]/12 text-[#2D3F2C] dark:text-emerald-400 text-[10px] font-bold flex items-center justify-center shrink-0">
-                                                        KA
-                                                    </div>
-                                                    <span className="text-xs font-medium text-[#0D0D0D] dark:text-slate-200 whitespace-nowrap">
-                                                        {isRtl
-                                                            ? record.creatorNameAr
-                                                            : record.creatorNameEn}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <span
-                                                    className="text-xs font-mono text-[#6E6862] dark:text-slate-400 tabular-nums"
-                                                    dir="ltr"
-                                                >
-                                                    {record.createDate}
-                                                </span>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(record)}
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors cursor-pointer ${
-                                                        isActive
-                                                            ? 'bg-[#265938]/10 text-[#265938] border-[#265938]/25 hover:bg-[#265938]/18'
-                                                            : 'bg-[#857E74]/12 text-[#6E6862] border-[#857E74]/30 hover:bg-[#857E74]/20'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`w-1.5 h-1.5 rounded-full ${
-                                                            isActive
-                                                                ? 'bg-[#265938]'
-                                                                : 'bg-[#857E74]'
-                                                        }`}
-                                                    />
-                                                    <span>
-                                                        {isActive
-                                                            ? t('assetManagement.common.active')
-                                                            : t('assetManagement.common.inactive')}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            <td className="py-3.5 px-4 text-end">
-                                                <div className="inline-flex items-center justify-end gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setViewingRecord(record)}
-                                                        title={t('assetManagement.common.view')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] dark:hover:text-slate-100 hover:bg-[#FAF8F5] dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                                    >
-                                                        <Eye size={15} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEditDrawer(record)}
-                                                        title={t('assetManagement.common.edit')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                                    >
-                                                        <Pencil size={15} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(record)}
-                                                        title={
-                                                            isActive
-                                                                ? t('assetManagement.common.deactivate')
-                                                                : t('assetManagement.common.activate')
-                                                        }
-                                                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                                            isActive
-                                                                ? 'text-[#265938] hover:bg-[#265938]/10'
-                                                                : 'text-[#857E74] hover:bg-[#857E74]/15'
-                                                        }`}
-                                                    >
-                                                        <Power size={15} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setDeletingRecord(record)}
-                                                        title={t('assetManagement.common.delete')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#A63A3A] hover:bg-[#A63A3A]/10 transition-colors cursor-pointer"
-                                                    >
-                                                        <Trash2 size={15} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Bar */}
-                <div className="px-5 py-3.5 bg-[#FAF8F5]/60 dark:bg-slate-800/40 border-t border-[#E5E0D8] dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex items-center gap-3 text-xs text-[#6E6862] dark:text-slate-400">
-                        <span>{t('assetManagement.common.rowsPerPage')}</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('assetManagement.common.rowsPerPage')}
-                            className="px-2.5 py-1 rounded-md border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
-                        >
-                            {ASSET_PAGE_SIZE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                        <span>
-                            {t('assetManagement.common.showingCount', {
-                                from:
-                                    totalRecords === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1,
-                                to: Math.min(safeCurrentPage * pageSize, totalRecords),
-                                total: totalRecords,
-                            })}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                        <button
-                            type="button"
-                            disabled={safeCurrentPage <= 1}
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="p-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 text-[#0D0D0D] dark:text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                            aria-label={t('common.previous', 'Previous')}
-                        >
-                            <ChevronLeft size={14} className="rtl:rotate-180" />
-                        </button>
-
-                        {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
-                            <button
-                                key={pageNum}
-                                type="button"
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`min-w-7 h-7 px-2 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer ${
-                                    pageNum === safeCurrentPage
-                                        ? 'bg-[#2D3F2C] text-[#FAF8F5]'
-                                        : 'bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 hover:bg-[#FAF8F5]'
-                                }`}
-                                dir="ltr"
-                            >
-                                {pageNum}
-                            </button>
-                        ))}
-
-                        <button
-                            type="button"
-                            disabled={safeCurrentPage >= totalPages}
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            className="p-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 text-[#0D0D0D] dark:text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                            aria-label={t('common.next', 'Next')}
-                        >
-                            <ChevronRight size={14} className="rtl:rotate-180" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* View Asset Type Drawer */}
-            {viewingRecord && (
-                <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[1px]">
+            {deleteItem && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-[1px]">
                     <div
-                        className="w-full max-w-lg bg-white dark:bg-slate-900 h-full shadow-2xl border-s border-[#E5E0D8] dark:border-slate-800 flex flex-col justify-between overflow-y-auto"
                         dir={isRtl ? 'rtl' : 'ltr'}
+                        role="alertdialog"
+                        aria-modal="true"
+                        className="w-full max-w-md rounded-xl border border-[#E5E0D8] bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
                     >
-                        <div>
-                            <div className="px-6 py-5 border-b border-[#E5E0D8] dark:border-slate-800 flex items-center justify-between gap-3 bg-[#FAF8F5] dark:bg-slate-800/50">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shrink-0">
-                                        <Layers className="w-5 h-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className="text-xs font-mono font-bold text-[#6E6862] dark:text-slate-400"
-                                                dir="ltr"
-                                            >
-                                                {viewingRecord.id}
-                                            </span>
-                                            <span
-                                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
-                                                    viewingRecord.status === 'Active'
-                                                        ? 'bg-[#265938]/12 text-[#265938]'
-                                                        : 'bg-[#857E74]/15 text-[#6E6862]'
-                                                }`}
-                                            >
-                                                {viewingRecord.status === 'Active'
-                                                    ? t('assetManagement.common.active')
-                                                    : t('assetManagement.common.inactive')}
-                                            </span>
-                                        </div>
-                                        <h2 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100 truncate mt-0.5">
-                                            {isRtl ? viewingRecord.nameAr : viewingRecord.nameEn}
-                                        </h2>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingRecord(null)}
-                                    className="p-2 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-5">
-                                <div className="grid grid-cols-2 gap-3.5">
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862] dark:text-slate-400">
-                                            <Grid size={13} />
-                                            <span>{t('assetManagement.types.table.category')}</span>
-                                        </div>
-                                        <p className="text-xs font-bold text-[#0D0D0D] dark:text-slate-100 mt-1.5">
-                                            {isRtl
-                                                ? viewingRecord.categoryNameAr
-                                                : viewingRecord.categoryNameEn}{' '}
-                                            <span
-                                                className="font-mono text-[11px] text-[#6E6862]"
-                                                dir="ltr"
-                                            >
-                                                ({viewingRecord.categoryId})
-                                            </span>
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862] dark:text-slate-400">
-                                            <Box size={13} />
-                                            <span>
-                                                {t('assetManagement.types.table.assetSubtype')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-bold text-[#0D0D0D] dark:text-slate-100 mt-1.5">
-                                            {isRtl
-                                                ? viewingRecord.subTypeAr
-                                                : viewingRecord.subTypeEn}
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862] dark:text-slate-400">
-                                            <User size={13} />
-                                            <span>{t('assetManagement.types.table.creator')}</span>
-                                        </div>
-                                        <p className="text-xs font-bold text-[#0D0D0D] dark:text-slate-100 mt-1.5">
-                                            {isRtl
-                                                ? viewingRecord.creatorNameAr
-                                                : viewingRecord.creatorNameEn}
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862] dark:text-slate-400">
-                                            <Calendar size={13} />
-                                            <span>
-                                                {t('assetManagement.types.table.createDate')}
-                                            </span>
-                                        </div>
-                                        <p
-                                            className="text-xs font-mono font-bold text-[#0D0D0D] dark:text-slate-100 mt-1.5"
-                                            dir="ltr"
-                                        >
-                                            {viewingRecord.createDate}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800 space-y-2">
-                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400">
-                                        {t('assetManagement.types.table.templates')}
-                                    </span>
-                                    {(isRtl
-                                        ? viewingRecord.templatesAr
-                                        : viewingRecord.templatesEn
-                                    ).length === 0 ? (
-                                        <p className="text-xs text-[#6E6862] dark:text-slate-400 italic">
-                                            {t('assetManagement.types.labels.noTemplates')}
-                                        </p>
-                                    ) : (
-                                        <div className="flex flex-wrap gap-1.5 pt-1">
-                                            {(isRtl
-                                                ? viewingRecord.templatesAr
-                                                : viewingRecord.templatesEn
-                                            ).map((tpl, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100"
-                                                >
-                                                    <FileText
-                                                        size={13}
-                                                        className="text-[#8C6046]"
-                                                    />
-                                                    <span>{tpl}</span>
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="p-4 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-800 space-y-1.5">
-                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400">
-                                        {t('assetManagement.types.table.description')}
-                                    </span>
-                                    <p className="text-xs text-[#0D0D0D] dark:text-slate-200 leading-relaxed">
-                                        {(isRtl
-                                            ? viewingRecord.descriptionAr
-                                            : viewingRecord.descriptionEn) ||
-                                            t('assetManagement.common.noDescription')}
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-950/30">
+                            <Trash2 size={21} />
                         </div>
 
-                        <div className="px-6 py-4 border-t border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-800/50 flex items-center justify-between gap-2">
+                        <h3 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">
+                            {isRtl
+                                ? 'تأكيد حذف نوع الأصل'
+                                : 'Confirm Delete'}
+                        </h3>
+
+                        <p className="mt-3 text-sm text-[#6E6862] dark:text-slate-400">
+                            {isRtl
+                                ? `هل أنت متأكد من حذف "${deleteItem.name}"؟`
+                                : `Are you sure you want to delete "${deleteItem.name}" ? `}
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-2">
                             <button
                                 type="button"
-                                onClick={() => handleToggleStatus(viewingRecord)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] dark:text-slate-100 transition-colors cursor-pointer"
+                                disabled={deleteMutation.isPending}
+                                onClick={() => setDeleteItem(null)}
+                                className="rounded-lg border border-[#E5E0D8] px-4 py-2 text-sm dark:border-slate-700 dark:text-slate-200"
                             >
-                                <Power size={14} />
-                                <span>
-                                    {viewingRecord.status === 'Active'
-                                        ? t('assetManagement.common.deactivate')
-                                        : t('assetManagement.common.activate')}
-                                </span>
+                                {isRtl ? 'إلغاء' : 'Cancel'}
                             </button>
 
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => openEditDrawer(viewingRecord)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
-                                >
-                                    <Pencil size={13} />
-                                    <span>{t('assetManagement.common.edit')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingRecord(null)}
-                                    className="px-3.5 py-2 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-[#6E6862] dark:text-slate-300 hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                                >
-                                    {t('common.close', 'Close')}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Create / Edit Asset Type Drawer */}
-            {(isCreateOpen || editingRecord) && (
-                <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[1px]">
-                    <form
-                        onSubmit={handleFormSubmit}
-                        className="w-full max-w-lg bg-white dark:bg-slate-900 h-full shadow-2xl border-s border-[#E5E0D8] dark:border-slate-800 flex flex-col justify-between overflow-y-auto"
-                        dir={isRtl ? 'rtl' : 'ltr'}
-                    >
-                        <div>
-                            <div className="px-6 py-5 border-b border-[#E5E0D8] dark:border-slate-800 flex items-center justify-between gap-3 bg-[#FAF8F5] dark:bg-slate-800/50">
-                                <div>
-                                    <h2 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">
-                                        {editingRecord
-                                            ? t('assetManagement.types.drawer.editTitle')
-                                            : t('assetManagement.types.drawer.createTitle')}
-                                    </h2>
-                                    <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-0.5">
-                                        {t('assetManagement.types.drawer.subtitle')}
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={closeFormDrawer}
-                                    className="p-2 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] dark:hover:text-slate-100 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-                                {formError && (
-                                    <div className="p-3 rounded-lg bg-[#A63A3A]/10 border border-[#A63A3A]/30 text-xs font-medium text-[#A63A3A] flex items-center gap-2">
-                                        <AlertTriangle size={14} className="shrink-0" />
-                                        <span>{formError}</span>
-                                    </div>
-                                )}
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 mb-1.5">
-                                        {t('assetManagement.types.drawer.nameEn')}{' '}
-                                        <span className="text-[#A63A3A]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formState.nameEn}
-                                        onChange={(e) => {
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                nameEn: e.target.value,
-                                            }));
-                                            if (formError) setFormError(null);
-                                        }}
-                                        placeholder={t(
-                                            'assetManagement.types.drawer.nameEnPlaceholder'
-                                        )}
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:bg-white dark:focus:bg-slate-900 focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 mb-1.5">
-                                        {t('assetManagement.types.drawer.nameAr')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formState.nameAr}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                nameAr: e.target.value,
-                                            }))
-                                        }
-                                        placeholder={t(
-                                            'assetManagement.types.drawer.nameArPlaceholder'
-                                        )}
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:bg-white dark:focus:bg-slate-900 focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 mb-1.5">
-                                            {t('assetManagement.types.drawer.category')}{' '}
-                                            <span className="text-[#A63A3A]">*</span>
-                                        </label>
-                                        <select
-                                            value={formState.categoryId}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    categoryId: e.target.value,
-                                                }))
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C]"
-                                        >
-                                            {drawerCategories.map((cat) => (
-                                                <option key={cat.id} value={cat.id}>
-                                                    {isRtl ? cat.nameAr : cat.nameEn} ({cat.id})
-                                                    {cat.status === 'Inactive'
-                                                        ? ` — ${t('assetManagement.common.inactive')}`
-                                                        : ''}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 mb-1.5">
-                                            {t('assetManagement.types.drawer.assetSubtype')}
-                                        </label>
-                                        <select
-                                            value={formState.subTypeEn}
-                                            onChange={(e) =>
-                                                handleSubTypeSelectChange(e.target.value)
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C]"
-                                        >
-                                            {subTypeFilterOptions.map((opt) => (
-                                                <option key={opt.valueEn} value={opt.valueEn}>
-                                                    {isRtl ? opt.valueAr : opt.valueEn}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Document Templates Multi-Select */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100">
-                                            {t('assetManagement.types.drawer.templates')}
-                                        </label>
-                                        {formState.templatesEn.length > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setFormState((prev) => ({
-                                                        ...prev,
-                                                        templatesEn: [],
-                                                    }))
-                                                }
-                                                className="text-[11px] font-medium text-[#A63A3A] hover:underline cursor-pointer"
-                                            >
-                                                {t('assetManagement.types.drawer.clearTemplates')}
-                                            </button>
-                                        )}
-                                    </div>
-                                    <p className="text-[11px] text-[#6E6862] dark:text-slate-400 mb-2">
-                                        {t('assetManagement.types.drawer.templatesHint')}
-                                    </p>
-
-                                    <div className="p-3 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/70 border border-[#E5E0D8] dark:border-slate-700 max-h-44 overflow-y-auto flex flex-wrap gap-1.5">
-                                        {drawerTemplates.map((tpl) => {
-                                            const isSelected = formState.templatesEn.some(
-                                                (name) =>
-                                                    name.toLowerCase() ===
-                                                    tpl.nameEn.toLowerCase()
-                                            );
-                                            return (
-                                                <button
-                                                    key={tpl.nameEn}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleToggleTemplateSelection(tpl.nameEn)
-                                                    }
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                                                        isSelected
-                                                            ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
-                                                            : 'bg-white dark:bg-slate-900 text-[#0D0D0D] dark:text-slate-200 border-[#E5E0D8] dark:border-slate-700 hover:border-[#2D3F2C]'
-                                                    }`}
-                                                >
-                                                    {isSelected ? (
-                                                        <Check size={12} />
-                                                    ) : (
-                                                        <FileText
-                                                            size={12}
-                                                            className="text-[#857E74]"
-                                                        />
-                                                    )}
-                                                    <span>
-                                                        {isRtl ? tpl.nameAr : tpl.nameEn}
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Optional Custom Template Input */}
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <input
-                                            type="text"
-                                            value={customTemplateInput}
-                                            onChange={(e) =>
-                                                setCustomTemplateInput(e.target.value)
-                                            }
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    handleAddCustomTemplate();
-                                                }
-                                            }}
-                                            placeholder={t(
-                                                'assetManagement.types.drawer.addCustomTemplatePlaceholder'
-                                            )}
-                                            className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C]"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleAddCustomTemplate}
-                                            className="px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-[#FAF8F5] text-xs font-semibold text-[#2D3F2C] dark:text-emerald-400 transition-colors cursor-pointer"
-                                        >
-                                            {t('assetManagement.types.drawer.addTemplateBtn')}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 mb-1.5">
-                                        {t('assetManagement.types.drawer.descriptionEn')}
-                                    </label>
-                                    <textarea
-                                        rows={3}
-                                        value={formState.descriptionEn}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                descriptionEn: e.target.value,
-                                            }))
-                                        }
-                                        placeholder={t(
-                                            'assetManagement.types.drawer.descriptionPlaceholder'
-                                        )}
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:bg-white dark:focus:bg-slate-900 focus:border-[#2D3F2C] resize-none"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-100 mb-1.5">
-                                        {t('assetManagement.types.table.status')}
-                                    </label>
-                                    <select
-                                        value={formState.status}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                status: e.target.value as 'Active' | 'Inactive',
-                                            }))
-                                        }
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800 text-[#0D0D0D] dark:text-slate-100 focus:outline-hidden focus:border-[#2D3F2C]"
-                                    >
-                                        <option value="Active">
-                                            {t('assetManagement.common.active')}
-                                        </option>
-                                        <option value="Inactive">
-                                            {t('assetManagement.common.inactive')}
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="px-6 py-4 border-t border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-800/50 flex items-center justify-end gap-2">
                             <button
                                 type="button"
-                                onClick={closeFormDrawer}
-                                className="px-4 py-2 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-[#6E6862] dark:text-slate-300 hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                disabled={deleteMutation.isPending}
+                                onClick={() => deleteMutation.mutate(deleteItem)}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
                             >
-                                {t('common.cancel', 'Cancel')}
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
-                            >
-                                {editingRecord
-                                    ? t('common.saveChanges', 'Save Changes')
-                                    : t('assetManagement.types.actions.newType')}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {deletingRecord && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1px]">
-                    <div
-                        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl border border-[#E5E0D8] dark:border-slate-800 shadow-2xl p-6 space-y-4"
-                        dir={isRtl ? 'rtl' : 'ltr'}
-                    >
-                        <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#A63A3A]/12 text-[#A63A3A] flex items-center justify-center shrink-0">
-                                <AlertTriangle className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-[#0D0D0D] dark:text-slate-100">
-                                    {t('assetManagement.types.deleteModal.title')}
-                                </h3>
-                                <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-1 leading-relaxed">
-                                    {t('assetManagement.types.deleteModal.message', {
-                                        name: isRtl
-                                            ? deletingRecord.nameAr
-                                            : deletingRecord.nameEn,
-                                        id: deletingRecord.id,
-                                    })}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setDeletingRecord(null)}
-                                className="px-3.5 py-2 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-[#6E6862] dark:text-slate-300 hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                {t('common.cancel', 'Cancel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmDelete}
-                                className="px-3.5 py-2 rounded-lg bg-[#A63A3A] hover:bg-[#8f3030] text-xs font-medium text-white transition-colors cursor-pointer"
-                            >
-                                {t('common.delete', 'Delete')}
+                                {deleteMutation.isPending
+                                    ? isRtl
+                                        ? 'جاري الحذف...'
+                                        : 'Deleting...'
+                                    : isRtl
+                                        ? 'حذف'
+                                        : 'Delete'}
                             </button>
                         </div>
                     </div>

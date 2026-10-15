@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { DataTable } from '../../components/DataTable';
 import { AddTicketTypeForm, type CreateTicketTypeDto } from './AddTicketTypeForm';
 import { ticketApi } from '../../api/api';
+import i18n from '../../i18n';
 
 interface TicketTypeRecord {
     id: string;
@@ -121,18 +122,15 @@ export const TicketTypesPage = () => {
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
-                accessorKey: 'id',
-                header: 'Type Code',
+                accessorKey: 'codeName',
+                header: 'Code Name',
                 cell: ({ row }) => {
-                    const serialNumber = pageIndex * pageSize + row.index + 1;
-                    const typeCode = generateTypeCode(serialNumber);
-
                     return (
                         <span
                             className="inline-flex items-center rounded-md border border-[#2D3F2C]/20 bg-[#2D3F2C]/10 px-2.5 py-1 font-mono text-xs font-bold text-[#2D3F2C]"
                             dir="ltr"
                         >
-                            {typeCode}
+                            {row.original.codeName}
                         </span>
                     );
                 },
@@ -237,6 +235,92 @@ export const TicketTypesPage = () => {
         });
     };
 
+    const handleExport = useCallback(() => {
+        if (!ticketTypes.length) {
+            toast.error(
+                t('ticketing.ticketTypes.noDataToExport', {
+                    defaultValue: 'No ticket types to export.',
+                }),
+            );
+            return;
+        }
+
+        const headers = [
+            'Type Code',
+            'ID',
+            t('ticketing.ticketTypes.columns.name', {
+                defaultValue: 'Name',
+            }),
+            t('ticketing.ticketTypes.columns.description', {
+                defaultValue: 'Description',
+            }),
+            t('ticketing.ticketTypes.columns.ticketsCount', {
+                defaultValue: 'Tickets Count',
+            }),
+            t('ticketing.ticketTypes.columns.createdBy', {
+                defaultValue: 'Created By',
+            }),
+            t('ticketing.ticketTypes.columns.createdAt', {
+                defaultValue: 'Created At',
+            }),
+        ];
+
+        const escapeCsv = (value: unknown): string =>
+            `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+        const rows = ticketTypes.map((item, index) => {
+            const serialNumber = pageIndex * pageSize + index + 1;
+
+            const createdAt = item.createdAt
+                ? new Date(item.createdAt)
+                : null;
+
+            const formattedDate =
+                createdAt && !Number.isNaN(createdAt.getTime())
+                    ? createdAt.toLocaleString(
+                        i18n.dir() === 'rtl' ? 'ar-EG' : 'en-GB',
+                    )
+                    : '';
+
+            return [
+                escapeCsv(generateTypeCode(serialNumber)),
+                escapeCsv(item.id),
+                escapeCsv(item.name),
+                escapeCsv(item.description),
+                escapeCsv(item.ticketsCount ?? 0),
+                escapeCsv(item.createdBy),
+                escapeCsv(formattedDate),
+            ].join(',');
+        });
+
+        // BOM supports Arabic characters correctly in Excel.
+        const csv =
+            '\uFEFF' +
+            [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+
+        const blob = new Blob([csv], {
+            type: 'text/csv;charset=utf-8;',
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = 'ticket-types.csv';
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(url);
+
+        toast.success(
+            t('ticketing.ticketTypes.exportSuccess', {
+                defaultValue: 'Export completed successfully.',
+            }),
+        );
+    }, [ticketTypes, pageIndex, pageSize, t, i18n]);
+
     return (
         <div className="space-y-4">
             {isError && (
@@ -272,6 +356,7 @@ export const TicketTypesPage = () => {
                 title={t('ticketing.ticketTypesTitle')}
                 description={t('ticketing.ticketTypesDesc')}
                 addNewLabel={t('ticketing.ticketTypes.addLabel')}
+                onExport={handleExport}
             />
 
             <AddTicketTypeForm

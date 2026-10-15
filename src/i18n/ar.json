@@ -84,7 +84,8 @@
     "selectedCount": "تم تحديد {{count}} عنصر",
     "clearSelection": "إلغاء التحديد",
     "tryAdjustingFilters": "جرّب مسح نص البحث أو إعادة تعيين خيارات التصفية.",
-    "createdAt": "تاريخ الإنشاء"
+    "createdAt": "تاريخ الإنشاء",
+    "codeName": "كود الخدمة"
   },
   "nav": {
     "main": "الرئيسية",
@@ -7244,4 +7245,3 @@
     }
   }
 }
-

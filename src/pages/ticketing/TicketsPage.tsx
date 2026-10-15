@@ -483,6 +483,17 @@ export const TicketsPage: React.FC = () => {
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
+                accessorKey: 'codeName',
+                header: isAr ? 'الرمز الكودي' : 'codeName',
+                cell: ({ row }) => (
+                    <div
+                        className="block max-w-[260px] cursor-pointer truncate text-start font-medium text-[#0D0D0D] transition-colors hover:text-[#2D3F2C]"
+                    >
+                        {row.original.codeName || '—'}
+                    </div>
+                ),
+            },
+            {
                 accessorKey: 'subject',
                 header: isAr ? 'موضوع المهمة' : 'Subject',
                 cell: ({ row }) => (

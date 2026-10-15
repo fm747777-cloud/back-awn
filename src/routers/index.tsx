@@ -49,7 +49,7 @@ const AssetManagementPage = () => import('../pages/AssetManagementPage').then((m
 const AssetApprovalTasksPage = () => import('../pages/asset-management/AssetApprovalTasksPage').then((m) => ({ Component: m.AssetApprovalTasksPage }));
 const AssetsPage = () => import('../pages/asset-management/AssetsPage').then((m) => ({ Component: m.AssetsPage }));
 const AssetStatusPage = () => import('../pages/asset-management/AssetStatusPage').then((m) => ({ Component: m.AssetStatusPage }));
-const AssetTypesPage = () => import('../pages/asset-management/AssetTypesPage').then((m) => ({ Component: m.AssetTypesPage }));
+const AssetTypesPage = () => import('../pages/asset-management/AssetTypesPage').then((m) => ({ Component: m.AssetTypePage }));
 const AssetCategoriesPage = () => import('../pages/asset-management/AssetCategoriesPage').then((m) => ({ Component: m.AssetCategoriesPage }));
 const AssetTagsPage = () => import('../pages/asset-management/AssetTagsPage').then((m) => ({ Component: m.AssetTagsPage }));
 const AssetAuditTrailPage = () => import('../pages/asset-management/AssetAuditTrailPage').then((m) => ({ Component: m.AssetAuditTrailPage }));

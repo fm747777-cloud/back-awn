@@ -1404,44 +1404,12 @@ export const serviceApi = {
     },
 
     getServiceGroup: async (data: any = {}) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service-group', { params: data });
-                if (response.data !== undefined) return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.get('/service-group', { params: data });
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const list = getLocal('groups', initialGroups);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item: any) =>
-                    String(item.name || '').toLowerCase().includes(search) ||
-                    String(item.groupCode || '').toLowerCase().includes(search) ||
-                    String(item.description || '').toLowerCase().includes(search)
-            )
-            : list;
-
-        if (!data?.page && !data?.limit) {
-            return {
-                data: filtered,
-                count: filtered.length,
-                total: filtered.length,
-            };
-        }
-
-        const page = Number(data?.page || 1);
-        const limit = Number(data?.limit || 10);
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
-
-        return {
-            data: paged,
-            count: filtered.length,
-            total: filtered.length,
-        };
     },
 
     createServiceGroup: async (data: any) => {
@@ -1593,6 +1561,15 @@ export const serviceApi = {
         const updated = [newPackage, ...list];
         setLocal('packages', updated);
         return newPackage;
+    },
+
+
+    getServiceDocs: async (data: any = {}) => {
+        try {
+            const response = await axiosClient.get('/service-doc', { params: data });
+            if (response.data !== undefined) return response.data;
+        } catch {
+        }
     },
 };
 
@@ -1759,6 +1736,92 @@ export const documentApi = {
 
     deleteDocumentTag: async (data: any) => {
         const response = await axiosClient.delete('/document-tag', data);
+        return response.data;
+    },
+}
+
+export const assetApi = {
+    getAssetCategories: async (params: any) => {
+        const response = await axiosClient.get('/assets-category', { params });
+        return response.data;
+    },
+
+    createAssetCAtegory: async (data: any) => {
+        const response = await axiosClient.post('/assets-category', data);
+        return response.data;
+    },
+
+    updateAssetCAtegory: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/assets-category/${id}`, data);
+        return response.data;
+    },
+
+    deleteAssetCategory: async (id: string) => {
+        const response = await axiosClient.delete(`/assets-category/${id}`);
+        return response.data;
+    },
+
+
+    getAssetTags: async (params: any) => {
+        const response = await axiosClient.get('/asset-tag', { params });
+        return response.data;
+    },
+
+    createAssetTag: async (data: any) => {
+        const response = await axiosClient.post('/asset-tag', data);
+        return response.data;
+    },
+
+    updateAssetTag: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/asset-tag/${id}`, data);
+        return response.data;
+    },
+
+    deleteAssetTag: async (id: string) => {
+        const response = await axiosClient.delete(`/asset-tag/${id}`);
+        return response.data;
+    },
+
+
+    getAssetStatus: async (params: any) => {
+        const response = await axiosClient.get('/asset-status', { params });
+        return response.data;
+    },
+
+    createAssetStatus: async (data: any) => {
+        const response = await axiosClient.post('/asset-status', data);
+        return response.data;
+    },
+
+    updateAssetStatus: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/asset-status/${id}`, data);
+        return response.data;
+    },
+
+    deleteAssetStatus: async (id: string) => {
+        const response = await axiosClient.delete(`/asset-status/${id}`);
+        return response.data;
+    },
+
+
+
+    getAssetTypes: async (params: any) => {
+        const response = await axiosClient.get('/asset-type', { params });
+        return response.data;
+    },
+
+    createAssetType: async (data: any) => {
+        const response = await axiosClient.post('/asset-type', data);
+        return response.data;
+    },
+
+    updateAssetType: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/asset-type/${id}`, data);
+        return response.data;
+    },
+
+    deleteAssetType: async (id: string) => {
+        const response = await axiosClient.delete(`/asset-type/${id}`);
         return response.data;
     },
 }
@@ -2110,11 +2173,11 @@ export interface CrmWonDealSummary {
     outstandingValue: number;
     totalOutstandingValue: number;
     fulfillmentStatus:
-        | 'ready_for_quote'
-        | 'quoted'
-        | 'contracted'
-        | 'invoiced'
-        | 'fulfilled';
+    | 'ready_for_quote'
+    | 'quoted'
+    | 'contracted'
+    | 'invoiced'
+    | 'fulfilled';
 }
 
 export interface CrmImportResult<T> {
@@ -4523,10 +4586,10 @@ function syncEntitiesWithOwnershipTypeUpdate(
             owners: company.owners.map((o) =>
                 o.ownershipTypeId === updatedOwnType.id
                     ? {
-                          ...o,
-                          ownershipTypeNameEn: updatedOwnType.nameEn,
-                          ownershipTypeNameAr: updatedOwnType.nameAr,
-                      }
+                        ...o,
+                        ownershipTypeNameEn: updatedOwnType.nameEn,
+                        ownershipTypeNameAr: updatedOwnType.nameAr,
+                    }
                     : o
             ),
         };
@@ -6411,9 +6474,9 @@ export const crmApi = {
         const duplicate = list.find(
             (item) =>
                 item.title.trim().toLowerCase() ===
-                    validated.title.trim().toLowerCase() &&
+                validated.title.trim().toLowerCase() &&
                 item.contactEmail.trim().toLowerCase() ===
-                    validated.contactEmail.trim().toLowerCase()
+                validated.contactEmail.trim().toLowerCase()
         );
         if (duplicate) {
             throw new CrmApiError({
@@ -6563,13 +6626,13 @@ export const crmApi = {
             assignedEmployeeNameEn: employee
                 ? employee.nameEn
                 : merged.assignedEmployeeId
-                  ? merged.assignedEmployeeNameEn || ''
-                  : '',
+                    ? merged.assignedEmployeeNameEn || ''
+                    : '',
             assignedEmployeeNameAr: employee
                 ? employee.nameAr
                 : merged.assignedEmployeeId
-                  ? merged.assignedEmployeeNameAr || ''
-                  : '',
+                    ? merged.assignedEmployeeNameAr || ''
+                    : '',
             companyId: linkedCompany?.id || undefined,
             companyNameEn: linkedCompany ? linkedCompany.nameEn : undefined,
             companyNameAr: linkedCompany ? linkedCompany.nameAr : undefined,
@@ -7302,10 +7365,10 @@ export const crmApi = {
                 leads.map((l) =>
                     l.companyId === id
                         ? {
-                              ...l,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...l,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : l
                 )
             );
@@ -7319,10 +7382,10 @@ export const crmApi = {
                 contacts.map((c) =>
                     c.companyId === id
                         ? {
-                              ...c,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...c,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : c
                 )
             );
@@ -7336,10 +7399,10 @@ export const crmApi = {
                 owners.map((o) =>
                     o.companyId === id
                         ? {
-                              ...o,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...o,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : o
                 )
             );
@@ -7353,10 +7416,10 @@ export const crmApi = {
                 deals.map((d) =>
                     d.companyId === id
                         ? {
-                              ...d,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...d,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : d
                 )
             );
@@ -7370,10 +7433,10 @@ export const crmApi = {
                 quotations.map((q) =>
                     q.companyId === id
                         ? {
-                              ...q,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...q,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : q
                 )
             );
@@ -7387,10 +7450,10 @@ export const crmApi = {
                 contracts.map((c) =>
                     c.companyId === id
                         ? {
-                              ...c,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...c,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : c
                 )
             );
@@ -7404,10 +7467,10 @@ export const crmApi = {
                 invoices.map((inv) =>
                     inv.companyId === id
                         ? {
-                              ...inv,
-                              companyNameEn: updatedRecord.nameEn,
-                              companyNameAr: updatedRecord.nameAr,
-                          }
+                            ...inv,
+                            companyNameEn: updatedRecord.nameEn,
+                            companyNameAr: updatedRecord.nameAr,
+                        }
                         : inv
                 )
             );
@@ -7732,10 +7795,10 @@ export const crmApi = {
         const normalizedExisting =
             newRecord.isPrimary && newRecord.companyId
                 ? list.map((item) =>
-                      item.companyId === newRecord.companyId
-                          ? { ...item, isPrimary: false }
-                          : item
-                  )
+                    item.companyId === newRecord.companyId
+                        ? { ...item, isPrimary: false }
+                        : item
+                )
                 : list;
 
         setLocal(CRM_STORAGE_KEYS.CONTACTS, [newRecord, ...normalizedExisting]);
@@ -7786,7 +7849,7 @@ export const crmApi = {
             (item) =>
                 item.id !== id &&
                 item.email.trim().toLowerCase() ===
-                    merged.email.trim().toLowerCase()
+                merged.email.trim().toLowerCase()
         );
         if (duplicateEmail) {
             throw new CrmApiError({
@@ -8207,11 +8270,11 @@ export const crmApi = {
             data.fullNameEn?.trim() ||
             (data.firstName !== undefined || data.lastName !== undefined
                 ? [
-                      (data.firstName ?? previous.firstName ?? '').trim(),
-                      (data.lastName ?? previous.lastName ?? '').trim(),
-                  ]
-                      .filter(Boolean)
-                      .join(' ')
+                    (data.firstName ?? previous.firstName ?? '').trim(),
+                    (data.lastName ?? previous.lastName ?? '').trim(),
+                ]
+                    .filter(Boolean)
+                    .join(' ')
                 : previous.fullNameEn);
 
         const merged = validateWithSchema(
@@ -8276,25 +8339,25 @@ export const crmApi = {
                 owners: comp.owners.map((o) =>
                     o.ownerId === id
                         ? {
-                              ...o,
-                              firstName: updatedRecord.firstName,
-                              lastName: updatedRecord.lastName,
-                              fullNameEn: updatedRecord.fullNameEn,
-                              fullNameAr: updatedRecord.fullNameAr,
-                              gender: updatedRecord.gender,
-                              nationality: updatedRecord.nationality,
-                              ownershipTypeId: updatedRecord.ownershipTypeId,
-                              ownershipTypeNameEn:
-                                  updatedRecord.ownershipTypeNameEn,
-                              ownershipTypeNameAr:
-                                  updatedRecord.ownershipTypeNameAr,
-                              nationalIdOrIqama: updatedRecord.nationalIdOrIqama,
-                              phone: updatedRecord.phone,
-                              email: updatedRecord.email,
-                              ownershipPercentage:
-                                  updatedRecord.ownershipPercentage,
-                              isMainOwner: updatedRecord.isMainOwner,
-                          }
+                            ...o,
+                            firstName: updatedRecord.firstName,
+                            lastName: updatedRecord.lastName,
+                            fullNameEn: updatedRecord.fullNameEn,
+                            fullNameAr: updatedRecord.fullNameAr,
+                            gender: updatedRecord.gender,
+                            nationality: updatedRecord.nationality,
+                            ownershipTypeId: updatedRecord.ownershipTypeId,
+                            ownershipTypeNameEn:
+                                updatedRecord.ownershipTypeNameEn,
+                            ownershipTypeNameAr:
+                                updatedRecord.ownershipTypeNameAr,
+                            nationalIdOrIqama: updatedRecord.nationalIdOrIqama,
+                            phone: updatedRecord.phone,
+                            email: updatedRecord.email,
+                            ownershipPercentage:
+                                updatedRecord.ownershipPercentage,
+                            isMainOwner: updatedRecord.isMainOwner,
+                        }
                         : o
                 ),
             };
@@ -8495,10 +8558,10 @@ export const crmApi = {
                 item.period_type === 'days'
                     ? 'days'
                     : item.period_type === 'months'
-                      ? 'months'
-                      : item.service_validity === 'oneTime'
-                        ? 'one_time'
-                        : 'years',
+                        ? 'months'
+                        : item.service_validity === 'oneTime'
+                            ? 'one_time'
+                            : 'years',
             category: String(item.category || 'General'),
         }));
     },
@@ -8509,9 +8572,9 @@ export const crmApi = {
         return list.map((pkg: any) => {
             const cycle: CrmBillingCycle =
                 pkg.billingCycle === 'monthly' ||
-                pkg.billingCycle === 'quarterly' ||
-                pkg.billingCycle === 'semi_annual' ||
-                pkg.billingCycle === 'one_time'
+                    pkg.billingCycle === 'quarterly' ||
+                    pkg.billingCycle === 'semi_annual' ||
+                    pkg.billingCycle === 'one_time'
                     ? pkg.billingCycle
                     : 'annual';
             return {
@@ -8525,8 +8588,8 @@ export const crmApi = {
                     cycle === 'monthly'
                         ? 'months'
                         : cycle === 'one_time'
-                          ? 'one_time'
-                          : 'years',
+                            ? 'one_time'
+                            : 'years',
                 description: String(pkg.description || ''),
             };
         });
@@ -8844,8 +8907,8 @@ export const crmApi = {
             closedCount > 0
                 ? Math.round((wonDeals.length / closedCount) * 100)
                 : wonDeals.length > 0
-                  ? 100
-                  : 0;
+                    ? 100
+                    : 0;
 
         return {
             totalDeals,
@@ -8897,8 +8960,8 @@ export const crmApi = {
             stage === 'won'
                 ? 100
                 : stage === 'lost'
-                  ? 0
-                  : data.probability ?? defaultProb;
+                    ? 0
+                    : data.probability ?? defaultProb;
         const resolvedVal = roundCrmCurrency(
             Number(data.expectedValue ?? data.amount ?? 0)
         );
@@ -9035,15 +9098,15 @@ export const crmApi = {
                 const nextLeads = leads.map((l) =>
                     l.id === linkedLead.id
                         ? {
-                              ...l,
-                              leadStatusId: convertedStage.id,
-                              leadStatusNameEn: convertedStage.nameEn,
-                              leadStatusNameAr: convertedStage.nameAr,
-                              companyId: l.companyId || company.id,
-                              companyNameEn: l.companyNameEn || company.nameEn,
-                              companyNameAr: l.companyNameAr || company.nameAr,
-                              updatedAt: todayIso,
-                          }
+                            ...l,
+                            leadStatusId: convertedStage.id,
+                            leadStatusNameEn: convertedStage.nameEn,
+                            leadStatusNameAr: convertedStage.nameAr,
+                            companyId: l.companyId || company.id,
+                            companyNameEn: l.companyNameEn || company.nameEn,
+                            companyNameAr: l.companyNameAr || company.nameAr,
+                            updatedAt: todayIso,
+                        }
                         : l
                 );
                 setLocal(CRM_STORAGE_KEYS.LEADS, nextLeads);
@@ -9091,20 +9154,20 @@ export const crmApi = {
             nextStage === 'won'
                 ? 100
                 : nextStage === 'lost'
-                  ? 0
-                  : data.probability !== undefined
-                    ? data.probability
-                    : nextStage !== previous.stage
-                      ? CRM_DEAL_STAGE_DEFAULT_PROBABILITY[nextStage]
-                      : previous.probability;
+                    ? 0
+                    : data.probability !== undefined
+                        ? data.probability
+                        : nextStage !== previous.stage
+                            ? CRM_DEAL_STAGE_DEFAULT_PROBABILITY[nextStage]
+                            : previous.probability;
 
         const resolvedVal = roundCrmCurrency(
             Number(
                 data.expectedValue ??
-                    data.amount ??
-                    previous.expectedValue ??
-                    previous.amount ??
-                    0
+                data.amount ??
+                previous.expectedValue ??
+                previous.amount ??
+                0
             )
         );
 
@@ -9216,11 +9279,11 @@ export const crmApi = {
                 quotations.map((q) =>
                     q.dealId === id
                         ? {
-                              ...q,
-                              dealTitle: updatedRecord.titleEn,
-                              dealTitleEn: updatedRecord.titleEn,
-                              dealTitleAr: updatedRecord.titleAr,
-                          }
+                            ...q,
+                            dealTitle: updatedRecord.titleEn,
+                            dealTitleEn: updatedRecord.titleEn,
+                            dealTitleAr: updatedRecord.titleAr,
+                        }
                         : q
                 )
             );
@@ -9234,11 +9297,11 @@ export const crmApi = {
                 contracts.map((c) =>
                     c.dealId === id
                         ? {
-                              ...c,
-                              dealTitle: updatedRecord.titleEn,
-                              dealTitleEn: updatedRecord.titleEn,
-                              dealTitleAr: updatedRecord.titleAr,
-                          }
+                            ...c,
+                            dealTitle: updatedRecord.titleEn,
+                            dealTitleEn: updatedRecord.titleEn,
+                            dealTitleAr: updatedRecord.titleAr,
+                        }
                         : c
                 )
             );
@@ -9504,16 +9567,16 @@ export const crmApi = {
                 taxRate: matchedTax
                     ? matchedTax.rate
                     : li.taxRate !== undefined
-                      ? li.taxRate
-                      : (defaultVat?.rate ?? 15),
+                        ? li.taxRate
+                        : (defaultVat?.rate ?? 15),
                 vatId: matchedVat
                     ? matchedVat.id
                     : li.vatId || defaultVat?.id || undefined,
                 vatRate: matchedVat
                     ? matchedVat.rate
                     : li.vatRate !== undefined
-                      ? li.vatRate
-                      : (li.taxRate ?? defaultVat?.rate ?? 15),
+                        ? li.vatRate
+                        : (li.taxRate ?? defaultVat?.rate ?? 15),
             };
         });
 
@@ -9587,8 +9650,8 @@ export const crmApi = {
         const linkedContact = validated.contactId
             ? contacts.find((c) => c.id === validated.contactId)
             : deal?.contactId
-              ? contacts.find((c) => c.id === deal.contactId)
-              : undefined;
+                ? contacts.find((c) => c.id === deal.contactId)
+                : undefined;
 
         const employee = CRM_SALES_EMPLOYEES.find(
             (e) =>
@@ -9716,16 +9779,16 @@ export const crmApi = {
                 taxRate: matchedTax
                     ? matchedTax.rate
                     : li.taxRate !== undefined
-                      ? li.taxRate
-                      : (defaultVat?.rate ?? 15),
+                        ? li.taxRate
+                        : (defaultVat?.rate ?? 15),
                 vatId: matchedVat
                     ? matchedVat.id
                     : li.vatId || defaultVat?.id || undefined,
                 vatRate: matchedVat
                     ? matchedVat.rate
                     : li.vatRate !== undefined
-                      ? li.vatRate
-                      : (li.taxRate ?? defaultVat?.rate ?? 15),
+                        ? li.vatRate
+                        : (li.taxRate ?? defaultVat?.rate ?? 15),
             };
         });
 
@@ -9947,14 +10010,14 @@ export const crmApi = {
             action:
                 (updatedRecord.quotationStatus === 'approved' ||
                     updatedRecord.quotationStatus === 'accepted') &&
-                previous.quotationStatus !== updatedRecord.quotationStatus
+                    previous.quotationStatus !== updatedRecord.quotationStatus
                     ? 'APPROVED'
                     : updatedRecord.quotationStatus === 'rejected' &&
                         previous.quotationStatus !== 'rejected'
-                      ? 'REJECTED'
-                      : isStatusChange
-                        ? 'STATUS_CHANGED'
-                        : 'UPDATED',
+                        ? 'REJECTED'
+                        : isStatusChange
+                            ? 'STATUS_CHANGED'
+                            : 'UPDATED',
             resourceType: 'Quotation',
             resourceId: updatedRecord.id,
             resourceCode: updatedRecord.code,
@@ -10382,8 +10445,8 @@ export const crmApi = {
         const linkedContact = validated.contactId
             ? contacts.find((c) => c.id === validated.contactId)
             : deal?.contactId
-              ? contacts.find((c) => c.id === deal.contactId)
-              : undefined;
+                ? contacts.find((c) => c.id === deal.contactId)
+                : undefined;
 
         const employee = CRM_SALES_EMPLOYEES.find(
             (e) =>
@@ -10488,17 +10551,17 @@ export const crmApi = {
         const previous = list[idx];
         const rawTotal = Number(
             data.totalValue ??
-                data.contractValue ??
-                previous.totalValue ??
-                previous.contractValue ??
-                0
+            data.contractValue ??
+            previous.totalValue ??
+            previous.contractValue ??
+            0
         );
         const rawSub = Number(data.subtotal ?? previous.subtotal ?? rawTotal);
         const rawDisc = Number(data.discountTotal ?? previous.discountTotal ?? 0);
         const rawTax = Number(
             data.taxAmount ??
-                previous.taxAmount ??
-                Math.max(0, rawTotal - (rawSub - rawDisc))
+            previous.taxAmount ??
+            Math.max(0, rawTotal - (rawSub - rawDisc))
         );
         const finalTotal = roundCrmCurrency(
             rawTotal > 0 ? rawTotal : Math.max(0, rawSub - rawDisc) + rawTax
@@ -11363,10 +11426,10 @@ export const crmApi = {
 
         const validMethod: CrmInvoicePaymentMethod | undefined =
             payment.paymentMethod === 'bank_transfer' ||
-            payment.paymentMethod === 'sadad' ||
-            payment.paymentMethod === 'cheque' ||
-            payment.paymentMethod === 'corporate_card' ||
-            payment.paymentMethod === 'cash'
+                payment.paymentMethod === 'sadad' ||
+                payment.paymentMethod === 'cheque' ||
+                payment.paymentMethod === 'corporate_card' ||
+                payment.paymentMethod === 'cash'
                 ? payment.paymentMethod
                 : invoice.paymentMethod || 'bank_transfer';
 
@@ -11771,7 +11834,7 @@ export const crmApi = {
                     (e) =>
                         e.id === item.assignedApproverId ||
                         e.nameEn.toLowerCase() ===
-                            item.assignedApproverNameEn.toLowerCase()
+                        item.assignedApproverNameEn.toLowerCase()
                 ) || CRM_SALES_EMPLOYEES[0];
             return {
                 ...item,
@@ -11934,7 +11997,7 @@ export const crmApi = {
                 (e) =>
                     e.id === data.assignedApproverId ||
                     e.nameEn.toLowerCase() ===
-                        (data.assignedApproverNameEn || '').toLowerCase()
+                    (data.assignedApproverNameEn || '').toLowerCase()
             ) || CRM_SALES_EMPLOYEES[0];
 
         const validated = validateWithSchema(
@@ -12220,7 +12283,7 @@ export const crmApi = {
                     signedDate:
                         approvalStatus === 'Approved'
                             ? contracts[cIdx].signedDate ||
-                              decidedAt.split('T')[0]
+                            decidedAt.split('T')[0]
                             : contracts[cIdx].signedDate,
                     updatedAt: decidedAt.split('T')[0],
                 };
@@ -12606,8 +12669,8 @@ export const crmApi = {
 
         const specialist = validated.assignedSpecialistId
             ? CRM_SALES_EMPLOYEES.find(
-                  (e) => e.id === validated.assignedSpecialistId
-              )
+                (e) => e.id === validated.assignedSpecialistId
+            )
             : undefined;
 
         const list = readOrInitializeCrmCollection(
@@ -12728,8 +12791,8 @@ export const crmApi = {
 
         const specialist = merged.assignedSpecialistId
             ? CRM_SALES_EMPLOYEES.find(
-                  (e) => e.id === merged.assignedSpecialistId
-              )
+                (e) => e.id === merged.assignedSpecialistId
+            )
             : undefined;
 
         const todayIso = new Date().toISOString().split('T')[0];
@@ -12943,20 +13006,20 @@ export const crmApi = {
             crmSalesPerformanceDashboardFilterSchema.safeParse(params || {});
         const normalizedFilters = parsedFilters.success
             ? {
-                  dateFrom: parsedFilters.data.dateFrom || undefined,
-                  dateTo: parsedFilters.data.dateTo || undefined,
-                  assignedEmployeeId:
-                      parsedFilters.data.assignedEmployeeId || 'all',
-                  sectorId: parsedFilters.data.sectorId || 'all',
-                  companyId: parsedFilters.data.companyId || 'all',
-              }
+                dateFrom: parsedFilters.data.dateFrom || undefined,
+                dateTo: parsedFilters.data.dateTo || undefined,
+                assignedEmployeeId:
+                    parsedFilters.data.assignedEmployeeId || 'all',
+                sectorId: parsedFilters.data.sectorId || 'all',
+                companyId: parsedFilters.data.companyId || 'all',
+            }
             : {
-                  dateFrom: undefined,
-                  dateTo: undefined,
-                  assignedEmployeeId: 'all',
-                  sectorId: 'all',
-                  companyId: 'all',
-              };
+                dateFrom: undefined,
+                dateTo: undefined,
+                assignedEmployeeId: 'all',
+                sectorId: 'all',
+                companyId: 'all',
+            };
 
         if (isCrmRemoteBackendActive()) {
             const response = await axiosClient.get(
@@ -13181,8 +13244,8 @@ export const crmApi = {
         const quotationAcceptanceRate =
             totalQuotations > 0
                 ? roundCrmCurrency(
-                      (acceptedQuotationsCount / totalQuotations) * 100
-                  )
+                    (acceptedQuotationsCount / totalQuotations) * 100
+                )
                 : 0;
         const totalQuotedValue = roundCrmCurrency(
             filteredQuotations.reduce((sum, q) => sum + (q.grandTotal || 0), 0)
@@ -13224,11 +13287,11 @@ export const crmApi = {
         const collectionRate =
             totalInvoicedAmount > 0
                 ? Math.min(
-                      100,
-                      roundCrmCurrency(
-                          (totalCollectedAmount / totalInvoicedAmount) * 100
-                      )
-                  )
+                    100,
+                    roundCrmCurrency(
+                        (totalCollectedAmount / totalInvoicedAmount) * 100
+                    )
+                )
                 : 0;
 
         const kpis: CrmSalesPerformanceKpis = {
@@ -13269,8 +13332,8 @@ export const crmApi = {
             normalizedFilters.assignedEmployeeId === 'all'
                 ? CRM_SALES_EMPLOYEES
                 : CRM_SALES_EMPLOYEES.filter(
-                      (emp) => emp.id === normalizedFilters.assignedEmployeeId
-                  );
+                    (emp) => emp.id === normalizedFilters.assignedEmployeeId
+                );
 
         const repPerformance: CrmSalesRepPerformanceItem[] =
             candidateEmployees.map((emp) => {
@@ -13369,9 +13432,9 @@ export const crmApi = {
                     leadConversionRate:
                         empLeads.length > 0
                             ? roundCrmCurrency(
-                                  (empConvertedLeads.length / empLeads.length) *
-                                      100
-                              )
+                                (empConvertedLeads.length / empLeads.length) *
+                                100
+                            )
                             : 0,
                     dealsCount: empDeals.length,
                     openDealsCount: empOpenDeals.length,
@@ -13380,8 +13443,8 @@ export const crmApi = {
                     winRate:
                         empDeals.length > 0
                             ? roundCrmCurrency(
-                                  (empWonDeals.length / empDeals.length) * 100
-                              )
+                                (empWonDeals.length / empDeals.length) * 100
+                            )
                             : 0,
                     pipelineValue: empPipelineValue,
                     weightedPipelineValue: empWeightedValue,
@@ -13397,12 +13460,12 @@ export const crmApi = {
                     collectionRate:
                         empInvoicedAmount > 0
                             ? Math.min(
-                                  100,
-                                  roundCrmCurrency(
-                                      (empCollectedAmount / empInvoicedAmount) *
-                                          100
-                                  )
-                              )
+                                100,
+                                roundCrmCurrency(
+                                    (empCollectedAmount / empInvoicedAmount) *
+                                    100
+                                )
+                            )
                             : 0,
                 };
             });
@@ -13433,17 +13496,17 @@ export const crmApi = {
                 const avgProb =
                     stageDeals.length > 0
                         ? roundCrmCurrency(
-                              stageDeals.reduce(
-                                  (sum, d) => sum + (d.probability ?? 0),
-                                  0
-                              ) / stageDeals.length
-                          )
+                            stageDeals.reduce(
+                                (sum, d) => sum + (d.probability ?? 0),
+                                0
+                            ) / stageDeals.length
+                        )
                         : CRM_DEAL_STAGE_DEFAULT_PROBABILITY[stage];
                 const shareOfPipeline =
                     totalPipelineValue > 0
                         ? roundCrmCurrency(
-                              (stageTotalValue / totalPipelineValue) * 100
-                          )
+                            (stageTotalValue / totalPipelineValue) * 100
+                        )
                         : 0;
 
                 return {
@@ -13575,7 +13638,7 @@ export const crmApi = {
                 matchesSector(comp.sectorId) &&
                 (normalizedFilters.assignedEmployeeId === 'all' ||
                     comp.assignedEmployeeId ===
-                        normalizedFilters.assignedEmployeeId ||
+                    normalizedFilters.assignedEmployeeId ||
                     filteredDeals.some((d) => d.companyId === comp.id) ||
                     filteredInvoices.some((inv) => inv.companyId === comp.id))
         );
@@ -13668,11 +13731,11 @@ export const crmApi = {
                         collectionRate:
                             compInvoiced > 0
                                 ? Math.min(
-                                      100,
-                                      roundCrmCurrency(
-                                          (compCollected / compInvoiced) * 100
-                                      )
-                                  )
+                                    100,
+                                    roundCrmCurrency(
+                                        (compCollected / compInvoiced) * 100
+                                    )
+                                )
                                 : 0,
                     };
                 })
@@ -13687,8 +13750,8 @@ export const crmApi = {
             normalizedFilters.sectorId === 'all'
                 ? allSectors
                 : allSectors.filter(
-                      (s) => s.id === normalizedFilters.sectorId
-                  );
+                    (s) => s.id === normalizedFilters.sectorId
+                );
 
         const sectorPerformance: CrmSectorSalesPerformanceItem[] =
             candidateSectors

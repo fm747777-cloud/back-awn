@@ -153,8 +153,6 @@ export const CannedRepliesPage = () => {
         onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to delete canned reply.'),
     });
 
-    const generateCode = (index: number) => `CR-${String(index + 1 + pageIndex * pageSize).padStart(3, '0')}`;
-
     const openForm = (mode: 'create' | 'edit' | 'view', reply: CannedReply | null = null) => {
         setFormMode(mode);
         setActiveReply(reply);
@@ -176,11 +174,10 @@ export const CannedRepliesPage = () => {
 
     const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
         {
-            id: 'code',
-            header: 'Canned Reply Code',
+            id: 'codeName',
+            header: 'Code Name',
             cell: ({ row }: { row: any }) => {
-                const index = replies.findIndex((item) => item.id === row.original.id);
-                return <span className="inline-flex rounded-md border border-[#2D3F2C]/15 bg-[#2D3F2C]/[0.07] px-2.5 py-1 font-mono text-xs font-bold text-[#2D3F2C]" dir="ltr">{generateCode(Math.max(index, 0))}</span>;
+                return <span className="inline-flex rounded-md border border-[#2D3F2C]/15 bg-[#2D3F2C]/[0.07] px-2.5 py-1 font-mono text-xs font-bold text-[#2D3F2C]">{row.original.codeName}</span>;
             },
         },
         {
@@ -196,7 +193,7 @@ export const CannedRepliesPage = () => {
         {
             accessorKey: 'createdAt',
             header: 'Created At',
-            cell: ({ row }: { row: any }) => <span className="whitespace-nowrap font-mono text-xs text-[#777168]" dir="ltr">{row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString() : '—'}</span>,
+            cell: ({ row }: { row: any }) => <span className="whitespace-nowrap font-mono text-xs text-[#777168]">{row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString() : '—'}</span>,
         },
         {
             id: 'actions',
@@ -205,10 +202,78 @@ export const CannedRepliesPage = () => {
         },
     ], [replies, pageIndex, pageSize]);
 
+    const handleExport = useCallback(() => {
+        if (!replies.length) {
+            toast.error('No canned replies to export.');
+            return;
+        }
+
+        const headers = [
+            'Canned Reply Code',
+            'ID',
+            'Subject',
+            'Message',
+            'Created At',
+        ];
+
+        const escapeCsv = (value: unknown): string =>
+            `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+        const rows = replies.map((reply, index) => {
+            const createdAt = reply.createdAt
+                ? new Date(reply.createdAt)
+                : null;
+
+            const formattedDate =
+                createdAt && !Number.isNaN(createdAt.getTime())
+                    ? createdAt.toLocaleString()
+                    : '';
+
+            return [
+                escapeCsv(reply.codeName),
+                escapeCsv(reply.id),
+                escapeCsv(reply.subject),
+                escapeCsv(reply.message),
+                escapeCsv(formattedDate),
+            ].join(',');
+        });
+
+        // BOM لضمان ظهور النص العربي بشكل صحيح في Excel.
+        const csv =
+            '\uFEFF' +
+            [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+
+        const blob = new Blob([csv], {
+            type: 'text/csv;charset=utf-8;',
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = 'canned-replies.csv';
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(url);
+
+        toast.success('Canned replies exported successfully.');
+    }, [replies, pageIndex, pageSize]);
+
     return (
         <div className="space-y-4">
             {isError && <div role="alert" className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span>Failed to load canned replies.</span><button type="button" onClick={() => refetch()} className="font-semibold underline">Retry</button></div>}
-            <DataTable columns={columns} data={replies} count={totalCount} loading={isLoading} searchPlaceholder="Search canned replies..." pageIndex={pageIndex} pageSize={pageSize} onPageChange={setPageIndex} onPageSizeChange={(size) => { setPageSize(size); setPageIndex(0); }} searchValue={searchValue} onSearchChange={(value) => { setSearchValue(value); setPageIndex(0); }} onAddNew={() => openForm('create')} title={t('ticketing.cannedRepliesTitle', { defaultValue: 'Canned Replies' })} description={t('ticketing.cannedRepliesDesc', { defaultValue: 'Manage reusable ticket responses.' })} addNewLabel={t('ticketing.cannedReplies.addLabel', { defaultValue: 'Add Canned Reply' })} />
+            <DataTable columns={columns}
+                data={replies} count={totalCount} loading={isLoading} searchPlaceholder="Search canned replies..."
+                pageIndex={pageIndex} pageSize={pageSize} onPageChange={setPageIndex}
+                onPageSizeChange={(size) => { setPageSize(size); setPageIndex(0); }} searchValue={searchValue}
+                onSearchChange={(value) => { setSearchValue(value); setPageIndex(0); }} onAddNew={() => openForm('create')}
+                title={t('ticketing.cannedRepliesTitle', { defaultValue: 'Canned Replies' })}
+                description={t('ticketing.cannedRepliesDesc', { defaultValue: 'Manage reusable ticket responses.' })}
+                addNewLabel={t('ticketing.cannedReplies.addLabel', { defaultValue: 'Add Canned Reply' })}
+                onExport={handleExport} />
             <CannedReplyForm isOpen={isFormOpen} mode={formMode} reply={activeReply} isLoading={createMutation.isPending || updateMutation.isPending} onClose={() => { setIsFormOpen(false); }} onSubmit={handleFormSubmit} />
             {replyToDelete && <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-[2px]"><div role="alertdialog" aria-modal="true" className="w-full max-w-sm rounded-2xl border border-[#E5E0D8] bg-white p-6 shadow-2xl"><div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600"><Trash2 size={19} /></div><h3 className="text-base font-bold text-[#0D0D0D]">Delete canned reply?</h3><p className="mt-2 text-sm leading-6 text-[#6E6862]">Are you sure you want to delete <strong className="text-[#0D0D0D]">{replyToDelete.subject}</strong>? This action cannot be undone.</p><div className="mt-6 flex justify-end gap-2"><button type="button" disabled={deleteMutation.isPending} onClick={() => setReplyToDelete(null)} className="rounded-lg border border-[#D6CFC4] px-4 py-2 text-xs font-semibold text-[#45413C] hover:bg-[#F8F6F2]">Cancel</button><button type="button" disabled={deleteMutation.isPending} onClick={handleDelete} className="rounded-lg bg-[#B42318] px-4 py-2 text-xs font-semibold text-white hover:bg-[#921D14] disabled:opacity-50">{deleteMutation.isPending ? 'Deleting...' : 'Delete Reply'}</button></div></div></div>}
         </div>
