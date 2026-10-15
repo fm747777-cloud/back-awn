@@ -139,6 +139,16 @@ export const InvoicesPage: React.FC = () => {
         queryFn: () => crmApi.contracts.getAll({ limit: 200 }),
     });
 
+    const { data: taxesRes } = useQuery({
+        queryKey: ['crm', 'taxes', 'lookup'],
+        queryFn: () => crmApi.getTaxes({ limit: 100 }),
+    });
+
+    const { data: catalogItems = [] } = useQuery({
+        queryKey: ['crm', 'service-catalog'],
+        queryFn: () => crmApi.quotations.getServiceCatalog(),
+    });
+
     const invalidateAll = () => {
         queryClient.invalidateQueries({ queryKey: ['crm'] });
     };
@@ -946,6 +956,8 @@ export const InvoicesPage: React.FC = () => {
                 quotations={quotations}
                 contracts={contracts}
                 employees={CRM_SALES_EMPLOYEES}
+                catalogItems={catalogItems}
+                taxes={taxesRes?.data || []}
                 isSubmitting={
                     createMutation.isPending || updateMutation.isPending
                 }

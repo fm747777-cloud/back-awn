@@ -7,6 +7,7 @@ import {
     Send,
     AlertTriangle,
     Building2,
+    Calculator,
 } from 'lucide-react';
 import type {
     CrmInvoiceRecord,
@@ -283,6 +284,59 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                             </div>
                         )}
                     </div>
+
+                    {/* Line Items Table */}
+                    {record.lineItems && record.lineItems.length > 0 && (
+                        <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
+                            <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
+                                <Calculator size={14} className="text-[#2D3F2C]" />
+                                <span>
+                                    {t('crm.commercial.common.lineItems.sectionTitle')}{' '}
+                                    ({record.lineItems.length})
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {record.lineItems.map((li, idx) => (
+                                    <div
+                                        key={li.id || idx}
+                                        className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-1.5 text-xs"
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="font-semibold text-[#0D0D0D]">
+                                                {idx + 1}.{' '}
+                                                {isRtl
+                                                    ? li.descriptionAr || li.descriptionEn
+                                                    : li.descriptionEn}
+                                            </span>
+                                            <span
+                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                dir="ltr"
+                                            >
+                                                {li.lineTotal.toLocaleString()} SAR
+                                            </span>
+                                        </div>
+                                        <div
+                                            className="flex items-center gap-3 text-[11px] font-mono text-[#6E6862]"
+                                            dir="ltr"
+                                        >
+                                            <span>
+                                                Qty: {li.quantity} × {li.unitPrice.toLocaleString()} SAR
+                                            </span>
+                                            {li.discountAmount > 0 && (
+                                                <span>
+                                                    Disc: {li.discountPercent > 0 ? `${li.discountPercent}% ` : ''}(-
+                                                    {li.discountAmount.toLocaleString()} SAR)
+                                                </span>
+                                            )}
+                                            <span>
+                                                VAT {li.taxRate}% (+{li.taxAmount.toLocaleString()} SAR)
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}

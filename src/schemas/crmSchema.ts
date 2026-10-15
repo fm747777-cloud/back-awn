@@ -928,6 +928,7 @@ export function calculateCrmInvoiceAmounts(input: {
     vatRate?: number;
     taxAmount?: number;
     paidAmount?: number;
+    lineItems?: Array<Partial<CrmQuotationLineItemInput> & { id?: string }>;
 }): {
     subtotal: number;
     discountTotal: number;
@@ -941,7 +942,43 @@ export function calculateCrmInvoiceAmounts(input: {
     paidAmount: number;
     remainingAmount: number;
     balanceDue: number;
+    lineItems?: CrmQuotationLineItem[];
 } {
+    if (input.lineItems && input.lineItems.length > 0) {
+        const computedTotals = calculateCrmQuotationTotals(input.lineItems);
+        const subtotal = computedTotals.subtotal;
+        const discountTotal = computedTotals.discountTotal;
+        const taxableAmount = computedTotals.taxableAmount;
+        const taxAmount = computedTotals.taxAmount;
+        const totalAmount = computedTotals.grandTotal;
+        const paidAmount = roundCrmCurrency(
+            Math.min(totalAmount, Math.max(0, Number(input.paidAmount ?? 0)))
+        );
+        const remainingAmount = roundCrmCurrency(
+            Math.max(0, totalAmount - paidAmount)
+        );
+        const effectiveRate =
+            computedTotals.lineItems[0]?.taxRate ??
+            computedTotals.lineItems[0]?.vatRate ??
+            15;
+
+        return {
+            subtotal,
+            discountTotal,
+            discountAmount: discountTotal,
+            taxableAmount,
+            taxRate: effectiveRate,
+            taxAmount,
+            vatRate: effectiveRate,
+            vatAmount: taxAmount,
+            totalAmount,
+            paidAmount,
+            remainingAmount,
+            balanceDue: remainingAmount,
+            lineItems: computedTotals.lineItems,
+        };
+    }
+
     const subtotal = roundCrmCurrency(Math.max(0, Number(input.subtotal ?? 0)));
     const rawDiscount = input.discountTotal ?? input.discountAmount ?? 0;
     const discountTotal = roundCrmCurrency(
@@ -980,6 +1017,10 @@ export function calculateCrmInvoiceAmounts(input: {
     };
 }
 
+export const crmInvoiceLineItemSchema = crmQuotationLineItemSchema;
+export type CrmInvoiceLineItem = CrmQuotationLineItem;
+export type CrmInvoiceLineItemInput = CrmQuotationLineItemInput;
+
 export const crmInvoiceInputSchema = z.object({
     invoiceNumber: z.string().trim().max(100).optional(),
     titleEn: z.string().trim().min(1, 'Invoice title is required').max(200),
@@ -1003,6 +1044,7 @@ export const crmInvoiceInputSchema = z.object({
     assignedEmployeeNameAr: z.string().trim().optional(),
     issueDate: crmIsoDateStringSchema,
     dueDate: crmIsoDateStringSchema,
+    lineItems: z.array(crmQuotationLineItemSchema).optional(),
     subtotal: crmNonNegativeAmountSchema.default(0),
     discountTotal: crmNonNegativeAmountSchema.default(0),
     discountAmount: crmNonNegativeAmountSchema.default(0),

@@ -1569,6 +1569,7 @@ export const serviceApi = {
             const response = await axiosClient.get('/service-doc', { params: data });
             if (response.data !== undefined) return response.data;
         } catch {
+            return [];
         }
     },
 };
@@ -3741,6 +3742,32 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
         assignedEmployeeNameAr: 'كريم وجدي',
         issueDate: '2026-01-20',
         dueDate: '2026-02-20',
+        lineItems: [
+            {
+                id: 'inv-li-1',
+                itemType: 'package',
+                packageId: 'pkg-1',
+                servicePackageId: 'pkg-1',
+                descriptionEn: 'Enterprise Corporate Bundle',
+                descriptionAr: 'باقة الشركات المتكاملة',
+                quantity: 1,
+                unitPrice: 14500,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'fixed',
+                discountPercent: 0,
+                discountValue: 0,
+                discountAmount: 0,
+                taxableAmount: 14500,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 2175,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 2175,
+                lineTotal: 16675,
+            },
+        ],
         subtotal: 14500,
         discountTotal: 0,
         discountAmount: 0,
@@ -3789,6 +3816,55 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
         assignedEmployeeNameAr: 'ليان العتيبي',
         issueDate: '2026-02-04',
         dueDate: '2026-03-04',
+        lineItems: [
+            {
+                id: 'inv-li-201',
+                itemType: 'package',
+                packageId: 'pkg-1',
+                servicePackageId: 'pkg-1',
+                descriptionEn: 'Enterprise Corporate Bundle (MISA & Commercial Compliance)',
+                descriptionAr: 'باقة الشركات المتكاملة (الالتزام التجاري ووزارة الاستثمار)',
+                quantity: 1,
+                unitPrice: 14500,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'percentage',
+                discountPercent: 10,
+                discountValue: 10,
+                discountAmount: 1450,
+                taxableAmount: 13050,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 1957.5,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 1957.5,
+                lineTotal: 15007.5,
+            },
+            {
+                id: 'inv-li-202',
+                itemType: 'service',
+                serviceId: 'srv-1',
+                descriptionEn: 'Executive Mobility & Premium Residency Advisory',
+                descriptionAr: 'استشارات الإقامة المميزة والتنقل التنفيذي',
+                quantity: 1,
+                unitPrice: 14400,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'fixed',
+                discountPercent: 0,
+                discountValue: 400,
+                discountAmount: 400,
+                taxableAmount: 14000,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 2100,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 2100,
+                lineTotal: 16100,
+            },
+        ],
         subtotal: 28900,
         discountTotal: 1850,
         discountAmount: 1850,
@@ -3836,6 +3912,31 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
         assignedEmployeeNameAr: 'نورة السبيعي',
         issueDate: '2026-02-05',
         dueDate: '2026-03-05',
+        lineItems: [
+            {
+                id: 'inv-li-301',
+                itemType: 'service',
+                serviceId: 'srv-3',
+                descriptionEn: 'Municipal Commercial Licenses Branch Audit',
+                descriptionAr: 'تدقيق وتجديد التراخيص البلدية التجارية للفروع',
+                quantity: 5,
+                unitPrice: 1200,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'fixed',
+                discountPercent: 0,
+                discountValue: 500,
+                discountAmount: 500,
+                taxableAmount: 5500,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 825,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 825,
+                lineTotal: 6325,
+            },
+        ],
         subtotal: 6000,
         discountTotal: 500,
         discountAmount: 500,
@@ -10143,6 +10244,7 @@ export const crmApi = {
             paidAmount: overrides.paidAmount ?? 0,
             remainingAmount: overrides.remainingAmount ?? quotation.grandTotal,
             balanceDue: overrides.balanceDue ?? quotation.grandTotal,
+            lineItems: overrides.lineItems ?? quotation.lineItems,
             invoiceStatus: overrides.invoiceStatus || 'issued',
             notes:
                 overrides.notes ||
@@ -10737,6 +10839,18 @@ export const crmApi = {
             Math.max(0, totalAmount - paidAmount)
         );
 
+        let inheritedLineItems = overrides.lineItems;
+        if (!inheritedLineItems && contract.quotationId) {
+            try {
+                const quot = await crmApi.getQuotationById(contract.quotationId);
+                if (quot?.lineItems && quot.lineItems.length > 0) {
+                    inheritedLineItems = quot.lineItems;
+                }
+            } catch {
+                // Ignore if quotation lookup fails
+            }
+        }
+
         return crmApi.createInvoice({
             titleEn:
                 overrides.titleEn ||
@@ -10755,6 +10869,7 @@ export const crmApi = {
             assignedEmployeeId: contract.assignedEmployeeId,
             issueDate: overrides.issueDate || todayIso,
             dueDate: overrides.dueDate || dueIso,
+            lineItems: inheritedLineItems,
             subtotal,
             discountTotal,
             discountAmount: discountTotal,
@@ -11024,6 +11139,7 @@ export const crmApi = {
                 : data.vatRate ?? defaultVat?.rate ?? 15,
             taxAmount: data.taxAmount,
             paidAmount: data.paidAmount ?? 0,
+            lineItems: data.lineItems,
         });
 
         let resolvedStatus: CrmInvoiceStatus = data.invoiceStatus || 'draft';
@@ -11045,6 +11161,7 @@ export const crmApi = {
             crmInvoiceInputSchema,
             {
                 ...data,
+                lineItems: calculated.lineItems || data.lineItems || undefined,
                 subtotal: calculated.subtotal,
                 discountTotal: calculated.discountTotal,
                 discountAmount: calculated.discountAmount,
@@ -11232,6 +11349,8 @@ export const crmApi = {
             ? taxes.find((t) => t.id === effectiveVatId)
             : undefined;
 
+        const effectiveLineItems =
+            data.lineItems !== undefined ? data.lineItems : previous.lineItems;
         const calculated = calculateCrmInvoiceAmounts({
             subtotal: data.subtotal ?? previous.subtotal,
             discountTotal:
@@ -11247,6 +11366,7 @@ export const crmApi = {
                 : (data.vatRate ?? previous.vatRate ?? 15),
             taxAmount: data.taxAmount ?? previous.taxAmount,
             paidAmount: data.paidAmount ?? previous.paidAmount,
+            lineItems: effectiveLineItems,
         });
 
         let resolvedStatus: CrmInvoiceStatus =
@@ -11268,6 +11388,7 @@ export const crmApi = {
             {
                 ...previous,
                 ...data,
+                lineItems: calculated.lineItems || effectiveLineItems || undefined,
                 subtotal: calculated.subtotal,
                 discountTotal: calculated.discountTotal,
                 discountAmount: calculated.discountAmount,

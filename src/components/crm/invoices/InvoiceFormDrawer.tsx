@@ -12,6 +12,7 @@ import {
     CRM_INVOICE_STATUS_VALUES,
     crmInvoiceInputSchema,
     calculateCrmInvoiceAmounts,
+    calculateCrmQuotationLineItem,
     type CrmInvoiceInput,
     type CrmInvoiceRecord,
     type CrmInvoiceStatus,
@@ -19,8 +20,12 @@ import {
     type CrmDealRecord,
     type CrmQuotationRecord,
     type CrmContractRecord,
+    type CrmQuotationLineItem,
+    type CrmTaxRecord,
 } from '../../../schemas/crmSchema';
-import type { CrmSalesEmployee } from '../../../api/api';
+import type { CrmSalesEmployee, CrmServiceCatalogItem } from '../../../api/api';
+import { crmApi } from '../../../api/api';
+import { CrmLineItemsEditor } from '../shared/CrmLineItemsEditor';
 
 export interface InvoiceFormDrawerProps {
     isOpen: boolean;
@@ -31,6 +36,8 @@ export interface InvoiceFormDrawerProps {
     quotations: CrmQuotationRecord[];
     contracts: CrmContractRecord[];
     employees: CrmSalesEmployee[];
+    catalogItems?: CrmServiceCatalogItem[];
+    taxes?: CrmTaxRecord[];
     isSubmitting?: boolean;
     serverError?: string | null;
     onClose: () => void;
@@ -46,6 +53,8 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
     quotations,
     contracts,
     employees,
+    catalogItems = [],
+    taxes = [],
     isSubmitting = false,
     serverError = null,
     onClose,
@@ -63,31 +72,97 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
     dueDateObj.setDate(dueDateObj.getDate() + 30);
     const dueDateIso = dueDateObj.toISOString().split('T')[0];
 
+    const [loadedTaxes, setLoadedTaxes] = useState<CrmTaxRecord[]>(taxes);
+    const [loadedCatalog, setLoadedCatalog] = useState<CrmServiceCatalogItem[]>(catalogItems);
+
+    useEffect(() => {
+        if (taxes && taxes.length > 0) {
+            setLoadedTaxes(taxes);
+        } else {
+            crmApi.getTaxes({ limit: 100 }).then((res) => {
+                if (res?.data && res.data.length > 0) {
+                    setLoadedTaxes(res.data);
+                }
+            }).catch(() => {});
+        }
+    }, [taxes]);
+
+    useEffect(() => {
+        if (catalogItems && catalogItems.length > 0) {
+            setLoadedCatalog(catalogItems);
+        } else {
+            crmApi.quotations.getServiceCatalog().then((res) => {
+                if (res && res.length > 0) {
+                    setLoadedCatalog(res);
+                }
+            }).catch(() => {});
+        }
+    }, [catalogItems]);
+
+    const activeCatalog = loadedCatalog.length > 0 ? loadedCatalog : catalogItems;
+    const defaultCatalogItem =
+        activeCatalog.find((c) => c.itemType === 'service') ||
+        activeCatalog[0];
+
+    const createDefaultLineItem = (): CrmQuotationLineItem =>
+        calculateCrmQuotationLineItem({
+            id: 'inv-li-1',
+            itemType: defaultCatalogItem?.itemType || 'service',
+            serviceId:
+                defaultCatalogItem?.itemType === 'service'
+                    ? defaultCatalogItem.id
+                    : undefined,
+            packageId:
+                defaultCatalogItem?.itemType === 'package'
+                    ? defaultCatalogItem.id
+                    : undefined,
+            descriptionEn:
+                defaultCatalogItem?.nameEn ||
+                'Corporate Retainer & Commercial PRO Services',
+            descriptionAr:
+                defaultCatalogItem?.nameAr ||
+                'خدمات العلاقات الحكومية وتراخيص الأعمال',
+            quantity: 1,
+            unitPrice: defaultCatalogItem?.unitPrice ?? 25000,
+            discountPercent: 0,
+            taxRate: 15,
+        });
+
     const [taxRate, setTaxRate] = useState<number>(15);
-    const [formState, setFormState] = useState<CrmInvoiceInput>({
-        invoiceNumber: '',
-        titleEn: '',
-        titleAr: '',
-        dealId: '',
-        quotationId: '',
-        contractId: '',
-        companyId: defaultCompany?.id || '',
-        assignedEmployeeId: defaultEmployeeId,
-        invoiceStatus: 'issued',
-        issueDate: todayIso,
-        dueDate: dueDateIso,
-        paidAt: '',
-        subtotal: 50000,
-        discountTotal: 0,
-        taxAmount: 7500,
-        totalAmount: 57500,
-        paidAmount: 0,
-        remainingAmount: 57500,
-        currency: 'SAR',
-        paymentMethod: 'bank_transfer',
-        paymentReference: '',
-        notes: '',
-        status: 'active',
+    const [formState, setFormState] = useState<CrmInvoiceInput>(() => {
+        const item = createDefaultLineItem();
+        const initialAmounts = calculateCrmInvoiceAmounts({
+            subtotal: item.quantity * item.unitPrice,
+            paidAmount: 0,
+            lineItems: [item],
+        });
+        return {
+            invoiceNumber: '',
+            titleEn: '',
+            titleAr: '',
+            dealId: '',
+            quotationId: '',
+            contractId: '',
+            companyId: defaultCompany?.id || '',
+            assignedEmployeeId: defaultEmployeeId,
+            invoiceStatus: 'issued',
+            issueDate: todayIso,
+            dueDate: dueDateIso,
+            paidAt: '',
+            lineItems: initialAmounts.lineItems || [item],
+            subtotal: initialAmounts.subtotal,
+            discountTotal: initialAmounts.discountTotal,
+            discountAmount: initialAmounts.discountAmount,
+            taxAmount: initialAmounts.taxAmount,
+            totalAmount: initialAmounts.totalAmount,
+            paidAmount: 0,
+            remainingAmount: initialAmounts.remainingAmount,
+            currency: 'SAR',
+            paymentMethod: 'bank_transfer',
+            paymentReference: '',
+            notes: '',
+            status: 'active',
+        };
     });
 
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -99,7 +174,34 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
         if (isOpen) {
             setFieldErrors({});
             if (mode === 'edit' && initialData) {
-                setTaxRate(15);
+                const loadedItems =
+                    initialData.lineItems && initialData.lineItems.length > 0
+                        ? initialData.lineItems
+                        : [
+                              calculateCrmQuotationLineItem({
+                                  id: `inv-li-${initialData.id || '1'}`,
+                                  itemType: 'custom',
+                                  descriptionEn: initialData.titleEn,
+                                  descriptionAr:
+                                      initialData.titleAr || undefined,
+                                  quantity: 1,
+                                  unitPrice: initialData.subtotal,
+                                  discountAmount: initialData.discountTotal,
+                                  discountPercent:
+                                      initialData.subtotal > 0
+                                          ? (initialData.discountTotal /
+                                                initialData.subtotal) *
+                                            100
+                                          : 0,
+                                  taxRate: initialData.taxRate ?? 15,
+                              }),
+                          ];
+                const computed = calculateCrmInvoiceAmounts({
+                    subtotal: initialData.subtotal,
+                    paidAmount: initialData.paidAmount,
+                    lineItems: loadedItems,
+                });
+                setTaxRate(computed.taxRate);
                 setFormState({
                     invoiceNumber: initialData.invoiceNumber,
                     titleEn: initialData.titleEn,
@@ -113,12 +215,14 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                     issueDate: initialData.issueDate,
                     dueDate: initialData.dueDate,
                     paidAt: initialData.paidAt || '',
-                    subtotal: initialData.subtotal,
-                    discountTotal: initialData.discountTotal,
-                    taxAmount: initialData.taxAmount,
-                    totalAmount: initialData.totalAmount,
+                    lineItems: computed.lineItems || loadedItems,
+                    subtotal: computed.subtotal,
+                    discountTotal: computed.discountTotal,
+                    discountAmount: computed.discountAmount,
+                    taxAmount: computed.taxAmount,
+                    totalAmount: computed.totalAmount,
                     paidAmount: initialData.paidAmount,
-                    remainingAmount: initialData.remainingAmount,
+                    remainingAmount: computed.remainingAmount,
                     currency: initialData.currency || 'SAR',
                     paymentMethod: initialData.paymentMethod || 'bank_transfer',
                     paymentReference: initialData.paymentReference || '',
@@ -126,7 +230,13 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                     status: initialData.status || 'active',
                 });
             } else {
-                setTaxRate(15);
+                const freshItem = createDefaultLineItem();
+                const freshComputed = calculateCrmInvoiceAmounts({
+                    subtotal: freshItem.quantity * freshItem.unitPrice,
+                    paidAmount: 0,
+                    lineItems: [freshItem],
+                });
+                setTaxRate(freshComputed.taxRate);
                 setFormState({
                     invoiceNumber: '',
                     titleEn: '',
@@ -140,12 +250,14 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                     issueDate: todayIso,
                     dueDate: dueDateIso,
                     paidAt: '',
-                    subtotal: 50000,
-                    discountTotal: 0,
-                    taxAmount: 7500,
-                    totalAmount: 57500,
+                    lineItems: freshComputed.lineItems || [freshItem],
+                    subtotal: freshComputed.subtotal,
+                    discountTotal: freshComputed.discountTotal,
+                    discountAmount: freshComputed.discountAmount,
+                    taxAmount: freshComputed.taxAmount,
+                    totalAmount: freshComputed.totalAmount,
                     paidAmount: 0,
-                    remainingAmount: 57500,
+                    remainingAmount: freshComputed.remainingAmount,
                     currency: 'SAR',
                     paymentMethod: 'bank_transfer',
                     paymentReference: '',
@@ -181,18 +293,62 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
         }
     };
 
+    const handleLineItemsChange = (items: CrmQuotationLineItem[]) => {
+        const computed = calculateCrmInvoiceAmounts({
+            subtotal: formState.subtotal,
+            paidAmount: formState.paidAmount,
+            lineItems: items,
+        });
+        setTaxRate(computed.taxRate);
+        setFormState((prev) => ({
+            ...prev,
+            lineItems: computed.lineItems,
+            subtotal: computed.subtotal,
+            discountTotal: computed.discountTotal,
+            discountAmount: computed.discountAmount,
+            taxAmount: computed.taxAmount,
+            totalAmount: computed.totalAmount,
+            paidAmount: computed.paidAmount,
+            remainingAmount: computed.remainingAmount,
+        }));
+    };
+
     const handleContractSelect = (contractId: string) => {
         const contract = contracts.find((c) => c.id === contractId);
         if (!contract) {
             handleChange('contractId', '');
             return;
         }
+        const linkedQuotation = contract.quotationId
+            ? quotations.find((q) => q.id === contract.quotationId)
+            : undefined;
+        const inheritedItems =
+            linkedQuotation?.lineItems && linkedQuotation.lineItems.length > 0
+                ? linkedQuotation.lineItems
+                : [
+                      calculateCrmQuotationLineItem({
+                          id: `inv-li-contract-${contract.id}`,
+                          itemType: 'custom',
+                          descriptionEn: contract.titleEn,
+                          descriptionAr: contract.titleAr || undefined,
+                          quantity: 1,
+                          unitPrice: contract.subtotal,
+                          discountAmount: contract.discountTotal,
+                          discountPercent:
+                              contract.subtotal > 0
+                                  ? (contract.discountTotal /
+                                        contract.subtotal) *
+                                    100
+                                  : 0,
+                          taxRate: 15,
+                      }),
+                  ];
         const computed = calculateCrmInvoiceAmounts({
             subtotal: contract.subtotal,
-            discountTotal: contract.discountTotal,
-            taxAmount: contract.taxAmount,
             paidAmount: formState.paidAmount,
+            lineItems: inheritedItems,
         });
+        setTaxRate(computed.taxRate);
         setFormState((prev) => ({
             ...prev,
             contractId: contract.id,
@@ -208,8 +364,10 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                 (contract.titleAr
                     ? `فاتورة ضريبية — ${contract.titleAr}`
                     : ''),
+            lineItems: computed.lineItems || inheritedItems,
             subtotal: computed.subtotal,
             discountTotal: computed.discountTotal,
+            discountAmount: computed.discountAmount,
             taxAmount: computed.taxAmount,
             totalAmount: computed.totalAmount,
             paidAmount: computed.paidAmount,
@@ -217,25 +375,74 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
         }));
     };
 
-    const handleFinancialChange = (
-        nextSubtotal: number,
-        nextDiscount: number,
-        nextTaxRate: number,
-        nextPaidAmount: number
-    ) => {
+    const handleQuotationSelect = (quotationId: string) => {
+        const quotation = quotations.find((q) => q.id === quotationId);
+        if (!quotation) {
+            handleChange('quotationId', '');
+            return;
+        }
+        const inheritedItems =
+            quotation.lineItems && quotation.lineItems.length > 0
+                ? quotation.lineItems
+                : [
+                      calculateCrmQuotationLineItem({
+                          id: `inv-li-quot-${quotation.id}`,
+                          itemType: 'custom',
+                          descriptionEn: quotation.titleEn,
+                          descriptionAr: quotation.titleAr || undefined,
+                          quantity: 1,
+                          unitPrice: quotation.subtotal,
+                          discountAmount: quotation.discountTotal,
+                          discountPercent:
+                              quotation.subtotal > 0
+                                  ? (quotation.discountTotal /
+                                        quotation.subtotal) *
+                                    100
+                                  : 0,
+                          taxRate: 15,
+                      }),
+                  ];
         const computed = calculateCrmInvoiceAmounts({
-            subtotal: nextSubtotal,
-            discountTotal: nextDiscount,
-            taxRate: nextTaxRate,
-            paidAmount: nextPaidAmount,
+            subtotal: quotation.subtotal,
+            paidAmount: formState.paidAmount,
+            lineItems: inheritedItems,
         });
-        setTaxRate(nextTaxRate);
+        setTaxRate(computed.taxRate);
         setFormState((prev) => ({
             ...prev,
+            quotationId: quotation.id,
+            dealId: quotation.dealId || prev.dealId,
+            companyId: quotation.companyId,
+            assignedEmployeeId:
+                quotation.assignedEmployeeId || prev.assignedEmployeeId,
+            titleEn:
+                prev.titleEn.trim() || `${quotation.titleEn} — Invoice`,
+            titleAr:
+                prev.titleAr?.trim() ||
+                (quotation.titleAr
+                    ? `فاتورة — ${quotation.titleAr}`
+                    : ''),
+            lineItems: computed.lineItems || inheritedItems,
             subtotal: computed.subtotal,
             discountTotal: computed.discountTotal,
+            discountAmount: computed.discountAmount,
             taxAmount: computed.taxAmount,
             totalAmount: computed.totalAmount,
+            paidAmount: computed.paidAmount,
+            remainingAmount: computed.remainingAmount,
+        }));
+    };
+
+    const handlePaidAmountChange = (newPaid: number) => {
+        const computed = calculateCrmInvoiceAmounts({
+            subtotal: formState.subtotal,
+            discountTotal: formState.discountTotal,
+            taxRate: taxRate,
+            paidAmount: Number(newPaid || 0),
+            lineItems: formState.lineItems,
+        });
+        setFormState((prev) => ({
+            ...prev,
             paidAmount: computed.paidAmount,
             remainingAmount: computed.remainingAmount,
         }));
@@ -244,6 +451,15 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setFieldErrors({});
+        const hasLineItems =
+            formState.lineItems && formState.lineItems.length > 0;
+        const computed = calculateCrmInvoiceAmounts({
+            subtotal: formState.subtotal,
+            discountTotal: formState.discountTotal,
+            taxRate: taxRate,
+            paidAmount: formState.paidAmount,
+            lineItems: formState.lineItems,
+        });
         const parsed = crmInvoiceInputSchema.safeParse({
             ...formState,
             invoiceNumber: formState.invoiceNumber?.trim() || undefined,
@@ -251,6 +467,17 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
             quotationId: formState.quotationId?.trim() || undefined,
             contractId: formState.contractId?.trim() || undefined,
             paidAt: formState.paidAt?.trim() || undefined,
+            lineItems:
+                computed.lineItems ||
+                (hasLineItems ? formState.lineItems : undefined),
+            subtotal: computed.subtotal,
+            discountTotal: computed.discountTotal,
+            discountAmount: computed.discountAmount,
+            taxAmount: computed.taxAmount,
+            totalAmount: computed.totalAmount,
+            paidAmount: computed.paidAmount,
+            remainingAmount: computed.remainingAmount,
+            balanceDue: computed.balanceDue,
         });
 
         if (!parsed.success) {
@@ -489,10 +716,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                 <select
                                     value={formState.quotationId || ''}
                                     onChange={(e) =>
-                                        handleChange(
-                                            'quotationId',
-                                            e.target.value
-                                        )
+                                        handleQuotationSelect(e.target.value)
                                     }
                                     className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
                                 >
@@ -606,7 +830,20 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                         </div>
                     </div>
 
-                    {/* Section 2: Financial & Settlement Amounts */}
+                    {/* Section 2: Interactive Line Items Editor */}
+                    <div className="rounded-xl border border-[#E5E0D8] bg-white p-4">
+                        <CrmLineItemsEditor
+                            lineItems={
+                                (formState.lineItems as CrmQuotationLineItem[]) || []
+                            }
+                            catalogItems={activeCatalog}
+                            taxes={loadedTaxes}
+                            onChange={handleLineItemsChange}
+                            error={fieldErrors.lineItems}
+                        />
+                    </div>
+
+                    {/* Section 3: Financial Settlement & Payments */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-4">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
                             <Calculator size={14} />
@@ -617,79 +854,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                             </span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.invoices.form.subtotalLabel'
-                                    )}
-                                </label>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step={500}
-                                    value={formState.subtotal}
-                                    onChange={(e) =>
-                                        handleFinancialChange(
-                                            Number(e.target.value || 0),
-                                            formState.discountTotal,
-                                            taxRate,
-                                            formState.paidAmount
-                                        )
-                                    }
-                                    dir="ltr"
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.invoices.form.discountTotalLabel'
-                                    )}
-                                </label>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step={100}
-                                    value={formState.discountTotal}
-                                    onChange={(e) =>
-                                        handleFinancialChange(
-                                            formState.subtotal,
-                                            Number(e.target.value || 0),
-                                            taxRate,
-                                            formState.paidAmount
-                                        )
-                                    }
-                                    dir="ltr"
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.invoices.form.taxRateLabel'
-                                    )}
-                                </label>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={100}
-                                    value={taxRate}
-                                    onChange={(e) =>
-                                        handleFinancialChange(
-                                            formState.subtotal,
-                                            formState.discountTotal,
-                                            Number(e.target.value || 0),
-                                            formState.paidAmount
-                                        )
-                                    }
-                                    dir="ltr"
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D]"
-                                />
-                            </div>
-
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
                                     {t(
@@ -699,13 +864,11 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                 <input
                                     type="number"
                                     min={0}
-                                    step={500}
+                                    max={formState.totalAmount}
+                                    step={100}
                                     value={formState.paidAmount}
                                     onChange={(e) =>
-                                        handleFinancialChange(
-                                            formState.subtotal,
-                                            formState.discountTotal,
-                                            taxRate,
+                                        handlePaidAmountChange(
                                             Number(e.target.value || 0)
                                         )
                                     }
@@ -713,24 +876,115 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                     className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D]"
                                 />
                             </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                                    {t(
+                                        'crm.commercial.invoices.form.paymentMethodLabel',
+                                        { defaultValue: 'Payment Method' }
+                                    )}
+                                </label>
+                                <select
+                                    value={
+                                        formState.paymentMethod ||
+                                        'bank_transfer'
+                                    }
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'paymentMethod',
+                                            e.target.value as any
+                                        )
+                                    }
+                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
+                                >
+                                    <option value="bank_transfer">
+                                        Bank Transfer (تحويل بنكي)
+                                    </option>
+                                    <option value="sadad">SADAD (سداد)</option>
+                                    <option value="credit_card">
+                                        Credit Card (بطاقة ائتمانية)
+                                    </option>
+                                    <option value="mada">MADA (مدى)</option>
+                                    <option value="cheque">
+                                        Cheque (شيك مصرفي)
+                                    </option>
+                                    <option value="cash">Cash (نقدي)</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <div className="rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        {formState.paidAmount > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-[#E5E0D8]">
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                                        {t(
+                                            'crm.commercial.invoices.form.paymentReferenceLabel'
+                                        )}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.paymentReference || ''}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                'paymentReference',
+                                                e.target.value
+                                            )
+                                        }
+                                        placeholder="e.g. SARIE-2026-99182"
+                                        dir="ltr"
+                                        className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                                        {t(
+                                            'crm.commercial.invoices.paymentModal.paidAtLabel',
+                                            { defaultValue: 'Payment Date' }
+                                        )}
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={formState.paidAt || todayIso}
+                                        onChange={(e) =>
+                                            handleChange('paidAt', e.target.value)
+                                        }
+                                        dir="ltr"
+                                        className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D]"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] p-3.5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             <div>
-                                <span className="text-[#6E6862] block">
+                                <span className="text-[#6E6862] block text-[11px]">
                                     {t(
-                                        'crm.commercial.invoices.form.taxAmountLabel'
+                                        'crm.commercial.common.lineItems.subtotal'
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#0D0D0D]"
+                                    className="font-mono font-semibold text-[#0D0D0D]"
+                                    dir="ltr"
+                                >
+                                    {formState.subtotal.toLocaleString()} SAR
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-[#6E6862] block text-[11px]">
+                                    {t(
+                                        'crm.commercial.invoices.form.taxAmountLabel'
+                                    )}{' '}
+                                    ({taxRate}%)
+                                </span>
+                                <span
+                                    className="font-mono font-semibold text-[#0D0D0D]"
                                     dir="ltr"
                                 >
                                     {formState.taxAmount.toLocaleString()} SAR
                                 </span>
                             </div>
                             <div>
-                                <span className="text-[#6E6862] block">
+                                <span className="text-[#6E6862] block text-[11px]">
                                     {t(
                                         'crm.commercial.invoices.form.totalAmountLabel'
                                     )}
@@ -743,13 +997,17 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                 </span>
                             </div>
                             <div>
-                                <span className="text-[#6E6862] block">
+                                <span className="text-[#6E6862] block text-[11px]">
                                     {t(
                                         'crm.commercial.invoices.form.remainingAmountLabel'
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#B45309]"
+                                    className={`font-mono font-bold ${
+                                        formState.remainingAmount > 0
+                                            ? 'text-[#B45309]'
+                                            : 'text-[#2E6B4E]'
+                                    }`}
                                     dir="ltr"
                                 >
                                     {formState.remainingAmount.toLocaleString()}{' '}
