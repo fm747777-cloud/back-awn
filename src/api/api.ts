@@ -2219,6 +2219,7 @@ export type CrmApiErrorCode =
     | 'CRM_MASTER_IN_USE'
     | 'CRM_ENTITY_IN_USE'
     | 'CRM_DUPLICATE_NAME'
+    | 'CRM_DUPLICATE_CONVERSION'
     | 'CRM_SYSTEM_PROTECTED';
 
 export class CrmApiError extends Error {
@@ -10238,14 +10239,25 @@ export const crmApi = {
         overrides: Partial<CrmContractInput> = {}
     ): Promise<CrmContractRecord> => {
         const quotation = await crmApi.getQuotationById(quotationId);
-        if (
-            quotation.quotationStatus === 'rejected' ||
-            quotation.quotationStatus === 'expired'
-        ) {
+        if (quotation.quotationStatus !== 'approved') {
             throw new CrmApiError({
-                message: `Quotation '${quotation.code}' cannot be converted to a Contract when '${quotation.quotationStatus}'.`,
+                message: `Quotation '${quotation.code}' must be in 'approved' status to be converted to a Contract. Current status: '${quotation.quotationStatus}'.`,
                 statusCode: 400,
                 code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+        const contracts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTRACTS,
+            initialCrmContracts
+        );
+        const existingContract = contracts.find(
+            (c) => c.quotationId === quotationId
+        );
+        if (existingContract) {
+            throw new CrmApiError({
+                message: `A contract (${existingContract.contractNumber}) has already been generated for quotation '${quotation.code}'.`,
+                statusCode: 409,
+                code: 'CRM_DUPLICATE_CONVERSION',
             });
         }
         const todayIso = new Date().toISOString().split('T')[0];
@@ -10617,13 +10629,43 @@ export const crmApi = {
             });
         }
 
-        const quotations = readOrInitializeCrmCollection(
-            CRM_STORAGE_KEYS.QUOTATIONS,
-            initialCrmQuotations
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTRACTS,
+            initialCrmContracts
         );
-        const linkedQuotation = validated.quotationId
-            ? quotations.find((q) => q.id === validated.quotationId)
-            : undefined;
+
+        let linkedQuotation: CrmQuotationRecord | undefined;
+        if (validated.quotationId && validated.quotationId.trim() !== '') {
+            const quotations = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.QUOTATIONS,
+                initialCrmQuotations
+            );
+            linkedQuotation = quotations.find((q) => q.id === validated.quotationId);
+            if (!linkedQuotation) {
+                throw new CrmApiError({
+                    message: `Quotation '${validated.quotationId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedQuotation.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Quotation '${linkedQuotation.code}' belongs to company '${linkedQuotation.companyNameEn || linkedQuotation.companyId}', which does not match contract company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            const existingContract = list.find(
+                (c) => c.quotationId === validated.quotationId
+            );
+            if (existingContract) {
+                throw new CrmApiError({
+                    message: `A contract (${existingContract.contractNumber}) has already been generated for quotation '${linkedQuotation.code}'.`,
+                    statusCode: 409,
+                    code: 'CRM_DUPLICATE_CONVERSION',
+                });
+            }
+        }
 
         const contacts = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.CONTACTS,
@@ -10644,10 +10686,6 @@ export const crmApi = {
                     'emp-1')
         );
 
-        const list = readOrInitializeCrmCollection(
-            CRM_STORAGE_KEYS.CONTRACTS,
-            initialCrmContracts
-        );
         const todayIso = new Date().toISOString().split('T')[0];
         const nextCode = generateNextCrmCode(list, 'CON');
         const seqSuffix = nextCode.replace(/\D+/g, '').padStart(3, '0');
@@ -10805,13 +10843,38 @@ export const crmApi = {
             });
         }
 
-        const quotations = readOrInitializeCrmCollection(
-            CRM_STORAGE_KEYS.QUOTATIONS,
-            initialCrmQuotations
-        );
-        const linkedQuotation = merged.quotationId
-            ? quotations.find((q) => q.id === merged.quotationId)
-            : undefined;
+        let linkedQuotation: CrmQuotationRecord | undefined;
+        if (merged.quotationId && merged.quotationId.trim() !== '') {
+            const quotations = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.QUOTATIONS,
+                initialCrmQuotations
+            );
+            linkedQuotation = quotations.find((q) => q.id === merged.quotationId);
+            if (!linkedQuotation) {
+                throw new CrmApiError({
+                    message: `Quotation '${merged.quotationId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedQuotation.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Quotation '${linkedQuotation.code}' belongs to company '${linkedQuotation.companyNameEn || linkedQuotation.companyId}', which does not match contract company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            const duplicateContract = list.find(
+                (c) => c.id !== id && c.quotationId === merged.quotationId
+            );
+            if (duplicateContract) {
+                throw new CrmApiError({
+                    message: `Another contract (${duplicateContract.contractNumber}) is already linked to quotation '${linkedQuotation.code}'.`,
+                    statusCode: 409,
+                    code: 'CRM_DUPLICATE_CONVERSION',
+                });
+            }
+        }
 
         const contacts = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.CONTACTS,
@@ -10905,6 +10968,13 @@ export const crmApi = {
         overrides: Partial<CrmInvoiceInput> = {}
     ): Promise<CrmInvoiceRecord> => {
         const contract = await crmApi.getContractById(contractId);
+        if (contract.contractStatus !== 'active') {
+            throw new CrmApiError({
+                message: `Contract '${contract.contractNumber}' must be 'active' to generate an invoice. Current status: '${contract.contractStatus}'.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
         const todayIso = new Date().toISOString().split('T')[0];
         const due = new Date();
         due.setDate(due.getDate() + 30);
@@ -10925,14 +10995,34 @@ export const crmApi = {
         );
 
         let inheritedLineItems = overrides.lineItems;
-        if (!inheritedLineItems && contract.quotationId) {
-            try {
-                const quot = await crmApi.getQuotationById(contract.quotationId);
-                if (quot?.lineItems && quot.lineItems.length > 0) {
-                    inheritedLineItems = quot.lineItems;
+        if (!inheritedLineItems) {
+            if (contract.quotationId) {
+                try {
+                    const quot = await crmApi.getQuotationById(contract.quotationId);
+                    if (quot?.lineItems && quot.lineItems.length > 0) {
+                        inheritedLineItems = quot.lineItems;
+                    }
+                } catch {
+                    // Ignore if quotation lookup fails
                 }
-            } catch {
-                // Ignore if quotation lookup fails
+            }
+            if (!inheritedLineItems || inheritedLineItems.length === 0) {
+                inheritedLineItems = [
+                    calculateCrmQuotationLineItem({
+                        id: `inv-li-contract-${contract.id}`,
+                        itemType: 'custom',
+                        descriptionEn: contract.titleEn,
+                        descriptionAr: contract.titleAr || undefined,
+                        quantity: 1,
+                        unitPrice: subtotal,
+                        discountAmount: discountTotal,
+                        discountPercent:
+                            subtotal > 0
+                                ? (discountTotal / subtotal) * 100
+                                : 0,
+                        taxRate: contract.taxRate ?? 15,
+                    }),
+                ];
             }
         }
 
@@ -10946,12 +11036,13 @@ export const crmApi = {
                     ? `فاتورة — ${contract.titleAr}`
                     : `فاتورة — ${contract.titleEn}`),
             companyId: contract.companyId,
-            dealId: contract.dealId,
-            quotationId: contract.quotationId,
+            dealId: overrides.dealId || contract.dealId,
+            quotationId: overrides.quotationId || contract.quotationId,
             contractId: contract.id,
             contractNumber: contract.contractNumber,
-            contactId: contract.contactId,
-            assignedEmployeeId: contract.assignedEmployeeId,
+            contactId: overrides.contactId || contract.contactId,
+            assignedEmployeeId:
+                overrides.assignedEmployeeId || contract.assignedEmployeeId,
             issueDate: overrides.issueDate || todayIso,
             dueDate: overrides.dueDate || dueIso,
             lineItems: inheritedLineItems,
@@ -10959,10 +11050,10 @@ export const crmApi = {
             discountTotal,
             discountAmount: discountTotal,
             taxId: overrides.taxId ?? 'crm-tax-1',
-            taxRate: overrides.taxRate ?? 15,
+            taxRate: overrides.taxRate ?? contract.taxRate ?? 15,
             taxAmount,
             vatId: overrides.vatId ?? 'crm-tax-1',
-            vatRate: overrides.vatRate ?? 15,
+            vatRate: overrides.vatRate ?? contract.taxRate ?? 15,
             vatAmount: taxAmount,
             totalAmount,
             paidAmount,
@@ -11312,7 +11403,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.DEALS,
             initialCrmDeals
         );
-        const linkedDeal = validated.dealId
+        let linkedDeal = validated.dealId
             ? deals.find((d) => d.id === validated.dealId)
             : undefined;
 
@@ -11320,7 +11411,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.QUOTATIONS,
             initialCrmQuotations
         );
-        const linkedQuotation = validated.quotationId
+        let linkedQuotation = validated.quotationId
             ? quotations.find((q) => q.id === validated.quotationId)
             : undefined;
 
@@ -11328,17 +11419,51 @@ export const crmApi = {
             CRM_STORAGE_KEYS.CONTRACTS,
             initialCrmContracts
         );
-        const linkedContract = validated.contractId
-            ? contracts.find((c) => c.id === validated.contractId)
-            : undefined;
+        let linkedContract: CrmContractRecord | undefined;
+        if (validated.contractId && validated.contractId.trim() !== '') {
+            linkedContract = contracts.find((c) => c.id === validated.contractId);
+            if (!linkedContract) {
+                throw new CrmApiError({
+                    message: `Contract '${validated.contractId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' belongs to company '${linkedContract.companyNameEn || linkedContract.companyId}', which does not match invoice company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.contractStatus !== 'active') {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' must be 'active' to be linked to an invoice. Current status: '${linkedContract.contractStatus}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+        }
 
         const contacts = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.CONTACTS,
             initialCrmContacts
         );
-        const linkedContact = validated.contactId
+        let linkedContact = validated.contactId
             ? contacts.find((c) => c.id === validated.contactId)
             : undefined;
+
+        if (linkedContract) {
+            if (!linkedDeal && linkedContract.dealId) {
+                linkedDeal = deals.find((d) => d.id === linkedContract.dealId);
+            }
+            if (!linkedQuotation && linkedContract.quotationId) {
+                linkedQuotation = quotations.find((q) => q.id === linkedContract.quotationId);
+            }
+            if (!linkedContact && linkedContract.contactId) {
+                linkedContact = contacts.find((c) => c.id === linkedContract.contactId);
+            }
+        }
 
         const employee = CRM_SALES_EMPLOYEES.find(
             (e) =>
@@ -11538,7 +11663,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.DEALS,
             initialCrmDeals
         );
-        const linkedDeal = merged.dealId
+        let linkedDeal = merged.dealId
             ? deals.find((d) => d.id === merged.dealId)
             : undefined;
 
@@ -11546,7 +11671,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.QUOTATIONS,
             initialCrmQuotations
         );
-        const linkedQuotation = merged.quotationId
+        let linkedQuotation = merged.quotationId
             ? quotations.find((q) => q.id === merged.quotationId)
             : undefined;
 
@@ -11554,9 +11679,51 @@ export const crmApi = {
             CRM_STORAGE_KEYS.CONTRACTS,
             initialCrmContracts
         );
-        const linkedContract = merged.contractId
-            ? contracts.find((c) => c.id === merged.contractId)
+        let linkedContract: CrmContractRecord | undefined;
+        if (merged.contractId && merged.contractId.trim() !== '') {
+            linkedContract = contracts.find((c) => c.id === merged.contractId);
+            if (!linkedContract) {
+                throw new CrmApiError({
+                    message: `Contract '${merged.contractId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' belongs to company '${linkedContract.companyNameEn || linkedContract.companyId}', which does not match invoice company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.contractStatus !== 'active') {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' must be 'active' to be linked to an invoice. Current status: '${linkedContract.contractStatus}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+        }
+
+        const contacts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+        let linkedContact = merged.contactId
+            ? contacts.find((c) => c.id === merged.contactId)
             : undefined;
+
+        if (linkedContract) {
+            if (!linkedDeal && linkedContract.dealId) {
+                linkedDeal = deals.find((d) => d.id === linkedContract.dealId);
+            }
+            if (!linkedQuotation && linkedContract.quotationId) {
+                linkedQuotation = quotations.find((q) => q.id === linkedContract.quotationId);
+            }
+            if (!linkedContact && linkedContract.contactId) {
+                linkedContact = contacts.find((c) => c.id === linkedContract.contactId);
+            }
+        }
 
         const todayIso = new Date().toISOString().split('T')[0];
         const updatedRecord: CrmInvoiceRecord = {
@@ -11588,18 +11755,21 @@ export const crmApi = {
             companyId: company.id,
             companyNameEn: company.nameEn,
             companyNameAr: company.nameAr,
-            dealId: linkedDeal?.id || undefined,
-            dealCode: linkedDeal?.code || undefined,
-            dealTitle: linkedDeal?.titleEn || undefined,
-            dealTitleEn: linkedDeal?.titleEn || undefined,
-            quotationId: linkedQuotation?.id || undefined,
-            quotationCode: linkedQuotation?.code || undefined,
-            contractId: linkedContract?.id || undefined,
-            contractCode: linkedContract?.code || undefined,
+            dealId: linkedDeal?.id || merged.dealId || previous.dealId || undefined,
+            dealCode: linkedDeal?.code || merged.dealCode || previous.dealCode || undefined,
+            dealTitle: linkedDeal?.titleEn || merged.dealTitle || previous.dealTitle || undefined,
+            dealTitleEn: linkedDeal?.titleEn || merged.dealTitleEn || previous.dealTitleEn || undefined,
+            quotationId: linkedQuotation?.id || merged.quotationId || previous.quotationId || undefined,
+            quotationCode: linkedQuotation?.code || merged.quotationCode || previous.quotationCode || undefined,
+            contractId: linkedContract?.id || merged.contractId || previous.contractId || undefined,
+            contractCode: linkedContract?.code || merged.contractCode || previous.contractCode || undefined,
             contractNumber:
                 linkedContract?.contractNumber ||
                 merged.contractNumber ||
                 previous.contractNumber,
+            contactId: linkedContact?.id || merged.contactId || previous.contactId || undefined,
+            contactName:
+                linkedContact?.fullNameEn || merged.contactName || previous.contactName || undefined,
             updatedAt: todayIso,
         };
 
