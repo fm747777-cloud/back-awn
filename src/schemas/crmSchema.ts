@@ -488,6 +488,7 @@ export const crmCompanyInputSchema = z.object({
     onboardingStatus: crmCompanyOnboardingStatusSchema.default('pre_onboarding'),
     status: crmRecordStatusSchema.default('active'),
     notes: z.string().trim().max(1000).optional(),
+    leadId: z.string().trim().optional(),
 });
 
 export const crmCompanySchema = crmCompanyInputSchema.extend({
@@ -790,6 +791,9 @@ export function calculateCrmQuotationTotals(
 export const crmQuotationInputSchema = z.object({
     titleEn: z.string().trim().min(1, 'Quotation title is required').max(200),
     titleAr: z.string().trim().max(200).optional(),
+    leadId: z.string().trim().optional(),
+    leadCode: z.string().trim().optional(),
+    leadTitle: z.string().trim().optional(),
     dealId: z.string().trim().optional(),
     dealCode: z.string().trim().optional(),
     dealTitle: z.string().trim().optional(),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     X,
@@ -10,6 +10,7 @@ import {
     Phone,
     Mail,
     MapPin,
+    Plus,
 } from 'lucide-react';
 import {
     crmLeadInputSchema,
@@ -19,8 +20,13 @@ import {
     type CrmLeadStatusRecord,
     type CrmSectorRecord,
     type CrmCompanyRecord,
+    type CrmCompanyInput,
+    type CrmOrganizationalTypeRecord,
+    type CrmOwnershipTypeRecord,
+    type CrmOwnerRecord,
 } from '../../../schemas/crmSchema';
-import type { CrmSalesEmployee } from '../../../api/api';
+import { crmApi, type CrmSalesEmployee } from '../../../api/api';
+import { CompanyPreOnboardingModal } from '../companies/CompanyPreOnboardingModal';
 
 export interface LeadFormDrawerProps {
     isOpen: boolean;
@@ -31,6 +37,10 @@ export interface LeadFormDrawerProps {
     sectors: CrmSectorRecord[];
     companies: CrmCompanyRecord[];
     employees: CrmSalesEmployee[];
+    organizationalTypes?: CrmOrganizationalTypeRecord[];
+    ownershipTypes?: CrmOwnershipTypeRecord[];
+    existingOwners?: CrmOwnerRecord[];
+    onCompanyCreated?: (newCompany: CrmCompanyRecord) => void;
     isSubmitting?: boolean;
     serverError?: string | null;
     onClose: () => void;
@@ -46,6 +56,10 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
     sectors,
     companies,
     employees,
+    organizationalTypes = [],
+    ownershipTypes = [],
+    existingOwners = [],
+    onCompanyCreated,
     isSubmitting = false,
     serverError = null,
     onClose,
@@ -90,6 +104,11 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
     });
 
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+    const [isCreatingCompany, setIsCreatingCompany] = useState(false);
+    const [companyModalError, setCompanyModalError] = useState<string | null>(null);
+    const [companyPrefill, setCompanyPrefill] = useState<Partial<CrmCompanyInput> | null>(null);
+    const [locallyCreatedCompanies, setLocallyCreatedCompanies] = useState<CrmCompanyRecord[]>([]);
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
     const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${defaultSourceId}-${defaultStatusId}-${defaultSectorId}`;
@@ -160,8 +179,6 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
-
     const handleChange = <K extends keyof CrmLeadInput>(
         field: K,
         value: CrmLeadInput[K]
@@ -198,6 +215,17 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
         await onSubmit(parsed.data);
     };
 
+    const allAvailableCompanies = useMemo(() => {
+        const map = new Map<string, CrmCompanyRecord>();
+        for (const c of companies) {
+            map.set(c.id, c);
+        }
+        for (const c of locallyCreatedCompanies) {
+            map.set(c.id, c);
+        }
+        return Array.from(map.values());
+    }, [companies, locallyCreatedCompanies]);
+
     const activeSources = leadSources.filter(
         (s) => s.status === 'active' || s.id === formState.leadSourceId
     );
@@ -207,9 +235,114 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
     const activeSectors = sectors.filter(
         (s) => s.status === 'active' || s.id === formState.sectorId
     );
-    const activeCompanies = companies.filter(
+    const activeCompanies = allAvailableCompanies.filter(
         (c) => c.status === 'active' || c.id === formState.companyId
     );
+
+    const selectedCompany = useMemo(() => {
+        if (!formState.companyId) return null;
+        return allAvailableCompanies.find((c) => c.id === formState.companyId) || null;
+    }, [formState.companyId, allAvailableCompanies]);
+
+    const handleOpenCreateCompany = () => {
+        const defaultOrgTypeId =
+            organizationalTypes.find((o) => o.status === 'active')?.id ||
+            organizationalTypes[0]?.id ||
+            '';
+        const defaultOwnTypeId =
+            ownershipTypes.find((o) => o.status === 'active')?.id ||
+            ownershipTypes[0]?.id ||
+            '';
+
+        const prefill: Partial<CrmCompanyInput> = {
+            nameEn: formState.temporaryCompanyName?.trim() || formState.title.trim(),
+            nameAr: formState.temporaryCompanyName?.trim() || formState.title.trim(),
+            businessName: formState.temporaryCompanyName?.trim() || formState.title.trim(),
+            organizationalTypeId: defaultOrgTypeId,
+            ownershipTypeId: defaultOwnTypeId,
+            sectorId: formState.sectorId || defaultSectorId,
+            assignedEmployeeId: formState.assignedEmployeeId || '',
+            phone: formState.contactPhone || '',
+            email: formState.contactEmail || '',
+            country: formState.country || 'Saudi Arabia',
+            state: formState.state || 'Riyadh Province',
+            city: formState.city || 'Riyadh',
+            pinCode: formState.pinCode || '',
+            address: formState.address || '',
+            website: formState.website || '',
+            leadId: initialData?.id || undefined,
+            owners: formState.contactName?.trim()
+                ? [
+                      {
+                          firstName:
+                              formState.contactName.trim().split(' ')[0] ||
+                              formState.contactName.trim(),
+                          lastName:
+                              formState.contactName
+                                  .trim()
+                                  .split(' ')
+                                  .slice(1)
+                                  .join(' ') || '',
+                          fullNameEn: formState.contactName.trim(),
+                          fullNameAr: formState.contactName.trim(),
+                          gender: 'male',
+                          nationality: 'Saudi',
+                          ownershipTypeId: defaultOwnTypeId,
+                          phone: formState.contactPhone || '',
+                          email: formState.contactEmail || '',
+                          ownershipPercentage: 100,
+                          isMainOwner: true,
+                      },
+                  ]
+                : [],
+        };
+        setCompanyPrefill(prefill);
+        setCompanyModalError(null);
+        setIsCompanyModalOpen(true);
+    };
+
+    const handleCreateCompanySubmit = async (companyData: CrmCompanyInput) => {
+        try {
+            setIsCreatingCompany(true);
+            setCompanyModalError(null);
+            const created = await crmApi.companies.submitPreOnboarding({
+                ...companyData,
+                leadId: initialData?.id || undefined,
+            });
+
+            setLocallyCreatedCompanies((prev) => [created, ...prev]);
+
+            setFormState((prev) => ({
+                ...prev,
+                companyId: created.id,
+                temporaryCompanyName: prev.temporaryCompanyName || created.nameEn,
+            }));
+
+            if (fieldErrors.companyId) {
+                setFieldErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.companyId;
+                    return next;
+                });
+            }
+
+            if (mode === 'edit' && initialData?.id) {
+                await crmApi.leads.update(initialData.id, { companyId: created.id });
+            }
+
+            onCompanyCreated?.(created);
+            setIsCompanyModalOpen(false);
+            setCompanyPrefill(null);
+        } catch (err: unknown) {
+            const msg =
+                err instanceof Error ? err.message : 'Failed to create company';
+            setCompanyModalError(msg);
+        } finally {
+            setIsCreatingCompany(false);
+        }
+    };
+
+    if (!isOpen) return null;
 
     return (
         <div
@@ -586,25 +719,95 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.linkedCompanyLabel')}
-                                </label>
-                                <select
-                                    value={formState.companyId || ''}
-                                    onChange={(e) => handleChange('companyId', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
-                                >
-                                    <option value="">
-                                        {t('crm.customer.leads.form.noLinkedCompany')}
-                                    </option>
-                                    {activeCompanies.map((comp) => (
-                                        <option key={comp.id} value={comp.id}>
-                                            {comp.code} —{' '}
-                                            {isRtl ? comp.nameAr : comp.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
+                            <div className="sm:col-span-2 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D]">
+                                        {t('crm.customer.leads.form.linkedCompanyLabel')}
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenCreateCompany}
+                                        disabled={isCreatingCompany}
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2D3F2C] hover:text-[#233122] hover:underline cursor-pointer disabled:opacity-50"
+                                    >
+                                        <Plus size={13} />
+                                        <span>{t('crm.customer.leads.form.newCompany', '+ New Company')}</span>
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <div className="flex-1">
+                                        <select
+                                            value={formState.companyId || ''}
+                                            onChange={(e) => {
+                                                const cid = e.target.value;
+                                                handleChange('companyId', cid);
+                                                if (cid) {
+                                                    const comp = allAvailableCompanies.find((c) => c.id === cid);
+                                                    if (comp && !formState.temporaryCompanyName) {
+                                                        handleChange('temporaryCompanyName', comp.nameEn);
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                        >
+                                            <option value="">
+                                                {t('crm.customer.leads.form.noLinkedCompany')}
+                                            </option>
+                                            {activeCompanies.map((comp) => (
+                                                <option key={comp.id} value={comp.id}>
+                                                    {comp.code} —{' '}
+                                                    {isRtl ? comp.nameAr : comp.nameEn}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenCreateCompany}
+                                        disabled={isCreatingCompany}
+                                        className="px-3 py-2.5 rounded-lg border border-[#2D3F2C]/30 bg-[#2D3F2C]/5 hover:bg-[#2D3F2C]/10 text-xs font-semibold text-[#2D3F2C] inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                                    >
+                                        <Plus size={14} />
+                                        <span>{t('crm.customer.leads.form.newCompany', 'New Company')}</span>
+                                    </button>
+                                </div>
+
+                                {selectedCompany && (
+                                    <div className="rounded-lg border border-[#C5D7C2] bg-[#F2F7F2] p-3 flex items-start justify-between gap-3 text-xs">
+                                        <div className="min-w-0 space-y-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="px-1.5 py-0.5 rounded bg-white border border-[#C5D7C2] font-mono text-[10px] font-bold text-[#2D3F2C]">
+                                                    {selectedCompany.code}
+                                                </span>
+                                                <span className="font-bold text-[#2D3F2C] truncate">
+                                                    {isRtl ? selectedCompany.nameAr : selectedCompany.nameEn}
+                                                </span>
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2E6B4E]/10 text-[#2E6B4E] font-medium">
+                                                    {selectedCompany.onboardingStatus}
+                                                </span>
+                                            </div>
+                                            <div className="text-[11px] text-[#6E6862] flex flex-wrap gap-x-3 gap-y-0.5">
+                                                {selectedCompany.crNumber && (
+                                                    <span>CR: {selectedCompany.crNumber}</span>
+                                                )}
+                                                {selectedCompany.taxNumber && (
+                                                    <span>VAT: {selectedCompany.taxNumber}</span>
+                                                )}
+                                                {selectedCompany.city && (
+                                                    <span>{selectedCompany.city}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleChange('companyId', '')}
+                                            className="text-[11px] font-semibold text-[#A63A3A] hover:underline cursor-pointer shrink-0"
+                                        >
+                                            {t('crm.customer.leads.form.unlinkCompany', 'Unlink')}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
@@ -745,6 +948,27 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                     </div>
                 </form>
             </div>
+
+            {isCompanyModalOpen && (
+                <CompanyPreOnboardingModal
+                    isOpen={isCompanyModalOpen}
+                    mode="create"
+                    prefillData={companyPrefill}
+                    organizationalTypes={organizationalTypes}
+                    ownershipTypes={ownershipTypes}
+                    sectors={sectors}
+                    existingOwners={existingOwners}
+                    employees={employees}
+                    isSubmitting={isCreatingCompany}
+                    serverError={companyModalError}
+                    onClose={() => {
+                        setIsCompanyModalOpen(false);
+                        setCompanyModalError(null);
+                        setCompanyPrefill(null);
+                    }}
+                    onSubmit={handleCreateCompanySubmit}
+                />
+            )}
         </div>
     );
 };

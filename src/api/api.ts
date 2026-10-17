@@ -6622,6 +6622,23 @@ export const crmApi = {
         const updated = [newRecord, ...list];
         setLocal(CRM_STORAGE_KEYS.LEADS, updated);
 
+        if (newRecord.companyId) {
+            const allCompanies = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.COMPANIES,
+                initialCrmCompanies
+            );
+            const compIdx = allCompanies.findIndex(
+                (c) => c.id === newRecord.companyId
+            );
+            if (compIdx !== -1 && allCompanies[compIdx].leadId !== newRecord.id) {
+                allCompanies[compIdx] = {
+                    ...allCompanies[compIdx],
+                    leadId: newRecord.id,
+                };
+                setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+            }
+        }
+
         recordCrmAuditEvent({
             action: 'CREATED',
             resourceType: 'Lead',
@@ -6749,6 +6766,23 @@ export const crmApi = {
         const updatedList = [...list];
         updatedList[idx] = updatedRecord;
         setLocal(CRM_STORAGE_KEYS.LEADS, updatedList);
+
+        if (updatedRecord.companyId) {
+            const allCompanies = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.COMPANIES,
+                initialCrmCompanies
+            );
+            const compIdx = allCompanies.findIndex(
+                (c) => c.id === updatedRecord.companyId
+            );
+            if (compIdx !== -1 && allCompanies[compIdx].leadId !== updatedRecord.id) {
+                allCompanies[compIdx] = {
+                    ...allCompanies[compIdx],
+                    leadId: updatedRecord.id,
+                };
+                setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+            }
+        }
 
         const isStageChange = previous.leadStatusId !== updatedRecord.leadStatusId;
         const isStatusChange = previous.status !== updatedRecord.status;
@@ -7231,6 +7265,7 @@ export const crmApi = {
                         employee?.nameEn || validated.assignedEmployeeNameEn || '',
                     assignedEmployeeNameAr:
                         employee?.nameAr || validated.assignedEmployeeNameAr || '',
+                    leadId: validated.leadId || undefined,
                     owners: enrichedOwners,
                     createdAt: new Date().toISOString().split('T')[0],
                     createdBy: 'Karim Wagdi',
@@ -7240,6 +7275,23 @@ export const crmApi = {
 
             setLocal(CRM_STORAGE_KEYS.OWNERS, nextOwnersList);
             setLocal(CRM_STORAGE_KEYS.COMPANIES, [newCompany, ...companies]);
+
+            if (validated.leadId && validated.leadId.trim() !== '') {
+                const leads = readOrInitializeCrmCollection(
+                    CRM_STORAGE_KEYS.LEADS,
+                    initialCrmLeads
+                );
+                const leadIdx = leads.findIndex((l) => l.id === validated.leadId);
+                if (leadIdx !== -1) {
+                    leads[leadIdx] = {
+                        ...leads[leadIdx],
+                        companyId: newCompany.id,
+                        companyNameEn: newCompany.nameEn,
+                        companyNameAr: newCompany.nameAr,
+                    };
+                    setLocal(CRM_STORAGE_KEYS.LEADS, leads);
+                }
+            }
 
             if (newCompany.onboardingStatus === 'under_review') {
                 const approvalTasks = readOrInitializeCrmCollection(
@@ -9775,10 +9827,37 @@ export const crmApi = {
         );
         const todayIso = new Date().toISOString().split('T')[0];
 
+        const duplicateQuotation = list.find(
+            (item) =>
+                item.companyId === company.id &&
+                item.titleEn.trim().toLowerCase() === validated.titleEn.trim().toLowerCase() &&
+                item.grandTotal === validated.grandTotal &&
+                (item.dealId || '') === (deal?.id || '')
+        );
+        if (duplicateQuotation) {
+            throw new CrmApiError({
+                message: `A quotation with title "${validated.titleEn}" already exists for this client (${duplicateQuotation.code}).`,
+                statusCode: 409,
+                code: 'CRM_DUPLICATE_NAME',
+            });
+        }
+
+        const leads = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.LEADS,
+            initialCrmLeads
+        );
+        const resolvedLeadId = validated.leadId || deal?.leadId;
+        const linkedLead = resolvedLeadId
+            ? leads.find((l) => l.id === resolvedLeadId)
+            : undefined;
+
         const newRecord: CrmQuotationRecord = validateWithSchema(
             crmQuotationSchema,
             {
                 ...validated,
+                leadId: linkedLead?.id || validated.leadId || deal?.leadId || undefined,
+                leadCode: linkedLead?.code || validated.leadCode || deal?.leadCode || undefined,
+                leadTitle: linkedLead?.title || validated.leadTitle || deal?.leadTitle || undefined,
                 dealId: deal?.id || undefined,
                 dealCode: deal?.code || undefined,
                 dealTitle: deal?.titleEn || undefined,

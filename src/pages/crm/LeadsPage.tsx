@@ -134,6 +134,21 @@ export const LeadsPage: React.FC = () => {
         queryFn: () => crmApi.companies.getAll({ page: 1, limit: 100 }),
     });
 
+    const { data: orgTypesRes } = useQuery({
+        queryKey: ['crm', 'organizationalTypes', 'lookup'],
+        queryFn: () => crmApi.getOrganizationalTypes({ page: 1, limit: 100 }),
+    });
+
+    const { data: ownTypesRes } = useQuery({
+        queryKey: ['crm', 'ownershipTypes', 'lookup'],
+        queryFn: () => crmApi.getOwnershipTypes({ page: 1, limit: 100 }),
+    });
+
+    const { data: ownersRes } = useQuery({
+        queryKey: ['crm', 'owners', 'lookup'],
+        queryFn: () => crmApi.owners.getAll({ page: 1, limit: 200 }),
+    });
+
     const { data: employees = [] } = useQuery({
         queryKey: ['crm', 'employees'],
         queryFn: () => crmApi.getSalesEmployees(),
@@ -1170,6 +1185,18 @@ export const LeadsPage: React.FC = () => {
                 sectors={sectors}
                 companies={companies}
                 employees={employees}
+                organizationalTypes={orgTypesRes?.data || []}
+                ownershipTypes={ownTypesRes?.data || []}
+                existingOwners={ownersRes?.data || []}
+                onCompanyCreated={(newCompany) => {
+                    invalidateAll();
+                    showToast(
+                        t('crm.customer.companies.feedback.created', {
+                            name: isRtl ? newCompany.nameAr : newCompany.nameEn,
+                            code: newCompany.code,
+                        })
+                    );
+                }}
                 isSubmitting={
                     createMutation.isPending || updateMutation.isPending
                 }

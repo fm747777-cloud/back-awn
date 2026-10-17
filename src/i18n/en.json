@@ -4754,6 +4754,8 @@
           "temporaryCompanyPlaceholder": "Enter prospect company name if not yet onboarded...",
           "linkedCompanyLabel": "Linked Registered Company (Optional)",
           "noLinkedCompany": "No Registered Company (Use Temporary Name)",
+          "newCompany": "New Company",
+          "unlinkCompany": "Unlink",
           "companySizeLabel": "Company Size (Employees)",
           "companySizePlaceholder": "e.g., 250-500 Employees",
           "estimatedValueLabel": "Estimated Deal Value (SAR)",

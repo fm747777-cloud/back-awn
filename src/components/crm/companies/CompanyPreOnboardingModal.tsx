@@ -29,6 +29,7 @@ export interface CompanyPreOnboardingModalProps {
     isOpen: boolean;
     mode: 'create' | 'edit';
     initialData?: CrmCompanyRecord | null;
+    prefillData?: Partial<CrmCompanyInput> | null;
     organizationalTypes: CrmOrganizationalTypeRecord[];
     ownershipTypes: CrmOwnershipTypeRecord[];
     sectors: CrmSectorRecord[];
@@ -44,6 +45,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     isOpen,
     mode,
     initialData,
+    prefillData = null,
     organizationalTypes,
     ownershipTypes,
     sectors,
@@ -113,7 +115,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     });
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${defaultOrgTypeId}-${defaultOwnTypeId}-${defaultSectorId}`;
+    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${prefillData?.nameEn ?? ''}-${prefillData?.email ?? ''}-${prefillData?.leadId ?? ''}-${defaultOrgTypeId}-${defaultOwnTypeId}-${defaultSectorId}`;
     if (currentSyncKey !== prevSyncKey) {
         setPrevSyncKey(currentSyncKey);
         if (isOpen) {
@@ -148,31 +150,42 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                             : [createBlankOwner(true)],
                     notes: initialData.notes || '',
                     status: initialData.status,
+                    leadId: initialData.leadId,
                 });
             } else {
                 setFormState({
-                    nameEn: '',
-                    nameAr: '',
-                    businessName: '',
-                    organizationalTypeId: defaultOrgTypeId,
-                    ownershipTypeId: defaultOwnTypeId,
-                    sectorId: defaultSectorId,
-                    assignedEmployeeId: '',
-                    crNumber: '',
-                    unifiedNumber: '',
-                    taxNumber: '',
-                    email: '',
-                    phone: '',
-                    website: '',
-                    country: 'Saudi Arabia',
-                    state: 'Riyadh Province',
-                    city: 'Riyadh',
-                    pinCode: '',
-                    address: '',
-                    onboardingStatus: 'pre_onboarding',
-                    owners: [createBlankOwner(true)],
-                    notes: '',
+                    nameEn: prefillData?.nameEn || '',
+                    nameAr: prefillData?.nameAr || prefillData?.nameEn || '',
+                    businessName:
+                        prefillData?.businessName ||
+                        prefillData?.nameEn ||
+                        '',
+                    businessType: prefillData?.businessType || 'existing_business',
+                    organizationalTypeId:
+                        prefillData?.organizationalTypeId || defaultOrgTypeId,
+                    ownershipTypeId:
+                        prefillData?.ownershipTypeId || defaultOwnTypeId,
+                    sectorId: prefillData?.sectorId || defaultSectorId,
+                    assignedEmployeeId: prefillData?.assignedEmployeeId || '',
+                    crNumber: prefillData?.crNumber || '',
+                    unifiedNumber: prefillData?.unifiedNumber || '',
+                    taxNumber: prefillData?.taxNumber || '',
+                    email: prefillData?.email || '',
+                    phone: prefillData?.phone || '',
+                    website: prefillData?.website || '',
+                    country: prefillData?.country || 'Saudi Arabia',
+                    state: prefillData?.state || 'Riyadh Province',
+                    city: prefillData?.city || 'Riyadh',
+                    pinCode: prefillData?.pinCode || '',
+                    address: prefillData?.address || '',
+                    onboardingStatus: prefillData?.onboardingStatus || 'pre_onboarding',
+                    owners:
+                        prefillData?.owners && prefillData.owners.length > 0
+                            ? prefillData.owners.map((o) => ({ ...o }))
+                            : [createBlankOwner(true)],
+                    notes: prefillData?.notes || '',
                     status: 'active',
+                    leadId: prefillData?.leadId,
                 });
             }
         }
@@ -410,7 +423,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="company-preonboarding-wizard-title"

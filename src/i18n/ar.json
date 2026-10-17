@@ -4754,6 +4754,8 @@
           "temporaryCompanyPlaceholder": "أدخل اسم المنشأة المرشحة إذا لم تكن مسجلة بعد...",
           "linkedCompanyLabel": "الشركة المسجلة المرتبطة (اختياري)",
           "noLinkedCompany": "بدون شركة مسجلة (استخدام الاسم المؤقت)",
+          "newCompany": "شركة جديدة",
+          "unlinkCompany": "إلغاء الربط",
           "companySizeLabel": "حجم المنشأة (عدد الموظفين)",
           "companySizePlaceholder": "مثال: 250-500 موظف",
           "estimatedValueLabel": "القيمة التقديرية للصفقة (ر.س)",
