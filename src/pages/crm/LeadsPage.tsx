@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     UserPlus,
@@ -25,22 +26,28 @@ import {
     Mail,
     Building2,
     Filter,
+    Briefcase,
+    FileText,
 } from 'lucide-react';
 import { crmApi } from '../../api/api';
 import type {
     CrmLeadRecord,
     CrmLeadInput,
     CrmRecordStatus,
+    CrmDealInput,
+    CrmDealRecord,
 } from '../../schemas/crmSchema';
 import { LeadFormDrawer } from '../../components/crm/leads/LeadFormDrawer';
 import { LeadViewDrawer } from '../../components/crm/leads/LeadViewDrawer';
 import { LeadImportModal } from '../../components/crm/leads/LeadImportModal';
+import { DealFormDrawer } from '../../components/crm/deals/DealFormDrawer';
 import { CrmCustomerDeleteModal } from '../../components/crm/shared/CrmCustomerDeleteModal';
 
 const QUERY_KEY = ['crm', 'leads'] as const;
 
 export const LeadsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
     const queryClient = useQueryClient();
 
@@ -64,6 +71,16 @@ export const LeadsPage: React.FC = () => {
     const [deletingRecord, setDeletingRecord] = useState<CrmLeadRecord | null>(null);
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
+
+    // Deal Conversion State
+    const [isDealFormOpen, setIsDealFormOpen] = useState(false);
+    const [dealPrefillData, setDealPrefillData] = useState<Partial<CrmDealRecord> | null>(null);
+    const [createdDealPrompt, setCreatedDealPrompt] = useState<{
+        deal: CrmDealRecord;
+        lead: CrmLeadRecord;
+    } | null>(null);
+    const [dealServerError, setDealServerError] = useState<string | null>(null);
+
     const [toast, setToast] = useState<{
         type: 'success' | 'error';
         message: string;
@@ -154,6 +171,11 @@ export const LeadsPage: React.FC = () => {
         queryFn: () => crmApi.getSalesEmployees(),
     });
 
+    const { data: contactsRes } = useQuery({
+        queryKey: ['crm', 'contacts', 'lookup'],
+        queryFn: () => crmApi.contacts.getAll({ limit: 200 }),
+    });
+
     const usageMap = useMemo(() => {
         void leadsResponse;
         return crmApi.getCustomerUsageMap('lead');
@@ -161,6 +183,97 @@ export const LeadsPage: React.FC = () => {
 
     const invalidateAll = () => {
         queryClient.invalidateQueries({ queryKey: ['crm'] });
+    };
+
+    // Deal Conversion Mutation & Handler
+    const createDealMutation = useMutation({
+        mutationFn: (payload: CrmDealInput) => crmApi.deals.create(payload),
+        onSuccess: (newDeal) => {
+            invalidateAll();
+            setIsDealFormOpen(false);
+            setDealServerError(null);
+            const originalLead =
+                viewingRecord ||
+                leadsResponse?.data?.find((l) => l.id === newDeal.leadId) ||
+                null;
+            if (originalLead) {
+                setCreatedDealPrompt({
+                    deal: newDeal,
+                    lead: originalLead,
+                });
+            }
+            showToast(
+                t('crm.customer.leads.viewDrawer.dealCreatedSuccess', {
+                    dealCode: newDeal.code,
+                    leadCode: newDeal.leadCode || originalLead?.code || '',
+                }),
+                'success'
+            );
+        },
+        onError: (err: Error) => {
+            setDealServerError(err.message);
+        },
+    });
+
+    const handleOpenDealFormForLead = (lead: CrmLeadRecord) => {
+        setDealServerError(null);
+        const companies = companiesRes?.data || [];
+        const allContacts = contactsRes?.data || [];
+
+        // Match existing company if linked or by exact name match
+        const matchedCompany = lead.companyId
+            ? companies.find((c) => c.id === lead.companyId)
+            : companies.find(
+                  (c) =>
+                      lead.temporaryCompanyName &&
+                      (c.nameEn.toLowerCase() ===
+                          lead.temporaryCompanyName.toLowerCase() ||
+                          c.nameAr === lead.temporaryCompanyName)
+              );
+
+        // Match primary or corresponding contact
+        const companyContacts = matchedCompany
+            ? allContacts.filter((cnt) => cnt.companyId === matchedCompany.id)
+            : [];
+        const matchedContact =
+            companyContacts.find(
+                (cnt) =>
+                    (lead.contactEmail &&
+                        cnt.email?.toLowerCase() ===
+                            lead.contactEmail.toLowerCase()) ||
+                    (lead.contactPhone &&
+                        cnt.phone &&
+                        lead.contactPhone.replace(/\D/g, '') ===
+                            cnt.phone.replace(/\D/g, ''))
+            ) ||
+            companyContacts.find((cnt) => cnt.isPrimary) ||
+            companyContacts[0];
+
+        const defaultCloseDateObj = new Date();
+        defaultCloseDateObj.setDate(defaultCloseDateObj.getDate() + 30);
+
+        setDealPrefillData({
+            titleEn: `${lead.title} — Deal`,
+            titleAr: lead.title,
+            leadId: lead.id,
+            companyId: matchedCompany?.id || lead.companyId || '',
+            contactId: matchedContact?.id || '',
+            sectorId:
+                lead.sectorId ||
+                matchedCompany?.sectorId ||
+                sectorsRes?.data?.[0]?.id ||
+                '',
+            stage: 'qualified',
+            probability: 25,
+            expectedValue: Number(lead.estimatedValue || 50000),
+            currency: 'SAR',
+            expectedCloseDate: defaultCloseDateObj.toISOString().split('T')[0],
+            assignedEmployeeId:
+                lead.assignedEmployeeId || employees[0]?.id || '',
+            notes: lead.notes || '',
+            status: 'active',
+        });
+        setIsDealFormOpen(true);
     };
 
     // Mutations
@@ -1240,7 +1353,152 @@ export const LeadsPage: React.FC = () => {
                 onAssignEmployee={(leadId, assignedEmployeeId) =>
                     assignMutation.mutate({ id: leadId, assignedEmployeeId })
                 }
+                onCreateDeal={handleOpenDealFormForLead}
             />
+
+            {/* Deal Form Drawer for Lead Conversion */}
+            <DealFormDrawer
+                isOpen={isDealFormOpen}
+                mode="create"
+                initialData={dealPrefillData}
+                companies={companiesRes?.data || []}
+                leads={leadsResponse?.data || []}
+                contacts={contactsRes?.data || []}
+                sectors={sectorsRes?.data || []}
+                employees={employees}
+                isSubmitting={createDealMutation.isPending}
+                serverError={dealServerError}
+                onClose={() => {
+                    setIsDealFormOpen(false);
+                    setDealPrefillData(null);
+                    setDealServerError(null);
+                }}
+                onSubmit={async (dealData) => {
+                    await createDealMutation.mutateAsync(dealData);
+                }}
+            />
+
+            {/* Post-Deal Creation Next-Action Modal */}
+            {createdDealPrompt && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs"
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-[#E5E0D8] p-6 space-y-4 text-start">
+                        <div className="w-12 h-12 rounded-xl bg-[#E9F5EE] border border-[#2E6B4E]/20 flex items-center justify-center text-[#2E6B4E]">
+                            <CheckCircle2 size={24} />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-bold text-[#0D0D0D]">
+                                {t(
+                                    'crm.customer.leads.viewDrawer.dealCreatedModalTitle',
+                                    'Deal Created Successfully'
+                                )}
+                            </h3>
+                            <p className="text-xs text-[#6E6862] mt-1">
+                                {t(
+                                    'crm.customer.leads.viewDrawer.dealCreatedModalDesc',
+                                    'Commercial Deal {{dealCode}} has been generated and linked to Lead {{leadCode}}.',
+                                    {
+                                        dealCode: createdDealPrompt.deal.code,
+                                        leadCode: createdDealPrompt.lead.code,
+                                    }
+                                )}
+                            </p>
+                        </div>
+                        <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#6E6862]">
+                                    {t(
+                                        'crm.commercial.deals.columns.dealTitle',
+                                        'Deal Title'
+                                    )}
+                                    :
+                                </span>
+                                <span className="font-semibold text-[#0D0D0D] truncate max-w-[200px]">
+                                    {isRtl
+                                        ? createdDealPrompt.deal.titleAr ||
+                                          createdDealPrompt.deal.titleEn
+                                        : createdDealPrompt.deal.titleEn}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#6E6862]">
+                                    {t(
+                                        'crm.commercial.deals.columns.company',
+                                        'Company'
+                                    )}
+                                    :
+                                </span>
+                                <span className="font-semibold text-[#0D0D0D] truncate max-w-[200px]">
+                                    {isRtl
+                                        ? createdDealPrompt.deal.companyNameAr ||
+                                          createdDealPrompt.deal.companyNameEn
+                                        : createdDealPrompt.deal.companyNameEn}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#6E6862]">
+                                    {t(
+                                        'crm.commercial.deals.columns.expectedValue',
+                                        'Value'
+                                    )}
+                                    :
+                                </span>
+                                <span
+                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    dir="ltr"
+                                >
+                                    {createdDealPrompt.deal.expectedValue.toLocaleString()}{' '}
+                                    SAR
+                                </span>
+                            </div>
+                        </div>
+                        <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const dealId = createdDealPrompt.deal.id;
+                                    setCreatedDealPrompt(null);
+                                    setViewingRecord(null);
+                                    navigate(`/crm/quotations?dealId=${dealId}`);
+                                }}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer shadow-sm transition-colors"
+                            >
+                                <FileText size={15} />
+                                <span>
+                                    {t(
+                                        'crm.customer.leads.viewDrawer.createQuotationCta',
+                                        'Create Quotation for Deal'
+                                    )}
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCreatedDealPrompt(null);
+                                    setViewingRecord(null);
+                                    navigate('/crm/deals');
+                                }}
+                                className="px-4 py-2.5 rounded-xl border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] cursor-pointer transition-colors"
+                            >
+                                {t(
+                                    'crm.customer.leads.viewDrawer.viewDeal',
+                                    'View Deals'
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCreatedDealPrompt(null)}
+                                className="px-3 py-2.5 rounded-xl text-xs font-semibold text-[#6E6862] hover:text-[#0D0D0D] cursor-pointer"
+                            >
+                                {t('crm.customer.common.close', 'Close')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Import Leads Modal */}
             <LeadImportModal

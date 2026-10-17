@@ -12,6 +12,7 @@ import {
     ShieldCheck,
     ShieldAlert,
     Link2,
+    Briefcase,
 } from 'lucide-react';
 import type {
     CrmLeadRecord,
@@ -32,6 +33,7 @@ export interface LeadViewDrawerProps {
     onEdit: (record: CrmLeadRecord) => void;
     onTransitionStage: (leadId: string, leadStatusId: string) => void;
     onAssignEmployee: (leadId: string, assignedEmployeeId: string) => void;
+    onCreateDeal?: (record: CrmLeadRecord) => void;
 }
 
 export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
@@ -44,6 +46,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
     onEdit,
     onTransitionStage,
     onAssignEmployee,
+    onCreateDeal,
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
@@ -183,6 +186,37 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             </div>
                         </div>
                     </div>
+
+                    {/* Quick Deal Conversion CTA */}
+                    {onCreateDeal && (
+                        <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div className="space-y-0.5 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <Briefcase size={15} className="text-[#2D3F2C] shrink-0" />
+                                    <span className="text-xs font-bold text-[#0D0D0D]">
+                                        {t('crm.customer.leads.viewDrawer.createDeal')}
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-[#6E6862]">
+                                    {record.companyId
+                                        ? t('crm.customer.leads.viewDrawer.createDealWithCompany', {
+                                              company: isRtl
+                                                  ? record.companyNameAr || record.companyNameEn
+                                                  : record.companyNameEn,
+                                          })
+                                        : t('crm.customer.leads.viewDrawer.createDealNotice')}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => onCreateDeal(record)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold shrink-0 cursor-pointer transition-colors shadow-sm"
+                            >
+                                <Briefcase size={13} />
+                                <span>{t('crm.customer.leads.viewDrawer.createDealBtn')}</span>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Lead & Company Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
@@ -331,22 +365,36 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-end gap-2.5">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
-                    >
-                        {t('crm.customer.common.close')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
-                    >
-                        <Edit3 size={14} />
-                        {t('crm.customer.common.editRecord')}
-                    </button>
+                <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-2.5">
+                    {onCreateDeal ? (
+                        <button
+                            type="button"
+                            onClick={() => onCreateDeal(record)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                        >
+                            <Briefcase size={14} />
+                            <span>{t('crm.customer.leads.viewDrawer.createDealBtn')}</span>
+                        </button>
+                    ) : (
+                        <div />
+                    )}
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
+                        >
+                            {t('crm.customer.common.close')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onEdit(record)}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#0D0D0D] text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                            <Edit3 size={14} />
+                            {t('crm.customer.common.editRecord')}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     useQuery,
     useMutation,
@@ -45,6 +45,8 @@ import { CrmCommercialDeleteModal } from '../../components/crm/shared/CrmCommerc
 export const DealsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const initialLeadParam = searchParams.get('leadId');
     const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
@@ -257,6 +259,39 @@ export const DealsPage: React.FC = () => {
     const quotations = quotationsRes?.data || [];
     const contracts = contractsRes?.data || [];
     const invoices = invoicesRes?.data || [];
+
+    useEffect(() => {
+        if (initialLeadParam && leadsRes?.data && companies.length > 0) {
+            const matchedLead = leadsRes.data.find(
+                (l) => l.id === initialLeadParam
+            );
+            if (matchedLead) {
+                const matchedCompany = matchedLead.companyId
+                    ? companies.find((c) => c.id === matchedLead.companyId)
+                    : companies.find(
+                          (c) =>
+                              matchedLead.temporaryCompanyName &&
+                              (c.nameEn.toLowerCase() ===
+                                  matchedLead.temporaryCompanyName.toLowerCase() ||
+                                  c.nameAr === matchedLead.temporaryCompanyName)
+                      );
+                setEditingRecord({
+                    titleEn: `${matchedLead.title} — Deal`,
+                    titleAr: matchedLead.title,
+                    leadId: matchedLead.id,
+                    companyId:
+                        matchedCompany?.id || matchedLead.companyId || '',
+                    sectorId:
+                        matchedLead.sectorId || matchedCompany?.sectorId || '',
+                    expectedValue: matchedLead.estimatedValue || 50000,
+                    assignedEmployeeId: matchedLead.assignedEmployeeId || '',
+                    status: 'active',
+                } as unknown as CrmDealRecord);
+                setFormMode('create');
+                setIsFormOpen(true);
+            }
+        }
+    }, [initialLeadParam, leadsRes?.data, companies]);
 
     const deleteEligibility = deletingRecord
         ? checkCrmCommercialDeletionEligibility('deal', deletingRecord.id)

@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "verify:crm:2a": "npx tsx scripts/verify-crm-phase2a-lead-to-deal.ts",
     "verify:ums:4f": "npx tsx scripts/verify-ums-phase4f.ts",
     "verify:ums:4g": "npx tsx scripts/verify-ums-phase4g.ts",
     "verify:crm:2b": "npx tsx scripts/verify-crm-phase2b.ts",

@@ -4781,7 +4781,16 @@
           "subtitle": "Comprehensive lead qualification, stage progression, and contact summary",
           "quickActions": "Pipeline Stage & Assignment Progression",
           "changeStage": "Transition Pipeline Stage",
-          "assignRep": "Assign Sales Representative"
+          "assignRep": "Assign Sales Representative",
+          "createDeal": "Create Commercial Deal",
+          "createDealBtn": "Create Deal",
+          "createDealNotice": "Convert this qualified lead into a commercial deal with prefilled lead details.",
+          "createDealWithCompany": "Convert this lead into a commercial deal linked to {{company}}.",
+          "dealCreatedSuccess": "Commercial Deal \"{{dealCode}}\" created successfully for Lead \"{{leadCode}}\"!",
+          "dealCreatedModalTitle": "Deal Created Successfully",
+          "dealCreatedModalDesc": "Commercial Deal {{dealCode}} has been generated and linked to Lead {{leadCode}}.",
+          "createQuotationCta": "Create Quotation for Deal",
+          "viewDeal": "View Deals"
         },
         "importModal": {
           "title": "Import Leads Batch (CSV)",
@@ -5207,6 +5216,7 @@
           "titleArPlaceholder": "مثال: المراجعة القانونية السنوية والاستشارات الزكوية 2026",
           "companyLabel": "Customer Company",
           "selectCompany": "Select a company...",
+          "selectCompanyToLink": "Select an active client company to complete Deal creation",
           "leadLabel": "Originating Lead (Optional)",
           "contactLabel": "Primary Contact (Optional)",
           "sectorLabel": "Industry Sector",

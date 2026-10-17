@@ -4781,7 +4781,16 @@
           "subtitle": "تفاصيل التأهيل الكاملة وتدرج المراحل وملخص بيانات التواصل",
           "quickActions": "تحديث المرحلة وتعيين ممثل المبيعات",
           "changeStage": "نقل مرحلة المسار",
-          "assignRep": "تعيين ممثل المبيعات"
+          "assignRep": "تعيين ممثل المبيعات",
+          "createDeal": "إنشاء صفقة تجارية",
+          "createDealBtn": "إنشاء صفقة",
+          "createDealNotice": "تحويل هذا العميل المحتمل إلى صفقة تجارية مع تعبئة بيانات العميل المسبقة.",
+          "createDealWithCompany": "تحويل هذا العميل المحتمل إلى صفقة تجارية مرتبطة بشركة {{company}}.",
+          "dealCreatedSuccess": "تم إنشاء الصفقة التجارية \"{{dealCode}}\" بنجاح للعميل المحتمل \"{{leadCode}}\"!",
+          "dealCreatedModalTitle": "تم إنشاء الصفقة بنجاح",
+          "dealCreatedModalDesc": "تم إنشاء الصفقة التجارية {{dealCode}} وربطها بالعميل المحتمل {{leadCode}}.",
+          "createQuotationCta": "إنشاء عرض سعر للصفقة",
+          "viewDeal": "عرض الصفقات"
         },
         "importModal": {
           "title": "استيراد دفعة عملاء محتملين (CSV)",
@@ -5207,6 +5216,7 @@
           "titleArPlaceholder": "مثال: المراجعة القانونية السنوية والاستشارات الزكوية 2026",
           "companyLabel": "الشركة العميلة",
           "selectCompany": "اختر الشركة...",
+          "selectCompanyToLink": "اختر شركة عميل نشطة لإتمام إنشاء الصفقة",
           "leadLabel": "العميل المحتمل المرتبط (اختياري)",
           "contactLabel": "جهة الاتصال الرئيسية (اختياري)",
           "sectorLabel": "القطاع الاقتصادي",

@@ -25,7 +25,7 @@ import type { CrmSalesEmployee } from '../../../api/api';
 export interface DealFormDrawerProps {
     isOpen: boolean;
     mode: 'create' | 'edit';
-    initialData?: CrmDealRecord | null;
+    initialData?: CrmDealRecord | Partial<CrmDealRecord> | null;
     companies: CrmCompanyRecord[];
     leads: CrmLeadRecord[];
     contacts: CrmContactRecord[];
@@ -82,50 +82,59 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${defaultCompany?.id ?? ''}-${defaultEmployeeId}`;
+    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? initialData?.leadId ?? 'new'}-${initialData?.companyId ?? defaultCompany?.id ?? ''}-${initialData?.assignedEmployeeId ?? defaultEmployeeId}`;
     if (currentSyncKey !== prevSyncKey) {
         setPrevSyncKey(currentSyncKey);
         if (isOpen) {
             setFieldErrors({});
             if (mode === 'edit' && initialData) {
                 setFormState({
-                    titleEn: initialData.titleEn,
+                    titleEn: initialData.titleEn || '',
                     titleAr: initialData.titleAr || '',
                     leadId: initialData.leadId || '',
-                    companyId: initialData.companyId,
+                    companyId: initialData.companyId || defaultCompany?.id || '',
                     contactId: initialData.contactId || '',
                     sectorId:
                         initialData.sectorId ||
                         defaultCompany?.sectorId ||
                         sectors[0]?.id ||
                         '',
-                    stage: initialData.stage,
-                    probability: initialData.probability,
+                    stage: initialData.stage || 'qualified',
+                    probability: initialData.probability ?? 20,
                     expectedValue: Number(initialData.expectedValue || 0),
                     currency: initialData.currency || 'SAR',
-                    expectedCloseDate: initialData.expectedCloseDate,
-                    assignedEmployeeId: initialData.assignedEmployeeId,
+                    expectedCloseDate: initialData.expectedCloseDate || defaultCloseDate,
+                    assignedEmployeeId: initialData.assignedEmployeeId || defaultEmployeeId,
                     lostReason: initialData.lostReason || '',
                     notes: initialData.notes || '',
                     status: initialData.status || 'active',
                 });
             } else {
                 setFormState({
-                    titleEn: '',
-                    titleAr: '',
-                    leadId: '',
-                    companyId: defaultCompany?.id || '',
-                    contactId: '',
-                    sectorId: defaultCompany?.sectorId || sectors[0]?.id || '',
-                    stage: 'qualified',
-                    probability: 20,
-                    expectedValue: 50000,
-                    currency: 'SAR',
-                    expectedCloseDate: defaultCloseDate,
-                    assignedEmployeeId: defaultEmployeeId,
+                    titleEn: initialData?.titleEn || '',
+                    titleAr: initialData?.titleAr || '',
+                    leadId: initialData?.leadId || '',
+                    companyId: initialData?.companyId || defaultCompany?.id || '',
+                    contactId: initialData?.contactId || '',
+                    sectorId:
+                        initialData?.sectorId ||
+                        defaultCompany?.sectorId ||
+                        sectors[0]?.id ||
+                        '',
+                    stage: initialData?.stage || 'qualified',
+                    probability: initialData?.probability ?? 20,
+                    expectedValue:
+                        initialData?.expectedValue !== undefined
+                            ? Number(initialData.expectedValue)
+                            : 50000,
+                    currency: initialData?.currency || 'SAR',
+                    expectedCloseDate:
+                        initialData?.expectedCloseDate || defaultCloseDate,
+                    assignedEmployeeId:
+                        initialData?.assignedEmployeeId || defaultEmployeeId,
                     lostReason: '',
-                    notes: '',
-                    status: 'active',
+                    notes: initialData?.notes || '',
+                    status: initialData?.status || 'active',
                 });
             }
         }
@@ -288,6 +297,31 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                         <div className="rounded-xl border border-[#A63A3A]/30 bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
                             <AlertCircle size={16} className="shrink-0 mt-0.5" />
                             <span>{serverError}</span>
+                        </div>
+                    )}
+
+                    {/* Originating Lead Notification & Company Guidance */}
+                    {formState.leadId && (
+                        <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span
+                                    className="px-2 py-0.5 rounded bg-white border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#2D3F2C] shrink-0"
+                                    dir="ltr"
+                                >
+                                    {leads.find((l) => l.id === formState.leadId)?.code || 'LEAD'}
+                                </span>
+                                <span className="font-semibold text-[#0D0D0D] truncate">
+                                    {leads.find((l) => l.id === formState.leadId)?.title}
+                                </span>
+                            </div>
+                            {!formState.companyId && (
+                                <span className="text-[11px] text-[#B45309] font-medium shrink-0">
+                                    {t(
+                                        'crm.commercial.deals.form.selectCompanyToLink',
+                                        'Select an active client company to complete Deal creation'
+                                    )}
+                                </span>
+                            )}
                         </div>
                     )}
 
