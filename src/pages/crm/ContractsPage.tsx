@@ -790,20 +790,37 @@ export const ContractsPage: React.FC = () => {
                                         </td>
                                         <td className="py-3.5 px-4 text-end">
                                             <div className="inline-flex items-center gap-1.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        generateInvoiceMutation.mutate(
-                                                            c.id
-                                                        )
-                                                    }
-                                                    title={t(
-                                                        'crm.commercial.contracts.viewDrawer.generateInvoiceCta'
-                                                    )}
-                                                    className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2E6B4E] cursor-pointer"
-                                                >
-                                                    <Receipt size={14} />
-                                                </button>
+                                                {(() => {
+                                                    const isEligible = c.contractStatus === 'active';
+                                                    const isDisabled = !isEligible || generateInvoiceMutation.isPending;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isDisabled}
+                                                            onClick={() =>
+                                                                generateInvoiceMutation.mutate(
+                                                                    c.id
+                                                                )
+                                                            }
+                                                            title={
+                                                                !isEligible
+                                                                    ? t(
+                                                                          'crm.commercial.contracts.viewDrawer.generateInvoiceIneligible'
+                                                                      )
+                                                                    : t(
+                                                                          'crm.commercial.contracts.viewDrawer.generateInvoiceCta'
+                                                                      )
+                                                            }
+                                                            className={`p-1.5 rounded-lg border border-[#E5E0D8] transition-colors ${
+                                                                isDisabled
+                                                                    ? 'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400'
+                                                                    : 'bg-white hover:bg-[#FAF8F5] text-[#2E6B4E] cursor-pointer'
+                                                            }`}
+                                                        >
+                                                            <Receipt size={14} />
+                                                        </button>
+                                                    );
+                                                })()}
                                                 <button
                                                     type="button"
                                                     onClick={() =>

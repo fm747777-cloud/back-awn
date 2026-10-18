@@ -5399,9 +5399,19 @@
           "title": "Contract Governance & Billing Profile",
           "subtitle": "Agreement terms, validity window, linked quotation, and invoice generation",
           "generateInvoiceCta": "Generate Invoice from Contract",
+          "generateInvoiceIneligible": "Contract must be active to generate an invoice",
+          "generateInvoiceIneligibleNotice": "Only active contracts can generate invoices. Activate this contract first.",
           "activateContract": "Activate Contract",
           "sendToReview": "Move to Under Review",
-          "terminateContract": "Terminate Contract"
+          "terminateContract": "Terminate Contract",
+          "linkedInvoices": "Billed Invoices ({{count}})",
+          "noInvoices": "No invoices generated from this contract yet.",
+          "viewAllInvoices": "View in Invoices",
+          "loadingInvoices": "Loading linked invoices...",
+          "errorLoadingInvoices": "Failed to load contract invoices.",
+          "issueDateLabel": "Issued",
+          "totalAmountLabel": "Total",
+          "balanceDueLabel": "Balance Due"
         },
         "empty": {
           "title": "No contracts match your filter criteria",

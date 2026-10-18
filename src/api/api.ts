@@ -38,6 +38,7 @@ import {
     crmSalesPerformanceDashboardSchema,
     CRM_DEAL_STAGE_VALUES,
     calculateCrmQuotationTotals,
+    calculateCrmQuotationLineItem,
     calculateCrmInvoiceAmounts,
     roundCrmCurrency,
     CRM_DEAL_STAGE_DEFAULT_PROBABILITY,

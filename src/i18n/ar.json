@@ -5399,9 +5399,19 @@
           "title": "ملف حوكمة العقد والفوترة",
           "subtitle": "شروط الاتفاقية وفترة السريان وعرض السعر المرتبط وإصدار الفواتير",
           "generateInvoiceCta": "إصدار فاتورة من العقد",
+          "generateInvoiceIneligible": "يجب أن يكون العقد نشطاً لإصدار فاتورة",
+          "generateInvoiceIneligibleNotice": "يمكن إصدار الفواتير للعقود النشطة فقط. يرجى تفعيل العقد أولاً.",
           "activateContract": "تفعيل العقد",
           "sendToReview": "إرسال للمراجعة",
-          "terminateContract": "إنهاء / فسخ العقد"
+          "terminateContract": "إنهاء / فسخ العقد",
+          "linkedInvoices": "الفواتير المصدرة ({{count}})",
+          "noInvoices": "لم يتم إصدار أي فواتير من هذا العقد حتى الآن.",
+          "viewAllInvoices": "عرض في الفواتير",
+          "loadingInvoices": "جاري تحميل الفواتير المرتبطة...",
+          "errorLoadingInvoices": "تعذر تحميل فواتير العقد.",
+          "issueDateLabel": "تاريخ الإصدار",
+          "totalAmountLabel": "الإجمالي",
+          "balanceDueLabel": "المتبقي"
         },
         "empty": {
           "title": "لا توجد عقود مطابقة لمعايير التصفية",

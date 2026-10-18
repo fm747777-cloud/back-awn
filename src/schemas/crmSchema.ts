@@ -901,6 +901,7 @@ export const crmContractInputSchema = z.object({
     billingCycle: crmBillingCycleSchema.default('annual'),
     subtotal: crmNonNegativeAmountSchema.default(0),
     discountTotal: crmNonNegativeAmountSchema.default(0),
+    taxRate: crmPercentageSchema.optional(),
     taxAmount: crmNonNegativeAmountSchema.default(0),
     totalValue: crmNonNegativeAmountSchema.default(0),
     contractValue: crmNonNegativeAmountSchema.default(0),
