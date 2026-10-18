@@ -5197,7 +5197,9 @@
         },
         "columns": {
           "code": "Deal Code",
+          "dealTitle": "Deal Title",
           "dealAndLead": "Deal Title & Source Lead",
+          "company": "Company",
           "companyAndContact": "Company & Primary Contact",
           "stageAndProbability": "Pipeline Stage & Win Prob.",
           "expectedValue": "Expected Value (SAR)",
@@ -5327,6 +5329,9 @@
           "convertedToContract": "Contract {{contractCode}} generated from Quotation {{quotationCode}}.",
           "convertedToInvoice": "Invoice {{invoiceCode}} generated from Quotation {{quotationCode}}.",
           "deleted": "Quotation \"{{name}}\" deleted successfully."
+        },
+        "validation": {
+          "mustBeApproved": "Only approved quotations can be converted into contracts."
         }
       },
       "contracts": {

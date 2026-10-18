@@ -5197,7 +5197,9 @@
         },
         "columns": {
           "code": "رمز الصفقة",
+          "dealTitle": "عنوان الصفقة",
           "dealAndLead": "عنوان الصفقة والعميل المحتمل",
+          "company": "الشركة",
           "companyAndContact": "الشركة وجهة الاتصال",
           "stageAndProbability": "المرحلة واحتمالية الفوز",
           "expectedValue": "القيمة المتوقعة (ر.س)",
@@ -5327,6 +5329,9 @@
           "convertedToContract": "تم إنشاء العقد {{contractCode}} من عرض السعر {{quotationCode}}.",
           "convertedToInvoice": "تم إصدار الفاتورة {{invoiceCode}} من عرض السعر {{quotationCode}}.",
           "deleted": "تم حذف عرض السعر \"{{name}}\" بنجاح."
+        },
+        "validation": {
+          "mustBeApproved": "يمكن تحويل عروض الأسعار المعتمدة فقط إلى عقود."
         }
       },
       "contracts": {
