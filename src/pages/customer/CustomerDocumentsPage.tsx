@@ -57,14 +57,10 @@ export interface CustomerDocumentItem {
 
 const STORAGE_KEY = 'awn_customer_documents_v1';
 
-const DEMO_COMPANIES = [
-    { id: 'cmp-1', nameEn: 'Al-Fursan Logistics Co.', nameAr: 'شركة الفرسان اللوجستية', crNumber: '1010345678' },
-    { id: 'cmp-2', nameEn: 'Rawabi Energy Services', nameAr: 'خدمات الروابي للطاقة', crNumber: '2050123456' },
-    { id: 'cmp-3', nameEn: 'Madaen Real Estate Group', nameAr: 'مجموعة مدائن العقارية', crNumber: '4030654321' },
-    { id: 'cmp-4', nameEn: 'Safwa Medical Healthcare', nameAr: 'صفوة الرعاية الطبية', crNumber: '1010987654' },
-    { id: 'cmp-5', nameEn: 'Horizon Digital Technologies', nameAr: 'تقنيات الأفق الرقمية', crNumber: '7001234567' },
-    { id: 'cmp-6', nameEn: 'Red Sea Hospitality & Resorts', nameAr: 'الضيافة والمنتجعات بالبحر الأحمر', crNumber: '4031987654' },
-];
+import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
+
+const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
+
 
 const SEED_DOCUMENTS: CustomerDocumentItem[] = [
     {

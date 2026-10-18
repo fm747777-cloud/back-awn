@@ -145,14 +145,10 @@ const INITIAL_DEALS: CustomerDealItem[] = [
     },
 ];
 
-const AVAILABLE_COMPANIES = [
-    { id: 'cmp-1', en: 'Al-Wataniya Logistics Co.', ar: 'الشركة الوطنية للخدمات اللوجستية' },
-    { id: 'cmp-2', en: 'Riyadh Tech Solutions', ar: 'شركة حلول الرياض التقنية' },
-    { id: 'cmp-3', en: 'Gulf Energy Trading Corp', ar: 'مؤسسة طاقة الخليج التجارية' },
-    { id: 'cmp-4', en: 'Najm Financial Advisory Group', ar: 'مجموعة نجم للاستشارات المالية' },
-    { id: 'cmp-5', en: 'Arabian Horizon Contracting', ar: 'شركة الأفق العربي للمقاولات' },
-    { id: 'cmp-6', en: 'Modern Infrastructure LLC', ar: 'شركة البنية التحتية الحديثة' },
-];
+import { CUSTOMER_COMPANIES_SIMPLE_OPTIONS } from './customerMockData';
+
+const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
+
 
 export const CustomerDealsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
