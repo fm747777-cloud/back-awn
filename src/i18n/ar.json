@@ -4790,7 +4790,19 @@
           "dealCreatedModalTitle": "تم إنشاء الصفقة بنجاح",
           "dealCreatedModalDesc": "تم إنشاء الصفقة التجارية {{dealCode}} وربطها بالعميل المحتمل {{leadCode}}.",
           "createQuotationCta": "إنشاء عرض سعر للصفقة",
-          "viewDeal": "عرض الصفقات"
+          "viewDeal": "عرض الصفقات",
+          "commercialPipeline": "مسار الصفقات التجارية والتقدم",
+          "commercialPipelineSubtitle": "الفرص التجارية وعروض الأسعار والعقود المنبثقة من هذا العميل المحتمل",
+          "noLinkedDeals": "لم يتم إنشاء أي صفقات تجارية لهذا العميل المحتمل حتى الآن.",
+          "convertedToDeal": "تم تحويل العميل المحتمل إلى صفقة",
+          "viewDealDetails": "عرض تفاصيل الصفقة",
+          "linkedQuotationsCount": "عروض الأسعار المرتبطة ({{count}})",
+          "noLinkedQuotations": "لم يتم إعداد عروض أسعار بعد",
+          "linkedContractsCount": "العقود المرتبطة ({{count}})",
+          "noLinkedContracts": "لم يتم تنفيذ عقود بعد",
+          "preOnboardCompanyAction": "تأهيل شركة العميل",
+          "companyRequiredForDeal": "يلزم ربط شركة عميلة نشطة لإنشاء صفقة تجارية.",
+          "selectCompanyFirst": "اربط شركة قائمة أو أهل شركة جديدة لتحويل هذا العميل المحتمل إلى صفقة."
         },
         "importModal": {
           "title": "استيراد دفعة عملاء محتملين (CSV)",
@@ -4921,7 +4933,10 @@
         },
         "viewDrawer": {
           "title": "الملف المؤسسي للشركة",
-          "subtitle": "سجل التأهيل المسبق، التسجيلات القانونية، وهيكل ملكية الشركاء"
+          "subtitle": "سجل التأهيل المسبق، التسجيلات القانونية، وهيكل ملكية الشركاء",
+          "originatingLeadTitle": "العميل المحتمل المنشئ",
+          "viewOriginatingLead": "عرض العميل المحتمل",
+          "leadArchivedNotice": "مرجع العميل المحتمل: {{leadId}} (سجل مؤرشف أو مستقل)"
         },
         "empty": {
           "title": "لا توجد شركات مطابقة لمعايير التصفية",
@@ -5219,6 +5234,8 @@
           "companyLabel": "الشركة العميلة",
           "selectCompany": "اختر الشركة...",
           "selectCompanyToLink": "اختر شركة عميل نشطة لإتمام إنشاء الصفقة",
+          "leadWithoutCompanyWarning": "العميل المحتمل المنشئ ليس له شركة مرتبطة. يلزم وجود شركة عميلة نشطة لإنشاء الصفقة.",
+          "preOnboardCompanyForLead": "تأهيل شركة لهذا العميل المحتمل",
           "leadLabel": "العميل المحتمل المرتبط (اختياري)",
           "contactLabel": "جهة الاتصال الرئيسية (اختياري)",
           "sectorLabel": "القطاع الاقتصادي",

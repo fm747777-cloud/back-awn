@@ -35,6 +35,7 @@ export interface DealFormDrawerProps {
     serverError?: string | null;
     onClose: () => void;
     onSubmit: (data: CrmDealInput) => Promise<void> | void;
+    onOpenCreateCompany?: (leadId?: string) => void;
 }
 
 export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
@@ -50,6 +51,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
     serverError = null,
     onClose,
     onSubmit,
+    onOpenCreateCompany,
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
@@ -61,13 +63,25 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
     defaultCloseDateObj.setDate(defaultCloseDateObj.getDate() + 30);
     const defaultCloseDate = defaultCloseDateObj.toISOString().split('T')[0];
 
+    const isFromLead = Boolean(initialData?.leadId);
+    const resolvedInitialCompanyId = initialData?.companyId
+        ? initialData.companyId
+        : isFromLead
+            ? ''
+            : defaultCompany?.id || '';
+
     const [formState, setFormState] = useState<CrmDealInput>({
         titleEn: '',
         titleAr: '',
         leadId: '',
-        companyId: defaultCompany?.id || '',
+        companyId: resolvedInitialCompanyId,
         contactId: '',
-        sectorId: defaultCompany?.sectorId || sectors[0]?.id || '',
+        sectorId:
+            (resolvedInitialCompanyId
+                ? companies.find((c) => c.id === resolvedInitialCompanyId)?.sectorId
+                : undefined) ||
+            sectors[0]?.id ||
+            '',
         stage: 'qualified',
         probability: 20,
         expectedValue: 50000,
@@ -82,7 +96,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? initialData?.leadId ?? 'new'}-${initialData?.companyId ?? defaultCompany?.id ?? ''}-${initialData?.assignedEmployeeId ?? defaultEmployeeId}`;
+    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? initialData?.leadId ?? 'new'}-${resolvedInitialCompanyId}-${initialData?.assignedEmployeeId ?? defaultEmployeeId}`;
     if (currentSyncKey !== prevSyncKey) {
         setPrevSyncKey(currentSyncKey);
         if (isOpen) {
@@ -92,11 +106,13 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                     titleEn: initialData.titleEn || '',
                     titleAr: initialData.titleAr || '',
                     leadId: initialData.leadId || '',
-                    companyId: initialData.companyId || defaultCompany?.id || '',
+                    companyId: initialData.companyId || '',
                     contactId: initialData.contactId || '',
                     sectorId:
                         initialData.sectorId ||
-                        defaultCompany?.sectorId ||
+                        (initialData.companyId
+                            ? companies.find((c) => c.id === initialData.companyId)?.sectorId
+                            : undefined) ||
                         sectors[0]?.id ||
                         '',
                     stage: initialData.stage || 'qualified',
@@ -114,11 +130,13 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                     titleEn: initialData?.titleEn || '',
                     titleAr: initialData?.titleAr || '',
                     leadId: initialData?.leadId || '',
-                    companyId: initialData?.companyId || defaultCompany?.id || '',
+                    companyId: resolvedInitialCompanyId,
                     contactId: initialData?.contactId || '',
                     sectorId:
                         initialData?.sectorId ||
-                        defaultCompany?.sectorId ||
+                        (resolvedInitialCompanyId
+                            ? companies.find((c) => c.id === resolvedInitialCompanyId)?.sectorId
+                            : undefined) ||
                         sectors[0]?.id ||
                         '',
                     stage: initialData?.stage || 'qualified',
@@ -315,21 +333,50 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                                 </span>
                             </div>
                             {!formState.companyId && (
-                                <span className="text-[11px] text-[#B45309] font-medium shrink-0">
-                                    {t(
-                                        'crm.commercial.deals.form.selectCompanyToLink',
-                                        'Select an active client company to complete Deal creation'
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[11px] text-[#A63A3A] font-semibold shrink-0 flex items-center gap-1 bg-[#FCECE9] px-2 py-0.5 rounded border border-[#A63A3A]/20">
+                                        <AlertCircle size={12} className="text-[#A63A3A]" />
+                                        {t(
+                                            'crm.commercial.deals.form.selectCompanyToLink',
+                                            'Select an active client company to complete Deal creation'
+                                        )}
+                                    </span>
+                                    {onOpenCreateCompany && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onOpenCreateCompany(formState.leadId)}
+                                            className="px-2.5 py-1 rounded bg-[#2D3F2C] hover:bg-[#233122] text-white text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                                        >
+                                            {t(
+                                                'crm.commercial.deals.form.preOnboardCompanyForLead',
+                                                'Pre-Onboard Company for this Lead'
+                                            )}
+                                        </button>
                                     )}
-                                </span>
+                                </div>
                             )}
                         </div>
                     )}
 
                     {/* Section 1: Deal Identity & Customer Link */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
-                            <Building2 size={14} />
-                            <span>{t('crm.commercial.deals.form.companyLabel')}</span>
+                        <div className="flex items-center justify-between text-xs font-bold text-[#2D3F2C]">
+                            <div className="flex items-center gap-2">
+                                <Building2 size={14} />
+                                <span>{t('crm.commercial.deals.form.companyLabel')}</span>
+                            </div>
+                            {onOpenCreateCompany && formState.leadId && !formState.companyId && (
+                                <button
+                                    type="button"
+                                    onClick={() => onOpenCreateCompany(formState.leadId)}
+                                    className="text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                >
+                                    + {t(
+                                        'crm.commercial.deals.form.preOnboardCompanyForLead',
+                                        'Pre-Onboard Company'
+                                    )}
+                                </button>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -395,8 +442,17 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                                     ))}
                                 </select>
                                 {fieldErrors.companyId && (
-                                    <p className="text-[11px] text-[#A63A3A] mt-1">
+                                    <p className="text-[11px] text-[#A63A3A] mt-1 flex items-center gap-1">
+                                        <AlertCircle size={12} />
                                         {fieldErrors.companyId}
+                                    </p>
+                                )}
+                                {!formState.companyId && formState.leadId && !fieldErrors.companyId && (
+                                    <p className="text-[11px] text-[#B45309] mt-1">
+                                        {t(
+                                            'crm.commercial.deals.form.leadWithoutCompanyWarning',
+                                            'The originating Lead does not have a linked company. A deal requires an active client company.'
+                                        )}
                                     </p>
                                 )}
                             </div>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
     X,
     Edit3,
@@ -13,14 +15,22 @@ import {
     ShieldAlert,
     Link2,
     Briefcase,
+    FileSpreadsheet,
+    FileCheck2,
+    ExternalLink,
+    AlertCircle,
+    CheckCircle2,
+    TrendingUp,
 } from 'lucide-react';
 import type {
     CrmLeadRecord,
     CrmLeadStatusRecord,
+    CrmDealRecord,
 } from '../../../schemas/crmSchema';
-import type {
-    CrmDeletionEligibilityResult,
-    CrmSalesEmployee,
+import {
+    crmApi,
+    type CrmDeletionEligibilityResult,
+    type CrmSalesEmployee,
 } from '../../../api/api';
 
 export interface LeadViewDrawerProps {
@@ -50,6 +60,40 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+    const navigate = useNavigate();
+
+    // Query Deals for this Lead
+    const { data: dealsRes, isLoading: isDealsLoading } = useQuery({
+        queryKey: ['crm', 'deals', 'lead', record?.id],
+        queryFn: () =>
+            record?.id ? crmApi.deals.getAll({ leadId: record.id, limit: 20 }) : null,
+        enabled: Boolean(isOpen && record?.id),
+    });
+
+    const linkedDeals = dealsRes?.data || [];
+    const firstDeal = linkedDeals[0];
+
+    // Query Quotations for the first deal
+    const { data: quotationsRes } = useQuery({
+        queryKey: ['crm', 'quotations', 'deal', firstDeal?.id],
+        queryFn: () =>
+            firstDeal?.id
+                ? crmApi.quotations.getAll({ dealId: firstDeal.id, limit: 20 })
+                : null,
+        enabled: Boolean(isOpen && firstDeal?.id),
+    });
+    const linkedQuotations = quotationsRes?.data || [];
+
+    // Query Contracts for the first deal
+    const { data: contractsRes } = useQuery({
+        queryKey: ['crm', 'contracts', 'deal', firstDeal?.id],
+        queryFn: () =>
+            firstDeal?.id
+                ? crmApi.contracts.getAll({ dealId: firstDeal.id, limit: 20 })
+                : null,
+        enabled: Boolean(isOpen && firstDeal?.id),
+    });
+    const linkedContracts = contractsRes?.data || [];
 
     if (!isOpen || !record) return null;
 
@@ -57,6 +101,20 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
     const sortedStages = [...leadStatuses]
         .filter((s) => s.status === 'active' || s.id === record.leadStatusId)
         .sort((a, b) => a.stageOrder - b.stageOrder);
+
+    const isConverted =
+        linkedDeals.length > 0 ||
+        record.leadStatusId === 'crm-lst-4' ||
+        currentStage?.closingOutcome === 'won' ||
+        currentStage?.nameEn?.toLowerCase() === 'converted';
+
+    const isLost =
+        currentStage?.closingOutcome === 'lost' ||
+        currentStage?.nameEn?.toLowerCase() === 'disqualified' ||
+        currentStage?.nameEn?.toLowerCase() === 'lost';
+
+    const canCreateDeal =
+        Boolean(onCreateDeal) && !isConverted && !isLost && record.status === 'active';
 
     return (
         <div

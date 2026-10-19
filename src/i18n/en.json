@@ -4790,7 +4790,19 @@
           "dealCreatedModalTitle": "Deal Created Successfully",
           "dealCreatedModalDesc": "Commercial Deal {{dealCode}} has been generated and linked to Lead {{leadCode}}.",
           "createQuotationCta": "Create Quotation for Deal",
-          "viewDeal": "View Deals"
+          "viewDeal": "View Deals",
+          "commercialPipeline": "Commercial Pipeline & Deal Progression",
+          "commercialPipelineSubtitle": "Commercial opportunities, quotations, and contracts originating from this lead",
+          "noLinkedDeals": "No commercial deals created for this lead yet.",
+          "convertedToDeal": "Lead Converted to Deal",
+          "viewDealDetails": "View Deal Details",
+          "linkedQuotationsCount": "Linked Quotations ({{count}})",
+          "noLinkedQuotations": "No quotations drafted yet",
+          "linkedContractsCount": "Linked Contracts ({{count}})",
+          "noLinkedContracts": "No contracts executed yet",
+          "preOnboardCompanyAction": "Pre-Onboard Company",
+          "companyRequiredForDeal": "A linked client company is required to create a commercial deal.",
+          "selectCompanyFirst": "Link or onboard a company to convert this lead to a deal."
         },
         "importModal": {
           "title": "Import Leads Batch (CSV)",
@@ -4921,7 +4933,10 @@
         },
         "viewDrawer": {
           "title": "Company Corporate Profile",
-          "subtitle": "3-step onboarding record, legal registrations, and shareholder structure"
+          "subtitle": "3-step onboarding record, legal registrations, and shareholder structure",
+          "originatingLeadTitle": "Originating CRM Lead",
+          "viewOriginatingLead": "View Lead",
+          "leadArchivedNotice": "Lead Reference: {{leadId}} (Record archived or standalone)"
         },
         "empty": {
           "title": "No companies match your filter criteria",
@@ -5219,6 +5234,8 @@
           "companyLabel": "Customer Company",
           "selectCompany": "Select a company...",
           "selectCompanyToLink": "Select an active client company to complete Deal creation",
+          "leadWithoutCompanyWarning": "The originating Lead does not have a linked company. A deal requires an active client company.",
+          "preOnboardCompanyForLead": "Pre-Onboard Company for this Lead",
           "leadLabel": "Originating Lead (Optional)",
           "contactLabel": "Primary Contact (Optional)",
           "sectorLabel": "Industry Sector",

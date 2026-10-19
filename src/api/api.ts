@@ -4875,10 +4875,134 @@ export function checkCrmMasterDeletionEligibility(
 }
 
 // ----------------------------------------------------------------------------
+// Reusable Lead Contact -> Primary Company Contact Synchronizer
+// ----------------------------------------------------------------------------
+export function syncLeadContactToCompany(
+    lead: {
+        id: string;
+        title: string;
+        contactName?: string;
+        contactEmail?: string;
+        contactPhone?: string;
+        contactJobTitle?: string;
+    },
+    company: {
+        id: string;
+        nameEn: string;
+        nameAr: string;
+    },
+    creatorName?: string,
+    existingContactsList?: CrmContactRecord[]
+): CrmContactRecord[] {
+    if (
+        !lead.contactName?.trim() ||
+        !lead.contactEmail?.trim() ||
+        !lead.contactPhone?.trim() ||
+        !company.id
+    ) {
+        return (
+            existingContactsList ||
+            readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.CONTACTS,
+                initialCrmContacts
+            )
+        );
+    }
+
+    const currentContacts =
+        existingContactsList ||
+        readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+    let nextContactsList = [...currentContacts];
+    const leadEmailLower = lead.contactEmail.trim().toLowerCase();
+
+    const existingForThisCompany = nextContactsList.find(
+        (c) =>
+            c.companyId === company.id &&
+            c.email.trim().toLowerCase() === leadEmailLower
+    );
+
+    if (existingForThisCompany) {
+        nextContactsList = nextContactsList.map((item) =>
+            item.id === existingForThisCompany.id
+                ? {
+                      ...item,
+                      isPrimary: true,
+                      leadId: lead.id,
+                      leadTitle: lead.title,
+                      phone: lead.contactPhone || item.phone,
+                      jobTitle: lead.contactJobTitle || item.jobTitle,
+                  }
+                : item.companyId === company.id
+                  ? { ...item, isPrimary: false }
+                  : item
+        );
+    } else {
+        const duplicateGlobal = nextContactsList.find(
+            (c) => c.email.trim().toLowerCase() === leadEmailLower
+        );
+        if (duplicateGlobal && !duplicateGlobal.companyId) {
+            nextContactsList = nextContactsList.map((item) =>
+                item.id === duplicateGlobal.id
+                    ? {
+                          ...item,
+                          companyId: company.id,
+                          companyNameEn: company.nameEn,
+                          companyNameAr: company.nameAr,
+                          leadId: lead.id,
+                          leadTitle: lead.title,
+                          isPrimary: true,
+                      }
+                    : item.companyId === company.id
+                      ? { ...item, isPrimary: false }
+                      : item
+            );
+        } else if (!duplicateGlobal) {
+            nextContactsList = nextContactsList.map((item) =>
+                item.companyId === company.id
+                    ? { ...item, isPrimary: false }
+                    : item
+            );
+            const newContactRecord: CrmContactRecord = validateWithSchema(
+                crmContactSchema,
+                {
+                    id: generateDeterministicCrmId(nextContactsList, 'crm-cnt'),
+                    code: generateNextCrmCode(nextContactsList, 'CNT'),
+                    fullNameEn: lead.contactName.trim(),
+                    fullNameAr: lead.contactName.trim(),
+                    contactType: 'decision_maker',
+                    jobTitle: lead.contactJobTitle?.trim() || 'Primary Contact',
+                    department: 'Management',
+                    phone: lead.contactPhone.trim(),
+                    email: lead.contactEmail.trim(),
+                    companyId: company.id,
+                    companyNameEn: company.nameEn,
+                    companyNameAr: company.nameAr,
+                    leadId: lead.id,
+                    leadTitle: lead.title,
+                    isPrimary: true,
+                    status: 'active',
+                    createdAt: new Date().toISOString().split('T')[0],
+                    createdBy: creatorName || 'Karim Wagdi',
+                },
+                'Contact'
+            );
+            nextContactsList.unshift(newContactRecord);
+        }
+    }
+
+    setLocal(CRM_STORAGE_KEYS.CONTACTS, nextContactsList);
+    return nextContactsList;
+}
+
+// ----------------------------------------------------------------------------
 // Central Export: crmApi
 // ----------------------------------------------------------------------------
 
 export const crmApi = {
+    syncLeadContactToCompany,
     isRemoteBackendActive: isCrmRemoteBackendActive,
 
     resetAllCrmStorage: (): void => {
@@ -6632,12 +6756,19 @@ export const crmApi = {
             const compIdx = allCompanies.findIndex(
                 (c) => c.id === newRecord.companyId
             );
-            if (compIdx !== -1 && allCompanies[compIdx].leadId !== newRecord.id) {
-                allCompanies[compIdx] = {
-                    ...allCompanies[compIdx],
-                    leadId: newRecord.id,
-                };
-                setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+            if (compIdx !== -1) {
+                if (allCompanies[compIdx].leadId !== newRecord.id) {
+                    allCompanies[compIdx] = {
+                        ...allCompanies[compIdx],
+                        leadId: newRecord.id,
+                    };
+                    setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+                }
+                syncLeadContactToCompany(
+                    newRecord,
+                    allCompanies[compIdx],
+                    employee?.nameEn
+                );
             }
         }
 
@@ -6777,12 +6908,19 @@ export const crmApi = {
             const compIdx = allCompanies.findIndex(
                 (c) => c.id === updatedRecord.companyId
             );
-            if (compIdx !== -1 && allCompanies[compIdx].leadId !== updatedRecord.id) {
-                allCompanies[compIdx] = {
-                    ...allCompanies[compIdx],
-                    leadId: updatedRecord.id,
-                };
-                setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+            if (compIdx !== -1) {
+                if (allCompanies[compIdx].leadId !== updatedRecord.id) {
+                    allCompanies[compIdx] = {
+                        ...allCompanies[compIdx],
+                        leadId: updatedRecord.id,
+                    };
+                    setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+                }
+                syncLeadContactToCompany(
+                    updatedRecord,
+                    allCompanies[compIdx],
+                    employee?.nameEn
+                );
             }
         }
 
@@ -7156,13 +7294,20 @@ export const crmApi = {
         const companyId = generateDeterministicCrmId(companies, 'crm-comp');
         const companyCode = generateNextCrmCode(companies, 'CMP');
 
-        // Snapshot OWNERS for atomic rollback safety
+        // Snapshot OWNERS and CONTACTS for atomic rollback safety
         const existingOwners = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.OWNERS,
             initialCrmOwners
         );
         const ownersSnapshot = existingOwners.map((o) => ({ ...o }));
         const nextOwnersList = [...existingOwners];
+
+        const existingContacts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+        const contactsSnapshot = existingContacts.map((c) => ({ ...c }));
+        let nextContactsList = [...existingContacts];
 
         try {
             const enrichedOwners: CrmCompanyOwnerAssignment[] = (
@@ -7285,13 +7430,22 @@ export const crmApi = {
                 );
                 const leadIdx = leads.findIndex((l) => l.id === validated.leadId);
                 if (leadIdx !== -1) {
+                    const matchedLead = leads[leadIdx];
                     leads[leadIdx] = {
-                        ...leads[leadIdx],
+                        ...matchedLead,
                         companyId: newCompany.id,
                         companyNameEn: newCompany.nameEn,
                         companyNameAr: newCompany.nameAr,
                     };
                     setLocal(CRM_STORAGE_KEYS.LEADS, leads);
+
+                    // Register Lead Contact as Primary Contact for the new company (idempotent deduplication)
+                    nextContactsList = syncLeadContactToCompany(
+                        matchedLead,
+                        newCompany,
+                        employee?.nameEn || 'Karim Wagdi',
+                        nextContactsList
+                    );
                 }
             }
 
@@ -7360,8 +7514,9 @@ export const crmApi = {
 
             return newCompany;
         } catch (err) {
-            // Rollback OWNERS if anything failed during company creation
+            // Rollback OWNERS and CONTACTS if anything failed during company creation
             setLocal(CRM_STORAGE_KEYS.OWNERS, ownersSnapshot);
+            setLocal(CRM_STORAGE_KEYS.CONTACTS, contactsSnapshot);
             throw err;
         }
     },
@@ -7973,6 +8128,157 @@ export const crmApi = {
             resourceNameAr: newRecord.fullNameAr || newRecord.fullNameEn,
             detailsEn: `Created Contact "${newRecord.fullNameEn}" (${newRecord.code}).`,
             detailsAr: `تم إنشاء جهة الاتصال "${newRecord.fullNameAr || newRecord.fullNameEn}" (${newRecord.code}).`,
+            newState: newRecord,
+        });
+
+        return newRecord;
+    },
+
+    registerLeadContact: async (params: {
+        leadId?: string;
+        companyId: string;
+        contactName?: string;
+        contactPhone?: string;
+        contactEmail?: string;
+        contactJobTitle?: string;
+        isPrimary?: boolean;
+    }): Promise<CrmContactRecord | null> => {
+        const companies = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.COMPANIES,
+            initialCrmCompanies
+        );
+        const company = companies.find((c) => c.id === params.companyId);
+        if (!company) {
+            throw new CrmApiError({
+                message: `Company '${params.companyId}' does not exist.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        let contactName = params.contactName;
+        let contactPhone = params.contactPhone;
+        let contactEmail = params.contactEmail;
+        let contactJobTitle = params.contactJobTitle;
+        let leadTitle: string | undefined;
+
+        if (params.leadId) {
+            const leads = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.LEADS,
+                initialCrmLeads
+            );
+            const lead = leads.find((l) => l.id === params.leadId);
+            if (lead) {
+                contactName = contactName || lead.contactName;
+                contactPhone = contactPhone || lead.contactPhone;
+                contactEmail = contactEmail || lead.contactEmail;
+                contactJobTitle = contactJobTitle || lead.contactJobTitle;
+                leadTitle = lead.title;
+            }
+        }
+
+        if (!contactName || !contactEmail || !contactPhone) {
+            return null;
+        }
+
+        const emailLower = contactEmail.trim().toLowerCase();
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+
+        // Check if already registered for this company
+        const existingIdx = list.findIndex(
+            (c) => c.companyId === company.id && c.email.trim().toLowerCase() === emailLower
+        );
+        if (existingIdx !== -1) {
+            const updated = list.map((item, idx) =>
+                idx === existingIdx
+                    ? {
+                          ...item,
+                          isPrimary: params.isPrimary !== undefined ? params.isPrimary : item.isPrimary,
+                          phone: contactPhone || item.phone,
+                          jobTitle: contactJobTitle || item.jobTitle,
+                          leadId: params.leadId || item.leadId,
+                          leadTitle: leadTitle || item.leadTitle,
+                      }
+                    : (params.isPrimary ?? true) && item.companyId === company.id
+                      ? { ...item, isPrimary: false }
+                      : item
+            );
+            setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+            return updated[existingIdx];
+        }
+
+        // Check if contact with same email exists in system unlinked
+        const existingByEmail = list.find(
+            (c) => c.email.trim().toLowerCase() === emailLower
+        );
+        if (existingByEmail) {
+            if (!existingByEmail.companyId) {
+                const updated = list.map((item) =>
+                    item.id === existingByEmail.id
+                        ? {
+                              ...item,
+                              companyId: company.id,
+                              companyNameEn: company.nameEn,
+                              companyNameAr: company.nameAr,
+                              isPrimary: params.isPrimary !== undefined ? params.isPrimary : true,
+                              leadId: params.leadId || item.leadId,
+                              leadTitle: leadTitle || item.leadTitle,
+                          }
+                        : (params.isPrimary ?? true) && item.companyId === company.id
+                          ? { ...item, isPrimary: false }
+                          : item
+                );
+                setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+                return updated.find((c) => c.id === existingByEmail.id)!;
+            }
+            return existingByEmail;
+        }
+
+        // Demote other contacts on this company if new contact is primary
+        const normalized = (params.isPrimary ?? true)
+            ? list.map((item) =>
+                  item.companyId === company.id ? { ...item, isPrimary: false } : item
+              )
+            : list;
+
+        const newRecord: CrmContactRecord = validateWithSchema(
+            crmContactSchema,
+            {
+                id: generateDeterministicCrmId(list, 'crm-cnt'),
+                code: generateNextCrmCode(list, 'CNT'),
+                fullNameEn: contactName,
+                fullNameAr: contactName,
+                contactType: 'decision_maker',
+                jobTitle: contactJobTitle || 'Primary Contact',
+                department: 'Management',
+                phone: contactPhone,
+                email: contactEmail,
+                companyId: company.id,
+                companyNameEn: company.nameEn,
+                companyNameAr: company.nameAr,
+                leadId: params.leadId,
+                leadTitle,
+                isPrimary: params.isPrimary ?? true,
+                status: 'active',
+                createdAt: new Date().toISOString().split('T')[0],
+                createdBy: 'Karim Wagdi',
+            },
+            'Contact'
+        );
+
+        setLocal(CRM_STORAGE_KEYS.CONTACTS, [newRecord, ...normalized]);
+        recordCrmAuditEvent({
+            action: 'CREATED',
+            resourceType: 'Contact',
+            resourceId: newRecord.id,
+            resourceCode: newRecord.code,
+            resourceNameEn: newRecord.fullNameEn,
+            resourceNameAr: newRecord.fullNameAr || newRecord.fullNameEn,
+            detailsEn: `Registered primary Contact "${newRecord.fullNameEn}" (${newRecord.code}) for Company "${company.nameEn}" from Lead.`,
+            detailsAr: `تم تسجيل جهة الاتصال الرئيسية "${newRecord.fullNameAr || newRecord.fullNameEn}" (${newRecord.code}) لشركة "${company.nameAr}" من العميل المحتمل.`,
             newState: newRecord,
         });
 
@@ -8686,6 +8992,15 @@ export const crmApi = {
         getAll: (params?: CrmContactQueryParams) => crmApi.getContacts(params),
         getById: (id: string) => crmApi.getContactById(id),
         create: (data: CrmContactInput) => crmApi.createContact(data),
+        registerLeadContact: (params: {
+            leadId?: string;
+            companyId: string;
+            contactName?: string;
+            contactPhone?: string;
+            contactEmail?: string;
+            contactJobTitle?: string;
+            isPrimary?: boolean;
+        }) => crmApi.registerLeadContact(params),
         update: (id: string, data: Partial<CrmContactInput>) =>
             crmApi.updateContact(id, data),
         delete: (id: string) => crmApi.deleteContact(id),
