@@ -514,16 +514,10 @@ export const CustomerBranchesPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.branches.addBranch')}</span>
-                        </button>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* 4 KPI Cards */}

@@ -214,14 +214,10 @@ export const CustomerCompaniesPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer self-start sm:self-center shrink-0"
-                    >
-                        <Plus className="w-4 h-4 text-[#BFAB93]" />
-                        <span>{t('customer.pages.companies.addCompany')}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* KPI Metrics Summary Strip */}
@@ -420,22 +416,6 @@ export const CustomerCompaniesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(c.id)}
-                                                    title={
-                                                        c.status === 'active'
-                                                            ? t('customer.pages.companies.table.deactivate')
-                                                            : t('customer.pages.companies.table.activate')
-                                                    }
-                                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                                        c.status === 'active'
-                                                            ? 'text-[#265938] hover:bg-[#EAF3EC]'
-                                                            : 'text-[#857E74] hover:bg-[#EFECE6]'
-                                                    }`}
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -487,15 +467,6 @@ export const CustomerCompaniesPage: React.FC = () => {
                                 </span>
                                 {getStatusBadge(viewingCompany.status)}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => handleToggleStatus(viewingCompany.id)}
-                                className="text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
-                            >
-                                {viewingCompany.status === 'active'
-                                    ? t('customer.pages.companies.details.deactivate')
-                                    : t('customer.pages.companies.details.activate')}
-                            </button>
                         </div>
 
                         {/* Legal & Registration Grid */}
@@ -586,198 +557,6 @@ export const CustomerCompaniesPage: React.FC = () => {
                                 {t('customer.pages.companies.details.close')}
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Add Company Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-7 space-y-6 text-start">
-                        {/* Modal Header */}
-                        <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
-                            <div>
-                                <h2 className="text-lg font-bold text-[#0D0D0D]">
-                                    {t('customer.pages.companies.modal.addTitle')}
-                                </h2>
-                                <p className="text-xs text-[#857E74] mt-0.5">
-                                    {t('customer.pages.companies.modal.addSubtitle')}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsAddModalOpen(false)}
-                                className="p-1 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Form */}
-                        <form onSubmit={handleAddCompany} className="space-y-4 text-xs">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.nameAr')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.nameAr}
-                                        onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                                        placeholder="مثال: شركة الرواد للتجارة"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.nameEn')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.nameEn}
-                                        onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                                        placeholder="e.g. Al-Rowad Trading Co."
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.cr')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        maxLength={10}
-                                        value={formData.crNumber}
-                                        onChange={(e) => setFormData({ ...formData, crNumber: e.target.value })}
-                                        placeholder="1010XXXXXX"
-                                        dir="ltr"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.tax')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength={15}
-                                        value={formData.taxNumber}
-                                        onChange={(e) => setFormData({ ...formData, taxNumber: e.target.value })}
-                                        placeholder="300XXXXXXXXXXXX"
-                                        dir="ltr"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.sector')}
-                                    </label>
-                                    <select
-                                        value={formData.sectorKey}
-                                        onChange={(e) => setFormData({ ...formData, sectorKey: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                                    >
-                                        {SECTORS_LIST.map((s) => (
-                                            <option key={s.key} value={s.key}>
-                                                {isRtl ? s.ar : s.en}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.city')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={isRtl ? formData.cityAr : formData.cityEn}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                cityEn: e.target.value,
-                                                cityAr: e.target.value,
-                                            })
-                                        }
-                                        placeholder={isRtl ? 'الرياض' : 'Riyadh'}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="pt-2 border-t border-[#F0ECE6]">
-                                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#857E74] mb-2">
-                                    {t('customer.pages.companies.details.primaryContact')}
-                                </h3>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                            {t('customer.pages.companies.modal.contactName')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.contactName}
-                                            onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                                            placeholder="Eng. Ahmed..."
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                                {t('customer.pages.companies.modal.contactPhone')}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.contactPhone}
-                                                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                                                placeholder="+966 5X XXX XXXX"
-                                                dir="ltr"
-                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                                {t('customer.pages.companies.modal.contactEmail')}
-                                            </label>
-                                            <input
-                                                type="email"
-                                                value={formData.contactEmail}
-                                                onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                                                placeholder="representative@domain.sa"
-                                                dir="ltr"
-                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Submit Buttons */}
-                            <div className="pt-4 border-t border-[#F0ECE6] flex items-center justify-end gap-2.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    className="px-4 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#6E6862] transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.companies.modal.cancel')}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.companies.modal.save')}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}

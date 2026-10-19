@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -252,7 +252,7 @@ export const DealsPage: React.FC = () => {
     const totalRecords = dealsResponse?.total || 0;
     const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
 
-    const companies = companiesRes?.data || [];
+    const companies = useMemo(() => companiesRes?.data || [], [companiesRes?.data]);
     const leads = leadsRes?.data || [];
     const contacts = contactsRes?.data || [];
     const sectors = sectorsRes?.data || [];

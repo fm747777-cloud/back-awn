@@ -153,11 +153,11 @@ export const CannedRepliesPage = () => {
         onError: (error: any) => toast.error(error?.response?.data?.message || 'Failed to delete canned reply.'),
     });
 
-    const openForm = (mode: 'create' | 'edit' | 'view', reply: CannedReply | null = null) => {
+    const openForm = useCallback((mode: 'create' | 'edit' | 'view', reply: CannedReply | null = null) => {
         setFormMode(mode);
         setActiveReply(reply);
         setIsFormOpen(true);
-    };
+    }, []);
 
     const handleFormSubmit = (data: { subject: string; message: string }) => {
         if (formMode === 'edit' && activeReply) {
@@ -200,7 +200,7 @@ export const CannedRepliesPage = () => {
             header: 'Actions',
             cell: ({ row }: { row: any }) => <CannedReplyActionsMenu record={row.original} onView={(record) => openForm('view', record)} onEdit={(record) => openForm('edit', record)} onDelete={setReplyToDelete} />,
         },
-    ], [replies, pageIndex, pageSize]);
+    ], [openForm]);
 
     const handleExport = useCallback(() => {
         if (!replies.length) {
@@ -219,7 +219,7 @@ export const CannedRepliesPage = () => {
         const escapeCsv = (value: unknown): string =>
             `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-        const rows = replies.map((reply, index) => {
+        const rows = replies.map((reply) => {
             const createdAt = reply.createdAt
                 ? new Date(reply.createdAt)
                 : null;
@@ -260,7 +260,7 @@ export const CannedRepliesPage = () => {
         URL.revokeObjectURL(url);
 
         toast.success('Canned replies exported successfully.');
-    }, [replies, pageIndex, pageSize]);
+    }, [replies]);
 
     return (
         <div className="space-y-4">

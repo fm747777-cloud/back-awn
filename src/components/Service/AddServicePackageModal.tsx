@@ -50,7 +50,8 @@ export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({ 
         },
     });
 
-    const selectedGroupIds = watch("service_group_ids") || [];
+    const rawGroupIds = watch("service_group_ids");
+    const selectedGroupIds = useMemo(() => rawGroupIds || [], [rawGroupIds]);
 
     const { data: serviceGroupsResponse, isLoading: isLoadingGroups, isError: isGroupsError, refetch: refetchGroups } = useQuery({
         queryKey: ["service-groups"],

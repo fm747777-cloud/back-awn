@@ -11,7 +11,7 @@ import { assetApi } from '../../api/api';
 const PAGE_SIZE = 10;
 
 export const AssetStatusPage = () => {
-    const { t, i18n } = useTranslation();
+    const { i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
     const [data, setData] = useState<AssetStatus[]>([]);
@@ -124,7 +124,7 @@ export const AssetStatusPage = () => {
         }
     };
 
-    const handleDelete = async (item: AssetStatus) => {
+    const handleDelete = useCallback(async (item: AssetStatus) => {
         const confirmed = window.confirm(
             isRtl
                 ? `هل أنت متأكد من حذف الحالة "${item.name}"؟`
@@ -160,7 +160,7 @@ export const AssetStatusPage = () => {
         } finally {
             setDeletingId(null);
         }
-    };
+    }, [isRtl, data.length, pageIndex, fetchAssetStatuses]);
 
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
@@ -330,7 +330,7 @@ export const AssetStatusPage = () => {
                 },
             },
         ],
-        [isRtl, menuItemId, deletingId],
+        [isRtl, menuItemId, deletingId, handleDelete],
     );
 
     return (

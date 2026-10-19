@@ -48,7 +48,6 @@ export const DocumentTypeDrawer: React.FC<DocumentTypeDrawerProps> = ({
 
     useEffect(() => {
         if (!isOpen) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setName(editingItem?.name ?? '');
         setDescription(editingItem?.description ?? '');
         setDocumentCategoryId(

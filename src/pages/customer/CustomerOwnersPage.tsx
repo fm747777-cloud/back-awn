@@ -486,16 +486,10 @@ export const CustomerOwnersPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.owners.addOwner')}</span>
-                        </button>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* 4 KPI Cards */}
@@ -740,34 +734,6 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-
-                                                {/* Edit */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(item)}
-                                                    className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E5E0D8] transition-colors cursor-pointer"
-                                                    title={t('customer.pages.owners.table.edit')}
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-
-                                                {/* Toggle Status */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(item.id)}
-                                                    className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                                        item.status === 'active'
-                                                            ? 'text-[#265938] hover:text-[#1E5631] hover:bg-[#EAF3EC] border-transparent hover:border-[#C5DFCC]'
-                                                            : 'text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border-transparent hover:border-[#E5E0D8]'
-                                                    }`}
-                                                    title={
-                                                        item.status === 'active'
-                                                            ? t('customer.pages.owners.table.deactivate')
-                                                            : t('customer.pages.owners.table.activate')
-                                                    }
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -905,48 +871,21 @@ export const CustomerOwnersPage: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-between">
+                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-end">
                             <button
                                 type="button"
-                                onClick={() => handleToggleStatus(viewingOwner.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                    viewingOwner.status === 'active'
-                                        ? 'bg-white text-[#857E74] border-[#DDD6CC] hover:bg-[#FAF8F5]'
-                                        : 'bg-[#EAF3EC] text-[#265938] border-[#C5DFCC] hover:bg-[#D5EAD8]'
-                                }`}
+                                onClick={() => setViewingOwner(null)}
+                                className="px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                             >
-                                <Power className="w-3.5 h-3.5" />
-                                <span>
-                                    {viewingOwner.status === 'active'
-                                        ? t('customer.pages.owners.table.deactivate')
-                                        : t('customer.pages.owners.table.activate')}
-                                </span>
+                                {t('customer.pages.owners.details.close')}
                             </button>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleStartEdit(viewingOwner)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    <Edit3 className="w-3.5 h-3.5 text-[#857E74]" />
-                                    <span>{t('customer.pages.owners.details.edit')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingOwner(null)}
-                                    className="px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.owners.details.close')}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Add / Edit Modal */}
-            {isFormModalOpen && (
+            {/* Add / Edit Modal (Disabled in view-only Customer Portal) */}
+            {false && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
                     <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Header */}

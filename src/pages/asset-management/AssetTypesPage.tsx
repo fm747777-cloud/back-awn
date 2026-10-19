@@ -217,10 +217,10 @@ export const AssetTypePage: React.FC = () => {
         },
     });
 
-    const records = assetTypesQuery.data?.items ?? [];
+    const records = useMemo(() => assetTypesQuery.data?.items ?? [], [assetTypesQuery.data?.items]);
     const count = assetTypesQuery.data?.count ?? 0;
-    const categories = optionsQuery.data?.categories ?? [];
-    const servicePackages = optionsQuery.data?.packages ?? [];
+    const categories = useMemo(() => optionsQuery.data?.categories ?? [], [optionsQuery.data?.categories]);
+    const servicePackages = useMemo(() => optionsQuery.data?.packages ?? [], [optionsQuery.data?.packages]);
 
     useEffect(() => {
         if (assetTypesQuery.error) {

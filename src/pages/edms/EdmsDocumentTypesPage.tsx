@@ -114,8 +114,8 @@ export const EdmsDocumentTypesPage: React.FC = () => {
         staleTime: 30_000,
     });
 
-    const categories = categoriesQuery.data ?? [];
-    const documentTypes = typesQuery.data ?? [];
+    const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
+    const documentTypes = useMemo(() => typesQuery.data ?? [], [typesQuery.data]);
 
     const createMutation = useMutation({
         mutationFn: (data: DocumentTypeFormValues) => documentApi.createDocumentType({
