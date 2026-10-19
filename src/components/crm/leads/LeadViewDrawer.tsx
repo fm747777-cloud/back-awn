@@ -18,7 +18,6 @@ import {
     FileSpreadsheet,
     FileCheck2,
     ExternalLink,
-    AlertCircle,
     CheckCircle2,
     TrendingUp,
 } from 'lucide-react';
@@ -63,7 +62,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
     const navigate = useNavigate();
 
     // Query Deals for this Lead
-    const { data: dealsRes, isLoading: isDealsLoading } = useQuery({
+    const { data: dealsRes } = useQuery({
         queryKey: ['crm', 'deals', 'lead', record?.id],
         queryFn: () =>
             record?.id ? crmApi.deals.getAll({ leadId: record.id, limit: 20 }) : null,
@@ -245,8 +244,193 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                         </div>
                     </div>
 
-                    {/* Quick Deal Conversion CTA */}
-                    {onCreateDeal && (
+                    {/* Linked Commercial Deals & Progression */}
+                    {linkedDeals.length > 0 ? (
+                        <div className="rounded-xl border border-[#2D3F2C]/30 bg-[#2D3F2C]/5 p-4 space-y-3.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Briefcase size={15} className="text-[#2D3F2C]" />
+                                    <span className="text-xs font-bold text-[#0D0D0D]">
+                                        {t('crm.customer.leads.viewDrawer.commercialPipeline')}
+                                    </span>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-full bg-[#E9F5EE] border border-[#2E6B4E]/20 text-[11px] font-semibold text-[#2E6B4E] flex items-center gap-1">
+                                    <CheckCircle2 size={11} />
+                                    {t('crm.customer.leads.viewDrawer.convertedToDeal')}
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-[#6E6862]">
+                                {t('crm.customer.leads.viewDrawer.commercialPipelineSubtitle')}
+                            </p>
+
+                            {/* Deals List */}
+                            <div className="space-y-3">
+                                {linkedDeals.map((deal: CrmDealRecord) => (
+                                    <div
+                                        key={deal.id}
+                                        className="p-3.5 rounded-xl border border-[#E5E0D8] bg-white shadow-2xs space-y-3"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="space-y-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span
+                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#2D3F2C]"
+                                                        dir="ltr"
+                                                    >
+                                                        {deal.code}
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded-full bg-[#EEF2FF] border border-[#3730A3]/20 text-[11px] font-medium text-[#3730A3]">
+                                                        {t(`crm.commercial.deals.stages.${deal.stage}`, {
+                                                            defaultValue: deal.stage,
+                                                        })}
+                                                    </span>
+                                                    <span className="text-[11px] font-mono text-[#6E6862] flex items-center gap-1">
+                                                        <TrendingUp size={11} className="text-[#2D3F2C]" />
+                                                        {deal.probability}%
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-xs font-bold text-[#0D0D0D] truncate">
+                                                    {isRtl ? deal.titleAr || deal.titleEn : deal.titleEn}
+                                                </h4>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    onClose();
+                                                    navigate(`/crm/deals?search=${deal.code}`);
+                                                }}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[11px] font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0 shadow-2xs"
+                                                title={t('crm.customer.leads.viewDrawer.viewDealDetails')}
+                                            >
+                                                <ExternalLink size={11} />
+                                                <span>{t('crm.customer.leads.viewDrawer.viewDealDetails')}</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-[#F0ECE4]">
+                                            <div>
+                                                <span className="text-[#6E6862] block">
+                                                    {t('crm.commercial.deals.form.expectedValueLabel')}
+                                                </span>
+                                                <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                                                    {Number(deal.expectedValue || 0).toLocaleString()} {t('crm.customer.common.sarCurrency')}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="text-[#6E6862] block">
+                                                    {t('crm.commercial.deals.form.expectedCloseDateLabel')}
+                                                </span>
+                                                <span className="font-mono text-[#0D0D0D]" dir="ltr">
+                                                    {deal.expectedCloseDate || '—'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Linked Quotations */}
+                                        <div className="pt-2 border-t border-[#F0ECE4] space-y-1.5">
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="font-semibold text-[#0D0D0D] flex items-center gap-1.5">
+                                                    <FileSpreadsheet size={12} className="text-[#2D3F2C]" />
+                                                    {t('crm.customer.leads.viewDrawer.linkedQuotationsCount', {
+                                                        count: linkedQuotations.length,
+                                                    })}
+                                                </span>
+                                            </div>
+                                            {linkedQuotations.length > 0 ? (
+                                                <div className="space-y-1">
+                                                    {linkedQuotations.map((q) => (
+                                                        <div
+                                                            key={q.id}
+                                                            className="flex items-center justify-between p-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[11px]"
+                                                        >
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                                                                    {q.code}
+                                                                </span>
+                                                                <span className="px-1.5 py-0.2 rounded text-[10px] bg-white border border-[#E5E0D8] text-[#6E6862]">
+                                                                    {q.status}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-mono font-semibold text-[#0D0D0D]" dir="ltr">
+                                                                    {Number(q.grandTotal || 0).toLocaleString()} SAR
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        onClose();
+                                                                        navigate(`/crm/quotations?search=${q.code}`);
+                                                                    }}
+                                                                    className="text-[#2D3F2C] hover:underline cursor-pointer"
+                                                                >
+                                                                    <ExternalLink size={11} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-[11px] text-[#6E6862] italic">
+                                                    {t('crm.customer.leads.viewDrawer.noLinkedQuotations')}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Linked Contracts */}
+                                        <div className="pt-2 border-t border-[#F0ECE4] space-y-1.5">
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <span className="font-semibold text-[#0D0D0D] flex items-center gap-1.5">
+                                                    <FileCheck2 size={12} className="text-[#2D3F2C]" />
+                                                    {t('crm.customer.leads.viewDrawer.linkedContractsCount', {
+                                                        count: linkedContracts.length,
+                                                    })}
+                                                </span>
+                                            </div>
+                                            {linkedContracts.length > 0 ? (
+                                                <div className="space-y-1">
+                                                    {linkedContracts.map((c) => (
+                                                        <div
+                                                            key={c.id}
+                                                            className="flex items-center justify-between p-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[11px]"
+                                                        >
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                                                                    {c.code || c.contractNumber}
+                                                                </span>
+                                                                <span className="px-1.5 py-0.2 rounded text-[10px] bg-white border border-[#E5E0D8] text-[#6E6862]">
+                                                                    {c.status}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-mono font-semibold text-[#0D0D0D]" dir="ltr">
+                                                                    {Number(c.totalValue || 0).toLocaleString()} SAR
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        onClose();
+                                                                        navigate(`/crm/contracts?search=${c.code}`);
+                                                                    }}
+                                                                    className="text-[#2D3F2C] hover:underline cursor-pointer"
+                                                                >
+                                                                    <ExternalLink size={11} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-[11px] text-[#6E6862] italic">
+                                                    {t('crm.customer.leads.viewDrawer.noLinkedContracts')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : canCreateDeal && onCreateDeal ? (
                         <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="space-y-0.5 min-w-0">
                                 <div className="flex items-center gap-2">
@@ -274,7 +458,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                 <span>{t('crm.customer.leads.viewDrawer.createDealBtn')}</span>
                             </button>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Lead & Company Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
@@ -424,7 +608,19 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-2.5">
-                    {onCreateDeal ? (
+                    {linkedDeals.length > 0 && firstDeal ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose();
+                                navigate(`/crm/deals?search=${firstDeal.code}`);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                        >
+                            <ExternalLink size={13} />
+                            <span>{t('crm.customer.leads.viewDrawer.viewDeal')}</span>
+                        </button>
+                    ) : canCreateDeal && onCreateDeal ? (
                         <button
                             type="button"
                             onClick={() => onCreateDeal(record)}

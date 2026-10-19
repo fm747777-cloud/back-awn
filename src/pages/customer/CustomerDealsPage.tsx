@@ -16,7 +16,14 @@ import {
     DollarSign,
     TrendingUp,
     Percent,
+    Lock,
 } from 'lucide-react';
+import {
+    UnifiedCustomerDealItem,
+    DealOriginSource,
+    loadMappedCrmDealsSync,
+    loadMappedCrmDeals,
+} from './crmCustomerDealAdapter';
 
 export type CustomerDealStage =
     | 'discovery'
@@ -154,8 +161,8 @@ export const CustomerDealsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language?.startsWith('ar');
 
-    // Persistence in awn_customer_deals_v1
-    const [deals, setDeals] = useState<CustomerDealItem[]>(() => {
+    // Persistence in awn_customer_deals_v1 (Strictly isolated from CRM collections)
+    const [customerDeals, setCustomerDeals] = useState<CustomerDealItem[]>(() => {
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
                 const stored = localStorage.getItem(STORAGE_KEY);
@@ -172,23 +179,54 @@ export const CustomerDealsPage: React.FC = () => {
         return INITIAL_DEALS;
     });
 
+    // Mapped CRM Deals (Read-Only Demo Integration, never persisted to awn_customer_deals_v1)
+    const [crmDeals, setCrmDeals] = useState<UnifiedCustomerDealItem[]>(() => {
+        return loadMappedCrmDealsSync();
+    });
+
+    useEffect(() => {
+        let isMounted = true;
+        loadMappedCrmDeals().then((mapped) => {
+            if (isMounted) {
+                setCrmDeals(mapped);
+            }
+        });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Strict persistence: ONLY customerDeals are saved to awn_customer_deals_v1
     useEffect(() => {
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(deals));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(customerDeals));
             }
         } catch {
             // ignore
         }
-    }, [deals]);
+    }, [customerDeals]);
+
+    // Unified Deals: Wraps customer & read-only CRM deals with source tagging & zero collision
+    const unifiedDeals: UnifiedCustomerDealItem[] = useMemo(() => {
+        const customerAdapted: UnifiedCustomerDealItem[] = customerDeals.map((d) => ({
+            ...d,
+            source: 'customer' as const,
+            compositeId: `customer:${d.id}`,
+            isReadOnly: false,
+        }));
+        return [...customerAdapted, ...crmDeals];
+    }, [customerDeals, crmDeals]);
 
     // Filters
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | CustomerDealStatus>('all');
     const [stageFilter, setStageFilter] = useState<'all' | CustomerDealStage>('all');
+    const [companyFilter, setCompanyFilter] = useState<'all' | string>('all');
+    const [sourceFilter, setSourceFilter] = useState<'all' | DealOriginSource>('all');
 
     // Drawer / Modal states
-    const [viewingDeal, setViewingDeal] = useState<CustomerDealItem | null>(null);
+    const [viewingDeal, setViewingDeal] = useState<UnifiedCustomerDealItem | null>(null);
     const [editingDeal, setEditingDeal] = useState<CustomerDealItem | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -213,7 +251,7 @@ export const CustomerDealsPage: React.FC = () => {
 
     // Filtered deals
     const filteredDeals = useMemo(() => {
-        return deals.filter((d) => {
+        return unifiedDeals.filter((d) => {
             const matchesSearch =
                 !search.trim() ||
                 d.nameEn.toLowerCase().includes(search.toLowerCase()) ||
@@ -224,17 +262,19 @@ export const CustomerDealsPage: React.FC = () => {
 
             const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
             const matchesStage = stageFilter === 'all' || d.stage === stageFilter;
+            const matchesCompany = companyFilter === 'all' || d.companyId === companyFilter;
+            const matchesSource = sourceFilter === 'all' || d.source === sourceFilter;
 
-            return matchesSearch && matchesStatus && matchesStage;
+            return matchesSearch && matchesStatus && matchesStage && matchesCompany && matchesSource;
         });
-    }, [deals, search, statusFilter, stageFilter]);
+    }, [unifiedDeals, search, statusFilter, stageFilter, companyFilter, sourceFilter]);
 
     // KPIs
     const kpis = useMemo(() => {
-        const total = deals.length;
-        const openDeals = deals.filter((d) => d.status === 'open');
-        const wonDeals = deals.filter((d) => d.status === 'won');
-        const lostDeals = deals.filter((d) => d.status === 'lost');
+        const total = unifiedDeals.length;
+        const openDeals = unifiedDeals.filter((d) => d.status === 'open');
+        const wonDeals = unifiedDeals.filter((d) => d.status === 'won');
+        const lostDeals = unifiedDeals.filter((d) => d.status === 'lost');
 
         const pipelineValue = openDeals.reduce((sum, d) => sum + d.value, 0);
         const wonValue = wonDeals.reduce((sum, d) => sum + d.value, 0);
@@ -248,7 +288,7 @@ export const CustomerDealsPage: React.FC = () => {
             wonValue,
             winRate,
         };
-    }, [deals]);
+    }, [unifiedDeals]);
 
     // Format currency
     const formatCurrency = (val: number) => {
@@ -257,6 +297,12 @@ export const CustomerDealsPage: React.FC = () => {
 
     // Stage updates
     const handleQuickStageChange = (id: string, newStage: CustomerDealStage) => {
+        // Guard: CRM deals are strictly read-only
+        const targetDeal = unifiedDeals.find((d) => d.id === id || d.compositeId === id);
+        if (targetDeal?.isReadOnly) {
+            return;
+        }
+
         let newStatus: CustomerDealStatus = 'open';
         let newProb = 50;
 
@@ -274,7 +320,7 @@ export const CustomerDealsPage: React.FC = () => {
             newProb = 75;
         }
 
-        setDeals((prev) =>
+        setCustomerDeals((prev) =>
             prev.map((d) =>
                 d.id === id
                     ? {
@@ -304,7 +350,10 @@ export const CustomerDealsPage: React.FC = () => {
     };
 
     // Open Edit Modal
-    const handleStartEdit = (deal: CustomerDealItem) => {
+    const handleStartEdit = (deal: CustomerDealItem | UnifiedCustomerDealItem) => {
+        if ('isReadOnly' in deal && deal.isReadOnly) {
+            return;
+        }
         setEditingDeal(deal);
         setFormData({
             nameEn: deal.nameEn,
@@ -342,7 +391,7 @@ export const CustomerDealsPage: React.FC = () => {
         const selectedComp = AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
 
         if (editingDeal) {
-            setDeals((prev) =>
+            setCustomerDeals((prev) =>
                 prev.map((d) =>
                     d.id === editingDeal.id
                         ? {
@@ -365,7 +414,7 @@ export const CustomerDealsPage: React.FC = () => {
             setEditingDeal(null);
             showToast(t('customer.pages.deals.feedback.dealUpdated'));
         } else {
-            const nextCodeNum = deals.length + 1;
+            const nextCodeNum = customerDeals.length + 1;
             const newCode = `DL-2026-${String(nextCodeNum).padStart(3, '0')}`;
 
             const newDeal: CustomerDealItem = {
@@ -385,7 +434,7 @@ export const CustomerDealsPage: React.FC = () => {
                 createdAt: new Date().toISOString().split('T')[0],
             };
 
-            setDeals([newDeal, ...deals]);
+            setCustomerDeals([newDeal, ...customerDeals]);
             setIsAddModalOpen(false);
             showToast(t('customer.pages.deals.feedback.dealAdded'));
         }
@@ -395,6 +444,8 @@ export const CustomerDealsPage: React.FC = () => {
         setSearch('');
         setStatusFilter('all');
         setStageFilter('all');
+        setCompanyFilter('all');
+        setSourceFilter('all');
     };
 
     const getStageBadge = (stage: CustomerDealStage) => {
@@ -599,7 +650,32 @@ export const CustomerDealsPage: React.FC = () => {
                         <option value="closed_lost">{t('customer.pages.deals.stages.closed_lost')}</option>
                     </select>
 
-                    {(search || statusFilter !== 'all' || stageFilter !== 'all') && (
+                    <select
+                        value={companyFilter}
+                        onChange={(e) => setCompanyFilter(e.target.value)}
+                        aria-label={t('customer.pages.deals.filterCompany')}
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                    >
+                        <option value="all">{t('customer.pages.deals.companyAll')}</option>
+                        {AVAILABLE_COMPANIES.map((c) => (
+                            <option key={c.id} value={c.id}>
+                                {isRtl ? c.ar : c.en}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={sourceFilter}
+                        onChange={(e) => setSourceFilter(e.target.value as any)}
+                        aria-label={t('customer.pages.deals.filterSource')}
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                    >
+                        <option value="all">{t('customer.pages.deals.sourceAll')}</option>
+                        <option value="customer">{t('customer.pages.deals.sourceCustomer')}</option>
+                        <option value="crm">{t('customer.pages.deals.sourceCrm')}</option>
+                    </select>
+
+                    {(search || statusFilter !== 'all' || stageFilter !== 'all' || companyFilter !== 'all' || sourceFilter !== 'all') && (
                         <button
                             type="button"
                             onClick={resetFilters}
@@ -648,7 +724,7 @@ export const CustomerDealsPage: React.FC = () => {
                                 </tr>
                             ) : (
                                 filteredDeals.map((deal) => (
-                                    <tr key={deal.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                                    <tr key={deal.compositeId || deal.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
                                         {/* Deal Name & Code */}
                                         <td className="px-5 py-3.5 font-medium text-[#0D0D0D]">
                                             <div className="flex items-center gap-3">
@@ -659,9 +735,21 @@ export const CustomerDealsPage: React.FC = () => {
                                                     <p className="font-bold text-sm text-[#0D0D0D]">
                                                         {isRtl ? deal.nameAr : deal.nameEn}
                                                     </p>
-                                                    <span className="font-mono text-[11px] text-[#857E74]" dir="ltr">
-                                                        {deal.code}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <span className="font-mono text-[11px] text-[#857E74]" dir="ltr">
+                                                            {deal.code}
+                                                        </span>
+                                                        {deal.source === 'crm' ? (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EAEFF8] text-[#2A4365] border border-[#CBD8EC]">
+                                                                <Briefcase className="w-2.5 h-2.5" />
+                                                                {t('customer.pages.deals.badgeCrm')}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] text-[#857E74] border border-[#E5E0D8]">
+                                                                {t('customer.pages.deals.badgeCustomer')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -708,14 +796,23 @@ export const CustomerDealsPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(deal)}
-                                                    title={t('customer.pages.deals.table.edit')}
-                                                    className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
+                                                {deal.isReadOnly ? (
+                                                    <span
+                                                        title={t('customer.pages.deals.crmReadOnlyTooltip')}
+                                                        className="p-1.5 rounded-lg text-[#857E74] opacity-50 cursor-not-allowed inline-flex items-center"
+                                                    >
+                                                        <Lock className="w-4 h-4" />
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleStartEdit(deal)}
+                                                        title={t('customer.pages.deals.table.edit')}
+                                                        className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                                    >
+                                                        <Edit3 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -759,6 +856,19 @@ export const CustomerDealsPage: React.FC = () => {
                             </button>
                         </div>
 
+                        {/* Read-Only CRM Notice Banner */}
+                        {viewingDeal.isReadOnly && (
+                            <div className="p-3.5 rounded-xl bg-[#EAEFF8]/60 border border-[#CBD8EC] flex items-start gap-2.5 text-xs text-[#2A4365]">
+                                <Lock className="w-4 h-4 text-[#2A4365] shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-bold">{t('customer.pages.deals.crmNoticeTitle')}</p>
+                                    <p className="text-[11px] text-[#4A5D6E] mt-0.5 leading-relaxed">
+                                        {t('customer.pages.deals.crmNoticeDesc')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Commercial Summary Strip */}
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
@@ -784,28 +894,30 @@ export const CustomerDealsPage: React.FC = () => {
                                 {getStageBadge(viewingDeal.stage)}
                             </div>
 
-                            {/* Quick Stage Transitions */}
-                            <div className="pt-2 border-t border-[#E5E0D8] flex flex-wrap items-center gap-1.5">
-                                <span className="text-[11px] font-semibold text-[#857E74] me-2">
-                                    {t('customer.pages.deals.table.quickStage')}:
-                                </span>
-                                {(['discovery', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as CustomerDealStage[]).map(
-                                    (stg) => (
-                                        <button
-                                            key={stg}
-                                            type="button"
-                                            onClick={() => handleQuickStageChange(viewingDeal.id, stg)}
-                                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                                                viewingDeal.stage === stg
-                                                    ? 'bg-[#2D3F2C] text-white'
-                                                    : 'bg-white border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#FAF8F5]'
-                                            }`}
-                                        >
-                                            {t(`customer.pages.deals.stages.${stg}`)}
-                                        </button>
-                                    )
-                                )}
-                            </div>
+                            {/* Quick Stage Transitions (Disabled for CRM read-only deals) */}
+                            {!viewingDeal.isReadOnly && (
+                                <div className="pt-2 border-t border-[#E5E0D8] flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[11px] font-semibold text-[#857E74] me-2">
+                                        {t('customer.pages.deals.table.quickStage')}:
+                                    </span>
+                                    {(['discovery', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as CustomerDealStage[]).map(
+                                        (stg) => (
+                                            <button
+                                                key={stg}
+                                                type="button"
+                                                onClick={() => handleQuickStageChange(viewingDeal.id, stg)}
+                                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                                                    viewingDeal.stage === stg
+                                                        ? 'bg-[#2D3F2C] text-white'
+                                                        : 'bg-white border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#FAF8F5]'
+                                                }`}
+                                            >
+                                                {t(`customer.pages.deals.stages.${stg}`)}
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Milestones & Timeline */}
@@ -840,13 +952,15 @@ export const CustomerDealsPage: React.FC = () => {
 
                         {/* Footer */}
                         <div className="pt-4 border-t border-[#F0ECE6] flex items-center justify-end gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => handleStartEdit(viewingDeal)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                            >
-                                {t('customer.pages.deals.modal.editTitle')}
-                            </button>
+                            {!viewingDeal.isReadOnly && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleStartEdit(viewingDeal)}
+                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                                >
+                                    {t('customer.pages.deals.modal.editTitle')}
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => setViewingDeal(null)}

@@ -7307,7 +7307,7 @@ export const crmApi = {
             initialCrmContacts
         );
         const contactsSnapshot = existingContacts.map((c) => ({ ...c }));
-        let nextContactsList = [...existingContacts];
+        const nextContactsList = [...existingContacts];
 
         try {
             const enrichedOwners: CrmCompanyOwnerAssignment[] = (
@@ -7440,7 +7440,7 @@ export const crmApi = {
                     setLocal(CRM_STORAGE_KEYS.LEADS, leads);
 
                     // Register Lead Contact as Primary Contact for the new company (idempotent deduplication)
-                    nextContactsList = syncLeadContactToCompany(
+                    syncLeadContactToCompany(
                         matchedLead,
                         newCompany,
                         employee?.nameEn || 'Karim Wagdi',
@@ -8084,6 +8084,46 @@ export const crmApi = {
                 validated.email.trim().toLowerCase()
         );
         if (duplicateEmail) {
+            if (linkedCompany && duplicateEmail.companyId === linkedCompany.id) {
+                const updated = list.map((item) =>
+                    item.id === duplicateEmail.id
+                        ? validateWithSchema(
+                              crmContactSchema,
+                              {
+                                  ...item,
+                                  ...validated,
+                                  id: item.id,
+                                  code: item.code,
+                                  companyId: linkedCompany.id,
+                                  companyNameEn: linkedCompany.nameEn,
+                                  companyNameAr: linkedCompany.nameAr,
+                                  leadId: linkedLead?.id || item.leadId,
+                                  leadTitle: linkedLead?.title || item.leadTitle,
+                                  isPrimary: validated.isPrimary ?? item.isPrimary,
+                                  updatedAt: new Date().toISOString().split('T')[0],
+                              },
+                              'Contact'
+                          )
+                        : (validated.isPrimary ?? true) && item.companyId === linkedCompany.id
+                          ? { ...item, isPrimary: false }
+                          : item
+                );
+                setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+                const enriched = updated.find((c) => c.id === duplicateEmail.id)!;
+                recordCrmAuditEvent({
+                    action: 'UPDATED',
+                    resourceType: 'Contact',
+                    resourceId: enriched.id,
+                    resourceCode: enriched.code,
+                    resourceNameEn: enriched.fullNameEn,
+                    resourceNameAr: enriched.fullNameAr || enriched.fullNameEn,
+                    detailsEn: `Updated Contact "${enriched.fullNameEn}" (${enriched.code}).`,
+                    detailsAr: `تم تحديث جهة الاتصال "${enriched.fullNameAr || enriched.fullNameEn}" (${enriched.code}).`,
+                    newState: enriched,
+                });
+                return enriched;
+            }
+
             throw new CrmApiError({
                 message: `Contact with email "${validated.email}" already exists (${duplicateEmail.code}).`,
                 statusCode: 409,

@@ -26,7 +26,6 @@ import {
     Mail,
     Building2,
     Filter,
-    Briefcase,
     FileText,
 } from 'lucide-react';
 import { crmApi } from '../../api/api';
