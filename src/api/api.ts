@@ -2341,7 +2341,7 @@ const initialCrmLeadStatuses: CrmLeadStatusRecord[] = [
         nameAr: 'مؤهل',
         stageOrder: 3,
         probability: 60,
-        colorCode: '#265938',
+        colorCode: '#037F8C',
         isDefault: false,
         isClosingStage: false,
         closingOutcome: 'none',
@@ -2359,7 +2359,7 @@ const initialCrmLeadStatuses: CrmLeadStatusRecord[] = [
         nameAr: 'تم التحويل لصفقة',
         stageOrder: 4,
         probability: 100,
-        colorCode: '#2D3F2C',
+        colorCode: '#037F8C',
         isDefault: false,
         isClosingStage: true,
         closingOutcome: 'won',
@@ -4396,7 +4396,7 @@ function readNormalizedLeadStatuses(): CrmLeadStatusRecord[] {
             const seed = seedById.get(item.id);
             return {
                 ...item,
-                colorCode: item.colorCode || seed?.colorCode || '#2D3F2C',
+                colorCode: item.colorCode || seed?.colorCode || '#037F8C',
                 isDefault:
                     typeof item.isDefault === 'boolean'
                         ? item.isDefault
@@ -5261,7 +5261,7 @@ export const crmApi = {
             crmLeadStatusSchema,
             {
                 ...validated,
-                colorCode: validated.colorCode || '#2D3F2C',
+                colorCode: validated.colorCode || '#037F8C',
                 closingOutcome: validated.isClosingStage
                     ? validated.closingOutcome && validated.closingOutcome !== 'none'
                         ? validated.closingOutcome
@@ -5340,7 +5340,7 @@ export const crmApi = {
         const updatedRecord: CrmLeadStatusRecord = {
             ...previous,
             ...merged,
-            colorCode: merged.colorCode || previous.colorCode || '#2D3F2C',
+            colorCode: merged.colorCode || previous.colorCode || '#037F8C',
             closingOutcome: merged.isClosingStage
                 ? merged.closingOutcome && merged.closingOutcome !== 'none'
                     ? merged.closingOutcome

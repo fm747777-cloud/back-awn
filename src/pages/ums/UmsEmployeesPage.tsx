@@ -665,7 +665,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             {t('ums.employees.title')}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             UMS-EMP
@@ -698,7 +698,7 @@ export const UmsEmployeesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees/new')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={15} />
                         <span>{t('ums.employees.actions.addEmployee')}</span>
@@ -725,7 +725,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                         <Users size={18} />
                     </div>
                 </div>
@@ -737,15 +737,15 @@ export const UmsEmployeesPage: React.FC = () => {
                             {t('ums.employees.kpis.activeEmployees')}
                         </p>
                         <div className="flex items-baseline gap-2 mt-1.5">
-                            <span className="text-2xl font-bold font-mono text-[#265938]">
+                            <span className="text-2xl font-bold font-mono text-[#037F8C]">
                                 {kpis.activeEmployees}
                             </span>
-                            <span className="text-[11px] text-[#265938] font-medium">
+                            <span className="text-[11px] text-[#037F8C] font-medium">
                                 {t('ums.employees.kpis.activeSub')}
                             </span>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                    <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                         <UserCheck size={18} />
                     </div>
                 </div>
@@ -837,7 +837,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             {t('ums.employees.kpis.invitedEmployees')}
                         </p>
                         <div className="flex items-baseline gap-2 mt-1.5">
-                            <span className="text-2xl font-bold font-mono text-[#2D3F2C]">
+                            <span className="text-2xl font-bold font-mono text-[#037F8C]">
                                 {kpis.invitedEmployees}
                             </span>
                             <span className="text-[11px] text-[#6E6862]">
@@ -845,7 +845,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                         <MailCheck size={18} />
                     </div>
                 </div>
@@ -889,7 +889,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 placeholder={t('ums.employees.filters.searchPlaceholder')}
-                                className="w-full ps-9 pe-8 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-all"
+                                className="w-full ps-9 pe-8 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-all"
                             />
                             {searchInput && (
                                 <button
@@ -927,7 +927,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                 }}
                                                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                                                     isActive
-                                                        ? 'bg-[#2D3F2C] text-white shadow-2xs'
+                                                        ? 'bg-[#037F8C] text-white shadow-2xs'
                                                         : 'text-[#6E6862] hover:text-[#0D0D0D]'
                                                 }`}
                                             >
@@ -965,7 +965,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                     setCurrentPage(1);
                                 }}
                                 aria-label={t('ums.employees.filters.departmentLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
                                     {t('ums.employees.filters.allDepartments')}
@@ -993,7 +993,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                     setCurrentPage(1);
                                 }}
                                 aria-label={t('ums.employees.filters.designationLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
                                     {t('ums.employees.filters.allDesignations')}
@@ -1021,7 +1021,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                     setCurrentPage(1);
                                 }}
                                 aria-label={t('ums.employees.filters.branchLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
                                     {t('ums.employees.filters.allBranches')}
@@ -1051,7 +1051,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                     setCurrentPage(1);
                                 }}
                                 aria-label={t('ums.employees.filters.contractTypeLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
                                     {t('ums.employees.filters.allContractTypes')}
@@ -1078,7 +1078,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                     setCurrentPage(1);
                                 }}
                                 aria-label={t('ums.employees.filters.probationLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
                                     {t('ums.employees.filters.allProbation')}
@@ -1096,8 +1096,8 @@ export const UmsEmployeesPage: React.FC = () => {
 
                 {/* Bulk Operations Bar */}
                 {selectedIds.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#EAF3EC] border-b border-[#265938]/20 text-xs">
-                        <span className="font-semibold text-[#265938]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#EAF3EC] border-b border-[#037F8C]/20 text-xs">
+                        <span className="font-semibold text-[#037F8C]">
                             {t('ums.employees.table.selectedCount', {
                                 count: selectedIds.length,
                             })}
@@ -1107,7 +1107,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleBulkStatusChange('Active')}
-                                className="px-2.5 py-1 rounded bg-white text-[#265938] border border-[#265938]/30 font-semibold hover:bg-[#FAF8F5] cursor-pointer"
+                                className="px-2.5 py-1 rounded bg-white text-[#037F8C] border border-[#037F8C]/30 font-semibold hover:bg-[#FAF8F5] cursor-pointer"
                             >
                                 {t('ums.employees.actions.bulkActivate')}
                             </button>
@@ -1123,7 +1123,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleExportCsv(true)}
-                                className="px-2.5 py-1 rounded bg-white text-[#2D3F2C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
+                                className="px-2.5 py-1 rounded bg-white text-[#037F8C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
                             >
                                 {t('ums.employees.actions.bulkExport')}
                             </button>
@@ -1152,7 +1152,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                         aria-label={t('common.selectAll', {
                                             defaultValue: 'Select all visible rows',
                                         })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                     />
                                 </th>
                                 <th className="py-3 px-4 text-start">
@@ -1207,7 +1207,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                 <button
                                                     type="button"
                                                     onClick={handleResetFilters}
-                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                                 >
                                                     <RotateCcw size={12} />
                                                     <span>
@@ -1251,7 +1251,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                     checked={isSelected}
                                                     onChange={() => handleToggleSelectRow(emp.id)}
                                                     aria-label={emp.code}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                    className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                                 />
                                             </td>
 
@@ -1262,7 +1262,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                     onClick={() =>
                                                         navigate(`/ums/employees/${emp.id}`)
                                                     }
-                                                    className="font-mono font-bold text-[#2D3F2C] hover:underline cursor-pointer"
+                                                    className="font-mono font-bold text-[#037F8C] hover:underline cursor-pointer"
                                                     dir="ltr"
                                                 >
                                                     {emp.code}
@@ -1283,7 +1283,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                             className="w-8 h-8 rounded-full object-cover border border-[#E5E0D8] shrink-0"
                                                         />
                                                     ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                                                        <div className="w-8 h-8 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
                                                             {getInitials(emp.nameEn, emp.nameAr)}
                                                         </div>
                                                     )}
@@ -1293,7 +1293,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                             onClick={() =>
                                                                 navigate(`/ums/employees/${emp.id}`)
                                                             }
-                                                            className="font-bold text-[#0D0D0D] hover:text-[#2D3F2C] transition-colors text-start block truncate cursor-pointer"
+                                                            className="font-bold text-[#0D0D0D] hover:text-[#037F8C] transition-colors text-start block truncate cursor-pointer"
                                                         >
                                                             {isRtl
                                                                 ? emp.nameAr || emp.nameEn
@@ -1357,7 +1357,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                             <td className="py-3 px-4">
                                                 {role ? (
                                                     <div>
-                                                        <span className="font-semibold text-[#2D3F2C] block">
+                                                        <span className="font-semibold text-[#037F8C] block">
                                                             {isRtl ? role.nameAr : role.nameEn}
                                                         </span>
                                                         {secGroup && (
@@ -1427,9 +1427,9 @@ export const UmsEmployeesPage: React.FC = () => {
                                                             rx="3"
                                                             className={
                                                                 completion.percentage === 100
-                                                                    ? 'fill-[#265938]'
+                                                                    ? 'fill-[#037F8C]'
                                                                     : completion.percentage >= 75
-                                                                    ? 'fill-[#2D3F2C]'
+                                                                    ? 'fill-[#037F8C]'
                                                                     : 'fill-[#C28E3A]'
                                                             }
                                                         />
@@ -1445,7 +1445,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                         onClick={() => handleToggleStatus(emp)}
                                                         className={`inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors ${
                                                             emp.status === 'Active'
-                                                                ? 'text-[#265938] hover:text-[#1B4D3E]'
+                                                                ? 'text-[#037F8C] hover:text-[#1B4D3E]'
                                                                 : emp.status === 'Draft'
                                                                 ? 'text-[#C28E3A] hover:text-[#0D0D0D]'
                                                                 : 'text-[#857E74] hover:text-[#0D0D0D]'
@@ -1461,7 +1461,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                         <span
                                                             className={`w-2 h-2 rounded-full ${
                                                                 emp.status === 'Active'
-                                                                    ? 'bg-[#265938]'
+                                                                    ? 'bg-[#037F8C]'
                                                                     : emp.status === 'Draft'
                                                                     ? 'bg-[#C28E3A]'
                                                                     : 'bg-[#857E74]'
@@ -1515,7 +1515,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleSendInvitation(emp)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                                                         title={
                                                             computeEmployeeInvitationStatus(emp) ===
                                                             'Not Sent'
@@ -1535,7 +1535,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                         onClick={() => handleToggleStatus(emp)}
                                                         className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                                                             emp.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
+                                                                ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
                                                                 : 'text-[#857E74] hover:bg-[#FAF8F5]'
                                                         }`}
                                                         title={
@@ -1578,7 +1578,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                         >
                             {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
                                 <option key={opt} value={opt}>
@@ -1718,7 +1718,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                 handleToggleStatus(deletingEmployee);
                                                 setDeletingEmployee(null);
                                             }}
-                                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                            className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                         >
                                             {t('ums.employees.actions.deactivateInstead')}
                                         </button>
@@ -1805,7 +1805,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         {isRtl ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
                         <span>{t('ums.employees.actions.backToList')}</span>
@@ -1825,7 +1825,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees')}
-                        className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <span>{t('ums.employees.actions.backToList')}</span>
                     </button>
@@ -1966,7 +1966,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     : employee.nameEn || employee.nameAr}
                             </h1>
                             <span
-                                className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                 dir="ltr"
                             >
                                 {employee.code}
@@ -1992,7 +1992,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleSendInvitation}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Send size={13} />
                         <span>
@@ -2018,7 +2018,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate(`/ums/employees/${employee.id}/edit`)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Pencil size={13} />
                         <span>{t('ums.employees.actions.editEmployee')}</span>
@@ -2062,7 +2062,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate(`/ums/employees/${employee.id}/edit`)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors shrink-0 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors shrink-0 cursor-pointer"
                     >
                         <Pencil size={13} />
                         <span>{t('ums.employees.actions.editEmployee')}</span>
@@ -2080,7 +2080,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             className="w-14 h-14 rounded-full object-cover border border-[#E5E0D8] shrink-0"
                         />
                     ) : (
-                        <div className="w-14 h-14 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-base shrink-0">
+                        <div className="w-14 h-14 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-base shrink-0">
                             {getInitials(employee.nameEn, employee.nameAr)}
                         </div>
                     )}
@@ -2089,7 +2089,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             <h2 className="text-lg font-bold text-[#0D0D0D]">
                                 {employee.nameEn}
                             </h2>
-                            <span className="text-sm font-semibold text-[#2D3F2C]" dir="rtl">
+                            <span className="text-sm font-semibold text-[#037F8C]" dir="rtl">
                                 ({employee.nameAr})
                             </span>
                         </div>
@@ -2123,7 +2123,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         <span className="font-semibold text-[#45413C]">
                             {t('ums.employees.details.fields.profileCompletion')}
                         </span>
-                        <span className="font-mono font-bold text-[#2D3F2C]">
+                        <span className="font-mono font-bold text-[#037F8C]">
                             {completion.percentage}%
                         </span>
                     </div>
@@ -2139,7 +2139,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             rx="4"
                             className={
                                 completion.percentage === 100
-                                    ? 'fill-[#265938]'
+                                    ? 'fill-[#037F8C]'
                                     : 'fill-[#C28E3A]'
                             }
                         />
@@ -2158,7 +2158,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 1: PERSONAL INFORMATION */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <User size={16} />
                         </div>
                         <div>
@@ -2290,7 +2290,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 2: EMPLOYMENT INFORMATION */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <Briefcase size={16} />
                         </div>
                         <div>
@@ -2372,7 +2372,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => navigate(`/ums/employees/${manager.id}`)}
-                                    className="font-semibold text-[#2D3F2C] hover:underline mt-0.5 block cursor-pointer"
+                                    className="font-semibold text-[#037F8C] hover:underline mt-0.5 block cursor-pointer"
                                 >
                                     {isRtl ? manager.nameAr : manager.nameEn} ({manager.code})
                                 </button>
@@ -2433,7 +2433,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 3: SALARY DETAILS */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <Wallet size={16} />
                         </div>
                         <div>
@@ -2496,16 +2496,16 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="p-3.5 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-between">
+                    <div className="p-3.5 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-between">
                         <div>
-                            <span className="text-xs font-bold text-[#265938] block">
+                            <span className="text-xs font-bold text-[#037F8C] block">
                                 {t('ums.employees.details.fields.grossSalary')}
                             </span>
-                            <span className="text-[11px] text-[#265938]/80">
+                            <span className="text-[11px] text-[#037F8C]/80">
                                 {t('ums.employees.details.fields.currencySar')}
                             </span>
                         </div>
-                        <span className="text-lg font-mono font-bold text-[#265938]">
+                        <span className="text-lg font-mono font-bold text-[#037F8C]">
                             {formatSarCurrency(
                                 employee.salaryDetails?.grossSalary || 0,
                                 isRtl
@@ -2557,7 +2557,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 4: DOCUMENTS & IQAMA */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <FileText size={16} />
                         </div>
                         <div>
@@ -2592,7 +2592,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 <span
                                     className={`font-semibold ${
                                         iqamaStatus === 'Valid'
-                                            ? 'text-[#265938]'
+                                            ? 'text-[#037F8C]'
                                             : iqamaStatus === 'Warning'
                                             ? 'text-[#C28E3A]'
                                             : 'text-[#DC2626]'
@@ -2669,7 +2669,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                                 {Math.max(1, Math.round(doc.fileSize / 1024))} KB
                                             </span>
                                         </div>
-                                        <span className="text-[10px] font-mono text-[#265938] shrink-0">
+                                        <span className="text-[10px] font-mono text-[#037F8C] shrink-0">
                                             {doc.uploadedAt.slice(0, 10)}
                                         </span>
                                     </div>
@@ -2683,7 +2683,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
                         <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                                 <HeartHandshake size={16} />
                             </div>
                             <div>
@@ -2728,7 +2728,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     <span
                                         className={`text-[11px] font-semibold ${
                                             dep.insuranceIncluded
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -2746,7 +2746,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
                         <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                                 <ShieldCheck size={16} />
                             </div>
                             <div>
@@ -2762,7 +2762,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleSendInvitation}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
                         >
                             <Send size={12} />
                             <span>
@@ -2783,7 +2783,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     size={13}
                                     className={
                                         employee.status === 'Active'
-                                            ? 'text-[#265938]'
+                                            ? 'text-[#037F8C]'
                                             : 'text-[#C28E3A]'
                                     }
                                 />
@@ -2798,7 +2798,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             <span
                                 className={`font-bold mt-0.5 block ${
                                     invitationStatus === 'Accepted'
-                                        ? 'text-[#265938]'
+                                        ? 'text-[#037F8C]'
                                         : invitationStatus === 'Pending'
                                         ? 'text-[#C28E3A]'
                                         : 'text-[#6E6862]'
@@ -2858,7 +2858,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
                     <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <History size={16} />
                         </div>
                         <div>
@@ -2874,7 +2874,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/audit-trail')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
                     >
                         <History size={12} />
                         <span>{t('ums.employees.auditHistory.viewFullAudit')}</span>
@@ -2894,7 +2894,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             >
                                 <div className="space-y-0.5">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {ev.action}
                                         </span>
                                         <span className="text-[#0D0D0D] font-semibold">

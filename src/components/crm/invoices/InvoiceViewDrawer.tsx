@@ -88,7 +88,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.invoiceNumber}
@@ -97,7 +97,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                                 className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${
                                     isProforma
                                         ? 'bg-[#F3EEFA] text-[#5B21B6] border border-[#DDD6FE]'
-                                        : 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]'
+                                        : 'bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]'
                                 }`}
                             >
                                 {t(
@@ -142,7 +142,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                             onClick={handleOpenDocument}
                             title={t('crm.commercial.invoices.actions.printDocument')}
                             aria-label={t('crm.commercial.invoices.actions.printDocument')}
-                            className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2D3F2C] flex items-center justify-center transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#037F8C] flex items-center justify-center transition-colors cursor-pointer"
                         >
                             <Printer size={16} />
                         </button>
@@ -279,7 +279,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                                                 'issued'
                                             )
                                         }
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] text-white text-xs font-semibold cursor-pointer"
                                     >
                                         <Send size={13} />
                                         {t(
@@ -339,7 +339,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     {/* Invoice Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.invoices.viewDrawer.title')}
                             </span>
@@ -366,7 +366,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {record.totalAmount.toLocaleString()} SAR
@@ -430,7 +430,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     {record.lineItems && record.lineItems.length > 0 && (
                         <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                             <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                                <Calculator size={14} className="text-[#2D3F2C]" />
+                                <Calculator size={14} className="text-[#037F8C]" />
                                 <span>
                                     {t('crm.commercial.common.lineItems.sectionTitle')}{' '}
                                     ({record.lineItems.length})
@@ -450,7 +450,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                                                     : li.descriptionEn}
                                             </span>
                                             <span
-                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                className="font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {li.lineTotal.toLocaleString()} SAR
@@ -501,7 +501,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={handleOpenDocument}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#2D3F2C] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#037F8C] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#037F8C] cursor-pointer"
                     >
                         <Printer size={14} />
                         {t('crm.commercial.invoices.actions.printDocument')}
@@ -516,7 +516,7 @@ export const InvoiceViewDrawer: React.FC<InvoiceViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.commercial.common.edit')}

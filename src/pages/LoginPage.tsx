@@ -80,7 +80,7 @@ export const LoginPage = () => {
             {/* Top Subtle Brand Bar */}
             <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[#E5E0D8] bg-white/80 backdrop-blur-xs">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] flex items-center justify-center text-[#FAF8F5] font-bold text-lg shadow-xs">
+                    <div className="w-9 h-9 rounded-lg bg-[#037F8C] flex items-center justify-center text-[#FAF8F5] font-bold text-lg shadow-xs">
                         ع
                     </div>
                     <div>
@@ -116,7 +116,7 @@ export const LoginPage = () => {
                             </>
                         ) : (
                             <>
-                                <Moon size={13} className="text-[#2D3F2C]" />
+                                <Moon size={13} className="text-[#037F8C]" />
                                 <span className="text-[11px]">{t('nav.darkMode', { defaultValue: 'Dark' })}</span>
                             </>
                         )}
@@ -135,7 +135,7 @@ export const LoginPage = () => {
                             onClick={() => setLanguage('en')}
                             aria-pressed={!isAr}
                             className={`px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all cursor-pointer leading-none ${!isAr
-                                ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-2xs'
                                 : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
                                 }`}
                         >
@@ -146,7 +146,7 @@ export const LoginPage = () => {
                             onClick={() => setLanguage('ar')}
                             aria-pressed={isAr}
                             className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer leading-none ${isAr
-                                ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-2xs'
                                 : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#F0ECE4]/60'
                                 }`}
                         >
@@ -160,7 +160,7 @@ export const LoginPage = () => {
             <main className="flex-1 flex items-center justify-center p-4">
                 <div className="w-full max-w-md bg-white border border-[#E5E0D8] rounded-2xl shadow-lg overflow-hidden">
                     {/* Card Top Olive Accent Header */}
-                    <div className="bg-[#2D3F2C] px-8 py-7 text-[#FAF8F5]">
+                    <div className="bg-[#037F8C] px-8 py-7 text-[#FAF8F5]">
                         <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#3E553D] text-[#C2A46D] text-[11px] font-semibold uppercase tracking-wider mb-3">
                             {t('common.awnEnterprise')}
                         </div>
@@ -189,7 +189,7 @@ export const LoginPage = () => {
                                         {...register('email')}
                                         className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${errors.email
                                             ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
-                                            : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
+                                            : 'border-[#D6CFC4] focus:border-[#037F8C] focus:bg-white focus:ring-2 focus:ring-[#037F8C]/15'
                                             }`}
                                     />
                                 </div>
@@ -208,7 +208,7 @@ export const LoginPage = () => {
                                     </label>
                                     <button
                                         type="button"
-                                        className="text-xs text-[#2D3F2C] hover:underline font-medium"
+                                        className="text-xs text-[#037F8C] hover:underline font-medium"
                                     >
                                         {t('login.forgotPassword')}
                                     </button>
@@ -222,7 +222,7 @@ export const LoginPage = () => {
                                         {...register('password')}
                                         className={`w-full ps-10 pe-4 py-2.5 text-sm rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#8C847A] outline-none transition text-start ${errors.password
                                             ? 'border-[#B83232] focus:ring-2 focus:ring-[#B83232]/20'
-                                            : 'border-[#D6CFC4] focus:border-[#2D3F2C] focus:bg-white focus:ring-2 focus:ring-[#2D3F2C]/15'
+                                            : 'border-[#D6CFC4] focus:border-[#037F8C] focus:bg-white focus:ring-2 focus:ring-[#037F8C]/15'
                                             }`}
                                     />
                                 </div>
@@ -237,7 +237,7 @@ export const LoginPage = () => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-2.5 px-4 bg-[#2D3F2C] hover:bg-[#1F2C1E] text-[#FAF8F5] font-semibold text-sm rounded-lg shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                                className="w-full py-2.5 px-4 bg-[#037F8C] hover:bg-[#1F2C1E] text-[#FAF8F5] font-semibold text-sm rounded-lg shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                             >
                                 <span>{isLoading ? t('login.signingIn') : t('login.signInBtn')}</span>
                                 {!isLoading && <ArrowRight className="w-4 h-4 rtl:rotate-180" />}

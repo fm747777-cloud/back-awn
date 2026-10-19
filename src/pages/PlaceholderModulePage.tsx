@@ -62,13 +62,13 @@ export const PlaceholderModulePage: React.FC<PlaceholderModulePageProps> = ({
         <div className="space-y-6 text-start">
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-8 shadow-2xs">
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-xs">
+                    <div className="w-12 h-12 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shadow-xs">
                         <Layers className="w-6 h-6" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl font-bold text-[#0D0D0D]">{localizedModuleName}</h1>
-                            <span className="px-2.5 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]" dir="ltr">
+                            <span className="px-2.5 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]" dir="ltr">
                                 {resolvedCode}
                             </span>
                         </div>
@@ -80,7 +80,7 @@ export const PlaceholderModulePage: React.FC<PlaceholderModulePageProps> = ({
 
                 <div className="p-6 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <ShieldCheck className="w-5 h-5 text-[#265938]" />
+                        <ShieldCheck className="w-5 h-5 text-[#037F8C]" />
                         <div>
                             <p className="text-sm font-semibold text-[#0D0D0D]">
                                 {t('placeholder.configuredTitle')}

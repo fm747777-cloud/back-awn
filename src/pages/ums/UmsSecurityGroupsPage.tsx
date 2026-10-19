@@ -689,7 +689,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
                 <div>
                     <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-sm">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shadow-sm">
                             <ShieldCheck className="w-5 h-5 text-[#84C799]" />
                         </div>
                         <div>
@@ -698,7 +698,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     {t('ums.securityGroups.title', { defaultValue: 'Security Groups' })}
                                 </h1>
                                 <span
-                                    className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                    className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                     dir="ltr"
                                 >
                                     UMS-SEC
@@ -718,15 +718,15 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => handleExportCsv()}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#FAF8F5] hover:border-[#2D3F2C]/30 transition-all shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white text-[#037F8C] border border-[#E5E0D8] hover:bg-[#FAF8F5] hover:border-[#037F8C]/30 transition-all shadow-sm"
                     >
-                        <Download className="w-3.5 h-3.5 text-[#2D3F2C]" />
+                        <Download className="w-3.5 h-3.5 text-[#037F8C]" />
                         <span>{t('ums.common.export', { defaultValue: 'Export CSV' })}</span>
                     </button>
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98]"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98]"
                     >
                         <Plus className="w-4 h-4" />
                         <span>{t('ums.securityGroups.addSecurityGroup', { defaultValue: 'Add Security Group' })}</span>
@@ -745,8 +745,8 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono">{totalGroups}</p>
                         <p className="text-[11px] text-[#6E6862] mt-0.5">Configured policy containers</p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
-                        <Shield className="w-5 h-5 text-[#2D3F2C]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
+                        <Shield className="w-5 h-5 text-[#037F8C]" />
                     </div>
                 </div>
 
@@ -790,8 +790,8 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono">{totalAssignedUsers}</p>
                         <p className="text-[11px] text-[#6E6862] mt-0.5">Mapped enterprise staff</p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
-                        <Users className="w-5 h-5 text-[#2D3F2C]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
+                        <Users className="w-5 h-5 text-[#037F8C]" />
                     </div>
                 </div>
             </div>
@@ -812,7 +812,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             placeholder={t('ums.securityGroups.searchPlaceholder', {
                                 defaultValue: 'Search security groups by code, name, or description...',
                             })}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#6E6862] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C] transition-all"
+                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#6E6862] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/30 focus:border-[#037F8C] transition-all"
                         />
                         {searchQuery && (
                             <button
@@ -846,7 +846,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                         }}
                                         className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
                                             statusFilter === s
-                                                ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-xs'
+                                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
                                                 : 'text-[#6E6862] hover:text-[#0D0D0D]'
                                         }`}
                                     >
@@ -881,9 +881,9 @@ export const UmsSecurityGroupsPage: React.FC = () => {
 
                 {/* Batch Actions Toolbar */}
                 {selectedIds.length > 0 && (
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F5] border border-[#2D3F2C]/20 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F5] border border-[#037F8C]/20 text-xs">
                         <div className="flex items-center gap-2">
-                            <span className="font-semibold text-[#2D3F2C] font-mono">
+                            <span className="font-semibold text-[#037F8C] font-mono">
                                 {selectedIds.length} {t('ums.common.selected', { defaultValue: 'selected' })}
                             </span>
                             <span className="text-[#6E6862]">|</span>
@@ -918,7 +918,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     const selectedGroups = groups.filter((g) => selectedIds.includes(g.id));
                                     handleExportCsv(selectedGroups);
                                 }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-white text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-all"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-white text-[#037F8C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-all"
                             >
                                 <Download className="w-3 h-3" />
                                 <span>{t('ums.common.exportSelected', { defaultValue: 'Export Selected' })}</span>
@@ -938,11 +938,11 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={handleSelectAllVisible}
-                                        className="text-[#2D3F2C] hover:opacity-80"
+                                        className="text-[#037F8C] hover:opacity-80"
                                         title="Select all on page"
                                     >
                                         {allVisibleSelected ? (
-                                            <CheckSquare className="w-4 h-4 text-[#2D3F2C]" />
+                                            <CheckSquare className="w-4 h-4 text-[#037F8C]" />
                                         ) : (
                                             <Square className="w-4 h-4 text-[#6E6862]" />
                                         )}
@@ -978,7 +978,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                         setSearchQuery('');
                                                         setStatusFilter('All');
                                                     }}
-                                                    className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
+                                                    className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline"
                                                 >
                                                     Clear active filters
                                                 </button>
@@ -1005,10 +1005,10 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleToggleSelect(group.id)}
-                                                    className="text-[#2D3F2C]"
+                                                    className="text-[#037F8C]"
                                                 >
                                                     {isSelected ? (
-                                                        <CheckSquare className="w-4 h-4 text-[#2D3F2C]" />
+                                                        <CheckSquare className="w-4 h-4 text-[#037F8C]" />
                                                     ) : (
                                                         <Square className="w-4 h-4 text-[#6E6862]/60" />
                                                     )}
@@ -1019,7 +1019,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             <td className="p-3">
                                                 <div className="flex items-center gap-1.5">
                                                     <span
-                                                        className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                                        className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                                         dir="ltr"
                                                     >
                                                         {group.code}
@@ -1059,8 +1059,8 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             {/* Permissions Summary */}
                                             <td className="p-3">
                                                 <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8]">
-                                                    <KeyRound className="w-3 h-3 text-[#2D3F2C]" />
-                                                    <span className="font-mono font-semibold text-[#2D3F2C]">
+                                                    <KeyRound className="w-3 h-3 text-[#037F8C]" />
+                                                    <span className="font-mono font-semibold text-[#037F8C]">
                                                         {activePermissions}
                                                     </span>
                                                     <span className="text-[10px] text-[#6E6862]">/ 28 active</span>
@@ -1069,14 +1069,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
 
                                             {/* Assigned Roles Count */}
                                             <td className="p-3 text-center">
-                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
+                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                                                     {assignedRoles.length}
                                                 </span>
                                             </td>
 
                                             {/* Assigned Users Count */}
                                             <td className="p-3 text-center">
-                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
+                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                                                     {assignedEmployees.length}
                                                 </span>
                                             </td>
@@ -1117,7 +1117,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => setViewingGroup(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] rounded-md transition-colors"
+                                                        className="p-1.5 text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] rounded-md transition-colors"
                                                         title="View Details"
                                                     >
                                                         <Eye className="w-3.5 h-3.5" />
@@ -1125,7 +1125,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleOpenEdit(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] rounded-md transition-colors"
+                                                        className="p-1.5 text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] rounded-md transition-colors"
                                                         title="Edit Security Group"
                                                     >
                                                         <Pencil className="w-3.5 h-3.5" />
@@ -1133,7 +1133,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleToggleStatus(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] rounded-md transition-colors"
+                                                        className="p-1.5 text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] rounded-md transition-colors"
                                                         title={group.status === 'Active' ? 'Deactivate' : 'Activate'}
                                                     >
                                                         <Power className="w-3.5 h-3.5" />
@@ -1185,7 +1185,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     setPageSize(Number(e.target.value));
                                     setCurrentPage(1);
                                 }}
-                                className="px-2 py-0.5 rounded border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                className="px-2 py-0.5 rounded border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                             >
                                 {UMS_PAGE_SIZE_OPTIONS.map((size) => (
                                     <option key={size} value={size}>
@@ -1232,7 +1232,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                         {/* Drawer Header */}
                         <div className="p-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center">
+                                <div className="w-9 h-9 rounded-lg bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center">
                                     <ShieldCheck className="w-5 h-5 text-[#84C799]" />
                                 </div>
                                 <div>
@@ -1302,7 +1302,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             setFormData((prev) => ({ ...prev, nameEn: e.target.value }))
                                         }
                                         placeholder="e.g. Operations & Service Officers"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg border bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C] ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg border bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/30 focus:border-[#037F8C] ${
                                             formErrors.nameEn
                                                 ? 'border-[#D32F2F] bg-[#FFEBEE]/20'
                                                 : 'border-[#E5E0D8]'
@@ -1329,7 +1329,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             setFormData((prev) => ({ ...prev, nameAr: e.target.value }))
                                         }
                                         placeholder="مثال: أخصائيو العمليات والخدمات المؤسسية"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg border bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C] ${
+                                        className={`w-full px-3 py-2 text-xs rounded-lg border bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/30 focus:border-[#037F8C] ${
                                             formErrors.nameAr
                                                 ? 'border-[#D32F2F] bg-[#FFEBEE]/20'
                                                 : 'border-[#E5E0D8]'
@@ -1358,7 +1358,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             onChange={() =>
                                                 setFormData((prev) => ({ ...prev, status: 'Active' }))
                                             }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C]"
+                                            className="text-[#037F8C] focus:ring-[#037F8C]"
                                         />
                                         <span>{t('ums.common.active', { defaultValue: 'Active' })}</span>
                                     </label>
@@ -1371,7 +1371,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             onChange={() =>
                                                 setFormData((prev) => ({ ...prev, status: 'Inactive' }))
                                             }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C]"
+                                            className="text-[#037F8C] focus:ring-[#037F8C]"
                                         />
                                         <span>{t('ums.common.inactive', { defaultValue: 'Inactive' })}</span>
                                     </label>
@@ -1396,7 +1396,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             }))
                                         }
                                         placeholder="Describe the operational mandate and scope of this security group..."
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/30 focus:border-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1415,7 +1415,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             }))
                                         }
                                         placeholder="وصف النطاق التشغيلي والصلاحيات الممنوحة لهذه المجموعة..."
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/30 focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1425,7 +1425,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                                     <div>
                                         <div className="flex items-center gap-1.5">
-                                            <Lock className="w-4 h-4 text-[#2D3F2C]" />
+                                            <Lock className="w-4 h-4 text-[#037F8C]" />
                                             <h3 className="text-xs font-bold text-[#0D0D0D]">
                                                 {t('ums.securityGroups.permissionsMatrix', {
                                                     defaultValue: 'Module Permissions Matrix',
@@ -1442,14 +1442,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={handleGrantAll}
-                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#E8F5E9] hover:text-[#2E7D32] transition-colors"
+                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8] hover:bg-[#E8F5E9] hover:text-[#2E7D32] transition-colors"
                                         >
                                             {t('ums.securityGroups.form.grantAll', { defaultValue: 'Grant Full' })}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={handleReadOnlyAll}
-                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-colors"
+                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-colors"
                                         >
                                             {t('ums.securityGroups.form.readOnlyAll', { defaultValue: 'Read-Only' })}
                                         </button>
@@ -1496,7 +1496,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                         {/* Module Name & Icon */}
                                                         <td className="p-2.5">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                                                                <div className="w-6 h-6 rounded bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                                                                     <Icon className="w-3.5 h-3.5" />
                                                                 </div>
                                                                 <div>
@@ -1518,7 +1518,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                                 onChange={(e) =>
                                                                     handlePermissionChange(mKey, 'read', e.target.checked)
                                                                 }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
+                                                                className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C]"
                                                             />
                                                         </td>
 
@@ -1530,7 +1530,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                                 onChange={(e) =>
                                                                     handlePermissionChange(mKey, 'write', e.target.checked)
                                                                 }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
+                                                                className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C]"
                                                             />
                                                         </td>
 
@@ -1542,7 +1542,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                                 onChange={(e) =>
                                                                     handlePermissionChange(mKey, 'delete', e.target.checked)
                                                                 }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
+                                                                className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C]"
                                                             />
                                                         </td>
 
@@ -1554,7 +1554,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                                 onChange={(e) =>
                                                                     handlePermissionChange(mKey, 'export', e.target.checked)
                                                                 }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
+                                                                className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C]"
                                                             />
                                                         </td>
 
@@ -1563,7 +1563,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleToggleModuleRow(mKey)}
-                                                                className="p-1 rounded text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5]"
+                                                                className="p-1 rounded text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5]"
                                                                 title={rowAllChecked ? 'Revoke module' : 'Grant module'}
                                                             >
                                                                 {rowAllChecked ? (
@@ -1597,7 +1597,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <button
                                 type="submit"
                                 form="security-group-form"
-                                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98]"
+                                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98]"
                             >
                                 {editingGroup
                                     ? t('ums.common.saveChanges', { defaultValue: 'Save Changes' })
@@ -1620,7 +1620,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                         {/* Header */}
                         <div className="p-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center">
                                     <ShieldCheck className="w-5 h-5 text-[#84C799]" />
                                 </div>
                                 <div>
@@ -1629,7 +1629,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             {isRtl ? viewingGroup.nameAr : viewingGroup.nameEn}
                                         </h2>
                                         <span
-                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#2D3F2C] border border-[#E5E0D8]"
+                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#037F8C] border border-[#E5E0D8]"
                                             dir="ltr"
                                         >
                                             {viewingGroup.code}
@@ -1714,7 +1714,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-1.5">
-                                        <Lock className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Lock className="w-4 h-4 text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.securityGroups.details.permissionsMatrixTitle', {
                                                 defaultValue: 'Configured Module Permissions',
@@ -1747,7 +1747,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                     <tr key={mKey} className="hover:bg-[#FAF8F5]/60 transition-colors">
                                                         <td className="p-2.5">
                                                             <div className="flex items-center gap-2">
-                                                                <Icon className="w-3.5 h-3.5 text-[#2D3F2C]" />
+                                                                <Icon className="w-3.5 h-3.5 text-[#037F8C]" />
                                                                 <span className="font-semibold text-[#0D0D0D]">
                                                                     {isRtl ? meta.nameAr : meta.nameEn}
                                                                 </span>
@@ -1793,14 +1793,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-1.5">
-                                        <Layers className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Layers className="w-4 h-4 text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.securityGroups.details.assignedRolesList', {
                                                 defaultValue: 'Assigned Roles',
                                             })}
                                         </h3>
                                     </div>
-                                    <span className="text-[11px] font-mono font-semibold text-[#2D3F2C]">
+                                    <span className="text-[11px] font-mono font-semibold text-[#037F8C]">
                                         {(groupRoleMap.get(viewingGroup.id) || []).length} Roles
                                     </span>
                                 </div>
@@ -1825,7 +1825,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                 >
                                                     <div>
                                                         <div className="flex items-center gap-1.5">
-                                                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
+                                                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                                                                 {role.code}
                                                             </span>
                                                             <span className="font-semibold text-[#0D0D0D]">
@@ -1836,7 +1836,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                             Level {role.level} • {role.status}
                                                         </span>
                                                     </div>
-                                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C]">
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C]">
                                                         {role.employeeCount} staff
                                                     </span>
                                                 </div>
@@ -1850,14 +1850,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-1.5">
-                                        <Users className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Users className="w-4 h-4 text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.securityGroups.details.assignedEmployeesList', {
                                                 defaultValue: 'Assigned Users & Employees',
                                             })}
                                         </h3>
                                     </div>
-                                    <span className="text-[11px] font-mono font-semibold text-[#2D3F2C]">
+                                    <span className="text-[11px] font-mono font-semibold text-[#037F8C]">
                                         {(groupEmployeeMap.get(viewingGroup.id) || []).length} Users
                                     </span>
                                 </div>
@@ -1895,7 +1895,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                         className="p-3 rounded-lg border border-[#E5E0D8] bg-white flex items-center justify-between text-xs"
                                                     >
                                                         <div className="flex items-center gap-2.5">
-                                                            <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center font-bold text-[10px]">
+                                                            <div className="w-7 h-7 rounded-full bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center font-bold text-[10px]">
                                                                 {emp.nameEn.charAt(0)}
                                                             </div>
                                                             <div>
@@ -1908,7 +1908,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                             </div>
                                                         </div>
                                                         <div className="text-end">
-                                                            <span className="text-[11px] font-medium text-[#2D3F2C] block">
+                                                            <span className="text-[11px] font-medium text-[#037F8C] block">
                                                                 {roleTitle}
                                                             </span>
                                                             <span className="text-[10px] text-[#6E6862]">
@@ -1942,7 +1942,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                         setViewingGroup(null);
                                         handleOpenEdit(g);
                                     }}
-                                    className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all"
+                                    className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all"
                                 >
                                     {t('ums.common.edit', { defaultValue: 'Edit Group' })}
                                 </button>
@@ -2033,7 +2033,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={handleDeactivateFromDeleteModal}
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm"
+                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm"
                                 >
                                     Deactivate Group Instead
                                 </button>

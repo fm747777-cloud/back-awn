@@ -63,7 +63,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {deal.code}
@@ -102,7 +102,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                     {/* Financial & Revenue Collection Progress */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-3">
                         <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-[#2D3F2C]">
+                            <span className="font-bold text-[#037F8C]">
                                 {t(
                                     'crm.commercial.wonDeals.drawer.collectionRate'
                                 )}
@@ -142,7 +142,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {summary.totalContractedValue.toLocaleString()}{' '}
@@ -183,7 +183,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                     {/* Customer & Account Executive */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span>
                                 {t(
                                     'crm.commercial.wonDeals.columns.companyAndSector'
@@ -222,7 +222,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-2.5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                                <FileText size={14} className="text-[#2D3F2C]" />
+                                <FileText size={14} className="text-[#037F8C]" />
                                 <span>
                                     {t(
                                         'crm.commercial.deals.viewDrawer.linkedQuotations',
@@ -236,7 +236,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                                     onClick={() =>
                                         onNavigateToQuotations(deal.id)
                                     }
-                                    className="text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                    className="text-[11px] font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                 >
                                     {t(
                                         'crm.commercial.wonDeals.drawer.createQuotation'
@@ -251,7 +251,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                             >
                                 <div>
                                     <span
-                                        className="font-mono font-bold text-[#2D3F2C]"
+                                        className="font-mono font-bold text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {q.code}
@@ -278,7 +278,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                             <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
                                 <FileCheck2
                                     size={14}
-                                    className="text-[#2D3F2C]"
+                                    className="text-[#037F8C]"
                                 />
                                 <span>
                                     {t(
@@ -293,7 +293,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                                     onClick={() =>
                                         onNavigateToContracts(deal.id)
                                     }
-                                    className="text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                    className="text-[11px] font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                 >
                                     {t(
                                         'crm.commercial.wonDeals.drawer.createContract'
@@ -308,7 +308,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                             >
                                 <div>
                                     <span
-                                        className="font-mono font-bold text-[#2D3F2C]"
+                                        className="font-mono font-bold text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {c.contractNumber}
@@ -333,7 +333,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-2.5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                                <Receipt size={14} className="text-[#2D3F2C]" />
+                                <Receipt size={14} className="text-[#037F8C]" />
                                 <span>
                                     {t(
                                         'crm.commercial.deals.viewDrawer.linkedInvoices',
@@ -347,7 +347,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                                     onClick={() =>
                                         onNavigateToInvoices(deal.id)
                                     }
-                                    className="text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                    className="text-[11px] font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                 >
                                     {t(
                                         'crm.commercial.wonDeals.drawer.createInvoice'
@@ -362,7 +362,7 @@ export const WonDealSummaryDrawer: React.FC<WonDealSummaryDrawerProps> = ({
                             >
                                 <div>
                                     <span
-                                        className="font-mono font-bold text-[#2D3F2C]"
+                                        className="font-mono font-bold text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {inv.invoiceNumber}

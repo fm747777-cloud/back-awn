@@ -360,13 +360,13 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C] shrink-0">
                             {mode === 'create' ? <UserPlus size={18} /> : <Edit3 size={18} />}
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
                                 <span
-                                    className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                    className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {mode === 'edit' && initialData
@@ -417,7 +417,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
 
                     {/* Section 1: Lead & Qualification Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <Building2 size={14} />
                             <span>{t('crm.customer.leads.form.sectionLeadInfo')}</span>
                         </div>
@@ -433,7 +433,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     value={formState.title}
                                     onChange={(e) => handleChange('title', e.target.value)}
                                     placeholder={t('crm.customer.leads.form.titlePlaceholder')}
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                         fieldErrors.title
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -458,7 +458,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                             e.target.value as 'company' | 'individual'
                                         )
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 >
                                     <option value="company">
                                         {t('crm.customer.leads.typeCompany')}
@@ -479,7 +479,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     onChange={(e) =>
                                         handleChange('leadStatusId', e.target.value)
                                     }
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                         fieldErrors.leadStatusId
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -505,7 +505,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     onChange={(e) =>
                                         handleChange('leadSourceId', e.target.value)
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 >
                                     {activeSources.map((src) => (
                                         <option key={src.id} value={src.id}>
@@ -523,7 +523,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                 <select
                                     value={formState.sectorId}
                                     onChange={(e) => handleChange('sectorId', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 >
                                     {activeSectors.map((sec) => (
                                         <option key={sec.id} value={sec.id}>
@@ -542,7 +542,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     onChange={(e) =>
                                         handleChange('assignedEmployeeId', e.target.value)
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 >
                                     <option value="">
                                         {t('crm.customer.common.unassigned')}
@@ -571,7 +571,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                             Math.max(0, Number(e.target.value || 0))
                                         )
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                     dir="ltr"
                                 />
                             </div>
@@ -580,7 +580,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
 
                     {/* Section 2: Primary Contact Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <Phone size={14} />
                             <span>{t('crm.customer.leads.form.sectionContactInfo')}</span>
                         </div>
@@ -600,7 +600,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     placeholder={t(
                                         'crm.customer.leads.form.contactNamePlaceholder'
                                     )}
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                         fieldErrors.contactName
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -626,7 +626,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     placeholder={t(
                                         'crm.customer.leads.form.contactJobTitlePlaceholder'
                                     )}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -645,7 +645,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                         'crm.customer.leads.form.contactPhonePlaceholder'
                                     )}
                                     dir="ltr"
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                         fieldErrors.contactPhone
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -678,7 +678,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                             'crm.customer.leads.form.contactEmailPlaceholder'
                                         )}
                                         dir="ltr"
-                                        className={`w-full ps-8 pe-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 ${
+                                        className={`w-full ps-8 pe-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                             fieldErrors.contactEmail
                                                 ? 'border-[#A63A3A]'
                                                 : 'border-[#E5E0D8]'
@@ -696,7 +696,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
 
                     {/* Section 3: Company, Location & Notes */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <MapPin size={14} />
                             <span>{t('crm.customer.leads.form.sectionAddressInfo')}</span>
                         </div>
@@ -715,7 +715,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     placeholder={t(
                                         'crm.customer.leads.form.temporaryCompanyPlaceholder'
                                     )}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -728,7 +728,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                         type="button"
                                         onClick={handleOpenCreateCompany}
                                         disabled={isCreatingCompany}
-                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2D3F2C] hover:text-[#233122] hover:underline cursor-pointer disabled:opacity-50"
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#037F8C] hover:text-[#233122] hover:underline cursor-pointer disabled:opacity-50"
                                     >
                                         <Plus size={13} />
                                         <span>{t('crm.customer.leads.form.newCompany', '+ New Company')}</span>
@@ -749,7 +749,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                                     }
                                                 }
                                             }}
-                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                         >
                                             <option value="">
                                                 {t('crm.customer.leads.form.noLinkedCompany')}
@@ -766,7 +766,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                         type="button"
                                         onClick={handleOpenCreateCompany}
                                         disabled={isCreatingCompany}
-                                        className="px-3 py-2.5 rounded-lg border border-[#2D3F2C]/30 bg-[#2D3F2C]/5 hover:bg-[#2D3F2C]/10 text-xs font-semibold text-[#2D3F2C] inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                                        className="px-3 py-2.5 rounded-lg border border-[#037F8C]/30 bg-[#037F8C]/5 hover:bg-[#037F8C]/10 text-xs font-semibold text-[#037F8C] inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                                     >
                                         <Plus size={14} />
                                         <span>{t('crm.customer.leads.form.newCompany', 'New Company')}</span>
@@ -777,10 +777,10 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     <div className="rounded-lg border border-[#C5D7C2] bg-[#F2F7F2] p-3 flex items-start justify-between gap-3 text-xs">
                                         <div className="min-w-0 space-y-1">
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="px-1.5 py-0.5 rounded bg-white border border-[#C5D7C2] font-mono text-[10px] font-bold text-[#2D3F2C]">
+                                                <span className="px-1.5 py-0.5 rounded bg-white border border-[#C5D7C2] font-mono text-[10px] font-bold text-[#037F8C]">
                                                     {selectedCompany.code}
                                                 </span>
-                                                <span className="font-bold text-[#2D3F2C] truncate">
+                                                <span className="font-bold text-[#037F8C] truncate">
                                                     {isRtl ? selectedCompany.nameAr : selectedCompany.nameEn}
                                                 </span>
                                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2E6B4E]/10 text-[#2E6B4E] font-medium">
@@ -823,7 +823,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     placeholder={t(
                                         'crm.customer.leads.form.companySizePlaceholder'
                                     )}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -835,7 +835,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     type="text"
                                     value={formState.city || ''}
                                     onChange={(e) => handleChange('city', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -847,7 +847,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     type="text"
                                     value={formState.country || ''}
                                     onChange={(e) => handleChange('country', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -860,7 +860,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     value={formState.website || ''}
                                     onChange={(e) => handleChange('website', e.target.value)}
                                     dir="ltr"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -872,7 +872,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     type="text"
                                     value={formState.address || ''}
                                     onChange={(e) => handleChange('address', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -887,7 +887,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     placeholder={t(
                                         'crm.customer.leads.form.notesPlaceholder'
                                     )}
-                                    className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20"
+                                    className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
@@ -936,7 +936,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                         >
                             <CheckCircle2 size={14} />
                             {isSubmitting

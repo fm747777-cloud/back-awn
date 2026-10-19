@@ -123,30 +123,30 @@ export const Sidebar = () => {
 
     return (
         <aside
-            className={`bg-[#0D0D0D] border-e border-[#1C1A17] min-h-screen flex flex-col justify-between transition-all duration-300 relative select-none z-30 ${
+            className={`bg-white border-e border-[#E5E7EB] min-h-screen flex flex-col justify-between transition-all duration-300 relative select-none z-30 ${
                 collapsed ? 'w-20' : 'w-64'
             }`}
         >
             {/* Header / Brand Logo */}
             <div>
-                <div className="h-16 border-b border-[#1C1A17] flex items-center justify-center px-4">
+                <div className="h-16 border-b border-[#E5E7EB] flex items-center justify-center px-4">
                     {!collapsed ? (
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] border border-[#BFAB93]/40 flex items-center justify-center shadow-xs shrink-0">
-                                <span className="text-sm font-black text-[#BFAB93]">ع</span>
+                            <div className="w-8 h-8 rounded-lg bg-[#37848C] border border-[#BF9A56]/40 flex items-center justify-center shadow-xs shrink-0">
+                                <span className="text-sm font-black text-white">ع</span>
                             </div>
                             <div className="text-start">
-                                <span className="text-base font-bold text-[#FAF8F5] block leading-tight tracking-wide">
+                                <span className="text-base font-bold text-[#1F2937] block leading-tight tracking-wide">
                                     عَـــــوْن
                                 </span>
-                                <span className="text-[9px] font-semibold tracking-[0.25em] text-[#BFAB93] uppercase block">
+                                <span className="text-[9px] font-semibold tracking-[0.25em] text-[#37848C] uppercase block">
                                     {t('common.awnEnterprise')}
                                 </span>
                             </div>
                         </div>
                     ) : (
-                        <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] border border-[#BFAB93]/50 flex items-center justify-center">
-                            <span className="text-xs font-black text-[#BFAB93]">ع</span>
+                        <div className="w-9 h-9 rounded-lg bg-[#37848C] border border-[#BF9A56]/50 flex items-center justify-center">
+                            <span className="text-xs font-black text-white">ع</span>
                         </div>
                     )}
                 </div>
@@ -187,8 +187,8 @@ export const Sidebar = () => {
                                         title={collapsed ? translatedGroupTitle : undefined}
                                         className={`w-full group relative flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer ${
                                             hasActiveChild
-                                                ? 'bg-white/[0.06] text-[#FAF8F5]'
-                                                : 'text-[#9C958C] hover:bg-white/[0.04] hover:text-[#FAF8F5]'
+                                                ? 'bg-[#37848C]/10 text-[#37848C]'
+                                                : 'text-[#4B5563] hover:bg-slate-100 hover:text-[#111827]'
                                         }`}
                                     >
                                         <span className="flex items-center gap-3 min-w-0">
@@ -196,8 +196,8 @@ export const Sidebar = () => {
                                                 size={17}
                                                 className={`transition-colors shrink-0 ${
                                                     hasActiveChild
-                                                        ? 'text-[#BFAB93]'
-                                                        : 'text-[#857E74] group-hover:text-[#FAF8F5]'
+                                                        ? 'text-[#37848C]'
+                                                        : 'text-[#6B7280] group-hover:text-[#37848C]'
                                                 }`}
                                             />
                                             {!collapsed && (
@@ -211,8 +211,8 @@ export const Sidebar = () => {
                                                 size={15}
                                                 className={`shrink-0 transition-transform duration-200 ${
                                                     hasActiveChild
-                                                        ? 'text-[#BFAB93]'
-                                                        : 'text-[#857E74] group-hover:text-[#FAF8F5]'
+                                                        ? 'text-[#37848C]'
+                                                        : 'text-[#6B7280] group-hover:text-[#37848C]'
                                                 } ${isExpanded ? 'rotate-180' : ''}`}
                                             />
                                         )}
@@ -223,7 +223,7 @@ export const Sidebar = () => {
                                             className={
                                                 collapsed
                                                     ? 'space-y-1 pt-0.5'
-                                                    : 'ps-3 ms-3 border-s border-[#1C1A17] space-y-1 pt-0.5'
+                                                    : 'ps-3 ms-3 border-s border-[#E5E7EB] space-y-1 pt-0.5'
                                             }
                                         >
                                             {group.items.map((item) => {
@@ -247,8 +247,8 @@ export const Sidebar = () => {
                                                                 isActive || activeByPath;
                                                             return `group relative flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
                                                                 active
-                                                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] font-semibold shadow-xs'
-                                                                    : 'text-[#9C958C] hover:bg-white/[0.04] hover:text-[#FAF8F5]'
+                                                                    ? 'bg-[#37848C] text-white font-semibold shadow-xs'
+                                                                    : 'text-[#4B5563] hover:bg-slate-100 hover:text-[#111827]'
                                                             }`;
                                                         }}
                                                         title={
@@ -261,14 +261,14 @@ export const Sidebar = () => {
                                                             return (
                                                                 <>
                                                                     {active && (
-                                                                        <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e bg-[#BFAB93]" />
+                                                                        <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e bg-[#BF9A56]" />
                                                                     )}
                                                                     <Icon
                                                                         size={16}
                                                                         className={`transition-colors shrink-0 ${
                                                                             active
-                                                                                ? 'text-[#BFAB93]'
-                                                                                : 'text-[#857E74] group-hover:text-[#FAF8F5]'
+                                                                                ? 'text-white'
+                                                                                : 'text-[#6B7280] group-hover:text-[#37848C]'
                                                                         }`}
                                                                     />
                                                                     {!collapsed && (
@@ -297,7 +297,7 @@ export const Sidebar = () => {
                         return (
                             <div key={idx} className="space-y-1">
                                 {shouldShowGroupTitle && (
-                                    <p className="px-3 py-1 text-[10px] font-semibold text-[#6E6862] uppercase tracking-[0.16em] text-start">
+                                    <p className="px-3 py-1 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-[0.16em] text-start">
                                         {translatedGroupTitle}
                                     </p>
                                 )}
@@ -316,8 +316,8 @@ export const Sidebar = () => {
                                                 const active = isActive || activeByPath;
                                                 return `group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-150 ${
                                                     active
-                                                        ? 'bg-[#2D3F2C] text-[#FAF8F5] font-semibold shadow-xs'
-                                                        : 'text-[#9C958C] hover:bg-white/[0.04] hover:text-[#FAF8F5]'
+                                                        ? 'bg-[#37848C] text-white font-semibold shadow-xs'
+                                                        : 'text-[#4B5563] hover:bg-slate-100 hover:text-[#111827]'
                                                 }`;
                                             }}
                                             title={collapsed ? translatedLabel : undefined}
@@ -328,14 +328,14 @@ export const Sidebar = () => {
                                                     <>
                                                         {/* Start Accent indicator for active item */}
                                                         {active && (
-                                                            <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e bg-[#BFAB93]" />
+                                                            <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e bg-[#BF9A56]" />
                                                         )}
                                                         <Icon
                                                             size={17}
                                                             className={`transition-colors shrink-0 ${
                                                                 active
-                                                                    ? 'text-[#BFAB93]'
-                                                                    : 'text-[#857E74] group-hover:text-[#FAF8F5]'
+                                                                    ? 'text-white'
+                                                                    : 'text-[#6B7280] group-hover:text-[#37848C]'
                                                             }`}
                                                         />
                                                         {!collapsed && (
@@ -354,14 +354,14 @@ export const Sidebar = () => {
             </div>
 
             {/* Footer - Account Settings */}
-            <div className="p-3 border-t border-[#1C1A17]">
+            <div className="p-3 border-t border-[#E5E7EB]">
                 <NavLink
                     to="/settings"
                     className={({ isActive }) =>
                         `group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-150 ${
                             isActive
-                                ? 'bg-[#2D3F2C] text-[#FAF8F5] font-semibold shadow-xs'
-                                : 'text-[#9C958C] hover:bg-white/[0.04] hover:text-[#FAF8F5]'
+                                ? 'bg-[#37848C] text-white font-semibold shadow-xs'
+                                : 'text-[#4B5563] hover:bg-slate-100 hover:text-[#111827]'
                         }`
                     }
                     title={collapsed ? t('nav.accountSettings') : undefined}
@@ -369,14 +369,14 @@ export const Sidebar = () => {
                     {({ isActive }) => (
                         <>
                             {isActive && (
-                                <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e bg-[#BFAB93]" />
+                                <span className="absolute start-0 top-1.5 bottom-1.5 w-1 rounded-e bg-[#BF9A56]" />
                             )}
                             <Settings
                                 size={17}
                                 className={`transition-colors shrink-0 ${
                                     isActive
-                                        ? 'text-[#BFAB93]'
-                                        : 'text-[#857E74] group-hover:text-[#FAF8F5]'
+                                        ? 'text-white'
+                                        : 'text-[#6B7280] group-hover:text-[#37848C]'
                                 }`}
                             />
                             {!collapsed && <span>{t('nav.accountSettings')}</span>}

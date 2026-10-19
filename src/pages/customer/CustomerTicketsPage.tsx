@@ -760,21 +760,10 @@ export const CustomerTicketsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleResetDemoData}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-colors"
-                        title={isRtl ? 'إعادة ضبط البيانات التجريبية' : 'Reset Demo Data'}
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>{isRtl ? 'استعادة البيانات' : 'Reset Demo'}</span>
-                    </button>
-                    <button
-                        onClick={handleOpenAddModal}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm hover:shadow transition-all"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>{isRtl ? 'إنشاء تذكرة جديدة' : 'New Ticket'}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
             </div>
 
@@ -1062,22 +1051,6 @@ export const CustomerTicketsPage: React.FC = () => {
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleOpenEditModal(item)}
-                                                        className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
-                                                        title={isRtl ? 'تعديل التذكرة' : 'Edit Ticket'}
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                    {item.status !== 'resolved' && item.status !== 'closed' && (
-                                                        <button
-                                                            onClick={() => handleUpdateStatus(item.id, 'resolved')}
-                                                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                                                            title={isRtl ? 'تعليم كتم الحل' : 'Mark as Resolved'}
-                                                        >
-                                                            <CheckCircle2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1275,85 +1248,23 @@ export const CustomerTicketsPage: React.FC = () => {
                                     )}
                                 </div>
 
-                                {/* Add comment input */}
-                                <div className="pt-2 space-y-2">
-                                    <textarea
-                                        rows={2}
-                                        value={newCommentText}
-                                        onChange={(e) => setNewCommentText(e.target.value)}
-                                        placeholder={isRtl ? 'أضف رداً أو ملاحظة متابعة...' : 'Add a response or follow-up comment...'}
-                                        className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    <div className="flex items-center justify-between">
-                                        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={isInternalComment}
-                                                onChange={(e) => setIsInternalComment(e.target.checked)}
-                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <span>{isRtl ? 'ملاحظة داخلية (فريق الدعم فقط)' : 'Internal Note (Staff only)'}</span>
-                                        </label>
-                                        <button
-                                            type="button"
-                                            disabled={!newCommentText.trim()}
-                                            onClick={handleAddComment}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
-                                        >
-                                            <Send className="w-3.5 h-3.5" />
-                                            <span>{isRtl ? 'إرسال الرد' : 'Post Reply'}</span>
-                                        </button>
-                                    </div>
+                                {/* View-only notice */}
+                                <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
+                                    {isRtl
+                                        ? 'بوابة العملاء في وضع العرض فقط — لا يمكن إضافة ردود أو تعليقات جديدة على التذكرة.'
+                                        : 'Customer Portal is in view-only mode — new replies cannot be posted.'}
                                 </div>
                             </div>
                         </div>
 
                         {/* Drawer Actions */}
-                        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex flex-wrap items-center gap-2">
-                            {viewingTicket.status !== 'in_progress' && viewingTicket.status !== 'resolved' && viewingTicket.status !== 'closed' && (
-                                <button
-                                    onClick={() => handleUpdateStatus(viewingTicket.id, 'in_progress')}
-                                    className="px-3 py-2 text-xs font-semibold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-300 rounded-xl transition-colors"
-                                >
-                                    {isRtl ? 'بدء المعالجة' : 'Mark In Progress'}
-                                </button>
-                            )}
-
-                            {viewingTicket.status !== 'escalated' && viewingTicket.status !== 'resolved' && viewingTicket.status !== 'closed' && (
-                                <button
-                                    onClick={() => handleUpdateStatus(viewingTicket.id, 'escalated')}
-                                    className="px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-300 rounded-xl transition-colors"
-                                >
-                                    {isRtl ? 'تصعيد التذكرة' : 'Escalate Ticket'}
-                                </button>
-                            )}
-
-                            {viewingTicket.status !== 'resolved' && (
-                                <button
-                                    onClick={() => handleUpdateStatus(viewingTicket.id, 'resolved')}
-                                    className="px-3 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors"
-                                >
-                                    {isRtl ? 'تحديد كتم الحل' : 'Mark Resolved'}
-                                </button>
-                            )}
-
-                            {viewingTicket.status === 'resolved' && (
-                                <button
-                                    onClick={() => handleUpdateStatus(viewingTicket.id, 'closed')}
-                                    className="px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded-xl transition-colors"
-                                >
-                                    {isRtl ? 'إغلاق نهائي' : 'Close Ticket'}
-                                </button>
-                            )}
-
-                            {(viewingTicket.status === 'resolved' || viewingTicket.status === 'closed') && (
-                                <button
-                                    onClick={() => handleUpdateStatus(viewingTicket.id, 'in_progress')}
-                                    className="px-3 py-2 text-xs font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 rounded-xl transition-colors"
-                                >
-                                    {isRtl ? 'إعادة فتح التذكرة' : 'Reopen Ticket'}
-                                </button>
-                            )}
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850 flex items-center justify-end">
+                            <button
+                                onClick={() => setViewingTicket(null)}
+                                className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 rounded-xl transition-colors cursor-pointer"
+                            >
+                                {isRtl ? 'إغلاق' : 'Close'}
+                            </button>
                         </div>
                     </div>
                 </div>

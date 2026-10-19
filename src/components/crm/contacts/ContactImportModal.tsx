@@ -86,7 +86,7 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
             <div className="relative z-10 w-full max-w-xl rounded-2xl bg-white border border-[#E5E0D8] shadow-2xl overflow-hidden text-start">
                 <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                             <FileSpreadsheet size={18} />
                         </div>
                         <div>
@@ -122,7 +122,7 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
                         <button
                             type="button"
                             onClick={() => setCsvText(SAMPLE_CONTACTS_CSV)}
-                            className="px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#2D3F2C] cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#037F8C] cursor-pointer"
                         >
                             {t('crm.customer.contacts.importModal.downloadTemplate')}
                         </button>
@@ -165,7 +165,7 @@ export const ContactImportModal: React.FC<ContactImportModalProps> = ({
                         type="button"
                         onClick={handleImportSubmit}
                         disabled={isImporting}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
                     >
                         <CheckCircle2 size={14} />
                         {isImporting

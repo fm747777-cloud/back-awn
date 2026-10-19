@@ -244,7 +244,7 @@ export const InvoiceDocumentModal: React.FC<InvoiceDocumentModalProps> = ({
                     <button
                         type="button"
                         onClick={handlePrint}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#2D3F2C] bg-[#2D3F2C] text-white hover:bg-[#233122] text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#037F8C] bg-[#037F8C] text-white hover:bg-[#233122] text-xs font-semibold cursor-pointer shadow-xs transition-colors"
                         title={t('crm.commercial.invoices.document.printAction')}
                     >
                         <Printer size={15} />
@@ -288,11 +288,11 @@ export const InvoiceDocumentModal: React.FC<InvoiceDocumentModalProps> = ({
                 className="w-full max-w-4xl bg-white text-[#0D0D0D] border border-[#E5E0D8] rounded-2xl shadow-2xl p-6 sm:p-10 md:p-12 mb-8 print:p-0 print:border-none print:shadow-none print:rounded-none print:m-0"
             >
                 {/* Document Header */}
-                <div className="border-b-2 border-[#2D3F2C] pb-6 mb-6">
+                <div className="border-b-2 border-[#037F8C] pb-6 mb-6">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         {/* Supplier Identity */}
                         <div className="flex items-start gap-3.5">
-                            <div className="w-13 h-13 rounded-2xl bg-[#2D3F2C] text-white flex flex-col items-center justify-center font-bold tracking-wider shadow-sm shrink-0 border border-[#233122]">
+                            <div className="w-13 h-13 rounded-2xl bg-[#037F8C] text-white flex flex-col items-center justify-center font-bold tracking-wider shadow-sm shrink-0 border border-[#233122]">
                                 <span className="text-base leading-none font-black">AWN</span>
                                 <span className="text-[9px] uppercase tracking-widest text-[#A8BCA1]">
                                     عون
@@ -335,7 +335,7 @@ export const InvoiceDocumentModal: React.FC<InvoiceDocumentModalProps> = ({
                                 className={`inline-block px-3 py-1 rounded-xl text-xs font-black tracking-wide uppercase ${
                                     isProforma
                                         ? 'bg-[#FEF3C7] text-[#92400E] border border-[#F59E0B]/30'
-                                        : 'bg-[#2D3F2C] text-white'
+                                        : 'bg-[#037F8C] text-white'
                                 }`}
                             >
                                 {isProforma ? (
@@ -869,14 +869,14 @@ export const InvoiceDocumentModal: React.FC<InvoiceDocumentModalProps> = ({
                             </span>
                         </div>
 
-                        <div className="border-t-2 border-[#2D3F2C] pt-2 mt-2 flex items-center justify-between">
+                        <div className="border-t-2 border-[#037F8C] pt-2 mt-2 flex items-center justify-between">
                             <span className="text-sm font-black text-[#0D0D0D]">
                                 {langMode === 'ar'
                                     ? 'الإجمالي المستحق (شامل الضريبة):'
                                     : 'Grand Total (Incl. VAT):'}
                             </span>
                             <span
-                                className="font-mono text-base font-black text-[#2D3F2C]"
+                                className="font-mono text-base font-black text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {invoice.totalAmount.toLocaleString()} SAR

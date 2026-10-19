@@ -133,7 +133,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.code}
@@ -196,7 +196,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                 <div className="flex-1 overflow-y-auto p-6 space-y-5">
                     {/* Quick Stage & Assignment Controls */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-3">
-                        <h3 className="text-xs font-bold text-[#2D3F2C]">
+                        <h3 className="text-xs font-bold text-[#037F8C]">
                             {t('crm.customer.leads.viewDrawer.quickActions')}
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -246,10 +246,10 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
 
                     {/* Linked Commercial Deals & Progression */}
                     {linkedDeals.length > 0 ? (
-                        <div className="rounded-xl border border-[#2D3F2C]/30 bg-[#2D3F2C]/5 p-4 space-y-3.5">
+                        <div className="rounded-xl border border-[#037F8C]/30 bg-[#037F8C]/5 p-4 space-y-3.5">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                    <Briefcase size={15} className="text-[#2D3F2C]" />
+                                    <Briefcase size={15} className="text-[#037F8C]" />
                                     <span className="text-xs font-bold text-[#0D0D0D]">
                                         {t('crm.customer.leads.viewDrawer.commercialPipeline')}
                                     </span>
@@ -274,7 +274,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                             <div className="space-y-1 min-w-0">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span
-                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#2D3F2C]"
+                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#037F8C]"
                                                         dir="ltr"
                                                     >
                                                         {deal.code}
@@ -285,7 +285,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                         })}
                                                     </span>
                                                     <span className="text-[11px] font-mono text-[#6E6862] flex items-center gap-1">
-                                                        <TrendingUp size={11} className="text-[#2D3F2C]" />
+                                                        <TrendingUp size={11} className="text-[#037F8C]" />
                                                         {deal.probability}%
                                                     </span>
                                                 </div>
@@ -300,7 +300,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                     onClose();
                                                     navigate(`/crm/deals?search=${deal.code}`);
                                                 }}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[11px] font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0 shadow-2xs"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[11px] font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0 shadow-2xs"
                                                 title={t('crm.customer.leads.viewDrawer.viewDealDetails')}
                                             >
                                                 <ExternalLink size={11} />
@@ -313,7 +313,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                 <span className="text-[#6E6862] block">
                                                     {t('crm.commercial.deals.form.expectedValueLabel')}
                                                 </span>
-                                                <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                                                <span className="font-mono font-bold text-[#037F8C]" dir="ltr">
                                                     {Number(deal.expectedValue || 0).toLocaleString()} {t('crm.customer.common.sarCurrency')}
                                                 </span>
                                             </div>
@@ -331,7 +331,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                         <div className="pt-2 border-t border-[#F0ECE4] space-y-1.5">
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="font-semibold text-[#0D0D0D] flex items-center gap-1.5">
-                                                    <FileSpreadsheet size={12} className="text-[#2D3F2C]" />
+                                                    <FileSpreadsheet size={12} className="text-[#037F8C]" />
                                                     {t('crm.customer.leads.viewDrawer.linkedQuotationsCount', {
                                                         count: linkedQuotations.length,
                                                     })}
@@ -345,7 +345,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                             className="flex items-center justify-between p-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[11px]"
                                                         >
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                                                                <span className="font-mono font-bold text-[#037F8C]" dir="ltr">
                                                                     {q.code}
                                                                 </span>
                                                                 <span className="px-1.5 py-0.2 rounded text-[10px] bg-white border border-[#E5E0D8] text-[#6E6862]">
@@ -362,7 +362,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                                         onClose();
                                                                         navigate(`/crm/quotations?search=${q.code}`);
                                                                     }}
-                                                                    className="text-[#2D3F2C] hover:underline cursor-pointer"
+                                                                    className="text-[#037F8C] hover:underline cursor-pointer"
                                                                 >
                                                                     <ExternalLink size={11} />
                                                                 </button>
@@ -381,7 +381,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                         <div className="pt-2 border-t border-[#F0ECE4] space-y-1.5">
                                             <div className="flex items-center justify-between text-[11px]">
                                                 <span className="font-semibold text-[#0D0D0D] flex items-center gap-1.5">
-                                                    <FileCheck2 size={12} className="text-[#2D3F2C]" />
+                                                    <FileCheck2 size={12} className="text-[#037F8C]" />
                                                     {t('crm.customer.leads.viewDrawer.linkedContractsCount', {
                                                         count: linkedContracts.length,
                                                     })}
@@ -395,7 +395,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                             className="flex items-center justify-between p-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[11px]"
                                                         >
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                                                                <span className="font-mono font-bold text-[#037F8C]" dir="ltr">
                                                                     {c.code || c.contractNumber}
                                                                 </span>
                                                                 <span className="px-1.5 py-0.2 rounded text-[10px] bg-white border border-[#E5E0D8] text-[#6E6862]">
@@ -412,7 +412,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                                                         onClose();
                                                                         navigate(`/crm/contracts?search=${c.code}`);
                                                                     }}
-                                                                    className="text-[#2D3F2C] hover:underline cursor-pointer"
+                                                                    className="text-[#037F8C] hover:underline cursor-pointer"
                                                                 >
                                                                     <ExternalLink size={11} />
                                                                 </button>
@@ -431,10 +431,10 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             </div>
                         </div>
                     ) : canCreateDeal && onCreateDeal ? (
-                        <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="rounded-xl border border-[#037F8C]/20 bg-[#037F8C]/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="space-y-0.5 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <Briefcase size={15} className="text-[#2D3F2C] shrink-0" />
+                                    <Briefcase size={15} className="text-[#037F8C] shrink-0" />
                                     <span className="text-xs font-bold text-[#0D0D0D]">
                                         {t('crm.customer.leads.viewDrawer.createDeal')}
                                     </span>
@@ -452,7 +452,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             <button
                                 type="button"
                                 onClick={() => onCreateDeal(record)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold shrink-0 cursor-pointer transition-colors shadow-sm"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold shrink-0 cursor-pointer transition-colors shadow-sm"
                             >
                                 <Briefcase size={13} />
                                 <span>{t('crm.customer.leads.viewDrawer.createDealBtn')}</span>
@@ -463,7 +463,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     {/* Lead & Company Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span>{t('crm.customer.leads.form.sectionLeadInfo')}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-xs">
@@ -505,7 +505,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                     {t('crm.customer.leads.form.estimatedValueLabel')}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {Number(record.estimatedValue || 0).toLocaleString()}{' '}
@@ -518,7 +518,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     {/* Primary Contact Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <UserCheck size={14} className="text-[#2D3F2C]" />
+                            <UserCheck size={14} className="text-[#037F8C]" />
                             <span>{t('crm.customer.leads.form.sectionContactInfo')}</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -537,11 +537,11 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                             </div>
                             <div className="p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-1">
                                 <div className="flex items-center gap-1.5 font-mono text-[#0D0D0D]" dir="ltr">
-                                    <Phone size={12} className="text-[#2D3F2C]" />
+                                    <Phone size={12} className="text-[#037F8C]" />
                                     <span>{record.contactPhone}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 font-mono text-[#6E6862]" dir="ltr">
-                                    <Mail size={12} className="text-[#2D3F2C]" />
+                                    <Mail size={12} className="text-[#037F8C]" />
                                     <span className="truncate">{record.contactEmail}</span>
                                 </div>
                             </div>
@@ -551,7 +551,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                     {/* Address & Notes */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-2.5 text-xs">
                         <div className="flex items-center gap-2 font-bold text-[#0D0D0D]">
-                            <MapPin size={14} className="text-[#2D3F2C]" />
+                            <MapPin size={14} className="text-[#037F8C]" />
                             <span>{t('crm.customer.leads.form.sectionAddressInfo')}</span>
                         </div>
                         <p className="text-[#45413C]">
@@ -596,7 +596,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono text-[#0D0D0D]"
                                             dir="ltr"
                                         >
-                                            <Link2 size={11} className="text-[#2D3F2C]" />
+                                            <Link2 size={11} className="text-[#037F8C]" />
                                             {ref}
                                         </span>
                                     ))}
@@ -615,7 +615,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                                 onClose();
                                 navigate(`/crm/deals?search=${firstDeal.code}`);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
                         >
                             <ExternalLink size={13} />
                             <span>{t('crm.customer.leads.viewDrawer.viewDeal')}</span>
@@ -624,7 +624,7 @@ export const LeadViewDrawer: React.FC<LeadViewDrawerProps> = ({
                         <button
                             type="button"
                             onClick={() => onCreateDeal(record)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm"
                         >
                             <Briefcase size={14} />
                             <span>{t('crm.customer.leads.viewDrawer.createDealBtn')}</span>

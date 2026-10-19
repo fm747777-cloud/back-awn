@@ -51,13 +51,13 @@ export const OwnerViewDrawer: React.FC<OwnerViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.code}
                             </span>
                             {record.isMainOwner && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#2D3F2C] text-white text-xs font-semibold">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#037F8C] text-white text-xs font-semibold">
                                     <Crown size={11} />
                                     {t('crm.customer.owners.mainOwnerBadge')}
                                 </span>
@@ -117,7 +117,7 @@ export const OwnerViewDrawer: React.FC<OwnerViewDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {record.ownershipPercentage ?? 100}%
@@ -151,19 +151,19 @@ export const OwnerViewDrawer: React.FC<OwnerViewDrawerProps> = ({
 
                         <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
                             <div className="flex items-center gap-2 font-mono text-[#0D0D0D]" dir="ltr">
-                                <Phone size={13} className="text-[#2D3F2C]" />
+                                <Phone size={13} className="text-[#037F8C]" />
                                 <span>{record.phone}</span>
                             </div>
                             {record.email && (
                                 <div className="flex items-center gap-2 font-mono text-[#0D0D0D]" dir="ltr">
-                                    <Mail size={13} className="text-[#2D3F2C]" />
+                                    <Mail size={13} className="text-[#037F8C]" />
                                     <span>{record.email}</span>
                                 </div>
                             )}
                         </div>
 
                         <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center gap-2">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span className="font-semibold text-[#0D0D0D]">
                                 {isRtl
                                     ? record.companyNameAr || record.companyNameEn
@@ -201,7 +201,7 @@ export const OwnerViewDrawer: React.FC<OwnerViewDrawerProps> = ({
                                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono text-[#0D0D0D]"
                                             dir="ltr"
                                         >
-                                            <Link2 size={11} className="text-[#2D3F2C]" />
+                                            <Link2 size={11} className="text-[#037F8C]" />
                                             {ref}
                                         </span>
                                     ))}
@@ -222,7 +222,7 @@ export const OwnerViewDrawer: React.FC<OwnerViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.customer.common.editRecord')}

@@ -332,7 +332,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleLoadSampleBatchPreview}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Sparkles size={14} />
                         <span>{t('ums.employees.import.loadSamplePreview')}</span>
@@ -359,7 +359,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleDownloadSampleZip}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <FileArchive size={14} />
                         <span>{t('ums.employees.import.downloadSampleZip')}</span>
@@ -369,17 +369,17 @@ export const UmsEmployeeImportPage: React.FC = () => {
 
             {/* Post-Import Completion Banner */}
             {commitResult && (
-                <div className="bg-[#EAF3EC] border border-[#265938]/30 rounded-xl p-5 shadow-2xs space-y-4">
+                <div className="bg-[#EAF3EC] border border-[#037F8C]/30 rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-[#265938] text-white flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-lg bg-[#037F8C] text-white flex items-center justify-center shrink-0">
                                 <CheckCircle2 size={20} />
                             </div>
                             <div>
                                 <h2 className="text-sm font-bold text-[#0D0D0D]">
                                     {t('ums.employees.import.resultBanner.title')}
                                 </h2>
-                                <p className="text-xs text-[#265938] font-medium mt-0.5">
+                                <p className="text-xs text-[#037F8C] font-medium mt-0.5">
                                     {t('ums.employees.import.resultBanner.summary', {
                                         imported: commitResult.importedCount,
                                         rejected: commitResult.rejectedCount,
@@ -402,7 +402,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => navigate('/ums/employees')}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer"
                             >
                                 <Users size={13} />
                                 <span>{t('ums.employees.import.resultBanner.viewDirectory')}</span>
@@ -411,15 +411,15 @@ export const UmsEmployeeImportPage: React.FC = () => {
                     </div>
 
                     {commitResult.importedEmployees.length > 0 && (
-                        <div className="pt-3 border-t border-[#265938]/20 flex flex-wrap items-center gap-2">
+                        <div className="pt-3 border-t border-[#037F8C]/20 flex flex-wrap items-center gap-2">
                             {commitResult.importedEmployees.map((emp) => (
                                 <button
                                     key={emp.id}
                                     type="button"
                                     onClick={() => navigate(`/ums/employees/${emp.id}`)}
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] hover:border-[#2D3F2C] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] hover:border-[#037F8C] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
                                 >
-                                    <span className="font-mono text-[#2D3F2C]">{emp.code}</span>
+                                    <span className="font-mono text-[#037F8C]">{emp.code}</span>
                                     <span>{isRtl ? emp.nameAr : emp.nameEn}</span>
                                     <ExternalLink size={11} className="text-[#857E74]" />
                                 </button>
@@ -446,11 +446,11 @@ export const UmsEmployeeImportPage: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
                         isDragging
-                            ? 'border-[#2D3F2C] bg-[#EAF3EC]/50'
-                            : 'border-[#E5E0D8] bg-[#FAF8F5] hover:border-[#2D3F2C]/50'
+                            ? 'border-[#037F8C] bg-[#EAF3EC]/50'
+                            : 'border-[#E5E0D8] bg-[#FAF8F5] hover:border-[#037F8C]/50'
                     }`}
                 >
-                    <div className="w-12 h-12 rounded-xl bg-white border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] mx-auto shadow-2xs">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] mx-auto shadow-2xs">
                         <UploadCloud size={22} />
                     </div>
                     <h2 className="text-sm font-bold text-[#0D0D0D] mt-3">
@@ -467,7 +467,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                         >
                             <FileSpreadsheet size={14} />
                             <span>
@@ -538,7 +538,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                     validationSummary.fileValid &&
                                     validationSummary.validRowsCount > 0 &&
                                     !commitResult
-                                        ? 'bg-[#2D3F2C] hover:bg-[#223121] text-white cursor-pointer'
+                                        ? 'bg-[#037F8C] hover:bg-[#223121] text-white cursor-pointer'
                                         : 'bg-[#E5E0D8] text-[#857E74] cursor-not-allowed'
                                 }`}
                             >
@@ -560,7 +560,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <BookOpen size={17} />
                         </div>
                         <div>
@@ -576,7 +576,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => setShowReferenceCodes((prev) => !prev)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
                     >
                         {showReferenceCodes ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         <span>
@@ -597,7 +597,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                             {EMPLOYEE_IMPORT_REQUIRED_HEADERS.map((col) => (
                                 <span
                                     key={col}
-                                    className="px-2 py-1 rounded bg-white border border-[#2D3F2C]/30 text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                    className="px-2 py-1 rounded bg-white border border-[#037F8C]/30 text-[11px] font-mono font-semibold text-[#037F8C]"
                                 >
                                     {col}*
                                 </span>
@@ -628,7 +628,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                         {/* Branches */}
                         <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
                             <span className="font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                                <MapPin size={13} className="text-[#2D3F2C]" />
+                                <MapPin size={13} className="text-[#037F8C]" />
                                 {t('ums.employees.import.branchesRef')} ({branches.length})
                             </span>
                             <div className="space-y-1 max-h-36 overflow-y-auto">
@@ -637,7 +637,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                         key={b.id}
                                         className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded border border-[#E5E0D8]"
                                     >
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {b.code}
                                         </span>
                                         <span className="text-[#45413C] truncate">
@@ -651,7 +651,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                         {/* Departments */}
                         <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
                             <span className="font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                                <Building2 size={13} className="text-[#2D3F2C]" />
+                                <Building2 size={13} className="text-[#037F8C]" />
                                 {t('ums.employees.import.departmentsRef')} ({departments.length})
                             </span>
                             <div className="space-y-1 max-h-36 overflow-y-auto">
@@ -660,7 +660,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                         key={d.id}
                                         className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded border border-[#E5E0D8]"
                                     >
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {d.code}
                                         </span>
                                         <span className="text-[#45413C] truncate">
@@ -674,7 +674,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                         {/* Designations */}
                         <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
                             <span className="font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                                <Briefcase size={13} className="text-[#2D3F2C]" />
+                                <Briefcase size={13} className="text-[#037F8C]" />
                                 {t('ums.employees.import.designationsRef')} ({designations.length})
                             </span>
                             <div className="space-y-1 max-h-36 overflow-y-auto">
@@ -683,7 +683,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                         key={d.id}
                                         className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded border border-[#E5E0D8]"
                                     >
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {d.code}
                                         </span>
                                         <span className="text-[#45413C] truncate">
@@ -697,7 +697,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                         {/* System Roles */}
                         <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
                             <span className="font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                                <ShieldCheck size={13} className="text-[#2D3F2C]" />
+                                <ShieldCheck size={13} className="text-[#037F8C]" />
                                 {t('ums.employees.import.rolesRef')} ({roles.length})
                             </span>
                             <div className="space-y-1 max-h-36 overflow-y-auto">
@@ -706,7 +706,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                         key={r.id}
                                         className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded border border-[#E5E0D8]"
                                     >
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {r.code}
                                         </span>
                                         <span className="text-[#45413C] truncate">
@@ -720,7 +720,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                         {/* Custom Addons */}
                         <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] space-y-2 md:col-span-2">
                             <span className="font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                                <FileText size={13} className="text-[#2D3F2C]" />
+                                <FileText size={13} className="text-[#037F8C]" />
                                 {t('ums.employees.import.addonsRef')} ({customAddons.length})
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
@@ -729,7 +729,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                         key={a.id}
                                         className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded border border-[#E5E0D8]"
                                     >
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {a.code} ({a.type})
                                         </span>
                                         <span className="text-[#45413C] truncate">
@@ -781,7 +781,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                     {t('ums.employees.import.kpi.totalRowsSub')}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                                 <FileSpreadsheet size={18} />
                             </div>
                         </div>
@@ -791,14 +791,14 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                 <span className="text-xs font-semibold text-[#6E6862] block">
                                     {t('ums.employees.import.kpi.validRows')}
                                 </span>
-                                <span className="text-2xl font-mono font-bold text-[#265938] mt-1 block">
+                                <span className="text-2xl font-mono font-bold text-[#037F8C] mt-1 block">
                                     {validationSummary.validRowsCount}
                                 </span>
-                                <span className="text-[11px] text-[#265938]">
+                                <span className="text-[11px] text-[#037F8C]">
                                     {t('ums.employees.import.kpi.validRowsSub')}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-[#EAF3EC] text-[#265938] flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-[#EAF3EC] text-[#037F8C] flex items-center justify-center">
                                 <CheckCircle2 size={18} />
                             </div>
                         </div>
@@ -848,7 +848,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                     onClick={() => setPreviewTab('all')}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                                         previewTab === 'all'
-                                            ? 'bg-[#2D3F2C] text-white'
+                                            ? 'bg-[#037F8C] text-white'
                                             : 'bg-white text-[#45413C] border border-[#E5E0D8] hover:bg-[#EFECE6]'
                                     }`}
                                 >
@@ -862,8 +862,8 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                     onClick={() => setPreviewTab('valid')}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                                         previewTab === 'valid'
-                                            ? 'bg-[#265938] text-white'
-                                            : 'bg-white text-[#265938] border border-[#E5E0D8] hover:bg-[#EAF3EC]'
+                                            ? 'bg-[#037F8C] text-white'
+                                            : 'bg-white text-[#037F8C] border border-[#E5E0D8] hover:bg-[#EAF3EC]'
                                     }`}
                                 >
                                     {t('ums.employees.import.tabs.valid', {
@@ -890,7 +890,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={handleCommitImport}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                                 >
                                     <Check size={14} />
                                     <span>
@@ -966,7 +966,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                                 </td>
                                                 <td className="py-3 px-3 whitespace-nowrap">
                                                     {isValid ? (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#EAF3EC] text-[#265938] font-semibold">
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#EAF3EC] text-[#037F8C] font-semibold">
                                                             <CheckCircle2 size={12} />
                                                             {t(
                                                                 'ums.employees.import.table.validBadge'
@@ -983,7 +983,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                                     )}
                                                 </td>
                                                 <td
-                                                    className="py-3 px-3 font-mono font-bold text-[#2D3F2C] whitespace-nowrap"
+                                                    className="py-3 px-3 font-mono font-bold text-[#037F8C] whitespace-nowrap"
                                                     dir="ltr"
                                                 >
                                                     {emp.code}
@@ -1038,7 +1038,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                                 <td className="py-3 px-3 font-mono text-[#0D0D0D] whitespace-nowrap">
                                                     {row.rawValues.joiningDate || emp.joiningDate}
                                                 </td>
-                                                <td className="py-3 px-3 font-mono font-semibold text-[#265938] whitespace-nowrap">
+                                                <td className="py-3 px-3 font-mono font-semibold text-[#037F8C] whitespace-nowrap">
                                                     {formatSarCurrency(
                                                         emp.salaryDetails?.grossSalary || 0,
                                                         isRtl
@@ -1046,7 +1046,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                                 </td>
                                                 <td className="py-3 px-3 min-w-[240px]">
                                                     {isValid ? (
-                                                        <span className="text-[#265938] font-medium">
+                                                        <span className="text-[#037F8C] font-medium">
                                                             {t(
                                                                 'ums.employees.import.table.readyToImport'
                                                             )}
@@ -1121,7 +1121,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
                                                     #{err.rowNumber}
                                                 </td>
                                                 <td
-                                                    className="py-2 px-3 font-mono font-semibold text-[#2D3F2C]"
+                                                    className="py-2 px-3 font-mono font-semibold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {err.field}

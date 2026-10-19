@@ -502,7 +502,7 @@ export const LeadsPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.customer.leads.badge')}
@@ -525,7 +525,7 @@ export const LeadsPage: React.FC = () => {
                         onClick={handleCopyExternalUrl}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
                     >
-                        <Copy size={14} className="text-[#2D3F2C]" />
+                        <Copy size={14} className="text-[#037F8C]" />
                         {t('crm.customer.leads.copyExternalUrl')}
                     </button>
 
@@ -534,7 +534,7 @@ export const LeadsPage: React.FC = () => {
                         onClick={() => setIsImportOpen(true)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
                     >
-                        <Upload size={14} className="text-[#2D3F2C]" />
+                        <Upload size={14} className="text-[#037F8C]" />
                         {t('crm.customer.leads.importButton')}
                     </button>
 
@@ -555,7 +555,7 @@ export const LeadsPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <UserPlus size={15} />
                         {t('crm.customer.leads.newButton')}
@@ -580,7 +580,7 @@ export const LeadsPage: React.FC = () => {
                             })}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <Users size={19} />
                     </div>
                 </div>
@@ -653,7 +653,7 @@ export const LeadsPage: React.FC = () => {
                                 setPage(1);
                             }}
                             placeholder={t('crm.customer.leads.searchPlaceholder')}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -679,7 +679,7 @@ export const LeadsPage: React.FC = () => {
                             }}
                             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer ${
                                 !includeQualified
-                                    ? 'bg-[#2D3F2C]/10 border-[#2D3F2C]/30 text-[#2D3F2C]'
+                                    ? 'bg-[#037F8C]/10 border-[#037F8C]/30 text-[#037F8C]'
                                     : 'bg-white border-[#E5E0D8] text-[#6E6862]'
                             }`}
                         >
@@ -853,7 +853,7 @@ export const LeadsPage: React.FC = () => {
                                             {isRtl ? stage.nameAr : stage.nameEn}
                                         </span>
                                     </div>
-                                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-bold text-[#2D3F2C]">
+                                    <span className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-bold text-[#037F8C]">
                                         {stageLeads.length}
                                     </span>
                                 </div>
@@ -862,17 +862,17 @@ export const LeadsPage: React.FC = () => {
                                     {stageLeads.map((lead) => (
                                         <div
                                             key={lead.id}
-                                            className="rounded-xl border border-[#E5E0D8] bg-white p-3.5 shadow-2xs space-y-2.5 hover:border-[#2D3F2C]/40 transition-colors"
+                                            className="rounded-xl border border-[#E5E0D8] bg-white p-3.5 shadow-2xs space-y-2.5 hover:border-[#037F8C]/40 transition-colors"
                                         >
                                             <div className="flex items-center justify-between gap-2">
                                                 <span
-                                                    className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[10px] font-mono font-semibold text-[#2D3F2C]"
+                                                    className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[10px] font-mono font-semibold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {lead.code}
                                                 </span>
                                                 <span
-                                                    className="text-[11px] font-mono font-bold text-[#2D3F2C]"
+                                                    className="text-[11px] font-mono font-bold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {Number(
@@ -885,7 +885,7 @@ export const LeadsPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setViewingRecord(lead)}
-                                                className="text-xs font-bold text-[#0D0D0D] hover:text-[#2D3F2C] text-start block w-full cursor-pointer"
+                                                className="text-xs font-bold text-[#0D0D0D] hover:text-[#037F8C] text-start block w-full cursor-pointer"
                                             >
                                                 {lead.title}
                                             </button>
@@ -1009,7 +1009,7 @@ export const LeadsPage: React.FC = () => {
                                                 key={lead.id}
                                                 className="hover:bg-[#FAF8F5]/60 transition-colors"
                                             >
-                                                <td className="py-3.5 px-4 font-mono font-semibold text-[#2D3F2C]" dir="ltr">
+                                                <td className="py-3.5 px-4 font-mono font-semibold text-[#037F8C]" dir="ltr">
                                                     {lead.code}
                                                 </td>
                                                 <td className="py-3.5 px-4">
@@ -1125,7 +1125,7 @@ export const LeadsPage: React.FC = () => {
                                                     </select>
                                                 </td>
                                                 <td
-                                                    className="py-3.5 px-4 font-mono font-bold text-[#2D3F2C]"
+                                                    className="py-3.5 px-4 font-mono font-bold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {Number(
@@ -1446,7 +1446,7 @@ export const LeadsPage: React.FC = () => {
                                     :
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {createdDealPrompt.deal.expectedValue.toLocaleString()}{' '}
@@ -1463,7 +1463,7 @@ export const LeadsPage: React.FC = () => {
                                     setViewingRecord(null);
                                     navigate(`/crm/quotations?dealId=${dealId}`);
                                 }}
-                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer shadow-sm transition-colors"
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer shadow-sm transition-colors"
                             >
                                 <FileText size={15} />
                                 <span>

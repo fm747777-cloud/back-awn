@@ -81,7 +81,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.contractNumber}
@@ -210,7 +210,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                                         className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-white text-xs font-semibold transition-colors ${
                                             isDisabled
                                                 ? 'bg-slate-400 cursor-not-allowed opacity-60'
-                                                : 'bg-[#2D3F2C] hover:bg-[#233122] cursor-pointer'
+                                                : 'bg-[#037F8C] hover:bg-[#233122] cursor-pointer'
                                         }`}
                                     >
                                         <Receipt size={14} />
@@ -237,7 +237,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                     {/* Contract Summary */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.contracts.viewDrawer.title')}
                             </span>
@@ -265,7 +265,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {record.totalValue.toLocaleString()} SAR
@@ -322,7 +322,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                                <Receipt size={14} className="text-[#2D3F2C]" />
+                                <Receipt size={14} className="text-[#037F8C]" />
                                 <span>
                                     {t(
                                         'crm.commercial.contracts.viewDrawer.linkedInvoices',
@@ -338,7 +338,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                                     onClose();
                                     navigate('/crm/invoices');
                                 }}
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2D3F2C] hover:text-[#1E2B1D] hover:underline cursor-pointer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#037F8C] hover:text-[#1E2B1D] hover:underline cursor-pointer"
                             >
                                 <span>
                                     {t(
@@ -393,7 +393,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                                             <div className="flex items-center justify-between gap-2 flex-wrap">
                                                 <div className="flex items-center gap-2">
                                                     <span
-                                                        className="font-mono font-bold text-[#2D3F2C]"
+                                                        className="font-mono font-bold text-[#037F8C]"
                                                         dir="ltr"
                                                     >
                                                         {inv.invoiceNumber}
@@ -402,7 +402,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                                                         className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                                             isProforma
                                                                 ? 'bg-[#F3EEFA] text-[#5B21B6] border border-[#DDD6FE]'
-                                                                : 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]'
+                                                                : 'bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]'
                                                         }`}
                                                     >
                                                         {t(
@@ -504,7 +504,7 @@ export const ContractViewDrawer: React.FC<ContractViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.commercial.common.edit')}

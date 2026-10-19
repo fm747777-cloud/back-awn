@@ -114,7 +114,7 @@ const Search = ({
                     <button
                         type="button"
                         onClick={onExport}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#DCD6CD] hover:border-[#BFAB93] text-[#2D3F2C] hover:bg-[#F8F6F2] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs active:scale-98"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#DCD6CD] hover:border-[#BFAB93] text-[#037F8C] hover:bg-[#F8F6F2] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs active:scale-98"
                     >
                         <Download size={14} className="text-[#6A7358]" />
                         <span>{t('common.export')}</span>
@@ -124,7 +124,7 @@ const Search = ({
                         <button
                             type="button"
                             onClick={onAddNew}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-[#FAF8F5] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-xs active:scale-98"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-[#FAF8F5] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-xs active:scale-98"
                         >
                             <Plus size={14} className="text-[#BFAB93]" />
                             <span>{addBtnText}</span>
@@ -146,7 +146,7 @@ const Search = ({
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={resolvedPlaceholder}
-                            className="w-full ps-9 pe-3.5 py-2 bg-[#FAF8F5]/80 hover:bg-[#FAF8F5] focus:bg-white border border-[#E5E0D8] focus:border-[#2D3F2C] rounded-lg text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/15 transition"
+                            className="w-full ps-9 pe-3.5 py-2 bg-[#FAF8F5]/80 hover:bg-[#FAF8F5] focus:bg-white border border-[#E5E0D8] focus:border-[#037F8C] rounded-lg text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/15 transition"
                         />
                     </div>
 
@@ -155,7 +155,7 @@ const Search = ({
                             type="button"
                             onClick={onToggleFilters}
                             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer shrink-0 shadow-2xs ${isFiltersOpen || hasActiveFilters
-                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5] border-[#037F8C]'
                                     : 'bg-white border-[#DCD6CD] hover:border-[#BFAB93] text-[#595550] hover:text-[#0D0D0D] hover:bg-[#F8F6F2]'
                                 }`}
                         >
@@ -171,7 +171,7 @@ const Search = ({
                 {/* Show Page Size Controls */}
                 <div className="flex items-center gap-2 text-xs text-[#6E6862] shrink-0 self-end sm:self-center">
                     <span>{t('pagination.show')}</span>
-                    <div className="relative inline-flex items-center bg-white border border-[#DCD6CD] hover:border-[#BFAB93] focus-within:border-[#2D3F2C] focus-within:ring-1 focus-within:ring-[#2D3F2C]/20 rounded-lg shadow-2xs transition">
+                    <div className="relative inline-flex items-center bg-white border border-[#DCD6CD] hover:border-[#BFAB93] focus-within:border-[#037F8C] focus-within:ring-1 focus-within:ring-[#037F8C]/20 rounded-lg shadow-2xs transition">
                         <input
                             type="number"
                             min={1}

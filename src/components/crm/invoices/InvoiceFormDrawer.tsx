@@ -539,7 +539,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C] shrink-0">
                             {mode === 'create' ? (
                                 <Receipt size={18} />
                             ) : (
@@ -551,7 +551,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                 className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold ${
                                     formState.invoiceType === 'proforma'
                                         ? 'bg-[#F3EEFA] text-[#5B21B6] border border-[#DDD6FE]'
-                                        : 'bg-white text-[#2D3F2C] border border-[#E5E0D8]'
+                                        : 'bg-white text-[#037F8C] border border-[#E5E0D8]'
                                 }`}
                                 dir="ltr"
                             >
@@ -619,7 +619,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                 onClick={() => handleChange('invoiceType', 'final_tax')}
                                 className={`p-3 rounded-xl border text-start transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                                     (formState.invoiceType || 'final_tax') === 'final_tax'
-                                        ? 'bg-white border-[#2D3F2C] shadow-xs ring-1 ring-[#2D3F2C]'
+                                        ? 'bg-white border-[#037F8C] shadow-xs ring-1 ring-[#037F8C]'
                                         : 'bg-white/60 border-[#E5E0D8] hover:bg-white hover:border-[#BFAB93]'
                                 }`}
                             >
@@ -627,7 +627,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                     <span className="text-xs font-bold text-[#0D0D0D]">
                                         {t('crm.commercial.invoices.form.typeFinalTax')}
                                     </span>
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                         INV-YYYY-XXX
                                     </span>
                                 </div>
@@ -662,7 +662,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
 
                     {/* Section 1: Invoice Identity & Commercial Links */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <Building2 size={14} />
                             <span>
                                 {t('crm.commercial.invoices.form.companyLabel')}
@@ -932,7 +932,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
 
                     {/* Section 3: Financial Settlement & Payments */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <Calculator size={14} />
                             <span>
                                 {t(
@@ -1077,7 +1077,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {formState.totalAmount.toLocaleString()} SAR
@@ -1131,7 +1131,7 @@ export const InvoiceFormDrawer: React.FC<InvoiceFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-5 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            className="px-5 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                         >
                             {isSubmitting
                                 ? t('crm.commercial.common.saving')

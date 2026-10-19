@@ -128,7 +128,7 @@ export const CrmCustomerDeleteModal: React.FC<CrmCustomerDeleteModalProps> = ({
                                         className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D]"
                                         dir="ltr"
                                     >
-                                        <Link2 size={12} className="text-[#2D3F2C] shrink-0" />
+                                        <Link2 size={12} className="text-[#037F8C] shrink-0" />
                                         <span className="truncate">{ref}</span>
                                     </li>
                                 ))}
@@ -166,7 +166,7 @@ export const CrmCustomerDeleteModal: React.FC<CrmCustomerDeleteModalProps> = ({
                                 type="button"
                                 onClick={onDeactivateInstead}
                                 disabled={isDeleting}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 <Power size={14} />
                                 {t('crm.customer.deleteModal.deactivateInsteadBtn')}

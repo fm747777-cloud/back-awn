@@ -78,7 +78,7 @@ export const UmsSectionPlaceholder: React.FC<UmsPlaceholderProps> = ({
                             {t(titleKey, { defaultValue: titleKey })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             {code}
@@ -117,7 +117,7 @@ export const UmsSectionPlaceholder: React.FC<UmsPlaceholderProps> = ({
 
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-8 shadow-2xs">
                 <div className="flex items-start gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-xs shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shadow-xs shrink-0">
                         <Icon className="w-6 h-6" />
                     </div>
                     <div>
@@ -125,7 +125,7 @@ export const UmsSectionPlaceholder: React.FC<UmsPlaceholderProps> = ({
                             <h2 className="text-lg font-bold text-[#0D0D0D]">
                                 {t(titleKey, { defaultValue: titleKey })}
                             </h2>
-                            <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#EAF3EC] text-[#265938] border border-[#265938]/20">
+                            <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-[#EAF3EC] text-[#037F8C] border border-[#037F8C]/20">
                                 {t('ums.placeholders.foundationReady', {
                                     defaultValue: 'Foundation Ready',
                                 })}
@@ -142,7 +142,7 @@ export const UmsSectionPlaceholder: React.FC<UmsPlaceholderProps> = ({
 
                 <div className="p-5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Shield className="w-5 h-5 text-[#265938]" />
+                        <Shield className="w-5 h-5 text-[#037F8C]" />
                         <div>
                             <p className="text-xs font-semibold text-[#0D0D0D]">
                                 {t('ums.placeholders.dataWiringComplete', {
@@ -158,7 +158,7 @@ export const UmsSectionPlaceholder: React.FC<UmsPlaceholderProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[#2D3F2C] bg-[#EFECE6] px-2.5 py-1 rounded-md">
+                    <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[#037F8C] bg-[#EFECE6] px-2.5 py-1 rounded-md">
                         <Sparkles size={13} />
                         <span>{phaseTarget}</span>
                     </div>
@@ -260,7 +260,7 @@ export const UmsDashboardPage: React.FC = () => {
                             {t('nav.dashboard', { defaultValue: 'UMS Executive Dashboard' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             UMS-DSH
@@ -291,7 +291,7 @@ export const UmsDashboardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees/new')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={15} />
                         <span>
@@ -315,7 +315,7 @@ export const UmsDashboardPage: React.FC = () => {
                                 {metrics.totalEmployees}
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Users size={18} />
                         </div>
                     </div>
@@ -332,11 +332,11 @@ export const UmsDashboardPage: React.FC = () => {
                             <p className="text-xs font-medium text-[#6E6862]">
                                 {isRtl ? 'نسبة التوطين (السعودة)' : 'Saudization Rate'}
                             </p>
-                            <p className="text-2xl font-bold text-[#265938] mt-1">
+                            <p className="text-2xl font-bold text-[#037F8C] mt-1">
                                 {metrics.saudizationRate}%
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <CheckCircle2 size={18} />
                         </div>
                     </div>
@@ -408,7 +408,7 @@ export const UmsDashboardPage: React.FC = () => {
                                 className="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] transition-colors cursor-pointer text-start"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                                    <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                                         <ModIcon size={16} />
                                     </div>
                                     <div>
@@ -423,7 +423,7 @@ export const UmsDashboardPage: React.FC = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <span className="px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-bold text-[#2D3F2C]">
+                                <span className="px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-bold text-[#037F8C]">
                                     {mod.count}
                                 </span>
                             </button>
@@ -443,7 +443,7 @@ export const UmsDashboardPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => navigate('/ums/departments')}
-                            className="text-xs font-semibold text-[#265938] hover:underline cursor-pointer"
+                            className="text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
                         >
                             {isRtl ? 'عرض الأقسام' : 'Manage Departments'}
                         </button>
@@ -467,7 +467,7 @@ export const UmsDashboardPage: React.FC = () => {
                                     <progress
                                         value={dept.count}
                                         max={Math.max(metrics.totalEmployees, 1)}
-                                        className="w-full h-2 rounded-full overflow-hidden bg-[#FAF8F5] border border-[#E5E0D8] accent-[#2D3F2C]"
+                                        className="w-full h-2 rounded-full overflow-hidden bg-[#FAF8F5] border border-[#E5E0D8] accent-[#037F8C]"
                                     />
                                 </div>
                             );
@@ -484,7 +484,7 @@ export const UmsDashboardPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => navigate('/ums/audit-trail')}
-                            className="text-xs font-semibold text-[#265938] hover:underline cursor-pointer"
+                            className="text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
                         >
                             {isRtl ? 'عرض السجل الكامل' : 'View Full Audit Trail'}
                         </button>
@@ -498,7 +498,7 @@ export const UmsDashboardPage: React.FC = () => {
                             >
                                 <div className="space-y-0.5">
                                     <div className="flex items-center gap-2">
-                                        <span className="px-1.5 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-[10px] font-semibold text-[#2D3F2C]">
+                                        <span className="px-1.5 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-[10px] font-semibold text-[#037F8C]">
                                             {ev.action}
                                         </span>
                                         <span className="font-bold text-[#0D0D0D]">
@@ -682,12 +682,12 @@ export const UmsAuditTrailPage: React.FC = () => {
         switch (action) {
             case 'CREATED':
             case 'ACTIVATED':
-                return 'bg-[#EAF3EC] text-[#265938] border-[#265938]/20';
+                return 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20';
             case 'IMPORTED':
                 return 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]';
             case 'UPDATED':
             case 'EXPORTED':
-                return 'bg-[#FAF8F5] text-[#2D3F2C] border-[#E5E0D8]';
+                return 'bg-[#FAF8F5] text-[#037F8C] border-[#E5E0D8]';
             case 'DEACTIVATED':
                 return 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]';
             case 'DELETED':
@@ -707,7 +707,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                             {t('nav.auditTrail', { defaultValue: 'UMS Audit Trail' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             UMS-AUD
@@ -743,7 +743,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                             </p>
                             <p className="text-2xl font-bold text-[#0D0D0D] mt-1">{kpis.total}</p>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <History size={18} />
                         </div>
                     </div>
@@ -755,11 +755,11 @@ export const UmsAuditTrailPage: React.FC = () => {
                             <p className="text-xs font-medium text-[#6E6862]">
                                 {isRtl ? 'عمليات الموظفين والاستيراد' : 'Employee & Import Events'}
                             </p>
-                            <p className="text-2xl font-bold text-[#265938] mt-1">
+                            <p className="text-2xl font-bold text-[#037F8C] mt-1">
                                 {kpis.employeeAndImport}
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <FileSpreadsheet size={18} />
                         </div>
                     </div>
@@ -771,11 +771,11 @@ export const UmsAuditTrailPage: React.FC = () => {
                             <p className="text-xs font-medium text-[#6E6862]">
                                 {isRtl ? 'تحديثات البيانات الأساسية' : 'Master Data Changes'}
                             </p>
-                            <p className="text-2xl font-bold text-[#2D3F2C] mt-1">
+                            <p className="text-2xl font-bold text-[#037F8C] mt-1">
                                 {kpis.masterDataChanges}
                             </p>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Activity size={18} />
                         </div>
                     </div>
@@ -818,7 +818,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                                     ? 'بحث بالمعرف، اسم الموظف، المسؤول، أو تفاصيل العملية...'
                                     : 'Search by event ID, employee code, actor, or description...'
                             }
-                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                         />
                         {searchQuery && (
                             <button
@@ -842,7 +842,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label="Filter by Resource Module"
-                            className="px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
+                            className="px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C] cursor-pointer"
                         >
                             <option value="ALL">
                                 {isRtl ? 'جميع الوحدات (All Modules)' : 'All Modules'}
@@ -861,7 +861,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label="Filter by Action Type"
-                            className="px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
+                            className="px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C] cursor-pointer"
                         >
                             <option value="ALL">
                                 {isRtl ? 'جميع العمليات (All Actions)' : 'All Actions'}
@@ -877,7 +877,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={handleResetFilters}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                             >
                                 <RotateCcw size={13} />
                                 <span>{t('common.reset', { defaultValue: 'Reset' })}</span>
@@ -934,7 +934,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                                         className="hover:bg-[#FAF8F5]/60 transition-colors"
                                     >
                                         <td
-                                            className="py-3 px-4 font-mono font-semibold text-[#2D3F2C] whitespace-nowrap"
+                                            className="py-3 px-4 font-mono font-semibold text-[#037F8C] whitespace-nowrap"
                                             dir="ltr"
                                         >
                                             {ev.id}
@@ -1056,7 +1056,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                         <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2">
                                 <span
-                                    className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-xs font-bold text-[#2D3F2C]"
+                                    className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono text-xs font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {viewingEvent.id}
@@ -1140,11 +1140,11 @@ export const UmsAuditTrailPage: React.FC = () => {
                                     </div>
                                 )}
                                 {viewingEvent.newState && (
-                                    <div className="p-3 rounded-lg bg-[#EAF3EC]/50 border border-[#265938]/20">
-                                        <p className="font-semibold text-[#265938] mb-1">
+                                    <div className="p-3 rounded-lg bg-[#EAF3EC]/50 border border-[#037F8C]/20">
+                                        <p className="font-semibold text-[#037F8C] mb-1">
                                             {isRtl ? 'الحالة الجديدة' : 'New State'}
                                         </p>
-                                        <p className="font-mono text-[11px] text-[#265938] break-words">
+                                        <p className="font-mono text-[11px] text-[#037F8C] break-words">
                                             {sanitizeAuditStateSnapshot(viewingEvent.newState)}
                                         </p>
                                     </div>
@@ -1156,7 +1156,7 @@ export const UmsAuditTrailPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingEvent(null)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold cursor-pointer"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>

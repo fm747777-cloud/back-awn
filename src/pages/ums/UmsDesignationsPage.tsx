@@ -502,7 +502,7 @@ export const UmsDesignationsPage: React.FC = () => {
                             {t('ums.designations.title', { defaultValue: 'Designations Master' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             DES-MST
@@ -529,7 +529,7 @@ export const UmsDesignationsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={14} />
                         <span>{t('ums.designations.addDesignation', { defaultValue: 'Add Designation' })}</span>
@@ -545,7 +545,7 @@ export const UmsDesignationsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.designations.kpi.total', { defaultValue: 'Total Designations' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Briefcase size={16} />
                         </div>
                     </div>
@@ -565,12 +565,12 @@ export const UmsDesignationsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.designations.kpi.active', { defaultValue: 'Active Positions' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <CheckCircle2 size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#265938]">
+                        <span className="text-2xl font-bold tracking-tight text-[#037F8C]">
                             {kpis.active}
                         </span>
                         <span className="text-[11px] font-normal text-[#6E6862]">
@@ -605,7 +605,7 @@ export const UmsDesignationsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.designations.kpi.workforce', { defaultValue: 'Assigned Workforce' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Users size={16} />
                         </div>
                     </div>
@@ -639,7 +639,7 @@ export const UmsDesignationsPage: React.FC = () => {
                             placeholder={t('ums.designations.searchPlaceholder', {
                                 defaultValue: 'Search designations by code, title, department, or description...',
                             })}
-                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] transition-colors"
+                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] transition-colors"
                         />
                         {searchQuery && (
                             <button
@@ -665,7 +665,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                     setCurrentPage(1);
                                 }}
                                 aria-label={t('ums.designations.filterDepartment', { defaultValue: 'Filter Department' })}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
                                     {t('common.allDepartments', { defaultValue: 'All Departments' })}
@@ -721,7 +721,7 @@ export const UmsDesignationsPage: React.FC = () => {
                 {/* Bulk selection actions bar */}
                 {selectedIds.length > 0 && (
                     <div className="flex items-center justify-between px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
-                        <span className="font-semibold text-[#2D3F2C]">
+                        <span className="font-semibold text-[#037F8C]">
                             {t('common.selectedCount', {
                                 defaultValue: `${selectedIds.length} item(s) selected`,
                                 count: selectedIds.length,
@@ -752,7 +752,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                         checked={isAllSelected}
                                         onChange={handleSelectAll}
                                         aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                     />
                                 </th>
                                 <th className="px-4 py-3 text-start">
@@ -809,7 +809,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                     checked={isSelected}
                                                     onChange={() => handleToggleSelect(item.id)}
                                                     aria-label={`Select ${item.titleEn}`}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                    className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                                 />
                                             </td>
 
@@ -826,7 +826,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                         title={t('common.copy', { defaultValue: 'Copy' })}
                                                     >
                                                         {copiedCode === item.code ? (
-                                                            <Check size={12} className="text-[#265938]" />
+                                                            <Check size={12} className="text-[#037F8C]" />
                                                         ) : (
                                                             <Copy size={12} />
                                                         )}
@@ -867,7 +867,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => setViewingDesignation(item)}
-                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                                     title={t('ums.designations.staffPreview', {
                                                         defaultValue: 'View assigned employees',
                                                     })}
@@ -888,14 +888,14 @@ export const UmsDesignationsPage: React.FC = () => {
                                                     onClick={() => handleToggleStatus(item)}
                                                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
                                                         item.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938] border-[#265938]/20 hover:bg-[#EAF3EC]/80'
+                                                            ? 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20 hover:bg-[#EAF3EC]/80'
                                                             : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
                                                     }`}
                                                     title={t('common.toggleStatus', { defaultValue: 'Click to toggle status' })}
                                                 >
                                                     <span
                                                         className={`w-1.5 h-1.5 rounded-full ${
-                                                            item.status === 'Active' ? 'bg-[#265938]' : 'bg-[#857E74]'
+                                                            item.status === 'Active' ? 'bg-[#037F8C]' : 'bg-[#857E74]'
                                                         }`}
                                                     />
                                                     <span>
@@ -935,7 +935,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                         onClick={() => handleToggleStatus(item)}
                                                         className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                                                             item.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
+                                                                ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
                                                                 : 'text-[#857E74] hover:bg-[#FAF8F5]'
                                                         }`}
                                                         title={t('common.toggleStatus', { defaultValue: 'Toggle Status' })}
@@ -973,7 +973,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                         >
                             {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
                                 <option key={opt} value={opt}>
@@ -1079,10 +1079,10 @@ export const UmsDesignationsPage: React.FC = () => {
                                             setFormData((prev) => ({ ...prev, titleEn: e.target.value }))
                                         }
                                         placeholder="e.g. Chief Executive Officer"
-                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                             formErrors.titleEn
                                                 ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {formErrors.titleEn && (
@@ -1105,10 +1105,10 @@ export const UmsDesignationsPage: React.FC = () => {
                                             setFormData((prev) => ({ ...prev, titleAr: e.target.value }))
                                         }
                                         placeholder="مثال: الرئيس التنفيذي"
-                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                             formErrors.titleAr
                                                 ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {formErrors.titleAr && (
@@ -1131,7 +1131,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                     onChange={(e) =>
                                         setFormData((prev) => ({ ...prev, departmentId: e.target.value }))
                                     }
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] cursor-pointer"
                                 >
                                     <option value="">
                                         {t('ums.designations.noDepartment', {
@@ -1158,7 +1158,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                         setFormData((prev) => ({ ...prev, descriptionEn: e.target.value }))
                                     }
                                     placeholder="Organizational role overview and core competencies..."
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                 />
                             </div>
 
@@ -1175,7 +1175,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                         setFormData((prev) => ({ ...prev, descriptionAr: e.target.value }))
                                     }
                                     placeholder="الوصف الوظيفي والمسؤوليات الرئيسية..."
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                 />
                             </div>
 
@@ -1194,7 +1194,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                             onChange={() =>
                                                 setFormData((prev) => ({ ...prev, status: 'Active' }))
                                             }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                         />
                                         <span>{t('common.active', { defaultValue: 'Active' })}</span>
                                     </label>
@@ -1207,7 +1207,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                             onChange={() =>
                                                 setFormData((prev) => ({ ...prev, status: 'Inactive' }))
                                             }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                         />
                                         <span>{t('common.inactive', { defaultValue: 'Inactive' })}</span>
                                     </label>
@@ -1228,7 +1228,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                                 >
                                     {isCreateOpen
                                         ? t('common.create', { defaultValue: 'Create' })
@@ -1246,7 +1246,7 @@ export const UmsDesignationsPage: React.FC = () => {
                     <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                                     <Briefcase size={18} />
                                 </div>
                                 <div>
@@ -1287,7 +1287,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                     <span
                                         className={`inline-block font-semibold mt-0.5 ${
                                             viewingDesignation.status === 'Active'
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -1334,7 +1334,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-xs font-bold text-[#0D0D0D]">
                                         {t('ums.designations.staffPreview', { defaultValue: 'Assigned Employees' })}{' '}
-                                        <span className="text-[#265938]">({viewedEmployees.length})</span>
+                                        <span className="text-[#037F8C]">({viewedEmployees.length})</span>
                                     </h3>
                                 </div>
 
@@ -1352,7 +1352,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                 className="flex items-center justify-between p-3 bg-white text-xs"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px]">
+                                                    <div className="w-7 h-7 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px]">
                                                         {emp.nameEn.slice(0, 2).toUpperCase()}
                                                     </div>
                                                     <div>
@@ -1367,7 +1367,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                 <span
                                                     className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                                         emp.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938]'
+                                                            ? 'bg-[#EAF3EC] text-[#037F8C]'
                                                             : 'bg-[#FAF8F5] text-[#857E74]'
                                                     }`}
                                                 >
@@ -1384,7 +1384,7 @@ export const UmsDesignationsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingDesignation(null)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>
@@ -1425,7 +1425,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                             handleToggleStatus(deletingDesignation);
                                             setDeletingDesignation(null);
                                         }}
-                                        className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                        className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                     >
                                         {t('common.deactivateInstead', { defaultValue: 'Deactivate Instead' })}
                                     </button>

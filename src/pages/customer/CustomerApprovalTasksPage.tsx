@@ -608,7 +608,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
         <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#265938] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#037F8C] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
                     <CheckCircle2 className="w-5 h-5 text-white" />
                     <span>{toastMessage}</span>
                 </div>
@@ -618,7 +618,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#265938] dark:text-emerald-400">
+                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#037F8C] dark:text-emerald-400">
                             <ShieldCheck className="w-6 h-6" />
                         </div>
                         <div>
@@ -639,15 +639,10 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <button
-                        onClick={handleStartAdd}
-                        className="bg-[#265938] hover:bg-[#1E472D] text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>{isRtl ? 'مهمة اعتماد جديدة' : 'New Approval Task'}</span>
-                    </button>
-                </div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                    <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                    <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                </span>
             </div>
 
             {/* 4 KPI Cards */}
@@ -661,7 +656,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                             {kpis.total}
                         </p>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#265938] dark:text-emerald-400">
+                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#037F8C] dark:text-emerald-400">
                         <ShieldCheck className="w-6 h-6" />
                     </div>
                 </div>
@@ -719,7 +714,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={isRtl ? 'البحث بالرمز، العنوان، مقدم الطلب، المعتمد، أو الشركة...' : 'Search by code, title, requester, approver, or company...'}
-                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -736,7 +731,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الحالات' : 'All Statuses'}</option>
                             <option value="pending">{isRtl ? 'في الانتظار' : 'Pending'}</option>
@@ -750,7 +745,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                         <select
                             value={priorityFilter}
                             onChange={(e) => setPriorityFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الأولويات' : 'All Priorities'}</option>
                             <option value="urgent">{isRtl ? 'عاجل جداً' : 'Urgent'}</option>
@@ -763,7 +758,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                         <select
                             value={entityTypeFilter}
                             onChange={(e) => setEntityTypeFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الكيانات' : 'All Entities'}</option>
                             <option value="contract">{isRtl ? 'عقد واتفاقية' : 'Contract'}</option>
@@ -777,7 +772,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                         <select
                             value={companyFilter}
                             onChange={(e) => setCompanyFilter(e.target.value)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الشركات' : 'All Companies'}</option>
                             {DEMO_COMPANIES.map((c) => (
@@ -881,44 +876,10 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                                 <button
                                                     onClick={() => setViewingTask(task)}
                                                     title={isRtl ? 'عرض ملف الاعتماد' : 'View Details'}
-                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleStartEdit(task)}
-                                                    title={isRtl ? 'تعديل' : 'Edit'}
-                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-                                                {task.status !== 'approved' && (
-                                                    <button
-                                                        onClick={() => handleApprove(task.id)}
-                                                        title={isRtl ? 'اعتماد الطلب' : 'Approve'}
-                                                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors"
-                                                    >
-                                                        <Check className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                {task.status !== 'rejected' && (
-                                                    <button
-                                                        onClick={() => handleOpenActionModal(task.id, 'reject')}
-                                                        title={isRtl ? 'رفض الطلب مع السبب' : 'Reject with reason'}
-                                                        className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
-                                                    >
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                                {task.status !== 'revision_requested' && task.status !== 'approved' && (
-                                                    <button
-                                                        onClick={() => handleOpenActionModal(task.id, 'revision')}
-                                                        title={isRtl ? 'إعادة لتعديل الملاحظات' : 'Return for revision'}
-                                                        className="p-1.5 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/40 rounded-lg transition-colors"
-                                                    >
-                                                        <CornerDownLeft className="w-4 h-4" />
-                                                    </button>
-                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -939,7 +900,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                         <div className="space-y-6">
                             <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/50 rounded-xl text-[#265938] dark:text-emerald-400">
+                                    <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/50 rounded-xl text-[#037F8C] dark:text-emerald-400">
                                         <ShieldCheck className="w-6 h-6" />
                                     </div>
                                     <div>
@@ -1034,32 +995,14 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                         </div>
 
                         {/* Drawer Actions */}
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-2">
-                            {viewingTask.status !== 'approved' && (
-                                <button
-                                    onClick={() => handleApprove(viewingTask.id)}
-                                    className="w-full py-2.5 px-4 rounded-xl bg-[#265938] hover:bg-[#1E472D] text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Check className="w-4 h-4" />
-                                    <span>{isRtl ? 'اعتماد الطلب فوراً' : 'Approve Request'}</span>
-                                </button>
-                            )}
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleOpenActionModal(viewingTask.id, 'revision')}
-                                    className="flex-1 py-2 px-3 rounded-lg border border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs font-medium hover:bg-purple-50 dark:hover:bg-purple-950/40 flex items-center justify-center gap-1.5"
-                                >
-                                    <CornerDownLeft className="w-3.5 h-3.5" />
-                                    <span>{isRtl ? 'إعادة للتعديل' : 'Request Revision'}</span>
-                                </button>
-                                <button
-                                    onClick={() => handleOpenActionModal(viewingTask.id, 'reject')}
-                                    className="flex-1 py-2 px-3 rounded-lg border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-medium hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center gap-1.5"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                    <span>{isRtl ? 'رفض الطلب' : 'Reject Task'}</span>
-                                </button>
-                            </div>
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setViewingTask(null)}
+                                className="px-4 py-2 bg-[#037F8C] hover:bg-[#1E472D] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                {isRtl ? 'إغلاق' : 'Close'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1113,7 +1056,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                             ? 'اكتب الأسباب والملاحظات هنا...'
                                             : 'Enter notes or specific reasons here...'
                                     }
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                 />
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-2">
@@ -1172,7 +1115,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="text"
                                         value={formData.code}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="APR-207"
                                     />
                                     {formErrors.code && <p className="text-xs text-red-500 mt-1">{formErrors.code}</p>}
@@ -1185,7 +1128,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         {DEMO_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -1205,7 +1148,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="text"
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="مثال: اعتماد ملحق عقد الصيانة"
                                     />
                                 </div>
@@ -1217,7 +1160,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="text"
                                         value={formData.titleEn}
                                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="e.g. Maintenance Contract Addendum Approval"
                                     />
                                 </div>
@@ -1232,7 +1175,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                     <select
                                         value={formData.linkedEntityType}
                                         onChange={(e) => setFormData({ ...formData, linkedEntityType: e.target.value as LinkedEntityType })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="contract">{isRtl ? 'عقد واتفاقية' : 'Contract'}</option>
                                         <option value="document">{isRtl ? 'وثيقة نظامية' : 'Document'}</option>
@@ -1250,7 +1193,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="text"
                                         value={formData.linkedEntityRef}
                                         onChange={(e) => setFormData({ ...formData, linkedEntityRef: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="CTR-2026-902"
                                     />
                                 </div>
@@ -1265,7 +1208,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="text"
                                         value={formData.requesterNameAr}
                                         onChange={(e) => setFormData({ ...formData, requesterNameAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="سلطان العتيبي"
                                     />
                                 </div>
@@ -1277,7 +1220,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="text"
                                         value={formData.assignedApproverAr}
                                         onChange={(e) => setFormData({ ...formData, assignedApproverAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="م. خالد العتيبي"
                                     />
                                 </div>
@@ -1291,7 +1234,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                     <select
                                         value={formData.priority}
                                         onChange={(e) => setFormData({ ...formData, priority: e.target.value as ApprovalPriority })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="low">{isRtl ? 'عادي' : 'Low'}</option>
                                         <option value="medium">{isRtl ? 'متوسط' : 'Medium'}</option>
@@ -1308,7 +1251,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                         type="date"
                                         value={formData.dueDate}
                                         onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     />
                                 </div>
 
@@ -1319,7 +1262,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as ApprovalStatus })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="pending">{isRtl ? 'في الانتظار' : 'Pending'}</option>
                                         <option value="in_review">{isRtl ? 'قيد المراجعة' : 'In Review'}</option>
@@ -1338,7 +1281,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                     rows={2}
                                     value={formData.reviewNotesAr}
                                     onChange={(e) => setFormData({ ...formData, reviewNotesAr: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     placeholder="شروط الاعتماد المسبقة..."
                                 />
                             </div>
@@ -1353,7 +1296,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 rounded-lg bg-[#265938] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
+                                    className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
                                 >
                                     {editingTaskId ? (isRtl ? 'حفظ التعديلات' : 'Save Changes') : (isRtl ? 'إنشاء المهمة' : 'Create Task')}
                                 </button>

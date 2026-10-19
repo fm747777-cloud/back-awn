@@ -391,7 +391,7 @@ export const InvoicesPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.commercial.invoices.badge')}
@@ -426,7 +426,7 @@ export const InvoicesPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         {t('crm.commercial.invoices.newButton')}
@@ -457,7 +457,7 @@ export const InvoicesPage: React.FC = () => {
                             )}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <Receipt size={19} />
                     </div>
                 </div>
@@ -561,7 +561,7 @@ export const InvoicesPage: React.FC = () => {
                             placeholder={t(
                                 'crm.commercial.invoices.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -796,7 +796,7 @@ export const InvoicesPage: React.FC = () => {
                                     >
                                         <td className="py-3.5 px-4">
                                             <span
-                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {inv.invoiceNumber}
@@ -809,7 +809,7 @@ export const InvoicesPage: React.FC = () => {
                                                     {t('crm.commercial.invoices.types.proformaShort')}
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                     {t('crm.commercial.invoices.types.finalTaxShort')}
                                                 </span>
                                             )}

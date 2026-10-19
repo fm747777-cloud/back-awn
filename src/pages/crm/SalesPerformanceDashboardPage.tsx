@@ -243,7 +243,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.salesPerformanceDashboard.badge')}
@@ -279,7 +279,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/crm/won-deals')}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Award size={14} />
                         {t('crm.salesPerformanceDashboard.quickLinks.viewWonDeals')}
@@ -300,7 +300,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                         type="button"
                         onClick={handleRefresh}
                         disabled={isFetching}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233222] disabled:opacity-60 text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233222] disabled:opacity-60 text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer"
                     >
                         <RefreshCw
                             size={14}
@@ -317,7 +317,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
             <div className="rounded-2xl bg-white border border-[#E5E0D8] p-4 space-y-3 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <Calendar size={15} className="text-[#2D3F2C]" />
+                        <Calendar size={15} className="text-[#037F8C]" />
                         <span className="text-xs font-bold text-[#0D0D0D]">
                             {t('crm.salesPerformanceDashboard.filters.title')}
                         </span>
@@ -352,7 +352,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                             value={dateFrom}
                             max={dateTo || undefined}
                             onChange={(e) => setDateFrom(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                     </div>
 
@@ -365,7 +365,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                             value={dateTo}
                             min={dateFrom || undefined}
                             onChange={(e) => setDateTo(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                     </div>
 
@@ -376,7 +376,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                         <select
                             value={employeeFilter}
                             onChange={(e) => setEmployeeFilter(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t('crm.salesPerformanceDashboard.filters.allReps')}
@@ -396,7 +396,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                         <select
                             value={sectorFilter}
                             onChange={(e) => setSectorFilter(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t(
@@ -420,7 +420,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                         <select
                             value={companyFilter}
                             onChange={(e) => setCompanyFilter(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t(
@@ -440,7 +440,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
             {/* Loading State */}
             {isLoading && (
                 <div className="rounded-2xl bg-white border border-[#E5E0D8] p-12 text-center space-y-3 shadow-xs">
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#2D3F2C]">
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#037F8C]">
                         <RefreshCw size={18} className="animate-spin" />
                     </div>
                     <h2 className="text-sm font-bold text-[#0D0D0D]">
@@ -473,7 +473,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => refetch()}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] text-[#FAF8F5] text-xs font-semibold cursor-pointer"
                     >
                         <RefreshCw size={13} />
                         {t('crm.salesPerformanceDashboard.states.retry')}
@@ -555,7 +555,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                     )}
                                 </span>
                                 <div
-                                    className="text-2xl font-bold text-[#2D3F2C] font-mono"
+                                    className="text-2xl font-bold text-[#037F8C] font-mono"
                                     dir="ltr"
                                 >
                                     {dashboard.kpis.weightedPipelineValue.toLocaleString()}{' '}
@@ -573,7 +573,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                     )}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center shrink-0">
                                 <TrendingUp size={19} />
                             </div>
                         </div>
@@ -675,7 +675,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                     )}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C] flex items-center justify-center shrink-0">
                                 <Users size={19} />
                             </div>
                         </div>
@@ -723,7 +723,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                     )}
                                 </span>
                                 <div
-                                    className="text-2xl font-bold text-[#2D3F2C] font-mono"
+                                    className="text-2xl font-bold text-[#037F8C] font-mono"
                                     dir="ltr"
                                 >
                                     {dashboard.kpis.averageWonDealSize.toLocaleString()}{' '}
@@ -741,7 +741,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                     )}
                                 </span>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C] flex items-center justify-center shrink-0">
                                 <Briefcase size={19} />
                             </div>
                         </div>
@@ -848,7 +848,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                     contentStyle={{
                                                         backgroundColor:
                                                             '#0D0D0D',
-                                                        borderColor: '#2D3F2C',
+                                                        borderColor: '#037F8C',
                                                         borderRadius: '10px',
                                                         color: '#FAF8F5',
                                                         fontSize: '12px',
@@ -872,7 +872,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                     name={t(
                                                         'crm.salesPerformanceDashboard.charts.series.wonDealValue'
                                                     )}
-                                                    fill="#2D3F2C"
+                                                    fill="#037F8C"
                                                     radius={[4, 4, 0, 0]}
                                                 />
                                                 <Bar
@@ -955,7 +955,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 ]}
                                                 contentStyle={{
                                                     backgroundColor: '#0D0D0D',
-                                                    borderColor: '#2D3F2C',
+                                                    borderColor: '#037F8C',
                                                     borderRadius: '10px',
                                                     color: '#FAF8F5',
                                                     fontSize: '12px',
@@ -979,7 +979,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 name={t(
                                                     'crm.salesPerformanceDashboard.charts.series.wonDealValue'
                                                 )}
-                                                fill="#2D3F2C"
+                                                fill="#037F8C"
                                                 radius={[4, 4, 0, 0]}
                                             />
                                             <Bar
@@ -1056,7 +1056,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 ]}
                                                 contentStyle={{
                                                     backgroundColor: '#0D0D0D',
-                                                    borderColor: '#2D3F2C',
+                                                    borderColor: '#037F8C',
                                                     borderRadius: '10px',
                                                     color: '#FAF8F5',
                                                     fontSize: '12px',
@@ -1072,7 +1072,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 name={t(
                                                     'crm.salesPerformanceDashboard.charts.series.expectedValue'
                                                 )}
-                                                fill="#2D3F2C"
+                                                fill="#037F8C"
                                                 radius={[4, 4, 0, 0]}
                                             />
                                             <Bar
@@ -1146,7 +1146,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 ]}
                                                 contentStyle={{
                                                     backgroundColor: '#0D0D0D',
-                                                    borderColor: '#2D3F2C',
+                                                    borderColor: '#037F8C',
                                                     borderRadius: '10px',
                                                     color: '#FAF8F5',
                                                     fontSize: '12px',
@@ -1170,7 +1170,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 name={t(
                                                     'crm.salesPerformanceDashboard.charts.series.wonDealValue'
                                                 )}
-                                                fill="#2D3F2C"
+                                                fill="#037F8C"
                                                 radius={[4, 4, 0, 0]}
                                             />
                                             <Bar
@@ -1195,7 +1195,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <UserCheck
                                         size={15}
-                                        className="text-[#2D3F2C]"
+                                        className="text-[#037F8C]"
                                     />
                                     <h2 className="text-xs font-bold text-[#0D0D0D] tracking-wide uppercase">
                                         {t(
@@ -1212,7 +1212,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => navigate('/crm/deals')}
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer self-start sm:self-auto"
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer self-start sm:self-auto"
                             >
                                 {t(
                                     'crm.salesPerformanceDashboard.quickLinks.viewDeals'
@@ -1281,7 +1281,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 </div>
                                                 <div className="text-[11px] text-[#6E6862] flex items-center gap-1.5 mt-0.5">
                                                     <span
-                                                        className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]"
+                                                        className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C]"
                                                         dir="ltr"
                                                     >
                                                         {rep.employeeCode}
@@ -1391,7 +1391,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                             <td className="py-3.5 px-4 min-w-[140px]">
                                                 <div className="flex items-center justify-between gap-2 mb-1">
                                                     <span
-                                                        className="font-mono font-bold text-xs text-[#2D3F2C]"
+                                                        className="font-mono font-bold text-xs text-[#037F8C]"
                                                         dir="ltr"
                                                     >
                                                         {rep.collectionRate}%
@@ -1430,7 +1430,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <Building2
                                         size={15}
-                                        className="text-[#2D3F2C]"
+                                        className="text-[#037F8C]"
                                     />
                                     <h2 className="text-xs font-bold text-[#0D0D0D] tracking-wide uppercase">
                                         {t(
@@ -1458,7 +1458,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => navigate('/crm/invoices')}
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                 >
                                     {t(
                                         'crm.salesPerformanceDashboard.quickLinks.viewInvoices'
@@ -1529,7 +1529,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                     </div>
                                                     <div className="text-[11px] text-[#6E6862] flex items-center gap-1.5 mt-0.5">
                                                         <span
-                                                            className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]"
+                                                            className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C]"
                                                             dir="ltr"
                                                         >
                                                             {comp.companyCode}
@@ -1562,7 +1562,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                                                 </td>
 
                                                 <td className="py-3.5 px-4">
-                                                    <span className="px-2 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-[11px] font-semibold text-[#2D3F2C]">
+                                                    <span className="px-2 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-[11px] font-semibold text-[#037F8C]">
                                                         {translateOnboardingStatus(
                                                             comp.onboardingStatus
                                                         )}

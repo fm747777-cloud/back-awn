@@ -866,7 +866,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             {t('ums.customAddons.title', { defaultValue: 'Custom Addons Master' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             UMS-ADD
@@ -895,7 +895,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={14} />
                         <span>
@@ -921,7 +921,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             onClick={() => setActiveTab(tabKey)}
                             className={`flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 isActive
-                                    ? 'bg-[#2D3F2C] text-white shadow-xs'
+                                    ? 'bg-[#037F8C] text-white shadow-xs'
                                     : 'bg-transparent text-[#45413C] hover:bg-[#FAF8F5] hover:text-[#0D0D0D]'
                             }`}
                         >
@@ -933,7 +933,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                 className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-md ${
                                     isActive
                                         ? 'bg-white/20 text-white'
-                                        : 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]'
+                                        : 'bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]'
                                 }`}
                             >
                                 {tabCount}
@@ -951,7 +951,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t(`ums.customAddons.kpi.${activeTab}.total`)}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             {getCategoryIcon(activeTab, 16)}
                         </div>
                     </div>
@@ -971,12 +971,12 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t(`ums.customAddons.kpi.${activeTab}.active`)}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <CheckCircle2 size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#265938]">
+                        <span className="text-2xl font-bold tracking-tight text-[#037F8C]">
                             {kpis.active}
                         </span>
                         <span className="text-[11px] font-normal text-[#6E6862]">
@@ -1040,7 +1040,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             value={searchQuery}
                             onChange={(e) => updateSearchQuery(e.target.value)}
                             placeholder={t(`ums.customAddons.searchPlaceholder.${activeTab}`)}
-                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] transition-colors"
+                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] transition-colors"
                         />
                         {searchQuery && (
                             <button
@@ -1094,7 +1094,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                 {/* Bulk Selection Action Bar */}
                 {selectedIds.length > 0 && (
                     <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
-                        <span className="font-semibold text-[#2D3F2C]">
+                        <span className="font-semibold text-[#037F8C]">
                             {t('ums.customAddons.bulk.selectedCount', {
                                 defaultValue: `${selectedIds.length} record(s) selected`,
                                 count: selectedIds.length,
@@ -1105,7 +1105,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleBulkStatusChange('Active')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#EAF3EC] text-[#265938] border border-[#265938]/20 font-semibold hover:bg-[#EAF3EC]/80 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#EAF3EC] text-[#037F8C] border border-[#037F8C]/20 font-semibold hover:bg-[#EAF3EC]/80 transition-colors cursor-pointer"
                             >
                                 <CheckCircle2 size={12} />
                                 <span>
@@ -1131,7 +1131,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleExportCsv(true)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white text-[#2D3F2C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white text-[#037F8C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                             >
                                 <Download size={12} />
                                 <span>
@@ -1167,7 +1167,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                         checked={isAllSelected}
                                         onChange={handleSelectAll}
                                         aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                     />
                                 </th>
                                 <th className="px-4 py-3 text-start">
@@ -1322,7 +1322,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={handleResetFilters}
-                                                className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
+                                                className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] cursor-pointer"
                                             >
                                                 <RotateCcw size={12} />
                                                 <span>{t('common.reset', { defaultValue: 'Reset Filters' })}</span>
@@ -1350,7 +1350,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     checked={isSelected}
                                                     onChange={() => handleToggleSelect(item.id)}
                                                     aria-label={`Select ${item.nameEn}`}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                    className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                                 />
                                             </td>
 
@@ -1358,7 +1358,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
                                                 <div className="flex items-center gap-1.5">
                                                     <span
-                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-semibold text-[#2D3F2C]"
+                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-semibold text-[#037F8C]"
                                                         dir="ltr"
                                                     >
                                                         {item.code}
@@ -1370,7 +1370,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                         title={t('common.copy', { defaultValue: 'Copy' })}
                                                     >
                                                         {copiedCode === item.code ? (
-                                                            <Check size={12} className="text-[#265938]" />
+                                                            <Check size={12} className="text-[#037F8C]" />
                                                         ) : (
                                                             <Copy size={12} />
                                                         )}
@@ -1410,7 +1410,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                         <button
                                                             type="button"
                                                             onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
                                                         >
                                                             <Users size={12} className="text-[#857E74]" />
                                                             <span>
@@ -1440,14 +1440,14 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     <td className="px-4 py-3 font-bold text-[#0D0D0D]">
                                                         {item.nameEn}
                                                     </td>
-                                                    <td className="px-4 py-3 font-semibold text-[#2D3F2C]" dir="rtl">
+                                                    <td className="px-4 py-3 font-semibold text-[#037F8C]" dir="rtl">
                                                         {item.nameAr}
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <button
                                                             type="button"
                                                             onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
                                                         >
                                                             <Users size={12} className="text-[#857E74]" />
                                                             <span>
@@ -1471,7 +1471,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     <td className="px-4 py-3 font-bold text-[#0D0D0D]">
                                                         {item.nameEn}
                                                     </td>
-                                                    <td className="px-4 py-3 font-semibold text-[#2D3F2C]" dir="rtl">
+                                                    <td className="px-4 py-3 font-semibold text-[#037F8C]" dir="rtl">
                                                         {item.nameAr}
                                                     </td>
                                                     <td className="px-4 py-3 max-w-xs">
@@ -1491,7 +1491,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                         <button
                                                             type="button"
                                                             onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
                                                         >
                                                             <Users size={12} className="text-[#857E74]" />
                                                             <span>
@@ -1523,7 +1523,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                                                             <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
                                                             <span>
                                                                 {t('ums.customAddons.badges.rankLevel', {
@@ -1549,7 +1549,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                         <button
                                                             type="button"
                                                             onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
                                                         >
                                                             <Users size={12} className="text-[#857E74]" />
                                                             <span>
@@ -1574,7 +1574,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     onClick={() => handleToggleStatus(item)}
                                                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
                                                         item.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938] border-[#265938]/20 hover:bg-[#EAF3EC]/80'
+                                                            ? 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20 hover:bg-[#EAF3EC]/80'
                                                             : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
                                                     }`}
                                                     title={t('common.toggleStatus', {
@@ -1584,7 +1584,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     <span
                                                         className={`w-1.5 h-1.5 rounded-full ${
                                                             item.status === 'Active'
-                                                                ? 'bg-[#265938]'
+                                                                ? 'bg-[#037F8C]'
                                                                 : 'bg-[#857E74]'
                                                         }`}
                                                     />
@@ -1622,7 +1622,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                         onClick={() => handleToggleStatus(item)}
                                                         className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                                                             item.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
+                                                                ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
                                                                 : 'text-[#857E74] hover:bg-[#FAF8F5]'
                                                         }`}
                                                         title={t('common.toggleStatus', {
@@ -1658,7 +1658,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             value={pageSize}
                             onChange={(e) => updatePageSize(Number(e.target.value))}
                             aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                         >
                             {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
                                 <option key={opt} value={opt}>
@@ -1725,7 +1725,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         {/* Drawer Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5]/60 sticky top-0 z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] text-white flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-lg bg-[#037F8C] text-white flex items-center justify-center shrink-0">
                                     {getCategoryIcon(formData.type, 18)}
                                 </div>
                                 <div>
@@ -1736,7 +1736,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                 : t(`ums.customAddons.editTitle.${formData.type}`)}
                                         </h2>
                                         <span
-                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#2D3F2C] border border-[#E5E0D8]"
+                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#037F8C] border border-[#E5E0D8]"
                                             dir="ltr"
                                         >
                                             {formData.code}
@@ -1808,10 +1808,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.bankNameEnPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameEn
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameEn && (
@@ -1838,10 +1838,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.bankNameArPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameAr
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameAr && (
@@ -1867,7 +1867,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.bankDescEnPlaceholder'
                                             )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                         />
                                     </div>
 
@@ -1888,7 +1888,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.bankDescArPlaceholder'
                                             )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                         />
                                     </div>
                                 </>
@@ -1914,10 +1914,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.religionNameEnPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameEn
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameEn && (
@@ -1945,10 +1945,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.religionNameArPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameAr
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameAr && (
@@ -1980,10 +1980,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobTitleEnPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameEn
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameEn && (
@@ -2011,10 +2011,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobTitleArPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameAr
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameAr && (
@@ -2040,7 +2040,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobTitleDescEnPlaceholder'
                                             )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                         />
                                     </div>
 
@@ -2061,7 +2061,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobTitleDescArPlaceholder'
                                             )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                         />
                                     </div>
                                 </>
@@ -2087,10 +2087,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobGradeEnPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameEn
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameEn && (
@@ -2118,10 +2118,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobGradeArPlaceholder'
                                             )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.nameAr
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         {formErrors.nameAr && (
@@ -2147,10 +2147,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     gradeLevel: Number(e.target.value),
                                                 }))
                                             }
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
+                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] ${
                                                 formErrors.gradeLevel
                                                     ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                             }`}
                                         />
                                         <p className="text-[11px] text-[#857E74] mt-1">
@@ -2179,7 +2179,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobGradeDescEnPlaceholder'
                                             )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                         />
                                     </div>
 
@@ -2200,7 +2200,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             placeholder={t(
                                                 'ums.customAddons.form.jobGradeDescArPlaceholder'
                                             )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                                         />
                                     </div>
                                 </>
@@ -2224,7 +2224,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     status: 'Active',
                                                 }))
                                             }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                         />
                                         <span>{t('common.active', { defaultValue: 'Active' })}</span>
                                     </label>
@@ -2240,7 +2240,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     status: 'Inactive',
                                                 }))
                                             }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                         />
                                         <span>
                                             {t('common.inactive', { defaultValue: 'Inactive' })}
@@ -2263,7 +2263,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                                 >
                                     {isCreateOpen
                                         ? t('common.create', { defaultValue: 'Create' })
@@ -2288,7 +2288,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                                     {getCategoryIcon(viewingAddon.type, 18)}
                                 </div>
                                 <div>
@@ -2297,7 +2297,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             {t(`ums.customAddons.viewTitle.${viewingAddon.type}`)}
                                         </h2>
                                         <span
-                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                             dir="ltr"
                                         >
                                             {viewingAddon.code}
@@ -2338,7 +2338,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     <span
                                         className={`inline-block font-semibold mt-0.5 ${
                                             viewingAddon.status === 'Active'
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -2399,7 +2399,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     <span className="font-semibold text-[#45413C]">
                                         {t('ums.customAddons.columns.gradeLevel')}
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-semibold bg-white text-[#2D3F2C] border border-[#E5E0D8]">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-semibold bg-white text-[#037F8C] border border-[#E5E0D8]">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
                                         {t('ums.customAddons.badges.rankLevel', {
                                             level: viewingAddon.gradeLevel ?? 1,
@@ -2445,7 +2445,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     <div className="flex items-center justify-between mb-2">
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.customAddons.details.linkedEmployeesTitle')}{' '}
-                                            <span className="text-[#265938]">
+                                            <span className="text-[#037F8C]">
                                                 ({viewedLinkedEmployees.length})
                                             </span>
                                         </h3>
@@ -2463,7 +2463,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     className="flex items-center justify-between p-3 bg-white text-xs"
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px]">
+                                                        <div className="w-7 h-7 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px]">
                                                             {emp.nameEn.slice(0, 2).toUpperCase()}
                                                         </div>
                                                         <div>
@@ -2478,7 +2478,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     <span
                                                         className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                                             emp.status === 'Active'
-                                                                ? 'bg-[#EAF3EC] text-[#265938]'
+                                                                ? 'bg-[#EAF3EC] text-[#037F8C]'
                                                                 : 'bg-[#FAF8F5] text-[#857E74]'
                                                         }`}
                                                     >
@@ -2501,7 +2501,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     setViewingAddon(null);
                                     handleOpenEdit(target);
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                             >
                                 <Pencil size={13} />
                                 <span>{t('common.edit', { defaultValue: 'Edit' })}</span>
@@ -2510,7 +2510,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingAddon(null)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>
@@ -2578,7 +2578,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                 handleToggleStatus(deletingAddon);
                                                 setDeletingAddon(null);
                                             }}
-                                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                            className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                         >
                                             {t('ums.customAddons.deleteModal.deactivateAlternative')}
                                         </button>

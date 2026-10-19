@@ -113,7 +113,7 @@ export const CrmLineItemsEditor: React.FC<CrmLineItemsEditorProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                     <h3 className="text-xs font-bold text-[#0D0D0D] flex items-center gap-1.5">
-                        <Calculator size={14} className="text-[#2D3F2C]" />
+                        <Calculator size={14} className="text-[#037F8C]" />
                         {t('crm.commercial.common.lineItems.sectionTitle')}
                     </h3>
                     <p className="text-[11px] text-[#6E6862]">
@@ -125,7 +125,7 @@ export const CrmLineItemsEditor: React.FC<CrmLineItemsEditorProps> = ({
                     <button
                         type="button"
                         onClick={() => handleAddLineItem('service')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#2D3F2C]/25 bg-[#2D3F2C]/10 hover:bg-[#2D3F2C]/15 text-[11px] font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#037F8C]/25 bg-[#037F8C]/10 hover:bg-[#037F8C]/15 text-[11px] font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Briefcase size={12} />
                         <Plus size={12} />
@@ -136,7 +136,7 @@ export const CrmLineItemsEditor: React.FC<CrmLineItemsEditorProps> = ({
                         onClick={() => handleAddLineItem('package')}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[11px] font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
                     >
-                        <Package size={12} className="text-[#2D3F2C]" />
+                        <Package size={12} className="text-[#037F8C]" />
                         <Plus size={12} />
                         {t('crm.commercial.common.lineItems.typePackage')}
                     </button>
@@ -167,7 +167,7 @@ export const CrmLineItemsEditor: React.FC<CrmLineItemsEditorProps> = ({
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                     <span
-                                        className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-bold text-[#2D3F2C]"
+                                        className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-bold text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         #{idx + 1}
@@ -398,7 +398,7 @@ export const CrmLineItemsEditor: React.FC<CrmLineItemsEditorProps> = ({
                                         )}
                                     </label>
                                     <div
-                                        className="px-2.5 py-1.5 rounded-lg border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 text-xs font-mono font-bold text-[#2D3F2C]"
+                                        className="px-2.5 py-1.5 rounded-lg border border-[#037F8C]/20 bg-[#037F8C]/5 text-xs font-mono font-bold text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {item.lineTotal.toLocaleString()} SAR
@@ -441,7 +441,7 @@ export const CrmLineItemsEditor: React.FC<CrmLineItemsEditorProps> = ({
                         {t('crm.commercial.common.lineItems.grandTotal')}
                     </span>
                     <span
-                        className="text-base font-mono font-bold text-[#2D3F2C]"
+                        className="text-base font-mono font-bold text-[#037F8C]"
                         dir="ltr"
                     >
                         {summary.grandTotal.toLocaleString()} SAR

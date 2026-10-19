@@ -452,7 +452,7 @@ export const CustomerDealsPage: React.FC = () => {
         switch (stage) {
             case 'closed_won':
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{t('customer.pages.deals.stages.closed_won')}</span>
                     </span>
@@ -491,7 +491,7 @@ export const CustomerDealsPage: React.FC = () => {
         switch (status) {
             case 'won':
                 return (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#EAF3EC] text-[#265938]">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#EAF3EC] text-[#037F8C]">
                         {t('customer.pages.deals.statusWon')}
                     </span>
                 );
@@ -515,7 +515,7 @@ export const CustomerDealsPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -530,7 +530,7 @@ export const CustomerDealsPage: React.FC = () => {
                                 {t('customer.pages.deals.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-DLS
@@ -541,14 +541,10 @@ export const CustomerDealsPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleStartAdd}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer self-start sm:self-center shrink-0"
-                    >
-                        <Plus className="w-4 h-4 text-[#BFAB93]" />
-                        <span>{t('customer.pages.deals.addDeal')}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* 4 KPI Cards */}
@@ -558,7 +554,7 @@ export const CustomerDealsPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.deals.kpis.totalDeals')}
                             </span>
-                            <Briefcase className="w-4 h-4 text-[#2D3F2C]" />
+                            <Briefcase className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -577,24 +573,24 @@ export const CustomerDealsPage: React.FC = () => {
 
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#265938]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.deals.kpis.wonValue')}
                             </span>
-                            <TrendingUp className="w-4 h-4 text-[#265938]" />
+                            <TrendingUp className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#265938] mt-2">
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">
                             {formatCurrency(kpis.wonValue)}
                         </p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.deals.kpis.winRate')}
                             </span>
-                            <Percent className="w-4 h-4 text-[#2D3F2C]" />
+                            <Percent className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#2D3F2C] mt-2">{kpis.winRate}%</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.winRate}%</p>
                     </div>
                 </div>
             </div>
@@ -609,7 +605,7 @@ export const CustomerDealsPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.deals.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -628,7 +624,7 @@ export const CustomerDealsPage: React.FC = () => {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
                         aria-label={t('customer.pages.deals.statusAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.deals.statusAll')}</option>
                         <option value="open">{t('customer.pages.deals.statusOpen')}</option>
@@ -640,7 +636,7 @@ export const CustomerDealsPage: React.FC = () => {
                         value={stageFilter}
                         onChange={(e) => setStageFilter(e.target.value as any)}
                         aria-label={t('customer.pages.deals.stageAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.deals.stageAll')}</option>
                         <option value="discovery">{t('customer.pages.deals.stages.discovery')}</option>
@@ -654,7 +650,7 @@ export const CustomerDealsPage: React.FC = () => {
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
                         aria-label={t('customer.pages.deals.filterCompany')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.deals.companyAll')}</option>
                         {AVAILABLE_COMPANIES.map((c) => (
@@ -668,7 +664,7 @@ export const CustomerDealsPage: React.FC = () => {
                         value={sourceFilter}
                         onChange={(e) => setSourceFilter(e.target.value as any)}
                         aria-label={t('customer.pages.deals.filterSource')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.deals.sourceAll')}</option>
                         <option value="customer">{t('customer.pages.deals.sourceCustomer')}</option>
@@ -715,7 +711,7 @@ export const CustomerDealsPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
+                                                className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline"
                                             >
                                                 {t('customer.pages.deals.feedback.resetFilters')}
                                             </button>
@@ -728,8 +724,8 @@ export const CustomerDealsPage: React.FC = () => {
                                         {/* Deal Name & Code */}
                                         <td className="px-5 py-3.5 font-medium text-[#0D0D0D]">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
-                                                    <Briefcase className="w-4 h-4 text-[#2D3F2C]" />
+                                                <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
+                                                    <Briefcase className="w-4 h-4 text-[#037F8C]" />
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-sm text-[#0D0D0D]">
@@ -796,23 +792,6 @@ export const CustomerDealsPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                {deal.isReadOnly ? (
-                                                    <span
-                                                        title={t('customer.pages.deals.crmReadOnlyTooltip')}
-                                                        className="p-1.5 rounded-lg text-[#857E74] opacity-50 cursor-not-allowed inline-flex items-center"
-                                                    >
-                                                        <Lock className="w-4 h-4" />
-                                                    </span>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleStartEdit(deal)}
-                                                        title={t('customer.pages.deals.table.edit')}
-                                                        className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -830,7 +809,7 @@ export const CustomerDealsPage: React.FC = () => {
                         {/* Header */}
                         <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-11 h-11 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-11 h-11 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <Briefcase className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -838,7 +817,7 @@ export const CustomerDealsPage: React.FC = () => {
                                         <h2 className="text-lg font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingDeal.nameAr : viewingDeal.nameEn}
                                         </h2>
-                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#2D3F2C] rounded-md font-semibold" dir="ltr">
+                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#037F8C] rounded-md font-semibold" dir="ltr">
                                             {viewingDeal.code}
                                         </span>
                                     </div>
@@ -879,7 +858,7 @@ export const CustomerDealsPage: React.FC = () => {
                             </div>
                             <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                                 <span className="text-[#857E74] block">{t('customer.pages.deals.table.value')}</span>
-                                <span className="font-bold text-[#2D3F2C] text-sm mt-1 block">
+                                <span className="font-bold text-[#037F8C] text-sm mt-1 block">
                                     {formatCurrency(viewingDeal.value)}
                                 </span>
                             </div>
@@ -894,30 +873,8 @@ export const CustomerDealsPage: React.FC = () => {
                                 {getStageBadge(viewingDeal.stage)}
                             </div>
 
-                            {/* Quick Stage Transitions (Disabled for CRM read-only deals) */}
-                            {!viewingDeal.isReadOnly && (
-                                <div className="pt-2 border-t border-[#E5E0D8] flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[11px] font-semibold text-[#857E74] me-2">
-                                        {t('customer.pages.deals.table.quickStage')}:
-                                    </span>
-                                    {(['discovery', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as CustomerDealStage[]).map(
-                                        (stg) => (
-                                            <button
-                                                key={stg}
-                                                type="button"
-                                                onClick={() => handleQuickStageChange(viewingDeal.id, stg)}
-                                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                                                    viewingDeal.stage === stg
-                                                        ? 'bg-[#2D3F2C] text-white'
-                                                        : 'bg-white border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#FAF8F5]'
-                                                }`}
-                                            >
-                                                {t(`customer.pages.deals.stages.${stg}`)}
-                                            </button>
-                                        )
-                                    )}
-                                </div>
-                            )}
+                            {/* Quick Stage Transitions (Disabled in view-only Customer Portal) */}
+                            {!viewingDeal.isReadOnly && null}
                         </div>
 
                         {/* Milestones & Timeline */}
@@ -950,17 +907,8 @@ export const CustomerDealsPage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Footer */}
                         <div className="pt-4 border-t border-[#F0ECE6] flex items-center justify-end gap-2.5">
-                            {!viewingDeal.isReadOnly && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleStartEdit(viewingDeal)}
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.deals.modal.editTitle')}
-                                </button>
-                            )}
+                            {!viewingDeal.isReadOnly && null}
                             <button
                                 type="button"
                                 onClick={() => setViewingDeal(null)}
@@ -1016,7 +964,7 @@ export const CustomerDealsPage: React.FC = () => {
                                         value={formData.nameAr}
                                         onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                                         placeholder="مثال: توريد وتطبيق الأنظمة"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1029,7 +977,7 @@ export const CustomerDealsPage: React.FC = () => {
                                         value={formData.nameEn}
                                         onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                                         placeholder="e.g. Systems Implementation"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1042,7 +990,7 @@ export const CustomerDealsPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -1062,7 +1010,7 @@ export const CustomerDealsPage: React.FC = () => {
                                         step={1000}
                                         value={formData.value}
                                         onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1097,7 +1045,7 @@ export const CustomerDealsPage: React.FC = () => {
                                                 probability: newProb,
                                             });
                                         }}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         <option value="discovery">{t('customer.pages.deals.stages.discovery')}</option>
                                         <option value="proposal">{t('customer.pages.deals.stages.proposal')}</option>
@@ -1119,7 +1067,7 @@ export const CustomerDealsPage: React.FC = () => {
                                                 status: e.target.value as CustomerDealStatus,
                                             })
                                         }
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         <option value="open">{t('customer.pages.deals.statusOpen')}</option>
                                         <option value="won">{t('customer.pages.deals.statusWon')}</option>
@@ -1142,7 +1090,7 @@ export const CustomerDealsPage: React.FC = () => {
                                                 probability: Number(e.target.value),
                                             })
                                         }
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1161,7 +1109,7 @@ export const CustomerDealsPage: React.FC = () => {
                                             expectedCloseDate: e.target.value,
                                         })
                                     }
-                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                 />
                             </div>
 
@@ -1174,7 +1122,7 @@ export const CustomerDealsPage: React.FC = () => {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Commercial milestones, payment terms, or client requirements..."
-                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                 />
                             </div>
 
@@ -1192,7 +1140,7 @@ export const CustomerDealsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.deals.modal.save')}
                                 </button>

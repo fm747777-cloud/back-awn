@@ -74,7 +74,7 @@ export const OperationalTaskViewDrawer: React.FC<
             case 'Under Review':
                 return 'bg-indigo-50 text-indigo-700 border-indigo-200';
             case 'Assigned':
-                return 'bg-[#2D3F2C]/10 text-[#2D3F2C] border-[#2D3F2C]/20';
+                return 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/20';
             case 'Blocked':
             case 'Rejected':
                 return 'bg-rose-50 text-rose-700 border-rose-200';
@@ -116,7 +116,7 @@ export const OperationalTaskViewDrawer: React.FC<
                     <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-bold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-bold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.code}
@@ -177,7 +177,7 @@ export const OperationalTaskViewDrawer: React.FC<
                 <div className="flex-1 overflow-y-auto p-6 space-y-5">
                     {/* Quick Status & Specialist Controls */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-3">
-                        <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                        <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                             <ClipboardList size={14} />
                             {t(
                                 'crm.workflow.operationalTasks.viewDrawer.quickExecutionTitle'
@@ -268,7 +268,7 @@ export const OperationalTaskViewDrawer: React.FC<
                     {/* Linked CRM Record */}
                     <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                                 <Building2 size={14} />
                                 {t(
                                     'crm.workflow.operationalTasks.viewDrawer.relatedEntitySection'
@@ -278,7 +278,7 @@ export const OperationalTaskViewDrawer: React.FC<
                                 <button
                                     type="button"
                                     onClick={() => onNavigateToRelated(record)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#2D3F2C] hover:text-white hover:border-[#2D3F2C] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#037F8C] hover:text-white hover:border-[#037F8C] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                                 >
                                     <ExternalLink size={12} />
                                     {t(
@@ -309,7 +309,7 @@ export const OperationalTaskViewDrawer: React.FC<
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C] mt-0.5 block"
+                                    className="font-mono font-bold text-[#037F8C] mt-0.5 block"
                                     dir="ltr"
                                 >
                                     {record.relatedEntityCode ||
@@ -355,7 +355,7 @@ export const OperationalTaskViewDrawer: React.FC<
 
                     {/* Schedule & Ownership */}
                     <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-3">
-                        <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                        <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                             <UserCheck size={14} />
                             {t(
                                 'crm.workflow.operationalTasks.viewDrawer.scheduleAndOwnershipSection'
@@ -462,7 +462,7 @@ export const OperationalTaskViewDrawer: React.FC<
                     {/* Operational Notes */}
                     {record.notes && (
                         <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-2">
-                            <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                                 <FileText size={14} />
                                 {t(
                                     'crm.workflow.operationalTasks.fields.notes'
@@ -488,7 +488,7 @@ export const OperationalTaskViewDrawer: React.FC<
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.commercial.common.edit')}

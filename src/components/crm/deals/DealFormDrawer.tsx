@@ -262,7 +262,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C] shrink-0">
                             {mode === 'create' ? (
                                 <Briefcase size={18} />
                             ) : (
@@ -271,7 +271,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                         </div>
                         <div className="min-w-0">
                             <span
-                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {mode === 'edit' && initialData
@@ -320,10 +320,10 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
 
                     {/* Originating Lead Notification & Company Guidance */}
                     {formState.leadId && (
-                        <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
+                        <div className="rounded-xl border border-[#037F8C]/20 bg-[#037F8C]/5 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
                             <div className="flex items-center gap-2 min-w-0">
                                 <span
-                                    className="px-2 py-0.5 rounded bg-white border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#2D3F2C] shrink-0"
+                                    className="px-2 py-0.5 rounded bg-white border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#037F8C] shrink-0"
                                     dir="ltr"
                                 >
                                     {leads.find((l) => l.id === formState.leadId)?.code || 'LEAD'}
@@ -345,7 +345,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                                         <button
                                             type="button"
                                             onClick={() => onOpenCreateCompany(formState.leadId)}
-                                            className="px-2.5 py-1 rounded bg-[#2D3F2C] hover:bg-[#233122] text-white text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
+                                            className="px-2.5 py-1 rounded bg-[#037F8C] hover:bg-[#233122] text-white text-[11px] font-semibold transition-colors cursor-pointer shrink-0"
                                         >
                                             {t(
                                                 'crm.commercial.deals.form.preOnboardCompanyForLead',
@@ -360,7 +360,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
 
                     {/* Section 1: Deal Identity & Customer Link */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-4">
-                        <div className="flex items-center justify-between text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center justify-between text-xs font-bold text-[#037F8C]">
                             <div className="flex items-center gap-2">
                                 <Building2 size={14} />
                                 <span>{t('crm.commercial.deals.form.companyLabel')}</span>
@@ -369,7 +369,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => onOpenCreateCompany(formState.leadId)}
-                                    className="text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                    className="text-[11px] font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                 >
                                     + {t(
                                         'crm.commercial.deals.form.preOnboardCompanyForLead',
@@ -527,7 +527,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
 
                     {/* Section 2: Commercial Valuation & Pipeline Stage */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <TrendingUp size={14} />
                             <span>
                                 {t('crm.commercial.deals.columns.stageAndProbability')}
@@ -737,7 +737,7 @@ export const DealFormDrawer: React.FC<DealFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-5 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            className="px-5 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                         >
                             {isSubmitting
                                 ? t('crm.commercial.common.saving')

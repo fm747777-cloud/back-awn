@@ -769,8 +769,8 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                     {/* ========================================================================= */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-5 space-y-4">
                         <div className="flex items-center gap-2 pb-2 border-b border-[#E5E0D8]/60">
-                            <Calendar size={15} className="text-[#2D3F2C]" />
-                            <h3 className="text-xs font-bold text-[#2D3F2C] tracking-wide">
+                            <Calendar size={15} className="text-[#037F8C]" />
+                            <h3 className="text-xs font-bold text-[#037F8C] tracking-wide">
                                 {t(
                                     'crm.commercial.quotations.form.sectionQuotationDetails'
                                 )}
@@ -791,7 +791,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                     onChange={(e) =>
                                         handleLeadChange(e.target.value)
                                     }
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-colors ${
                                         fieldErrors.leadId
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -833,7 +833,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                         setQuotationDate(e.target.value)
                                     }
                                     dir="ltr"
-                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-colors"
                                 />
                             </div>
 
@@ -851,7 +851,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                         setQuotationExpiryDate(e.target.value)
                                     }
                                     dir="ltr"
-                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-colors"
                                 />
                             </div>
                         </div>
@@ -862,8 +862,8 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                     {/* ========================================================================= */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-5 space-y-4">
                         <div className="flex items-center gap-2 pb-2 border-b border-[#E5E0D8]/60">
-                            <User size={15} className="text-[#2D3F2C]" />
-                            <h3 className="text-xs font-bold text-[#2D3F2C] tracking-wide">
+                            <User size={15} className="text-[#037F8C]" />
+                            <h3 className="text-xs font-bold text-[#037F8C] tracking-wide">
                                 {t(
                                     'crm.commercial.quotations.form.sectionCustomerDetails'
                                 )}
@@ -895,7 +895,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                     placeholder={t(
                                         'crm.commercial.quotations.form.customerNamePlaceholder'
                                     )}
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-colors ${
                                         fieldErrors.customerName
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -933,7 +933,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                         'crm.commercial.quotations.form.customerEmailPlaceholder'
                                     )}
                                     dir="ltr"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-colors ${
                                         fieldErrors.customerEmail
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -971,7 +971,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                         'crm.commercial.quotations.form.customerPhonePlaceholder'
                                     )}
                                     dir="ltr"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] transition-colors ${
                                         fieldErrors.customerPhone
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -992,7 +992,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-5 space-y-4">
                         <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2">
-                                <Layers size={15} className="text-[#2D3F2C]" />
+                                <Layers size={15} className="text-[#037F8C]" />
                                 <h3 className="text-xs font-bold text-[#0D0D0D]">
                                     {t(
                                         'crm.commercial.quotations.form.sectionSubscriptionDetails'
@@ -1004,7 +1004,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                             <button
                                 type="button"
                                 onClick={handleAddNewItem}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                             >
                                 <Plus size={13} />
                                 <span>
@@ -1036,7 +1036,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                         className="p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] space-y-3 relative group"
                                     >
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="text-[11px] font-bold text-[#2D3F2C]">
+                                            <span className="text-[11px] font-bold text-[#037F8C]">
                                                 #{idx + 1}
                                             </span>
                                             {subscriptionItems.length > 1 && (
@@ -1072,7 +1072,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                                                 e.target.value,
                                                         })
                                                     }
-                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                                                 >
                                                     <option value="">
                                                         {t(
@@ -1134,7 +1134,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                                         'crm.commercial.quotations.form.priceEachUnitPlaceholder'
                                                     )}
                                                     dir="ltr"
-                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                                                 />
                                             </div>
 
@@ -1169,7 +1169,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                                         'crm.commercial.quotations.form.enterQuantityPlaceholder'
                                                     )}
                                                     dir="ltr"
-                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                                                 />
                                             </div>
 
@@ -1191,7 +1191,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                                                 .value as SubscriptionPeriod,
                                                         })
                                                     }
-                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                                                 >
                                                     <option value="monthly">
                                                         {t(
@@ -1225,7 +1225,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                                     *
                                                 </label>
                                                 <div
-                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#F4EFEA] text-xs font-mono tabular-nums font-bold text-[#2D3F2C] flex items-center justify-between"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#F4EFEA] text-xs font-mono tabular-nums font-bold text-[#037F8C] flex items-center justify-between"
                                                     dir="ltr"
                                                 >
                                                     <span>
@@ -1276,9 +1276,9 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                         </div>
 
                         {/* Separate Total (Without VAT) summary in SAR */}
-                        <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="rounded-xl border border-[#037F8C]/20 bg-[#037F8C]/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
-                                <span className="text-xs font-bold text-[#2D3F2C] block">
+                                <span className="text-xs font-bold text-[#037F8C] block">
                                     {t(
                                         'crm.commercial.quotations.form.totalWithoutVatSummary'
                                     )}
@@ -1307,7 +1307,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                             </div>
 
                             <div
-                                className="text-end font-mono tabular-nums font-bold text-lg text-[#2D3F2C]"
+                                className="text-end font-mono tabular-nums font-bold text-lg text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {totalWithoutVat.toLocaleString(undefined, {
@@ -1328,8 +1328,8 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                     {/* ========================================================================= */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-5 space-y-4">
                         <div className="flex items-center gap-2 pb-2 border-b border-[#E5E0D8]/60">
-                            <Calculator size={15} className="text-[#2D3F2C]" />
-                            <h3 className="text-xs font-bold text-[#2D3F2C] tracking-wide">
+                            <Calculator size={15} className="text-[#037F8C]" />
+                            <h3 className="text-xs font-bold text-[#037F8C] tracking-wide">
                                 {t(
                                     'crm.commercial.quotations.form.sectionAdditionalDetails'
                                 )}
@@ -1366,7 +1366,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                             )
                                         }
                                         dir="ltr"
-                                        className="w-full px-3.5 py-2.5 pe-8 rounded-xl border border-[#E5E0D8] bg-white font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                        className="w-full px-3.5 py-2.5 pe-8 rounded-xl border border-[#E5E0D8] bg-white font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                                     />
                                     <span
                                         className="absolute inset-y-0 end-3 flex items-center text-[#6E6862] font-semibold text-xs pointer-events-none"
@@ -1450,7 +1450,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                             parseFloat(e.target.value) || 0
                                         )
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C]"
                                 >
                                     <option value="15">
                                         {t(
@@ -1524,7 +1524,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                         'crm.commercial.quotations.form.contractDurationPlaceholder'
                                     )}
                                     dir="ltr"
-                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] ${
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#037F8C]/20 focus:border-[#037F8C] ${
                                         fieldErrors.contractDuration
                                             ? 'border-[#A63A3A]'
                                             : 'border-[#E5E0D8]'
@@ -1539,7 +1539,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
 
                             {/* 6. Total Amount (Including VAT) (Full-width prominent banner) */}
                             <div className="sm:col-span-2 lg:col-span-3 pt-2">
-                                <div className="rounded-xl border-2 border-[#2D3F2C] bg-[#2D3F2C]/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="rounded-xl border-2 border-[#037F8C] bg-[#037F8C]/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div>
                                         <span className="text-xs font-bold text-[#0D0D0D] block">
                                             {t(
@@ -1586,7 +1586,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                     </div>
 
                                     <div
-                                        className="font-mono tabular-nums font-bold text-xl text-[#2D3F2C]"
+                                        className="font-mono tabular-nums font-bold text-xl text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {totalAmountWithVat.toLocaleString(
@@ -1596,7 +1596,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                                                 maximumFractionDigits: 2,
                                             }
                                         )}{' '}
-                                        <span className="text-xs font-sans font-semibold text-[#2D3F2C]">
+                                        <span className="text-xs font-sans font-semibold text-[#037F8C]">
                                             {t(
                                                 'crm.commercial.quotations.form.currencySar'
                                             )}
@@ -1619,7 +1619,7 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-6 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+                            className="px-6 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
                         >
                             {isSubmitting
                                 ? t('crm.commercial.common.saving')

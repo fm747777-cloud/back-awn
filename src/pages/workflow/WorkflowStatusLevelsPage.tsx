@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
     ListFilter,
     ShieldCheck,
@@ -8,22 +10,10 @@ import {
     CheckCircle2,
     XCircle,
     Flag,
-    Search,
-    RotateCcw,
-    Plus,
-    Download,
     Eye,
     Pencil,
     Trash2,
     Power,
-    ChevronLeft,
-    ChevronRight,
-    X,
-    Clock,
-    UserCheck,
-    Layers,
-    Database,
-    Calendar,
     MessageSquare,
 } from 'lucide-react';
 import {
@@ -33,111 +23,73 @@ import {
     recordWorkflowAuditEvent,
     formatWorkflowDateToday,
     WORKFLOW_SOURCES,
-    WORKFLOW_PAGE_SIZE_OPTIONS,
     type WorkflowStatusLevelRecord,
-    type WorkflowStageCategory,
     type WorkflowSource,
     type WorkflowStatus,
     type WorkflowType,
 } from './workflowMockData';
+import { DataTable } from '../../components/DataTable';
+import {
+    WorkflowStatusLevelFormDrawer,
+    type StatusLevelFormState,
+    DEFAULT_STATUS_LEVEL_FORM_STATE,
+    STAGE_CATEGORIES,
+} from '../../components/workflow/WorkflowStatusLevelFormDrawer';
+import { WorkflowStatusLevelViewDrawer } from '../../components/workflow/WorkflowStatusLevelViewDrawer';
+import { WorkflowStatusLevelDeleteModal } from '../../components/workflow/WorkflowStatusLevelDeleteModal';
 
 const SOURCE_BADGE_STYLES: Record<WorkflowSource, string> = {
-    CRM: 'bg-[#2D3F2C]/10 text-[#2D3F2C] border-[#2D3F2C]/25',
-    ASSET: 'bg-[#265938]/10 text-[#265938] border-[#265938]/25',
+    CRM: 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/25',
+    ASSET: 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/25',
     REQUEST: 'bg-[#8C6046]/12 text-[#8C6046] border-[#8C6046]/25',
     SERVICE: 'bg-[#6A7358]/12 text-[#6A7358] border-[#6A7358]/25',
     TICKETING: 'bg-[#BFAB93]/25 text-[#5C4938] border-[#BFAB93]/50',
     EDMS: 'bg-[#857E74]/15 text-[#524D46] border-[#857E74]/30',
 };
 
-const STAGE_CATEGORIES: WorkflowStageCategory[] = [
-    'Initiation',
-    'Verification',
-    'Compliance',
-    'Authorization',
-    'Completion',
-];
-
-const COLOR_OPTIONS = [
-    '#2D3F2C',
-    '#265938',
-    '#8C6046',
-    '#6A7358',
-    '#BFAB93',
-    '#857E74',
-    '#A63A3A',
-];
-
-interface StatusLevelFormState {
-    code: string;
-    levelNameEn: string;
-    levelNameAr: string;
-    workflowTitleEn: string;
-    workflowTitleAr: string;
-    workflowType: WorkflowType;
-    source: WorkflowSource;
-    levelOrder: number;
-    stageCategory: WorkflowStageCategory;
-    approverRoleEn: string;
-    approverRoleAr: string;
-    slaHours: number;
-    color: string;
-    isFinalLevel: boolean;
-    requireComment: boolean;
-    status: WorkflowStatus;
-    descriptionEn: string;
-    descriptionAr: string;
-}
-
-const DEFAULT_FORM_STATE: StatusLevelFormState = {
-    code: 'STL-NEW-01',
-    levelNameEn: '',
-    levelNameAr: '',
-    workflowTitleEn: 'Sector',
-    workflowTitleAr: 'القطاع',
-    workflowType: 'approval',
-    source: 'CRM',
-    levelOrder: 1,
-    stageCategory: 'Verification',
-    approverRoleEn: 'Governance Specialist',
-    approverRoleAr: 'أخصائي الحوكمة',
-    slaHours: 24,
-    color: '#2D3F2C',
-    isFinalLevel: false,
-    requireComment: true,
-    status: 'Enabled',
-    descriptionEn: '',
-    descriptionAr: '',
-};
-
 export const WorkflowStatusLevelsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language?.startsWith('ar') ?? false;
+    const queryClient = useQueryClient();
 
-    const [records, setRecords] = useState<WorkflowStatusLevelRecord[]>(() =>
-        loadWorkflowStatusLevels()
-    );
+    // TanStack Query for server state
+    const { data: records = [], isLoading } = useQuery<WorkflowStatusLevelRecord[]>({
+        queryKey: ['workflow-status-levels'],
+        queryFn: async () => loadWorkflowStatusLevels(),
+    });
+
     const availableWorkflows = useMemo(() => loadWorkflowRecords(), []);
+
+    // TanStack Mutation for persisting records
+    const saveMutation = useMutation({
+        mutationFn: async (updated: WorkflowStatusLevelRecord[]) => {
+            saveWorkflowStatusLevels(updated);
+            return updated;
+        },
+        onSuccess: (updated) => {
+            queryClient.setQueryData(['workflow-status-levels'], updated);
+        },
+    });
 
     const [typeTab, setTypeTab] = useState<'ALL' | WorkflowType>('ALL');
     const [searchQuery, setSearchQuery] = useState('');
     const [sourceFilter, setSourceFilter] = useState<string>('ALL');
     const [stageFilter, setStageFilter] = useState<string>('ALL');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageIndex, setPageIndex] = useState<number>(0);
     const [pageSize, setPageSize] = useState<number>(10);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
 
     // Drawers & Modals
     const [viewingRecord, setViewingRecord] = useState<WorkflowStatusLevelRecord | null>(null);
     const [editingRecord, setEditingRecord] = useState<WorkflowStatusLevelRecord | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
     const [deletingRecord, setDeletingRecord] = useState<WorkflowStatusLevelRecord | null>(null);
-    const [formState, setFormState] = useState<StatusLevelFormState>(DEFAULT_FORM_STATE);
+    const [formState, setFormState] = useState<StatusLevelFormState>(DEFAULT_STATUS_LEVEL_FORM_STATE);
 
     const persistRecords = (updated: WorkflowStatusLevelRecord[]) => {
-        setRecords(updated);
-        saveWorkflowStatusLevels(updated);
+        saveMutation.mutate(updated);
     };
 
     // Summary KPIs
@@ -180,13 +132,11 @@ export const WorkflowStatusLevelsPage: React.FC = () => {
     }, [records, typeTab, sourceFilter, stageFilter, statusFilter, searchQuery]);
 
     const totalRecords = filteredRecords.length;
-    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
-    const safeCurrentPage = Math.min(currentPage, totalPages);
 
     const paginatedRecords = useMemo(() => {
-        const start = (safeCurrentPage - 1) * pageSize;
+        const start = pageIndex * pageSize;
         return filteredRecords.slice(start, start + pageSize);
-    }, [filteredRecords, safeCurrentPage, pageSize]);
+    }, [filteredRecords, pageIndex, pageSize]);
 
     const hasActiveFilters =
         searchQuery.trim().length > 0 ||
@@ -199,7 +149,7 @@ export const WorkflowStatusLevelsPage: React.FC = () => {
         setSourceFilter('ALL');
         setStageFilter('ALL');
         setStatusFilter('ALL');
-        setCurrentPage(1);
+        setPageIndex(0);
     };
 
     // Selection helpers
@@ -303,7 +253,7 @@ export const WorkflowStatusLevelsPage: React.FC = () => {
         setEditingRecord(null);
         const defaultWf = availableWorkflows[0];
         setFormState({
-            ...DEFAULT_FORM_STATE,
+            ...DEFAULT_STATUS_LEVEL_FORM_STATE,
             code: `STL-${defaultWf?.source || 'CRM'}-${Math.floor(10 + Math.random() * 89)}`,
             workflowTitleEn: defaultWf?.titleEn || 'Sector',
             workflowTitleAr: defaultWf?.titleAr || 'القطاع',
@@ -343,25 +293,6 @@ export const WorkflowStatusLevelsPage: React.FC = () => {
     const closeFormDrawer = () => {
         setIsCreateOpen(false);
         setEditingRecord(null);
-    };
-
-    const handleWorkflowSelectChange = (titleEn: string) => {
-        const matched = availableWorkflows.find((w) => w.titleEn === titleEn);
-        if (matched) {
-            setFormState((prev) => ({
-                ...prev,
-                workflowTitleEn: matched.titleEn,
-                workflowTitleAr: matched.titleAr,
-                workflowType: matched.workflowType,
-                source: matched.source,
-            }));
-        } else {
-            setFormState((prev) => ({
-                ...prev,
-                workflowTitleEn: titleEn,
-                workflowTitleAr: titleEn,
-            }));
-        }
     };
 
     const handleFormSubmit = (e: React.FormEvent) => {
@@ -545,1367 +476,497 @@ export const WorkflowStatusLevelsPage: React.FC = () => {
             r.createDate,
         ]);
         const csvContent =
-            '\uFEFF' + [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `awn-workflow-status-levels-${formatWorkflowDateToday()}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success(
-            t('workflow.statusLevels.feedback.exportSuccess', { count: filteredRecords.length })
+            'data:text/csv;charset=utf-8,\uFEFF' +
+            [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute(
+            'download',
+            `awn_workflow_status_levels_${new Date().toISOString().slice(0, 10)}.csv`
         );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(t('workflow.statusLevels.feedback.exportedSuccess'));
     };
 
+    // DataTable columns
+    const columns: ColumnDef<any, any>[] = useMemo(
+        () => [
+            {
+                id: 'select',
+                header: () => (
+                    <input
+                        type="checkbox"
+                        checked={isAllCurrentPageSelected}
+                        onChange={handleToggleSelectAll}
+                        className="w-3.5 h-3.5 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                        aria-label={t('common.selectAll')}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <input
+                        type="checkbox"
+                        checked={selectedIds.includes(row.original.id)}
+                        onChange={() => handleToggleSelectOne(row.original.id)}
+                        className="w-3.5 h-3.5 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                        aria-label={`Select row ${row.original.id}`}
+                    />
+                ),
+            },
+            {
+                id: 'order',
+                header: () => <span>{t('workflow.statusLevels.table.order')}</span>,
+                cell: ({ row }) => {
+                    const record = row.original as WorkflowStatusLevelRecord;
+                    return (
+                        <span
+                            className="w-7 h-7 rounded-lg inline-flex items-center justify-center font-bold text-xs border"
+                            style={{
+                                backgroundColor: `${record.color}15`,
+                                borderColor: `${record.color}40`,
+                                color: record.color,
+                            }}
+                        >
+                            #{record.levelOrder}
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'code',
+                header: () => <span>{t('workflow.masters.table.code')}</span>,
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs font-semibold text-[#0D0D0D]">
+                        {row.original.code}
+                    </span>
+                ),
+            },
+            {
+                id: 'levelName',
+                header: () => <span>{t('workflow.statusLevels.table.levelName')}</span>,
+                cell: ({ row }) => {
+                    const record = row.original as WorkflowStatusLevelRecord;
+                    return (
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-xs font-semibold text-[#0D0D0D]">
+                                {isRtl ? record.levelNameAr : record.levelNameEn}
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] text-[#6E6862]">
+                                    {record.stageCategory}
+                                </span>
+                                {record.isFinalLevel && (
+                                    <span
+                                        title={t('workflow.statusLevels.labels.finalStage')}
+                                        className="inline-flex items-center gap-0.5 text-[10px] text-[#037F8C]"
+                                    >
+                                        <Flag size={10} />
+                                    </span>
+                                )}
+                                {record.requireComment && (
+                                    <span
+                                        title={t('workflow.statusLevels.labels.commentRequired')}
+                                        className="inline-flex items-center gap-0.5 text-[10px] text-[#8C6046]"
+                                    >
+                                        <MessageSquare size={10} />
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'workflow',
+                header: () => <span>{t('workflow.statusLevels.drawer.associatedWorkflow')}</span>,
+                cell: ({ row }) => {
+                    const record = row.original as WorkflowStatusLevelRecord;
+                    return (
+                        <div className="flex items-center gap-1.5">
+                            <span
+                                className={`inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-bold border ${
+                                    SOURCE_BADGE_STYLES[record.source]
+                                }`}
+                            >
+                                {record.source}
+                            </span>
+                            <span className="text-xs text-[#0D0D0D]">
+                                {isRtl ? record.workflowTitleAr : record.workflowTitleEn}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'approverRole',
+                header: () => <span>{t('workflow.statusLevels.drawer.approverRole')}</span>,
+                cell: ({ row }) => {
+                    const record = row.original as WorkflowStatusLevelRecord;
+                    return (
+                        <span className="text-xs text-[#6E6862]">
+                            {isRtl ? record.approverRoleAr : record.approverRoleEn}
+                        </span>
+                    );
+                },
+            },
+            {
+                id: 'sla',
+                header: () => <span>{t('workflow.statusLevels.table.sla')}</span>,
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs text-[#6E6862]">
+                        {row.original.slaHours}h
+                    </span>
+                ),
+            },
+            {
+                id: 'status',
+                header: () => <span>{t('workflow.statusLevels.table.status')}</span>,
+                cell: ({ row }) => {
+                    const record = row.original as WorkflowStatusLevelRecord;
+                    const isEnabled = record.status === 'Enabled';
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => handleToggleStatus(record)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors cursor-pointer ${
+                                isEnabled
+                                    ? 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/25 hover:bg-[#037F8C]/18'
+                                    : 'bg-[#857E74]/12 text-[#6E6862] border-[#857E74]/30 hover:bg-[#857E74]/20'
+                            }`}
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                    isEnabled ? 'bg-[#037F8C]' : 'bg-[#857E74]'
+                                }`}
+                            />
+                            <span>
+                                {isEnabled
+                                    ? t('workflow.workflows.statuses.enabled')
+                                    : t('workflow.workflows.statuses.disabled')}
+                            </span>
+                        </button>
+                    );
+                },
+            },
+            {
+                accessorKey: 'createDate',
+                header: () => <span>{t('workflow.workflows.table.createdDate')}</span>,
+                cell: ({ row }) => (
+                    <span className="text-xs font-mono text-[#6E6862] tabular-nums" dir="ltr">
+                        {row.original.createDate}
+                    </span>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => (
+                    <div className="text-end">{t('workflow.workflows.table.actions')}</div>
+                ),
+                cell: ({ row }) => {
+                    const record = row.original as WorkflowStatusLevelRecord;
+                    const isEnabled = record.status === 'Enabled';
+                    return (
+                        <div className="inline-flex items-center justify-end gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setViewingRecord(record)}
+                                title={t('workflow.workflows.actions.view')}
+                                className="p-1 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            >
+                                <Eye size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => openEditDrawer(record)}
+                                title={t('common.edit', 'Edit')}
+                                className="p-1 rounded-md text-[#857E74] hover:text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            >
+                                <Pencil size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleToggleStatus(record)}
+                                title={
+                                    isEnabled
+                                        ? t('workflow.workflows.actions.disable')
+                                        : t('workflow.workflows.actions.enable')
+                                }
+                                className={`p-1 rounded-md transition-colors cursor-pointer ${
+                                    isEnabled
+                                        ? 'text-[#037F8C] hover:bg-[#037F8C]/10'
+                                        : 'text-[#857E74] hover:bg-[#857E74]/15'
+                                }`}
+                            >
+                                <Power size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDeletingRecord(record)}
+                                title={t('common.delete', 'Delete')}
+                                className="p-1 rounded-md text-[#857E74] hover:text-[#A63A3A] hover:bg-[#FCECE9] transition-colors cursor-pointer"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [
+            isAllCurrentPageSelected,
+            selectedIds,
+            isRtl,
+            t,
+            handleToggleSelectAll,
+            handleToggleStatus,
+        ]
+    );
+
     return (
-        <div className="space-y-6 text-start">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-2.5">
-                        <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                            {t('workflow.statusLevels.title')}
-                        </h1>
-                        <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
-                            dir="ltr"
-                        >
-                            WFL-STL
-                        </span>
-                    </div>
-                    <p className="text-xs text-[#6E6862] mt-1 font-normal">
-                        {t('workflow.statusLevels.description')}
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    <button
-                        type="button"
-                        onClick={handleExportCsv}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <Download size={14} className="text-[#857E74]" />
-                        <span>{t('workflow.workflows.actions.exportCsv')}</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={openCreateDrawer}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <Plus size={14} />
-                        <span>{t('workflow.statusLevels.actions.addStatusLevel')}</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* KPI Summary Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.statusLevels.kpis.totalLevels')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center">
-                            <ListFilter className="w-4 h-4 text-[#BFAB93]" />
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 sm:p-7 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <h1 className="text-2xl font-bold text-[#0D0D0D] tracking-tight">
+                                {t('workflow.statusLevels.title')}
+                            </h1>
+                            <span
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
+                                dir="ltr"
+                            >
+                                STL-002
+                            </span>
                         </div>
+                        <p className="text-xs text-[#6E6862] mt-1 max-w-2xl leading-relaxed">
+                            {t('workflow.statusLevels.subtitle')}
+                        </p>
                     </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#0D0D0D] tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpiStats.total}
-                        </span>
-                    </div>
-                </div>
 
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.statusLevels.kpis.approvalLevels')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
-                            <ShieldCheck className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#0D0D0D] tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpiStats.approval}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.statusLevels.kpis.communicationLevels')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#6A7358]/15 text-[#2D3F2C] flex items-center justify-center">
-                            <Mail className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#0D0D0D] tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpiStats.communication}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.statusLevels.kpis.finalStages')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#8C6046]/12 text-[#8C6046] flex items-center justify-center">
-                            <Flag className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#8C6046] tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpiStats.finalLevels}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.dashboard.kpis.enabledWorkflows')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#265938]/12 text-[#265938] flex items-center justify-center">
-                            <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#265938] tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpiStats.enabled}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col justify-between">
-                    <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.dashboard.kpis.disabledWorkflows')}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#857E74]/15 text-[#857E74] flex items-center justify-center">
-                            <XCircle className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3">
-                        <span
-                            className="text-2xl font-bold font-mono text-[#6E6862] tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpiStats.disabled}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Status Levels Card: Tabs + Filters + Table + Pagination */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                {/* Top Tabs */}
-                <div className="px-5 pt-4 border-b border-[#E5E0D8] bg-[#FAF8F5]/60 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* Workflow type filter buttons */}
+                    <div className="flex items-center gap-1.5 p-1 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl self-start sm:self-auto">
                         <button
                             type="button"
                             onClick={() => {
                                 setTypeTab('ALL');
-                                setCurrentPage(1);
-                                setSelectedIds([]);
+                                setPageIndex(0);
                             }}
-                            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 typeTab === 'ALL'
-                                    ? 'border-[#2D3F2C] text-[#2D3F2C] bg-white rounded-t-lg'
-                                    : 'border-transparent text-[#6E6862] hover:text-[#0D0D0D]'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
                             }`}
                         >
-                            <ListFilter className="w-4 h-4" />
+                            <ListFilter size={13} />
                             <span>{t('workflow.statusLevels.tabs.all')}</span>
-                            <span
-                                className={`px-2 py-0.5 text-[11px] font-mono rounded-md ${
-                                    typeTab === 'ALL'
-                                        ? 'bg-[#2D3F2C] text-[#FAF8F5]'
-                                        : 'bg-[#E5E0D8]/70 text-[#0D0D0D]'
-                                }`}
-                                dir="ltr"
-                            >
-                                {kpiStats.total}
-                            </span>
+                            <span className="font-mono text-[10px]">({kpiStats.total})</span>
                         </button>
-
                         <button
                             type="button"
                             onClick={() => {
                                 setTypeTab('approval');
-                                setCurrentPage(1);
-                                setSelectedIds([]);
+                                setPageIndex(0);
                             }}
-                            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 typeTab === 'approval'
-                                    ? 'border-[#2D3F2C] text-[#2D3F2C] bg-white rounded-t-lg'
-                                    : 'border-transparent text-[#6E6862] hover:text-[#0D0D0D]'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
                             }`}
                         >
-                            <ShieldCheck className="w-4 h-4" />
-                            <span>{t('workflow.workflows.tabs.approval')}</span>
-                            <span
-                                className={`px-2 py-0.5 text-[11px] font-mono rounded-md ${
-                                    typeTab === 'approval'
-                                        ? 'bg-[#2D3F2C] text-[#FAF8F5]'
-                                        : 'bg-[#E5E0D8]/70 text-[#0D0D0D]'
-                                }`}
-                                dir="ltr"
-                            >
-                                {kpiStats.approval}
-                            </span>
+                            <ShieldCheck size={13} />
+                            <span>{t('workflow.statusLevels.tabs.approval')}</span>
+                            <span className="font-mono text-[10px]">({kpiStats.approval})</span>
                         </button>
-
                         <button
                             type="button"
                             onClick={() => {
                                 setTypeTab('communication');
-                                setCurrentPage(1);
-                                setSelectedIds([]);
+                                setPageIndex(0);
                             }}
-                            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 typeTab === 'communication'
-                                    ? 'border-[#2D3F2C] text-[#2D3F2C] bg-white rounded-t-lg'
-                                    : 'border-transparent text-[#6E6862] hover:text-[#0D0D0D]'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
                             }`}
                         >
-                            <Mail className="w-4 h-4" />
-                            <span>{t('workflow.workflows.tabs.communication')}</span>
-                            <span
-                                className={`px-2 py-0.5 text-[11px] font-mono rounded-md ${
-                                    typeTab === 'communication'
-                                        ? 'bg-[#2D3F2C] text-[#FAF8F5]'
-                                        : 'bg-[#E5E0D8]/70 text-[#0D0D0D]'
-                                }`}
-                                dir="ltr"
-                            >
-                                {kpiStats.communication}
+                            <Mail size={13} />
+                            <span>{t('workflow.statusLevels.tabs.communication')}</span>
+                            <span className="font-mono text-[10px]">
+                                ({kpiStats.communication})
                             </span>
                         </button>
                     </div>
                 </div>
 
-                {/* Search & Filters Bar */}
-                <div className="p-4 border-b border-[#E5E0D8] bg-white flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    {/* Search Input */}
-                    <div className="relative flex-1 max-w-md">
-                        <Search
-                            size={15}
-                            className="absolute top-1/2 -translate-y-1/2 start-3 text-[#857E74] pointer-events-none"
-                        />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            placeholder={t('workflow.statusLevels.filters.searchPlaceholder')}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C] transition-colors"
-                        />
-                        {searchQuery && (
+                {/* Bulk Actions Banner */}
+                {selectedIds.length > 0 && (
+                    <div className="mt-4 p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+                        <span className="text-xs font-semibold text-[#0D0D0D]">
+                            {t('workflow.workflows.feedback.selectedCount', {
+                                count: selectedIds.length,
+                            })}
+                        </span>
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setCurrentPage(1);
-                                }}
-                                className="absolute top-1/2 -translate-y-1/2 end-2.5 text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
-                                aria-label={t('common.clear', 'Clear')}
+                                onClick={() => handleBulkStatusChange('Enabled')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] hover:bg-[#1E472D] text-white text-xs font-semibold transition-colors cursor-pointer"
                             >
-                                <X size={13} />
+                                <CheckCircle2 size={13} />
+                                <span>{t('workflow.workflows.actions.enable')}</span>
                             </button>
-                        )}
+                            <button
+                                type="button"
+                                onClick={() => handleBulkStatusChange('Disabled')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#8C6046] hover:bg-[#734E39] text-white text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                <XCircle size={13} />
+                                <span>{t('workflow.workflows.actions.disable')}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedIds([])}
+                                className="px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                            >
+                                {t('common.cancel')}
+                            </button>
+                        </div>
                     </div>
+                )}
+            </div>
 
-                    {/* Filter Selects */}
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        {/* Source Filter */}
+            {/* Filter Content */}
+            {isFiltersOpen && (
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                            {t('workflow.workflows.table.source')}
+                        </label>
                         <select
                             value={sourceFilter}
                             onChange={(e) => {
                                 setSourceFilter(e.target.value);
-                                setCurrentPage(1);
+                                setPageIndex(0);
                             }}
-                            aria-label={t('workflow.workflows.filters.sourceLabel')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
+                            className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                         >
-                            <option value="ALL">{t('workflow.workflows.filters.allSources')}</option>
+                            <option value="ALL">{t('common.all')}</option>
                             {WORKFLOW_SOURCES.map((src) => (
                                 <option key={src} value={src}>
                                     {src}
                                 </option>
                             ))}
                         </select>
+                    </div>
 
-                        {/* Stage Category Filter */}
+                    <div>
+                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                            {t('workflow.statusLevels.table.stageCategory')}
+                        </label>
                         <select
                             value={stageFilter}
                             onChange={(e) => {
                                 setStageFilter(e.target.value);
-                                setCurrentPage(1);
+                                setPageIndex(0);
                             }}
-                            aria-label={t('workflow.statusLevels.filters.stageLabel')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
+                            className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                         >
-                            <option value="ALL">
-                                {t('workflow.statusLevels.filters.allStages')}
-                            </option>
-                            {STAGE_CATEGORIES.map((stg) => (
-                                <option key={stg} value={stg}>
-                                    {t(`workflow.statusLevels.stages.${stg}`)}
+                            <option value="ALL">{t('common.all')}</option>
+                            {STAGE_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {cat}
                                 </option>
                             ))}
                         </select>
+                    </div>
 
-                        {/* Status Filter */}
+                    <div>
+                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                            {t('workflow.workflows.table.status')}
+                        </label>
                         <select
                             value={statusFilter}
                             onChange={(e) => {
                                 setStatusFilter(e.target.value);
-                                setCurrentPage(1);
+                                setPageIndex(0);
                             }}
-                            aria-label={t('workflow.workflows.filters.statusLabel')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
+                            className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                         >
-                            <option value="ALL">
-                                {t('workflow.workflows.filters.allStatuses')}
-                            </option>
-                            <option value="Enabled">
-                                {t('workflow.workflows.statuses.enabled')}
-                            </option>
-                            <option value="Disabled">
-                                {t('workflow.workflows.statuses.disabled')}
-                            </option>
+                            <option value="ALL">{t('common.all')}</option>
+                            <option value="Enabled">{t('workflow.workflows.statuses.enabled')}</option>
+                            <option value="Disabled">{t('workflow.workflows.statuses.disabled')}</option>
                         </select>
-
-                        {hasActiveFilters && (
-                            <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                <RotateCcw size={13} />
-                                <span>{t('common.resetFilters', 'Reset Filters')}</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Bulk Selection Action Bar */}
-                {selectedIds.length > 0 && (
-                    <div className="px-5 py-2.5 bg-[#2D3F2C]/8 border-b border-[#E5E0D8] flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-[#2D3F2C]">
-                            <span
-                                className="px-2 py-0.5 rounded-md bg-[#2D3F2C] text-[#FAF8F5] font-mono"
-                                dir="ltr"
-                            >
-                                {selectedIds.length}
-                            </span>
-                            <span>{t('workflow.statusLevels.selection.selectedCount')}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleBulkStatusChange('Enabled')}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#265938] hover:bg-[#1f492e] text-[11px] font-semibold text-white transition-colors cursor-pointer"
-                            >
-                                <CheckCircle2 size={13} />
-                                <span>{t('workflow.workflows.selection.enableSelected')}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleBulkStatusChange('Disabled')}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#857E74] hover:bg-[#6E6862] text-[11px] font-semibold text-white transition-colors cursor-pointer"
-                            >
-                                <XCircle size={13} />
-                                <span>{t('workflow.workflows.selection.disableSelected')}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedIds([])}
-                                className="px-2.5 py-1.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                {t('workflow.workflows.selection.clearSelection')}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-start border-collapse">
-                        <thead>
-                            <tr className="bg-[#FAF8F5] border-b border-[#E5E0D8]">
-                                <th className="w-11 py-3.5 px-4 text-start">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllCurrentPageSelected}
-                                        onChange={handleToggleSelectAll}
-                                        aria-label={t('workflow.workflows.table.selectAll')}
-                                        className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                    />
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.id')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.levelName')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.levelOrder')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.workflowAndSource')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.approverAndSla')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.status')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
-                                    {t('workflow.statusLevels.table.createDate')}
-                                </th>
-                                <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-end">
-                                    {t('workflow.statusLevels.table.actions')}
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-[#E5E0D8]">
-                            {paginatedRecords.length === 0 ? (
-                                <tr>
-                                    <td colSpan={9} className="py-14 px-6 text-center">
-                                        <div className="max-w-sm mx-auto space-y-2">
-                                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#857E74]">
-                                                <ListFilter size={18} />
-                                            </div>
-                                            <p className="text-sm font-semibold text-[#0D0D0D]">
-                                                {t('workflow.statusLevels.empty.title')}
-                                            </p>
-                                            <p className="text-xs text-[#6E6862]">
-                                                {t('workflow.statusLevels.empty.description')}
-                                            </p>
-                                            {hasActiveFilters && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleResetFilters}
-                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] text-xs font-medium cursor-pointer"
-                                                >
-                                                    <RotateCcw size={12} />
-                                                    <span>
-                                                        {t('common.resetFilters', 'Reset Filters')}
-                                                    </span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedRecords.map((record) => {
-                                    const isSelected = selectedIds.includes(record.id);
-                                    const isEnabled = record.status === 'Enabled';
-
-                                    return (
-                                        <tr
-                                            key={record.id}
-                                            className={`transition-colors ${
-                                                isSelected
-                                                    ? 'bg-[#2D3F2C]/5'
-                                                    : 'hover:bg-[#FAF8F5]/70'
-                                            }`}
-                                        >
-                                            <td className="py-3.5 px-4">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleToggleSelectOne(record.id)}
-                                                    aria-label={`${t('workflow.workflows.table.selectRow')} ${record.id}`}
-                                                    className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                                />
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <span
-                                                    className="text-xs font-mono font-bold text-[#0D0D0D] tabular-nums"
-                                                    dir="ltr"
-                                                >
-                                                    #{record.id}
-                                                </span>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <div className="min-w-0">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <span
-                                                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                                                            style={{ backgroundColor: record.color }}
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setViewingRecord(record)}
-                                                            className="text-xs font-semibold text-[#0D0D0D] hover:text-[#2D3F2C] transition-colors text-start cursor-pointer"
-                                                        >
-                                                            {isRtl
-                                                                ? record.levelNameAr
-                                                                : record.levelNameEn}
-                                                        </button>
-                                                        <span
-                                                            className="px-1.5 py-0.5 text-[10px] font-mono rounded-sm bg-[#FAF8F5] text-[#6E6862] border border-[#E5E0D8]"
-                                                            dir="ltr"
-                                                        >
-                                                            {record.code}
-                                                        </span>
-                                                        {record.isFinalLevel && (
-                                                            <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-sm bg-[#265938]/12 text-[#265938]">
-                                                                {t(
-                                                                    'workflow.statusLevels.labels.finalStage'
-                                                                )}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[11px] text-[#6E6862] truncate max-w-md mt-0.5">
-                                                        {isRtl
-                                                            ? record.descriptionAr
-                                                            : record.descriptionEn}
-                                                    </p>
-                                                </div>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <div className="flex flex-col gap-1 items-start">
-                                                    <span
-                                                        className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#2D3F2C] text-[#FAF8F5] text-[11px] font-mono font-semibold"
-                                                        dir="ltr"
-                                                    >
-                                                        L{record.levelOrder}
-                                                    </span>
-                                                    <span className="text-[11px] text-[#6E6862]">
-                                                        {t(
-                                                            `workflow.statusLevels.stages.${record.stageCategory}`
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <div className="flex flex-col gap-1 items-start">
-                                                    <span className="text-xs font-semibold text-[#0D0D0D]">
-                                                        {isRtl
-                                                            ? record.workflowTitleAr
-                                                            : record.workflowTitleEn}
-                                                    </span>
-                                                    <span
-                                                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${
-                                                            SOURCE_BADGE_STYLES[record.source] ||
-                                                            'bg-[#FAF8F5] text-[#0D0D0D] border-[#E5E0D8]'
-                                                        }`}
-                                                        dir="ltr"
-                                                    >
-                                                        {record.source}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <div className="flex flex-col gap-1 items-start">
-                                                    <span className="text-xs font-medium text-[#0D0D0D]">
-                                                        {isRtl
-                                                            ? record.approverRoleAr
-                                                            : record.approverRoleEn}
-                                                    </span>
-                                                    <div className="flex items-center gap-2">
-                                                        <span
-                                                            className="inline-flex items-center gap-1 text-[11px] font-mono text-[#6E6862]"
-                                                            dir="ltr"
-                                                        >
-                                                            <Clock size={11} />
-                                                            {record.slaHours}h SLA
-                                                        </span>
-                                                        {record.requireComment && (
-                                                            <span
-                                                                title={t(
-                                                                    'workflow.statusLevels.labels.commentRequired'
-                                                                )}
-                                                                className="inline-flex items-center gap-1 text-[10px] text-[#8C6046]"
-                                                            >
-                                                                <MessageSquare size={11} />
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(record)}
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors cursor-pointer ${
-                                                        isEnabled
-                                                            ? 'bg-[#265938]/10 text-[#265938] border-[#265938]/25 hover:bg-[#265938]/18'
-                                                            : 'bg-[#857E74]/12 text-[#6E6862] border-[#857E74]/30 hover:bg-[#857E74]/20'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`w-1.5 h-1.5 rounded-full ${
-                                                            isEnabled
-                                                                ? 'bg-[#265938]'
-                                                                : 'bg-[#857E74]'
-                                                        }`}
-                                                    />
-                                                    <span>
-                                                        {isEnabled
-                                                            ? t('workflow.workflows.statuses.enabled')
-                                                            : t('workflow.workflows.statuses.disabled')}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            <td className="py-3.5 px-4">
-                                                <span
-                                                    className="text-xs font-mono text-[#6E6862] tabular-nums"
-                                                    dir="ltr"
-                                                >
-                                                    {record.createDate}
-                                                </span>
-                                            </td>
-
-                                            <td className="py-3.5 px-4 text-end">
-                                                <div className="inline-flex items-center justify-end gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setViewingRecord(record)}
-                                                        title={t('workflow.workflows.actions.view')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                    >
-                                                        <Eye size={15} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEditDrawer(record)}
-                                                        title={t('common.edit', 'Edit')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                    >
-                                                        <Pencil size={15} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(record)}
-                                                        title={
-                                                            isEnabled
-                                                                ? t('workflow.workflows.actions.disable')
-                                                                : t('workflow.workflows.actions.enable')
-                                                        }
-                                                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                                            isEnabled
-                                                                ? 'text-[#265938] hover:bg-[#265938]/10'
-                                                                : 'text-[#857E74] hover:bg-[#857E74]/15'
-                                                        }`}
-                                                    >
-                                                        <Power size={15} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setDeletingRecord(record)}
-                                                        title={t('common.delete', 'Delete')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#A63A3A] hover:bg-[#A63A3A]/10 transition-colors cursor-pointer"
-                                                    >
-                                                        <Trash2 size={15} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Bar */}
-                <div className="px-5 py-3.5 bg-[#FAF8F5]/60 border-t border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex items-center gap-3 text-xs text-[#6E6862]">
-                        <span>{t('workflow.workflows.pagination.rowsPerPage')}</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('workflow.workflows.pagination.rowsPerPage')}
-                            className="px-2.5 py-1 rounded-md border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
-                        >
-                            {WORKFLOW_PAGE_SIZE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                        <span>
-                            {t('workflow.statusLevels.pagination.showing', {
-                                from:
-                                    totalRecords === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1,
-                                to: Math.min(safeCurrentPage * pageSize, totalRecords),
-                                total: totalRecords,
-                            })}
-                        </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <div className="flex items-end">
                         <button
                             type="button"
-                            disabled={safeCurrentPage <= 1}
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                            aria-label={t('common.previous', 'Previous')}
+                            onClick={handleResetFilters}
+                            className="w-full px-3 py-2 bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] rounded-lg text-xs font-semibold text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
-                            <ChevronLeft size={14} className="rtl:rotate-180" />
+                            {t('common.resetFilters')}
                         </button>
-
-                        {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNum) => (
-                            <button
-                                key={pageNum}
-                                type="button"
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`min-w-7 h-7 px-2 rounded-lg text-xs font-mono font-semibold transition-colors cursor-pointer ${
-                                    pageNum === safeCurrentPage
-                                        ? 'bg-[#2D3F2C] text-[#FAF8F5]'
-                                        : 'bg-white border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#FAF8F5]'
-                                }`}
-                                dir="ltr"
-                            >
-                                {pageNum}
-                            </button>
-                        ))}
-
-                        <button
-                            type="button"
-                            disabled={safeCurrentPage >= totalPages}
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                            aria-label={t('common.next', 'Next')}
-                        >
-                            <ChevronRight size={14} className="rtl:rotate-180" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* View Status Level Drawer */}
-            {viewingRecord && (
-                <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[1px]">
-                    <div
-                        className="w-full max-w-lg bg-white h-full shadow-2xl border-s border-[#E5E0D8] flex flex-col justify-between overflow-y-auto"
-                        dir={isRtl ? 'rtl' : 'ltr'}
-                    >
-                        <div>
-                            {/* Drawer Header */}
-                            <div className="px-6 py-5 border-b border-[#E5E0D8] flex items-center justify-between gap-3 bg-[#FAF8F5]">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div
-                                        className="w-10 h-10 rounded-xl text-[#FAF8F5] flex items-center justify-center shrink-0 font-mono text-xs font-bold"
-                                        style={{ backgroundColor: viewingRecord.color }}
-                                        dir="ltr"
-                                    >
-                                        L{viewingRecord.levelOrder}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className="text-xs font-mono font-bold text-[#6E6862]"
-                                                dir="ltr"
-                                            >
-                                                #{viewingRecord.id} · {viewingRecord.code}
-                                            </span>
-                                            <span
-                                                className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
-                                                    viewingRecord.status === 'Enabled'
-                                                        ? 'bg-[#265938]/12 text-[#265938]'
-                                                        : 'bg-[#857E74]/15 text-[#6E6862]'
-                                                }`}
-                                            >
-                                                {viewingRecord.status === 'Enabled'
-                                                    ? t('workflow.workflows.statuses.enabled')
-                                                    : t('workflow.workflows.statuses.disabled')}
-                                            </span>
-                                        </div>
-                                        <h2 className="text-base font-bold text-[#0D0D0D] truncate mt-0.5">
-                                            {isRtl
-                                                ? viewingRecord.levelNameAr
-                                                : viewingRecord.levelNameEn}
-                                        </h2>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingRecord(null)}
-                                    className="p-2 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors cursor-pointer"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            {/* Drawer Content */}
-                            <div className="p-6 space-y-5">
-                                <div className="grid grid-cols-2 gap-3.5">
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862]">
-                                            <Database size={13} />
-                                            <span>
-                                                {t('workflow.statusLevels.table.workflowAndSource')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-bold text-[#0D0D0D] mt-1">
-                                            {isRtl
-                                                ? viewingRecord.workflowTitleAr
-                                                : viewingRecord.workflowTitleEn}{' '}
-                                            <span className="font-mono text-[#6E6862]" dir="ltr">
-                                                ({viewingRecord.source})
-                                            </span>
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862]">
-                                            <Layers size={13} />
-                                            <span>
-                                                {t('workflow.statusLevels.drawer.stageCategory')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-bold text-[#0D0D0D] mt-1">
-                                            {t(
-                                                `workflow.statusLevels.stages.${viewingRecord.stageCategory}`
-                                            )}
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862]">
-                                            <UserCheck size={13} />
-                                            <span>
-                                                {t('workflow.statusLevels.drawer.approverRole')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-bold text-[#0D0D0D] mt-1">
-                                            {isRtl
-                                                ? viewingRecord.approverRoleAr
-                                                : viewingRecord.approverRoleEn}
-                                        </p>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-[#6E6862]">
-                                            <Clock size={13} />
-                                            <span>
-                                                {t('workflow.statusLevels.drawer.slaHours')}
-                                            </span>
-                                        </div>
-                                        <p
-                                            className="text-xs font-mono font-bold text-[#0D0D0D] mt-1"
-                                            dir="ltr"
-                                        >
-                                            {viewingRecord.slaHours}h
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex flex-wrap items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 text-xs text-[#0D0D0D]">
-                                        <Calendar size={14} className="text-[#857E74]" />
-                                        <span className="text-[#6E6862]">
-                                            {t('workflow.statusLevels.table.createDate')}:
-                                        </span>
-                                        <span className="font-mono font-semibold" dir="ltr">
-                                            {viewingRecord.createDate}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {viewingRecord.isFinalLevel && (
-                                            <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[#265938]/12 text-[#265938]">
-                                                {t('workflow.statusLevels.labels.finalStage')}
-                                            </span>
-                                        )}
-                                        {viewingRecord.requireComment && (
-                                            <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-[#8C6046]/12 text-[#8C6046]">
-                                                {t('workflow.statusLevels.labels.commentRequired')}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] space-y-1.5">
-                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6862]">
-                                        {t('workflow.workflows.drawer.description')}
-                                    </span>
-                                    <p className="text-xs text-[#0D0D0D] leading-relaxed">
-                                        {isRtl
-                                            ? viewingRecord.descriptionAr
-                                            : viewingRecord.descriptionEn}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Drawer Footer */}
-                        <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleToggleStatus(viewingRecord)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                <Power size={14} />
-                                <span>
-                                    {viewingRecord.status === 'Enabled'
-                                        ? t('workflow.workflows.actions.disable')
-                                        : t('workflow.workflows.actions.enable')}
-                                </span>
-                            </button>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => openEditDrawer(viewingRecord)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
-                                >
-                                    <Pencil size={13} />
-                                    <span>{t('common.edit', 'Edit')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingRecord(null)}
-                                    className="px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                                >
-                                    {t('common.close', 'Close')}
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Create / Edit Status Level Drawer */}
-            {(isCreateOpen || editingRecord) && (
-                <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[1px]">
-                    <form
-                        onSubmit={handleFormSubmit}
-                        className="w-full max-w-lg bg-white h-full shadow-2xl border-s border-[#E5E0D8] flex flex-col justify-between overflow-y-auto"
-                        dir={isRtl ? 'rtl' : 'ltr'}
-                    >
-                        <div>
-                            <div className="px-6 py-5 border-b border-[#E5E0D8] flex items-center justify-between gap-3 bg-[#FAF8F5]">
-                                <div>
-                                    <h2 className="text-base font-bold text-[#0D0D0D]">
-                                        {editingRecord
-                                            ? t('workflow.statusLevels.drawer.editTitle')
-                                            : t('workflow.statusLevels.drawer.createTitle')}
-                                    </h2>
-                                    <p className="text-xs text-[#6E6862] mt-0.5">
-                                        {t('workflow.statusLevels.drawer.formSubtitle')}
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={closeFormDrawer}
-                                    className="p-2 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors cursor-pointer"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
+            {/* DataTable */}
+            <DataTable
+                columns={columns}
+                data={paginatedRecords}
+                count={totalRecords}
+                loading={isLoading || saveMutation.isPending}
+                searchPlaceholder={t('workflow.statusLevels.searchPlaceholder')}
+                pageIndex={pageIndex}
+                pageSize={pageSize}
+                onPageChange={(newIdx) => setPageIndex(newIdx)}
+                onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPageIndex(0);
+                }}
+                searchValue={searchQuery}
+                onSearchChange={(val) => {
+                    setSearchQuery(val);
+                    setPageIndex(0);
+                }}
+                onAddNew={openCreateDrawer}
+                onExport={handleExportCsv}
+                title={t('workflow.statusLevels.title')}
+                description={t('workflow.statusLevels.subtitle')}
+                addNewLabel={t('workflow.statusLevels.actions.newStatusLevel')}
+                onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+                isFiltersOpen={isFiltersOpen}
+                hasActiveFilters={hasActiveFilters}
+            />
 
-                            <div className="p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-3.5">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.masters.table.code')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formState.code}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    code: e.target.value,
-                                                }))
-                                            }
-                                            dir="ltr"
-                                            className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
+            {/* View Drawer */}
+            <WorkflowStatusLevelViewDrawer
+                record={viewingRecord}
+                onClose={() => setViewingRecord(null)}
+                onEdit={openEditDrawer}
+                onToggleStatus={handleToggleStatus}
+            />
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.statusLevels.table.levelOrder')}
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={15}
-                                            value={formState.levelOrder}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    levelOrder: Number(e.target.value) || 1,
-                                                }))
-                                            }
-                                            dir="ltr"
-                                            className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('workflow.statusLevels.drawer.levelNameEn')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formState.levelNameEn}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                levelNameEn: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="e.g., Compliance Review"
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('workflow.statusLevels.drawer.levelNameAr')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formState.levelNameAr}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                levelNameAr: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="مثال: مراجعة الامتثال"
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3.5">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.workflows.table.workflowTitle')}
-                                        </label>
-                                        <select
-                                            value={formState.workflowTitleEn}
-                                            onChange={(e) =>
-                                                handleWorkflowSelectChange(e.target.value)
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        >
-                                            {availableWorkflows.map((wf) => (
-                                                <option key={wf.id} value={wf.titleEn}>
-                                                    {isRtl ? wf.titleAr : wf.titleEn} ({wf.source})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.statusLevels.drawer.stageCategory')}
-                                        </label>
-                                        <select
-                                            value={formState.stageCategory}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    stageCategory: e.target
-                                                        .value as WorkflowStageCategory,
-                                                }))
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        >
-                                            {STAGE_CATEGORIES.map((stg) => (
-                                                <option key={stg} value={stg}>
-                                                    {t(`workflow.statusLevels.stages.${stg}`)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3.5">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.statusLevels.drawer.approverRole')} (EN)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formState.approverRoleEn}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    approverRoleEn: e.target.value,
-                                                }))
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.statusLevels.drawer.approverRole')} (AR)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formState.approverRoleAr}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    approverRoleAr: e.target.value,
-                                                }))
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3.5">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.statusLevels.drawer.slaHours')}
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={720}
-                                            value={formState.slaHours}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    slaHours: Number(e.target.value) || 12,
-                                                }))
-                                            }
-                                            dir="ltr"
-                                            className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                            {t('workflow.statusLevels.table.status')}
-                                        </label>
-                                        <select
-                                            value={formState.status}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    status: e.target.value as WorkflowStatus,
-                                                }))
-                                            }
-                                            className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                        >
-                                            <option value="Enabled">
-                                                {t('workflow.workflows.statuses.enabled')}
-                                            </option>
-                                            <option value="Disabled">
-                                                {t('workflow.workflows.statuses.disabled')}
-                                            </option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('workflow.masters.drawer.badgeColor')}
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                        {COLOR_OPTIONS.map((hex) => (
-                                            <button
-                                                key={hex}
-                                                type="button"
-                                                onClick={() =>
-                                                    setFormState((prev) => ({
-                                                        ...prev,
-                                                        color: hex,
-                                                    }))
-                                                }
-                                                className={`w-7 h-7 rounded-lg border-2 transition-transform cursor-pointer ${
-                                                    formState.color === hex
-                                                        ? 'border-[#0D0D0D] scale-110'
-                                                        : 'border-transparent'
-                                                }`}
-                                                style={{ backgroundColor: hex }}
-                                                aria-label={hex}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-5 pt-1">
-                                    <label className="inline-flex items-center gap-2 text-xs font-medium text-[#0D0D0D] cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={formState.isFinalLevel}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    isFinalLevel: e.target.checked,
-                                                }))
-                                            }
-                                            className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                        />
-                                        <span>{t('workflow.statusLevels.labels.finalStage')}</span>
-                                    </label>
-
-                                    <label className="inline-flex items-center gap-2 text-xs font-medium text-[#0D0D0D] cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={formState.requireComment}
-                                            onChange={(e) =>
-                                                setFormState((prev) => ({
-                                                    ...prev,
-                                                    requireComment: e.target.checked,
-                                                }))
-                                            }
-                                            className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                        />
-                                        <span>
-                                            {t('workflow.statusLevels.labels.commentRequired')}
-                                        </span>
-                                    </label>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('workflow.workflows.drawer.description')} (EN)
-                                    </label>
-                                    <textarea
-                                        rows={2}
-                                        value={formState.descriptionEn}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                descriptionEn: e.target.value,
-                                            }))
-                                        }
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('workflow.workflows.drawer.description')} (AR)
-                                    </label>
-                                    <textarea
-                                        rows={2}
-                                        value={formState.descriptionAr}
-                                        onChange={(e) =>
-                                            setFormState((prev) => ({
-                                                ...prev,
-                                                descriptionAr: e.target.value,
-                                            }))
-                                        }
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="px-6 py-4 border-t border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={closeFormDrawer}
-                                className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                {t('common.cancel', 'Cancel')}
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
-                            >
-                                {editingRecord
-                                    ? t('common.saveChanges', 'Save Changes')
-                                    : t('common.create', 'Create')}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
+            {/* Create / Edit Form Drawer */}
+            <WorkflowStatusLevelFormDrawer
+                isOpen={isCreateOpen || editingRecord !== null}
+                onClose={closeFormDrawer}
+                onSubmit={handleFormSubmit}
+                formState={formState}
+                setFormState={setFormState}
+                editingRecord={editingRecord}
+                availableWorkflows={availableWorkflows}
+            />
 
             {/* Delete Confirmation Modal */}
-            {deletingRecord && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4">
-                    <div
-                        className="w-full max-w-md bg-white rounded-xl border border-[#E5E0D8] shadow-xl p-6 space-y-4"
-                        dir={isRtl ? 'rtl' : 'ltr'}
-                    >
-                        <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#A63A3A]/12 text-[#A63A3A] flex items-center justify-center shrink-0">
-                                <Trash2 size={18} />
-                            </div>
-                            <div>
-                                <h3 className="text-base font-bold text-[#0D0D0D]">
-                                    {t('common.confirmDeleteTitle', 'Confirm Deletion')}
-                                </h3>
-                                <p className="text-xs text-[#6E6862] mt-1 leading-relaxed">
-                                    {t(
-                                        'common.confirmDeleteDesc',
-                                        'Are you sure you want to delete this record?'
-                                    )}{' '}
-                                    <span className="font-semibold text-[#0D0D0D]">
-                                        #{deletingRecord.id} (
-                                        {isRtl
-                                            ? deletingRecord.levelNameAr
-                                            : deletingRecord.levelNameEn}
-                                        )
-                                    </span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setDeletingRecord(null)}
-                                className="px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                {t('common.cancel', 'Cancel')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmDelete}
-                                className="px-3.5 py-2 rounded-lg bg-[#A63A3A] hover:bg-[#8e3030] text-xs font-medium text-white transition-colors cursor-pointer"
-                            >
-                                {t('common.delete', 'Delete')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <WorkflowStatusLevelDeleteModal
+                record={deletingRecord}
+                onClose={() => setDeletingRecord(null)}
+                onConfirm={handleConfirmDelete}
+            />
         </div>
     );
 };

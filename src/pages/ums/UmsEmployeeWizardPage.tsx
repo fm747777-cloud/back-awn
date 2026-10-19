@@ -724,7 +724,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                     >
                         {isRtl ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
                         <span>{t('ums.employees.actions.backToList')}</span>
@@ -1311,7 +1311,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                     <Paperclip size={14} className="text-[#857E74] shrink-0" />
                     {attachment ? (
                         <div className="text-xs min-w-0">
-                            <span className="font-semibold text-[#265938] inline-flex items-center gap-1 truncate">
+                            <span className="font-semibold text-[#037F8C] inline-flex items-center gap-1 truncate">
                                 <FileCheck2 size={13} />
                                 {attachment.fileName}
                             </span>
@@ -1329,7 +1329,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                 <div className="flex items-center gap-2 shrink-0">
                     <label
                         htmlFor={inputId}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Upload size={12} />
                         <span>
@@ -1431,7 +1431,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
 
                     <div>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-[#6E6862]">
-                            <span className="font-mono font-bold text-[#2D3F2C]" dir="ltr">
+                            <span className="font-mono font-bold text-[#037F8C]" dir="ltr">
                                 {form.code}
                             </span>
                             <span aria-hidden="true">·</span>
@@ -1442,7 +1442,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                 })}
                             </span>
                             <span aria-hidden="true">·</span>
-                            <span className="font-semibold text-[#265938]">
+                            <span className="font-semibold text-[#037F8C]">
                                 {t('ums.employees.wizard.liveCompletion')}:{' '}
                                 {liveCompletion.percentage}%
                             </span>
@@ -1480,7 +1480,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => handleSaveEmployee(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Save size={14} />
                         <span>{t('ums.employees.wizard.saveAsDraft')}</span>
@@ -1489,7 +1489,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => handleSaveEmployee(false)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                     >
                         <Check size={14} />
                         <span>
@@ -1507,7 +1507,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                     className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-xs font-medium ${
                         uploadFeedback.type === 'error'
                             ? 'bg-[#FEF2F2] border-[#DC2626]/30 text-[#DC2626]'
-                            : 'bg-[#EAF3EC] border-[#265938]/30 text-[#265938]'
+                            : 'bg-[#EAF3EC] border-[#037F8C]/30 text-[#037F8C]'
                     }`}
                 >
                     <div className="flex items-center gap-2">
@@ -1558,7 +1558,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                 onClick={() => handleStepClick(step.index)}
                                 className={`flex items-start gap-3 p-3 rounded-xl border text-start transition-all cursor-pointer ${
                                     isActive
-                                        ? 'bg-[#FAF8F5] border-[#2D3F2C] ring-1 ring-[#2D3F2C]'
+                                        ? 'bg-[#FAF8F5] border-[#037F8C] ring-1 ring-[#037F8C]'
                                         : isVisited
                                         ? 'bg-white hover:bg-[#FAF8F5] border-[#E5E0D8]'
                                         : 'bg-[#FAF8F5]/50 border-[#E5E0D8] opacity-75 hover:opacity-100'
@@ -1567,9 +1567,9 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                 <div
                                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
                                         isActive
-                                            ? 'bg-[#2D3F2C] text-white'
+                                            ? 'bg-[#037F8C] text-white'
                                             : step.complete
-                                            ? 'bg-[#EAF3EC] text-[#265938]'
+                                            ? 'bg-[#EAF3EC] text-[#037F8C]'
                                             : 'bg-[#EFECE6] text-[#6E6862]'
                                     }`}
                                 >
@@ -1587,7 +1587,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         {step.complete && (
                                             <CheckCircle2
                                                 size={13}
-                                                className="text-[#265938] shrink-0"
+                                                className="text-[#037F8C] shrink-0"
                                             />
                                         )}
                                     </div>
@@ -1620,7 +1620,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E0D8] shrink-0"
                                     />
                                 ) : (
-                                    <div className="w-16 h-16 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-lg shrink-0">
+                                    <div className="w-16 h-16 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-lg shrink-0">
                                         {getInitials(composedNameEn, composedNameAr)}
                                     </div>
                                 )}
@@ -1632,7 +1632,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         {t('ums.employees.wizard.personal.photoSectionDesc')}
                                     </p>
                                     {form.avatarMeta && (
-                                        <p className="text-[11px] font-mono text-[#265938] mt-1">
+                                        <p className="text-[11px] font-mono text-[#037F8C] mt-1">
                                             {form.avatarMeta.fileName} (
                                             {formatFileSize(form.avatarMeta.fileSize)})
                                         </p>
@@ -1643,7 +1643,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <label
                                     htmlFor="employee-avatar-upload"
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                                 >
                                     <Upload size={14} />
                                     <span>
@@ -1691,7 +1691,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         <span>
                                             {t('ums.employees.wizard.personal.composedFullNameEn')}
                                         </span>{' '}
-                                        <span className="font-bold text-[#2D3F2C]" dir="ltr">
+                                        <span className="font-bold text-[#037F8C]" dir="ltr">
                                             {composedNameEn}
                                         </span>
                                     </div>
@@ -1715,7 +1715,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.firstNameEn
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.firstNameEn && (
@@ -1737,7 +1737,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('secondNameEn', e.target.value)
                                         }
                                         placeholder="e.g. Abdulaziz"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -1753,7 +1753,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('thirdNameEn', e.target.value)
                                         }
                                         placeholder="e.g. Abdullah"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -1771,7 +1771,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.lastNameEn
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.lastNameEn && (
@@ -1794,7 +1794,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         <span>
                                             {t('ums.employees.wizard.personal.composedFullNameAr')}
                                         </span>{' '}
-                                        <span className="font-bold text-[#2D3F2C]" dir="rtl">
+                                        <span className="font-bold text-[#037F8C]" dir="rtl">
                                             {composedNameAr}
                                         </span>
                                     </div>
@@ -1818,7 +1818,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.firstNameAr
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.firstNameAr && (
@@ -1840,7 +1840,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('secondNameAr', e.target.value)
                                         }
                                         placeholder="مثال: عبدالعزيز"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -1856,7 +1856,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('thirdNameAr', e.target.value)
                                         }
                                         placeholder="مثال: عبدالله"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -1874,7 +1874,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.lastNameAr
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.lastNameAr && (
@@ -1909,7 +1909,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                         errors.email
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 />
                                 {errors.email && (
@@ -1934,7 +1934,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                         errors.workEmail
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 />
                                 {errors.workEmail && (
@@ -1959,7 +1959,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                         errors.phone
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 />
                                 <p className="text-[10px] text-[#857E74] mt-1">
@@ -1993,7 +1993,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                         errors.dobGregorian
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 />
                                 {errors.dobGregorian && (
@@ -2018,7 +2018,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                                     gregorianToApproximateHijri(form.dobGregorian)
                                                 )
                                             }
-                                            className="text-[10px] font-semibold text-[#2D3F2C] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                            className="text-[10px] font-semibold text-[#037F8C] hover:underline inline-flex items-center gap-1 cursor-pointer"
                                         >
                                             <Sparkles size={10} />
                                             <span>
@@ -2033,7 +2033,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     value={form.dobHijri}
                                     onChange={(e) => updateField('dobHijri', e.target.value)}
                                     placeholder="1410/08/15"
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                 />
                             </div>
 
@@ -2056,7 +2056,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.religionId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2093,7 +2093,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     onChange={(e) =>
                                         updateField('gender', e.target.value as Gender)
                                     }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     {GENDERS.map((g) => (
                                         <option key={g} value={g}>
@@ -2116,7 +2116,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             e.target.value as MaritalStatus
                                         )
                                     }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     {MARITAL_STATUSES.map((ms) => (
                                         <option key={ms} value={ms}>
@@ -2142,7 +2142,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('nationality', 'Egypt');
                                         }
                                     }}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     {CITIZENSHIPS.map((cit) => (
                                         <option key={cit} value={cit}>
@@ -2171,7 +2171,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.nationality
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2216,7 +2216,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     dir="ltr"
                                     value={form.code}
                                     readOnly
-                                    className="w-full px-3 py-2 rounded-lg bg-[#EFECE6]/60 border border-[#E5E0D8] text-xs font-mono font-bold text-[#2D3F2C] cursor-not-allowed"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#EFECE6]/60 border border-[#E5E0D8] text-xs font-mono font-bold text-[#037F8C] cursor-not-allowed"
                                 />
                             </div>
 
@@ -2230,7 +2230,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     onChange={(e) =>
                                         updateField('status', e.target.value as EmployeeStatus)
                                     }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     {(['Active', 'Inactive', 'Draft'] as EmployeeStatus[]).map(
                                         (st) => (
@@ -2254,7 +2254,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.branchId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2293,7 +2293,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.departmentId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2332,7 +2332,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.designationId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2374,7 +2374,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         updateField('jobTitleId', jtId);
                                         updateField('jobTitleName', jt?.nameEn || '');
                                     }}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     <option value="">
                                         {t('ums.employees.wizard.employment.selectJobTitle')}
@@ -2404,7 +2404,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.roleId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2424,7 +2424,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         ))}
                                 </select>
                                 {linkedSecurityGroup && (
-                                    <p className="text-[11px] text-[#265938] mt-1 flex items-center gap-1">
+                                    <p className="text-[11px] text-[#037F8C] mt-1 flex items-center gap-1">
                                         <ShieldCheck size={12} />
                                         <span>
                                             {t(
@@ -2458,7 +2458,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.jobGradeId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2497,7 +2497,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                         errors.managerId
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 >
                                     <option value="">
@@ -2539,7 +2539,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                         errors.joiningDate
                                             ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 />
                                 {errors.joiningDate && (
@@ -2563,7 +2563,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('isUnderProbation', true);
                                         }
                                     }}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     {CONTRACT_TYPES.map((ct) => (
                                         <option key={ct} value={ct}>
@@ -2586,7 +2586,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             e.target.value as EmploymentType
                                         )
                                     }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C] cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
                                 >
                                     {EMPLOYMENT_TYPES.map((et) => (
                                         <option key={et} value={et}>
@@ -2606,7 +2606,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     onChange={(e) =>
                                         updateField('isUnderProbation', e.target.checked)
                                     }
-                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                    className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                 />
                                 <span className="text-xs font-bold text-[#0D0D0D]">
                                     {t('ums.employees.wizard.employment.isUnderProbation')}
@@ -2629,14 +2629,14 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             Math.max(0, Number(e.target.value) || 0)
                                         )
                                     }
-                                    className="w-24 px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                    className="w-24 px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => updateField('probationPeriodDays', 90)}
                                     className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-pointer ${
                                         form.probationPeriodDays === 90
-                                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C]'
+                                            ? 'bg-[#037F8C] text-white border-[#037F8C]'
                                             : 'bg-white text-[#6E6862] border-[#E5E0D8] hover:text-[#0D0D0D]'
                                     }`}
                                 >
@@ -2647,7 +2647,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     onClick={() => updateField('probationPeriodDays', 180)}
                                     className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-pointer ${
                                         form.probationPeriodDays === 180
-                                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C]'
+                                            ? 'bg-[#037F8C] text-white border-[#037F8C]'
                                             : 'bg-white text-[#6E6862] border-[#E5E0D8] hover:text-[#0D0D0D]'
                                     }`}
                                 >
@@ -2674,7 +2674,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     onClick={() => setActiveDocSubTab(tab)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                                         activeDocSubTab === tab
-                                            ? 'bg-[#2D3F2C] text-white shadow-2xs'
+                                            ? 'bg-[#037F8C] text-white shadow-2xs'
                                             : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5]'
                                     }`}
                                 >
@@ -2689,7 +2689,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                         <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                             <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E0D8]">
                                 <div className="flex items-center gap-2">
-                                    <Landmark size={16} className="text-[#2D3F2C]" />
+                                    <Landmark size={16} className="text-[#037F8C]" />
                                     <h3 className="text-sm font-bold text-[#0D0D0D]">
                                         {t('ums.employees.wizard.documents.salaryTitle')}
                                     </h3>
@@ -2699,7 +2699,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         {t('ums.employees.wizard.documents.calculatedGross')}:
                                     </span>
                                     <span
-                                        className="font-mono font-bold text-sm text-[#265938]"
+                                        className="font-mono font-bold text-sm text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {calculatedSalary.grossSalary.toLocaleString('en-US')} SAR
@@ -2728,7 +2728,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.basicSalary
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.basicSalary && (
@@ -2754,7 +2754,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                                 Math.max(0, Number(e.target.value) || 0)
                                             )
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -2776,7 +2776,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                                 Math.max(0, Number(e.target.value) || 0)
                                             )
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -2796,7 +2796,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                                 Math.max(0, Number(e.target.value) || 0)
                                             )
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -2816,7 +2816,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                                 Math.max(0, Number(e.target.value) || 0)
                                             )
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -2840,7 +2840,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     <span
                                         className={`font-bold ${
                                             calculatedIqamaStatus === 'Valid'
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : calculatedIqamaStatus === 'Warning'
                                                 ? 'text-[#C28E3A]'
                                                 : 'text-[#DC2626]'
@@ -2870,7 +2870,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.iqamaNumber
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.iqamaNumber && (
@@ -2891,7 +2891,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('iqamaProfession', e.target.value)
                                         }
                                         placeholder="e.g. Software Engineer"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -2910,7 +2910,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.iqamaExpiryDate
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.iqamaExpiryDate && (
@@ -2932,7 +2932,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('workPermitNumber', e.target.value)
                                         }
                                         placeholder="WP-2026-XXXX"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -2947,7 +2947,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('workPermitExpiryDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -2980,7 +2980,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
                                             errors.bankId
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     >
                                         <option value="">
@@ -3017,7 +3017,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('accountHolderName', e.target.value)
                                         }
                                         placeholder={composedNameEn || 'Account Holder Name'}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3037,7 +3037,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
                                             errors.iban
                                                 ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     />
                                     {errors.iban && (
@@ -3059,7 +3059,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('accountNumber', e.target.value)
                                         }
                                         placeholder="608010167519"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3089,7 +3089,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('healthInsuranceProvider', e.target.value)
                                         }
                                         placeholder="Bupa Arabia / Tawuniya"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3105,7 +3105,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('healthInsurancePolicy', e.target.value)
                                         }
                                         placeholder="BUPA-99201-A"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3120,7 +3120,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('healthInsuranceClass', e.target.value)
                                         }
                                         placeholder="VIP / Class A / Class B"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3135,7 +3135,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('healthInsuranceExpiry', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3164,7 +3164,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('healthCardNumber', e.target.value)
                                         }
                                         placeholder="HC-88401"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3179,7 +3179,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('healthCardAuthority', e.target.value)
                                         }
                                         placeholder="Riyadh Municipality"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3194,7 +3194,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('healthCardIssueDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3209,7 +3209,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('healthCardExpiryDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3241,7 +3241,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             )
                                         }
                                         placeholder="V8839201"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3256,7 +3256,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('passportIssueCountry', e.target.value)
                                         }
                                         placeholder="Saudi Arabia"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3271,7 +3271,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('passportIssueDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3286,7 +3286,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('passportExpiry', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3313,7 +3313,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         value={form.visaNumber}
                                         onChange={(e) => updateField('visaNumber', e.target.value)}
                                         placeholder="6092837411"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3326,7 +3326,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         value={form.visaType}
                                         onChange={(e) => updateField('visaType', e.target.value)}
                                         placeholder="Work / Exit Re-Entry"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3342,7 +3342,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('visaBorderNumber', e.target.value)
                                         }
                                         placeholder="3099281726"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3357,7 +3357,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('visaIssueDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3370,7 +3370,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         dir="ltr"
                                         value={form.visaExpiry}
                                         onChange={(e) => updateField('visaExpiry', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3399,7 +3399,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('contractNumber', e.target.value)
                                         }
                                         placeholder="CNT-2026-001"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3414,7 +3414,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('contractStartDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3429,7 +3429,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('contractEndDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3458,7 +3458,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('drivingLicenseNumber', e.target.value)
                                         }
                                         placeholder="DL-10293847"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3473,7 +3473,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('drivingLicenseType', e.target.value)
                                         }
                                         placeholder="Private / Public"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3490,7 +3490,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('drivingLicenseIssueDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3505,7 +3505,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('drivingLicenseExpiry', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3536,7 +3536,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             updateField('gosiSubscriptionNumber', e.target.value)
                                         }
                                         placeholder="GOSI-88492011"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3557,7 +3557,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             )
                                         }
                                         placeholder="SCE-554019"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3572,7 +3572,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('subscriptionIssueDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -3589,7 +3589,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                         onChange={(e) =>
                                             updateField('subscriptionExpiryDate', e.target.value)
                                         }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -3621,7 +3621,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={handleAddDependent}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
                             >
                                 <Plus size={14} />
                                 <span>{t('ums.employees.wizard.dependents.addDependent')}</span>
@@ -3648,7 +3648,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                             className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] space-y-4"
                                         >
                                             <div className="flex items-center justify-between pb-2 border-b border-[#E5E0D8]">
-                                                <span className="text-xs font-bold text-[#2D3F2C]">
+                                                <span className="text-xs font-bold text-[#037F8C]">
                                                     {t(
                                                         'ums.employees.wizard.dependents.dependentCardTitle',
                                                         { index: idx + 1 }
@@ -3892,7 +3892,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                                                 e.target.checked
                                                             )
                                                         }
-                                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                                     />
                                                     <span className="text-xs font-semibold text-[#0D0D0D]">
                                                         {t(
@@ -3903,14 +3903,14 @@ export const UmsEmployeeWizardPage: React.FC = () => {
 
                                                 <div className="flex items-center gap-2">
                                                     {dep.documentAttachment && (
-                                                        <span className="text-xs font-semibold text-[#265938] inline-flex items-center gap-1">
+                                                        <span className="text-xs font-semibold text-[#037F8C] inline-flex items-center gap-1">
                                                             <FileCheck2 size={13} />
                                                             {dep.documentAttachment.fileName}
                                                         </span>
                                                     )}
                                                     <label
                                                         htmlFor={depDocId}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] cursor-pointer"
                                                     >
                                                         <Upload size={12} />
                                                         <span>
@@ -3952,7 +3952,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     {t('ums.employees.wizard.dependents.summaryDesc')}
                                 </p>
                             </div>
-                            <span className="font-mono text-sm font-bold text-[#265938]">
+                            <span className="font-mono text-sm font-bold text-[#037F8C]">
                                 {liveCompletion.percentage}% ({liveCompletion.completedCount}/
                                 {liveCompletion.totalCount})
                             </span>
@@ -3972,7 +3972,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                 <span className="text-[11px] text-[#857E74] block">
                                     {t('ums.employees.wizard.dependents.insuredDependents')}
                                 </span>
-                                <span className="font-mono text-base font-bold text-[#265938] mt-0.5 block">
+                                <span className="font-mono text-base font-bold text-[#037F8C] mt-0.5 block">
                                     {form.dependents.filter((d) => d.insuranceIncluded).length}
                                 </span>
                             </div>
@@ -3982,7 +3982,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     {t('ums.employees.wizard.dependents.grossMonthlyPackage')}
                                 </span>
                                 <span
-                                    className="font-mono text-base font-bold text-[#2D3F2C] mt-0.5 block"
+                                    className="font-mono text-base font-bold text-[#037F8C] mt-0.5 block"
                                     dir="ltr"
                                 >
                                     {calculatedSalary.grossSalary.toLocaleString('en-US')} SAR
@@ -4015,7 +4015,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                                     onChange={(e) =>
                                         updateField('sendInviteOnSave', e.target.checked)
                                     }
-                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                    className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                 />
                                 <span className="text-xs font-semibold text-[#0D0D0D]">
                                     {t('ums.employees.wizard.sendInviteOnSave')}
@@ -4045,7 +4045,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => handleSaveEmployee(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Save size={14} />
                         <span>{t('ums.employees.wizard.saveAsDraft')}</span>
@@ -4055,7 +4055,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleNextStep}
-                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                         >
                             <span>{t('ums.employees.wizard.nextStep')}</span>
                             {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
@@ -4064,7 +4064,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => handleSaveEmployee(false)}
-                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#265938] hover:bg-[#1B4D3E] text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#1B4D3E] text-white text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
                         >
                             <Check size={14} />
                             <span>

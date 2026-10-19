@@ -2271,7 +2271,7 @@ export function computeUmsDashboardMetrics(
 
     // Contract Types
     const contractColors: Record<ContractType, string> = {
-        Permanent: '#2D3F2C',
+        Permanent: '#037F8C',
         'Fixed Term': '#4A6B53',
         Probation: '#C28E3A',
         Seasonal: '#6E6862',
@@ -2312,7 +2312,7 @@ export function computeUmsDashboardMetrics(
 
     // Iqama Status
     const iqamaColors: Record<IqamaStatus, string> = {
-        Valid: '#265938',
+        Valid: '#037F8C',
         Warning: '#D97706',
         Critical: '#DC2626',
         Expired: '#7F1D1D',
@@ -2346,7 +2346,7 @@ export function computeUmsDashboardMetrics(
     }));
 
     // Department Stats
-    const deptPalette = ['#2D3F2C', '#3D5640', '#55755A', '#7A9A80', '#9FBFAC', '#BFAB93'];
+    const deptPalette = ['#037F8C', '#3D5640', '#55755A', '#7A9A80', '#9FBFAC', '#BFAB93'];
     const departmentStats = departments.map((dept, index) => ({
         id: dept.id,
         nameEn: dept.nameEn,

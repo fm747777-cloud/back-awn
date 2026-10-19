@@ -447,7 +447,7 @@ export const CustomerContactsPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -462,7 +462,7 @@ export const CustomerContactsPage: React.FC = () => {
                                 {t('customer.pages.contacts.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-CTC
@@ -490,7 +490,7 @@ export const CustomerContactsPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.contacts.kpis.totalContacts')}
                             </span>
-                            <Users className="w-4 h-4 text-[#2D3F2C]" />
+                            <Users className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -512,20 +512,20 @@ export const CustomerContactsPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.contacts.kpis.activeContacts')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#265938] mt-2">{kpis.activeCount}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.activeCount}</p>
                     </div>
 
                     {/* 4. Companies Represented */}
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.contacts.kpis.companiesCount')}
                             </span>
                             <Building2 className="w-4 h-4 text-[#8C6D3B]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#2D3F2C] mt-2">{kpis.uniqueCompanies}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.uniqueCompanies}</p>
                     </div>
                 </div>
             </div>
@@ -540,7 +540,7 @@ export const CustomerContactsPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.contacts.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -559,7 +559,7 @@ export const CustomerContactsPage: React.FC = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | ContactStatus)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.contacts.statusAll')}</option>
                         <option value="active">{t('customer.pages.contacts.statusActive')}</option>
@@ -570,7 +570,7 @@ export const CustomerContactsPage: React.FC = () => {
                     <select
                         value={primaryFilter}
                         onChange={(e) => setPrimaryFilter(e.target.value as 'all' | 'primary' | 'secondary')}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.contacts.roleAll')}</option>
                         <option value="primary">{t('customer.pages.contacts.rolePrimaryOnly')}</option>
@@ -581,7 +581,7 @@ export const CustomerContactsPage: React.FC = () => {
                     <select
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.contacts.companyAll')}</option>
                         {DEMO_COMPANIES.map((cmp) => (
@@ -631,7 +631,7 @@ export const CustomerContactsPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="text-xs text-[#2D3F2C] hover:underline font-semibold cursor-pointer mt-1"
+                                                className="text-xs text-[#037F8C] hover:underline font-semibold cursor-pointer mt-1"
                                             >
                                                 {t('customer.pages.contacts.feedback.resetFilters')}
                                             </button>
@@ -642,7 +642,7 @@ export const CustomerContactsPage: React.FC = () => {
                                 filteredContacts.map((c) => (
                                     <tr key={c.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
                                         {/* Code */}
-                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#2D3F2C]">
+                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#037F8C]">
                                             <span className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8]" dir="ltr">
                                                 {c.code}
                                             </span>
@@ -695,7 +695,7 @@ export const CustomerContactsPage: React.FC = () => {
                                         {/* Status */}
                                         <td className="py-3.5 px-4">
                                             {c.status === 'active' ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     <span>{t('customer.pages.contacts.statusActive')}</span>
                                                 </span>
@@ -736,7 +736,7 @@ export const CustomerContactsPage: React.FC = () => {
                         {/* Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <UserCheck className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -744,7 +744,7 @@ export const CustomerContactsPage: React.FC = () => {
                                         <h2 className="text-base font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingContact.nameAr : viewingContact.nameEn}
                                         </h2>
-                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]" dir="ltr">
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]" dir="ltr">
                                             {viewingContact.code}
                                         </span>
                                     </div>
@@ -791,13 +791,13 @@ export const CustomerContactsPage: React.FC = () => {
                                 </span>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-[#E5E0D8]">
-                                        <Phone className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Phone className="w-4 h-4 text-[#037F8C]" />
                                         <span className="text-xs font-mono font-medium" dir="ltr">
                                             {viewingContact.phone}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-[#E5E0D8]">
-                                        <Mail className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Mail className="w-4 h-4 text-[#037F8C]" />
                                         <span className="text-xs font-mono font-medium truncate" dir="ltr">
                                             {viewingContact.email}
                                         </span>
@@ -830,7 +830,7 @@ export const CustomerContactsPage: React.FC = () => {
                                     </span>
                                     <span className="px-2.5 py-1 rounded-full text-xs font-semibold">
                                         {viewingContact.status === 'active' ? (
-                                            <span className="text-[#265938]">{t('customer.pages.contacts.statusActive')}</span>
+                                            <span className="text-[#037F8C]">{t('customer.pages.contacts.statusActive')}</span>
                                         ) : (
                                             <span className="text-[#857E74]">{t('customer.pages.contacts.statusInactive')}</span>
                                         )}
@@ -854,7 +854,7 @@ export const CustomerContactsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingContact(null)}
-                                className="px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                                className="px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                             >
                                 {t('customer.pages.contacts.details.close')}
                             </button>
@@ -864,13 +864,13 @@ export const CustomerContactsPage: React.FC = () => {
             )}
 
             {/* Add / Edit Modal (Disabled in view-only Customer Portal) */}
-            {false && (
+            {isFormModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
                     <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <Users className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -909,7 +909,7 @@ export const CustomerContactsPage: React.FC = () => {
                                             value={formData.code}
                                             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                                             placeholder="CTC-101"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -921,7 +921,7 @@ export const CustomerContactsPage: React.FC = () => {
                                         <select
                                             value={formData.companyId}
                                             onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             {DEMO_COMPANIES.map((cmp) => (
                                                 <option key={cmp.id} value={cmp.id}>
@@ -946,7 +946,7 @@ export const CustomerContactsPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="الاسم بالعربية"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -963,7 +963,7 @@ export const CustomerContactsPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="Full name in English"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -983,7 +983,7 @@ export const CustomerContactsPage: React.FC = () => {
                                             value={formData.jobTitleAr}
                                             onChange={(e) => setFormData({ ...formData, jobTitleAr: e.target.value })}
                                             placeholder="المسمى الوظيفي بالعربية"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -997,7 +997,7 @@ export const CustomerContactsPage: React.FC = () => {
                                             value={formData.jobTitleEn}
                                             onChange={(e) => setFormData({ ...formData, jobTitleEn: e.target.value })}
                                             placeholder="Job Title in English"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1017,7 +1017,7 @@ export const CustomerContactsPage: React.FC = () => {
                                                 if (formErrors.phone) setFormErrors({ ...formErrors, phone: undefined });
                                             }}
                                             placeholder="+966 50 123 4567"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                         {formErrors.phone && (
@@ -1037,7 +1037,7 @@ export const CustomerContactsPage: React.FC = () => {
                                                 if (formErrors.email) setFormErrors({ ...formErrors, email: undefined });
                                             }}
                                             placeholder="contact@company.sa"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                         {formErrors.email && (
@@ -1057,7 +1057,7 @@ export const CustomerContactsPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, status: e.target.value as ContactStatus })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="active">{t('customer.pages.contacts.statusActive')}</option>
                                             <option value="inactive">{t('customer.pages.contacts.statusInactive')}</option>
@@ -1070,7 +1070,7 @@ export const CustomerContactsPage: React.FC = () => {
                                                 type="checkbox"
                                                 checked={formData.isPrimary}
                                                 onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
-                                                className="w-4 h-4 rounded text-[#2D3F2C] focus:ring-[#2D3F2C] border-[#D6CFC4] cursor-pointer"
+                                                className="w-4 h-4 rounded text-[#037F8C] focus:ring-[#037F8C] border-[#D6CFC4] cursor-pointer"
                                             />
                                             <span>{t('customer.pages.contacts.modal.isPrimaryLabel')}</span>
                                         </label>
@@ -1087,7 +1087,7 @@ export const CustomerContactsPage: React.FC = () => {
                                         value={formData.notes}
                                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                         placeholder="صلاحيات التوقيع والتفويضات..."
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1103,7 +1103,7 @@ export const CustomerContactsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                    className="px-5 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.contacts.modal.save')}
                                 </button>

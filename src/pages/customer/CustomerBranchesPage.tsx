@@ -485,7 +485,7 @@ export const CustomerBranchesPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -500,7 +500,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                 {t('customer.pages.branches.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-BRN
@@ -528,7 +528,7 @@ export const CustomerBranchesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.branches.kpis.totalBranches')}
                             </span>
-                            <MapPin className="w-4 h-4 text-[#2D3F2C]" />
+                            <MapPin className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -550,20 +550,20 @@ export const CustomerBranchesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.branches.kpis.activeBranches')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#265938] mt-2">{kpis.activeCount}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.activeCount}</p>
                     </div>
 
                     {/* 4. Cities Covered */}
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.branches.kpis.citiesCount')}
                             </span>
                             <Navigation className="w-4 h-4 text-[#8C6D3B]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#2D3F2C] mt-2">{kpis.citiesCount}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.citiesCount}</p>
                     </div>
                 </div>
             </div>
@@ -578,7 +578,7 @@ export const CustomerBranchesPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.branches.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -597,7 +597,7 @@ export const CustomerBranchesPage: React.FC = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | BranchStatus)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.branches.statusAll')}</option>
                         <option value="active">{t('customer.pages.branches.statusActive')}</option>
@@ -608,7 +608,7 @@ export const CustomerBranchesPage: React.FC = () => {
                     <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value as 'all' | BranchType)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.branches.typeAll')}</option>
                         <option value="headquarters">{t('customer.pages.branches.types.headquarters')}</option>
@@ -621,7 +621,7 @@ export const CustomerBranchesPage: React.FC = () => {
                     <select
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.branches.companyAll')}</option>
                         {DEMO_COMPANIES.map((cmp) => (
@@ -670,7 +670,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="text-xs text-[#2D3F2C] hover:underline font-semibold cursor-pointer mt-1"
+                                                className="text-xs text-[#037F8C] hover:underline font-semibold cursor-pointer mt-1"
                                             >
                                                 {t('customer.pages.branches.feedback.resetFilters')}
                                             </button>
@@ -681,7 +681,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                 filteredBranches.map((item) => (
                                     <tr key={item.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
                                         {/* Code */}
-                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#2D3F2C]">
+                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#037F8C]">
                                             <span className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8]" dir="ltr">
                                                 {item.branchCode}
                                             </span>
@@ -715,7 +715,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                         {/* City & Address */}
                                         <td className="py-3.5 px-4 max-w-xs">
                                             <div className="flex items-center gap-1 text-[#0D0D0D] font-semibold">
-                                                <MapPin className="w-3 h-3 text-[#2D3F2C] shrink-0" />
+                                                <MapPin className="w-3 h-3 text-[#037F8C] shrink-0" />
                                                 <span>{isRtl ? item.cityAr : item.cityEn}</span>
                                             </div>
                                             <p className="text-[11px] text-[#857E74] truncate mt-0.5">
@@ -737,7 +737,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                         {/* Status */}
                                         <td className="py-3.5 px-4">
                                             {item.status === 'active' ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     <span>{t('customer.pages.branches.statusActive')}</span>
                                                 </span>
@@ -761,34 +761,6 @@ export const CustomerBranchesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-
-                                                {/* Edit */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(item)}
-                                                    className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E5E0D8] transition-colors cursor-pointer"
-                                                    title={t('customer.pages.branches.table.edit')}
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-
-                                                {/* Toggle Status */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(item.id)}
-                                                    className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                                        item.status === 'active'
-                                                            ? 'text-[#265938] hover:text-[#1E5631] hover:bg-[#EAF3EC] border-transparent hover:border-[#C5DFCC]'
-                                                            : 'text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border-transparent hover:border-[#E5E0D8]'
-                                                    }`}
-                                                    title={
-                                                        item.status === 'active'
-                                                            ? t('customer.pages.branches.table.deactivate')
-                                                            : t('customer.pages.branches.table.activate')
-                                                    }
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -806,7 +778,7 @@ export const CustomerBranchesPage: React.FC = () => {
                         {/* Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <MapPinned className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -814,7 +786,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                         <h2 className="text-base font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingBranch.nameAr : viewingBranch.nameEn}
                                         </h2>
-                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]" dir="ltr">
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]" dir="ltr">
                                             {viewingBranch.branchCode}
                                         </span>
                                     </div>
@@ -860,7 +832,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                     {t('customer.pages.branches.details.locationDetails')}
                                 </span>
                                 <div className="flex items-start gap-2">
-                                    <MapPin className="w-4 h-4 text-[#2D3F2C] shrink-0 mt-0.5" />
+                                    <MapPin className="w-4 h-4 text-[#037F8C] shrink-0 mt-0.5" />
                                     <div>
                                         <p className="text-xs font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingBranch.cityAr : viewingBranch.cityEn}
@@ -886,7 +858,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                     <span className="text-[11px] font-semibold text-[#857E74] block mb-1">
                                         {t('customer.pages.branches.details.staffing')}
                                     </span>
-                                    <p className="text-xs font-bold text-[#2D3F2C]">
+                                    <p className="text-xs font-bold text-[#037F8C]">
                                         {viewingBranch.activeEmployeesCount} {isRtl ? 'موظفاً مسجلاً' : 'registered personnel'}
                                     </p>
                                 </div>
@@ -895,13 +867,13 @@ export const CustomerBranchesPage: React.FC = () => {
                             {/* Contact Info */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
-                                    <Phone className="w-4 h-4 text-[#2D3F2C]" />
+                                    <Phone className="w-4 h-4 text-[#037F8C]" />
                                     <span className="text-xs font-mono font-medium" dir="ltr">
                                         {viewingBranch.phone}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
-                                    <Mail className="w-4 h-4 text-[#2D3F2C]" />
+                                    <Mail className="w-4 h-4 text-[#037F8C]" />
                                     <span className="text-xs font-mono font-medium truncate" dir="ltr">
                                         {viewingBranch.email}
                                     </span>
@@ -910,41 +882,14 @@ export const CustomerBranchesPage: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-between">
+                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-end">
                             <button
                                 type="button"
-                                onClick={() => handleToggleStatus(viewingBranch.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                    viewingBranch.status === 'active'
-                                        ? 'bg-white text-[#857E74] border-[#DDD6CC] hover:bg-[#FAF8F5]'
-                                        : 'bg-[#EAF3EC] text-[#265938] border-[#C5DFCC] hover:bg-[#D5EAD8]'
-                                }`}
+                                onClick={() => setViewingBranch(null)}
+                                className="px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                             >
-                                <Power className="w-3.5 h-3.5" />
-                                <span>
-                                    {viewingBranch.status === 'active'
-                                        ? t('customer.pages.branches.table.deactivate')
-                                        : t('customer.pages.branches.table.activate')}
-                                </span>
+                                {t('customer.pages.branches.details.close')}
                             </button>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleStartEdit(viewingBranch)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    <Edit3 className="w-3.5 h-3.5 text-[#857E74]" />
-                                    <span>{t('customer.pages.branches.details.edit')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingBranch(null)}
-                                    className="px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.branches.details.close')}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -957,7 +902,7 @@ export const CustomerBranchesPage: React.FC = () => {
                         {/* Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <MapPin className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -999,7 +944,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                                 if (formErrors.code) setFormErrors({ ...formErrors, code: undefined });
                                             }}
                                             placeholder="BRN-RYD-01"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                         {formErrors.code && (
@@ -1014,7 +959,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                         <select
                                             value={formData.companyId}
                                             onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             {DEMO_COMPANIES.map((cmp) => (
                                                 <option key={cmp.id} value={cmp.id}>
@@ -1039,7 +984,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="اسم الفرع أو المقر بالعربية"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1056,7 +1001,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="Branch name in English"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1076,7 +1021,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, branchType: e.target.value as BranchType })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="headquarters">{t('customer.pages.branches.types.headquarters')}</option>
                                             <option value="regional_branch">{t('customer.pages.branches.types.regional_branch')}</option>
@@ -1094,7 +1039,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.crNumber}
                                             onChange={(e) => setFormData({ ...formData, crNumber: e.target.value })}
                                             placeholder="1010482910-001"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1111,7 +1056,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.cityAr}
                                             onChange={(e) => setFormData({ ...formData, cityAr: e.target.value })}
                                             placeholder="الرياض / جدة / الدمام"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1125,7 +1070,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.cityEn}
                                             onChange={(e) => setFormData({ ...formData, cityEn: e.target.value })}
                                             placeholder="Riyadh / Jeddah / Dammam"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1142,7 +1087,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.addressAr}
                                             onChange={(e) => setFormData({ ...formData, addressAr: e.target.value })}
                                             placeholder="الحي، الشارع، رقم المبنى..."
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1156,7 +1101,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.addressEn}
                                             onChange={(e) => setFormData({ ...formData, addressEn: e.target.value })}
                                             placeholder="District, Street, Building Number..."
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1173,7 +1118,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.managerNameAr}
                                             onChange={(e) => setFormData({ ...formData, managerNameAr: e.target.value })}
                                             placeholder="اسم مدير الفرع بالعربية"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1187,7 +1132,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.managerNameEn}
                                             onChange={(e) => setFormData({ ...formData, managerNameEn: e.target.value })}
                                             placeholder="Branch manager in English"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1204,7 +1149,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             placeholder="+966 11 200 0000"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1218,7 +1163,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             placeholder="branch@company.sa"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1232,7 +1177,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, status: e.target.value as BranchStatus })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="active">{t('customer.pages.branches.statusActive')}</option>
                                             <option value="inactive">{t('customer.pages.branches.statusInactive')}</option>
@@ -1252,7 +1197,7 @@ export const CustomerBranchesPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                    className="px-5 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.branches.modal.save')}
                                 </button>

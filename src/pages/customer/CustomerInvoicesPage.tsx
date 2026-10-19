@@ -573,7 +573,7 @@ export const CustomerInvoicesPage: React.FC = () => {
         switch (status) {
             case 'paid':
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{t('customer.pages.invoices.statusPaid')}</span>
                     </span>
@@ -620,7 +620,7 @@ export const CustomerInvoicesPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -635,7 +635,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 {t('customer.pages.invoices.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-INV
@@ -650,14 +650,10 @@ export const CustomerInvoicesPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.invoices.addInvoice')}</span>
-                        </button>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                            <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                            <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                        </span>
                     </div>
                 </div>
 
@@ -669,7 +665,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.invoices.kpis.totalInvoices')}
                             </span>
-                            <Receipt className="w-4 h-4 text-[#2D3F2C]" />
+                            <Receipt className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <div className="flex items-baseline gap-2 mt-2">
                             <p className="text-2xl font-bold text-[#0D0D0D]">{kpis.totalCount}</p>
@@ -698,10 +694,10 @@ export const CustomerInvoicesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.invoices.kpis.paidInvoices')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <div className="flex items-baseline gap-2 mt-2">
-                            <p className="text-2xl font-bold text-[#265938]">{kpis.paidCount}</p>
+                            <p className="text-2xl font-bold text-[#037F8C]">{kpis.paidCount}</p>
                             <span className="text-xs text-[#857E74] font-mono">
                                 ({formatCurrency(kpis.totalCollected)})
                             </span>
@@ -736,7 +732,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.invoices.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -756,7 +752,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
                         aria-label={t('customer.pages.invoices.filterCompany')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.invoices.companyAll')}</option>
                         {AVAILABLE_COMPANIES.map((c) => (
@@ -771,7 +767,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         value={sourceFilter}
                         onChange={(e) => setSourceFilter(e.target.value as any)}
                         aria-label={t('customer.pages.invoices.filterSource')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.invoices.sourceAll')}</option>
                         <option value="customer">{t('customer.pages.invoices.sourceCustomer')}</option>
@@ -783,7 +779,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
                         aria-label={t('customer.pages.invoices.statusAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.invoices.statusAll')}</option>
                         <option value="draft">{t('customer.pages.invoices.statusDraft')}</option>
@@ -836,7 +832,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                                className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                             >
                                                 {t('customer.pages.invoices.feedback.resetFilters')}
                                             </button>
@@ -850,7 +846,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         <td className="px-5 py-3.5">
                                             <div className="flex flex-col">
                                                 <div className="flex flex-wrap items-center gap-1.5">
-                                                    <span className="font-mono font-semibold text-[#2D3F2C] bg-[#EFECE6] px-1.5 py-0.5 rounded text-[11px]" dir="ltr">
+                                                    <span className="font-mono font-semibold text-[#037F8C] bg-[#EFECE6] px-1.5 py-0.5 rounded text-[11px]" dir="ltr">
                                                         {inv.invoiceNumber}
                                                     </span>
                                                     {inv.source === 'crm' ? (
@@ -862,7 +858,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                                             <span>{t('customer.pages.invoices.badgeCrm')}</span>
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center font-mono font-semibold px-1.5 py-0.5 rounded text-[10px] bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                                        <span className="inline-flex items-center font-mono font-semibold px-1.5 py-0.5 rounded text-[10px] bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                             <span>{t('customer.pages.invoices.badgeCustomer')}</span>
                                                         </span>
                                                     )}
@@ -918,7 +914,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         </td>
 
                                         {/* Paid */}
-                                        <td className="px-5 py-3.5 font-mono text-[#265938] font-medium">
+                                        <td className="px-5 py-3.5 font-mono text-[#037F8C] font-medium">
                                             {formatCurrency(inv.paidAmount)}
                                         </td>
 
@@ -929,7 +925,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                                     {formatCurrency(inv.balanceDue)}
                                                 </span>
                                             ) : (
-                                                <span className="text-[#265938]">0.00</span>
+                                                <span className="text-[#037F8C]">0.00</span>
                                             )}
                                         </td>
 
@@ -952,23 +948,6 @@ export const CustomerInvoicesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                {inv.isReadOnly ? (
-                                                    <span
-                                                        title={t('customer.pages.invoices.crmReadOnlyTooltip')}
-                                                        className="p-1.5 rounded-lg text-[#857E74]/40 cursor-not-allowed inline-flex items-center"
-                                                    >
-                                                        <Lock className="w-4 h-4" />
-                                                    </span>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleStartEdit(inv)}
-                                                        title={t('customer.pages.invoices.table.edit')}
-                                                        className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -986,7 +965,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         {/* Header */}
                         <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-11 h-11 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-11 h-11 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <Receipt className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -994,7 +973,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         <h2 className="text-lg font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingInvoice.titleAr : viewingInvoice.titleEn}
                                         </h2>
-                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#2D3F2C] rounded-md font-semibold" dir="ltr">
+                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#037F8C] rounded-md font-semibold" dir="ltr">
                                             {viewingInvoice.invoiceNumber}
                                         </span>
                                         {viewingInvoice.source === 'crm' && (
@@ -1068,17 +1047,17 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </div>
                                 <div className="pt-2 border-t border-[#E5E0D8] flex items-center justify-between font-bold text-sm text-[#0D0D0D]">
                                     <span>{t('customer.pages.invoices.table.total')}</span>
-                                    <span className="text-[#2D3F2C]">{formatCurrency(viewingInvoice.total)}</span>
+                                    <span className="text-[#037F8C]">{formatCurrency(viewingInvoice.total)}</span>
                                 </div>
                                 <div className="pt-2 border-t border-[#E5E0D8] flex items-center justify-between text-xs font-semibold">
-                                    <span className="text-[#265938]">{t('customer.pages.invoices.table.paidAmount')}</span>
-                                    <span className="font-mono text-[#265938]">{formatCurrency(viewingInvoice.paidAmount)}</span>
+                                    <span className="text-[#037F8C]">{t('customer.pages.invoices.table.paidAmount')}</span>
+                                    <span className="font-mono text-[#037F8C]">{formatCurrency(viewingInvoice.paidAmount)}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs font-bold">
                                     <span className={viewingInvoice.balanceDue > 0 ? 'text-[#991B1B]' : 'text-[#857E74]'}>
                                         {t('customer.pages.invoices.table.balanceDue')}
                                     </span>
-                                    <span className={`font-mono text-sm ${viewingInvoice.balanceDue > 0 ? 'text-[#991B1B]' : 'text-[#265938]'}`}>
+                                    <span className={`font-mono text-sm ${viewingInvoice.balanceDue > 0 ? 'text-[#991B1B]' : 'text-[#037F8C]'}`}>
                                         {formatCurrency(viewingInvoice.balanceDue)}
                                     </span>
                                 </div>
@@ -1101,7 +1080,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                             </div>
                             <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
                                 <span className="text-[#857E74] block">{t('customer.pages.invoices.table.linkedContract')}</span>
-                                <span className="font-mono font-bold text-[#2D3F2C] mt-0.5 block" dir="ltr">
+                                <span className="font-mono font-bold text-[#037F8C] mt-0.5 block" dir="ltr">
                                     {viewingInvoice.linkedContractNumber || '—'}
                                 </span>
                             </div>
@@ -1117,103 +1096,12 @@ export const CustomerInvoicesPage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Payment Recording Module (ONLY available for Customer invoices, NOT CRM) */}
-                        {!viewingInvoice.isReadOnly && viewingInvoice.balanceDue > 0 && viewingInvoice.status !== 'cancelled' && (
-                            <div className="border border-[#BFAB93]/40 rounded-xl p-4 bg-[#FAF8F5]">
-                                {!isPaymentFormOpen ? (
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs font-bold text-[#0D0D0D]">
-                                                {t('customer.pages.invoices.details.recordPayment')}
-                                            </p>
-                                            <p className="text-[11px] text-[#857E74] mt-0.5">
-                                                {t('customer.pages.invoices.details.recordPaymentDesc')}
-                                            </p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsPaymentFormOpen(true);
-                                                setPaymentAmount(viewingInvoice.balanceDue);
-                                                setPaymentError(null);
-                                            }}
-                                            className="px-3.5 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                                        >
-                                            {t('customer.pages.invoices.details.recordPayment')}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <form onSubmit={handleRecordPayment} className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-[#0D0D0D]">
-                                                {t('customer.pages.invoices.details.recordPayment')}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsPaymentFormOpen(false)}
-                                                className="text-xs text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
-                                            >
-                                                {t('customer.pages.invoices.modal.cancel')}
-                                            </button>
-                                        </div>
+                        {/* Payment Recording Module (Disabled in view-only Customer Portal) */}
+                        {!viewingInvoice.isReadOnly && null}
 
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                                {t('customer.pages.invoices.details.paymentAmount')} *
-                                            </label>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    required
-                                                    min={1}
-                                                    max={viewingInvoice.balanceDue}
-                                                    step={100}
-                                                    value={paymentAmount}
-                                                    onChange={(e) => {
-                                                        setPaymentAmount(Number(e.target.value));
-                                                        setPaymentError(null);
-                                                    }}
-                                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPaymentAmount(viewingInvoice.balanceDue)}
-                                                    className="shrink-0 px-2.5 py-2 rounded-lg bg-white border border-[#E5E0D8] text-[11px] font-semibold text-[#2D3F2C] hover:bg-[#FAF8F5] cursor-pointer"
-                                                >
-                                                    {t('customer.pages.invoices.details.payFullBalance')}
-                                                </button>
-                                            </div>
-                                            {paymentError && (
-                                                <p className="text-[11px] text-[#991B1B] font-medium mt-1">
-                                                    {paymentError}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="flex justify-end gap-2 pt-2">
-                                            <button
-                                                type="submit"
-                                                className="px-4 py-1.5 rounded-lg bg-[#265938] hover:bg-[#1E462C] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                                            >
-                                                {t('customer.pages.invoices.details.confirmPayment')}
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Footer: Edit button ONLY displayed for customer-origin invoices */}
+                        {/* Footer: View Only in Customer Portal */}
                         <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[#F0ECE6]">
-                            {!viewingInvoice.isReadOnly && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleStartEdit(viewingInvoice)}
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.invoices.modal.editTitle')}
-                                </button>
-                            )}
+                            {!viewingInvoice.isReadOnly && null}
                             <button
                                 type="button"
                                 onClick={() => {
@@ -1272,7 +1160,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
                                         placeholder="مثال: فاتورة الدفعة الأولى"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1285,7 +1173,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         value={formData.titleEn}
                                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
                                         placeholder="e.g., Initial Phase Tax Invoice"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1298,7 +1186,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -1314,7 +1202,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                     <select
                                         value={formData.linkedContractId}
                                         onChange={(e) => setFormData({ ...formData, linkedContractId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_CONTRACTS.map((cnt) => (
                                             <option key={cnt.id} value={cnt.id}>
@@ -1337,7 +1225,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         step={1000}
                                         value={formData.subtotal}
                                         onChange={(e) => setFormData({ ...formData, subtotal: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1350,7 +1238,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         step={500}
                                         value={formData.discount}
                                         onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1360,7 +1248,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         <option value="draft">{t('customer.pages.invoices.statusDraft')}</option>
                                         <option value="issued">{t('customer.pages.invoices.statusIssued')}</option>
@@ -1380,11 +1268,11 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <span className="text-[#857E74] block text-[11px]">{t('customer.pages.invoices.table.total')}</span>
-                                    <span className="font-mono font-bold text-sm text-[#2D3F2C]">{formatCurrency(calculatedTotal)}</span>
+                                    <span className="font-mono font-bold text-sm text-[#037F8C]">{formatCurrency(calculatedTotal)}</span>
                                 </div>
                                 <div>
                                     <span className="text-[#857E74] block text-[11px]">{t('customer.pages.invoices.table.balanceDue')}</span>
-                                    <span className={`font-mono font-bold text-sm ${calculatedBalanceDue > 0 ? 'text-[#991B1B]' : 'text-[#265938]'}`}>
+                                    <span className={`font-mono font-bold text-sm ${calculatedBalanceDue > 0 ? 'text-[#991B1B]' : 'text-[#037F8C]'}`}>
                                         {formatCurrency(calculatedBalanceDue)}
                                     </span>
                                 </div>
@@ -1400,7 +1288,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         required
                                         value={formData.issueDate}
                                         onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1412,7 +1300,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         required
                                         value={formData.dueDate}
                                         onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1426,7 +1314,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Payment reference, bank wire directions, tax receipt serial..."
-                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                 />
                             </div>
 
@@ -1444,7 +1332,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.invoices.modal.save')}
                                 </button>

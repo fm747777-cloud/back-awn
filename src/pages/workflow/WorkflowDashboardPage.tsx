@@ -242,8 +242,8 @@ export const WorkflowDashboardPage: React.FC = () => {
                 count: totalWorkflows,
                 percent: '100%',
                 icon: GitBranch,
-                accentClass: 'bg-[#2D3F2C]/10 border-[#2D3F2C]/20 text-[#2D3F2C]',
-                badgeClass: 'bg-[#2D3F2C]/10 text-[#2D3F2C]',
+                accentClass: 'bg-[#037F8C]/10 border-[#037F8C]/20 text-[#037F8C]',
+                badgeClass: 'bg-[#037F8C]/10 text-[#037F8C]',
             },
             {
                 key: 'approvalWorkflows',
@@ -252,8 +252,8 @@ export const WorkflowDashboardPage: React.FC = () => {
                 count: approvalRecords.length,
                 percent: `${safePct(approvalRecords.length, totalWorkflows)}%`,
                 icon: ShieldCheck,
-                accentClass: 'bg-[#265938]/10 border-[#265938]/20 text-[#265938]',
-                badgeClass: 'bg-[#265938]/10 text-[#265938]',
+                accentClass: 'bg-[#037F8C]/10 border-[#037F8C]/20 text-[#037F8C]',
+                badgeClass: 'bg-[#037F8C]/10 text-[#037F8C]',
             },
             {
                 key: 'communicationWorkflows',
@@ -262,8 +262,8 @@ export const WorkflowDashboardPage: React.FC = () => {
                 count: communicationRecords.length,
                 percent: `${safePct(communicationRecords.length, totalWorkflows)}%`,
                 icon: Mail,
-                accentClass: 'bg-[#6A7358]/15 border-[#6A7358]/25 text-[#2D3F2C]',
-                badgeClass: 'bg-[#6A7358]/15 text-[#2D3F2C]',
+                accentClass: 'bg-[#6A7358]/15 border-[#6A7358]/25 text-[#037F8C]',
+                badgeClass: 'bg-[#6A7358]/15 text-[#037F8C]',
             },
             {
                 key: 'enabledWorkflows',
@@ -272,8 +272,8 @@ export const WorkflowDashboardPage: React.FC = () => {
                 count: enabledWorkflows,
                 percent: `${safePct(enabledWorkflows, totalWorkflows)}%`,
                 icon: CheckCircle2,
-                accentClass: 'bg-[#2D3F2C]/10 border-[#2D3F2C]/20 text-[#2D3F2C]',
-                badgeClass: 'bg-[#265938]/10 text-[#265938]',
+                accentClass: 'bg-[#037F8C]/10 border-[#037F8C]/20 text-[#037F8C]',
+                badgeClass: 'bg-[#037F8C]/10 text-[#037F8C]',
             },
             {
                 key: 'disabledWorkflows',
@@ -293,7 +293,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                 percent: t('workflow.dashboard.labels.modulesTag'),
                 icon: Layers,
                 accentClass: 'bg-[#BFAB93]/25 border-[#BFAB93]/40 text-[#595550]',
-                badgeClass: 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]',
+                badgeClass: 'bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]',
             },
         ],
         [
@@ -321,14 +321,14 @@ export const WorkflowDashboardPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-medium text-[#2D3F2C] shadow-2xs">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-medium text-[#037F8C] shadow-2xs">
                         <Calendar size={13} className="text-[#857E74]" />
                         <span>{currentMonthYearLabel}</span>
                     </span>
                     <button
                         type="button"
                         onClick={() => navigate('/workflow/workflows')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
                     >
                         <GitBranch size={13} />
                         <span>{t('workflow.dashboard.actions.manageWorkflows')}</span>
@@ -344,7 +344,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                     return (
                         <div
                             key={card.key}
-                            className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs hover:border-[#2D3F2C]/40 transition-colors"
+                            className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs hover:border-[#037F8C]/40 transition-colors"
                         >
                             <div className="flex items-center justify-between">
                                 <div
@@ -385,7 +385,7 @@ export const WorkflowDashboardPage: React.FC = () => {
             >
                 <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shrink-0">
                             <ShieldCheck size={16} className="text-[#BFAB93]" />
                         </div>
                         <div>
@@ -403,7 +403,7 @@ export const WorkflowDashboardPage: React.FC = () => {
 
                     <div className="flex items-center gap-3 self-start sm:self-auto">
                         <span
-                            className="text-xs font-mono font-bold text-[#2D3F2C] bg-white border border-[#E5E0D8] px-2.5 py-1 rounded-md"
+                            className="text-xs font-mono font-bold text-[#037F8C] bg-white border border-[#E5E0D8] px-2.5 py-1 rounded-md"
                             dir="ltr"
                         >
                             {approvalRecords.length} {t('workflow.dashboard.labels.workflows')}
@@ -411,7 +411,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => navigate('/workflow/workflows?tab=approval')}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
                             <span>{t('workflow.dashboard.actions.viewApprovalWorkflows')}</span>
                             <ArrowRight size={13} className="rtl:rotate-180" />
@@ -425,7 +425,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                         <div className="lg:col-span-7 bg-[#FAF8F5]/60 border border-[#E5E0D8] rounded-xl p-4">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D0D0D]">
-                                    <BarChart3 size={14} className="text-[#2D3F2C]" />
+                                    <BarChart3 size={14} className="text-[#037F8C]" />
                                     <span>{t('workflow.dashboard.labels.statusDistributionChart')}</span>
                                 </span>
                                 <span className="text-[11px] text-[#6E6862]">
@@ -475,7 +475,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                                             ]}
                                             contentStyle={{
                                                 backgroundColor: '#0D0D0D',
-                                                borderColor: '#2D3F2C',
+                                                borderColor: '#037F8C',
                                                 borderRadius: '8px',
                                                 color: '#FAF8F5',
                                                 fontSize: '12px',
@@ -499,7 +499,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                         <div className="lg:col-span-5 bg-[#FAF8F5]/60 border border-[#E5E0D8] rounded-xl p-4 flex flex-col justify-between">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D0D0D]">
-                                    <PieChartIcon size={14} className="text-[#2D3F2C]" />
+                                    <PieChartIcon size={14} className="text-[#037F8C]" />
                                     <span>{t('workflow.dashboard.labels.statusShare')}</span>
                                 </span>
                                 <span className="text-[11px] font-mono text-[#6E6862]" dir="ltr">
@@ -543,7 +543,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                                             ]}
                                             contentStyle={{
                                                 backgroundColor: '#0D0D0D',
-                                                borderColor: '#2D3F2C',
+                                                borderColor: '#037F8C',
                                                 borderRadius: '8px',
                                                 color: '#FAF8F5',
                                                 fontSize: '12px',
@@ -596,7 +596,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                                 >
                                     <div>
                                         <span
-                                            className="text-xs font-mono font-bold text-[#2D3F2C] block"
+                                            className="text-xs font-mono font-bold text-[#037F8C] block"
                                             dir="ltr"
                                         >
                                             {src.source}
@@ -627,7 +627,7 @@ export const WorkflowDashboardPage: React.FC = () => {
             >
                 <div className="bg-[#FAF8F5] border-b border-[#E5E0D8] px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shrink-0">
                             <Mail size={16} className="text-[#BFAB93]" />
                         </div>
                         <div>
@@ -645,7 +645,7 @@ export const WorkflowDashboardPage: React.FC = () => {
 
                     <div className="flex items-center gap-3 self-start sm:self-auto">
                         <span
-                            className="text-xs font-mono font-bold text-[#2D3F2C] bg-white border border-[#E5E0D8] px-2.5 py-1 rounded-md"
+                            className="text-xs font-mono font-bold text-[#037F8C] bg-white border border-[#E5E0D8] px-2.5 py-1 rounded-md"
                             dir="ltr"
                         >
                             {communicationRecords.length} {t('workflow.dashboard.labels.workflows')}
@@ -653,7 +653,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => navigate('/workflow/workflows?tab=communication')}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
                             <span>{t('workflow.dashboard.actions.viewCommunicationWorkflows')}</span>
                             <ArrowRight size={13} className="rtl:rotate-180" />
@@ -667,7 +667,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                         <div className="lg:col-span-7 bg-[#FAF8F5]/60 border border-[#E5E0D8] rounded-xl p-4">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D0D0D]">
-                                    <BarChart3 size={14} className="text-[#2D3F2C]" />
+                                    <BarChart3 size={14} className="text-[#037F8C]" />
                                     <span>{t('workflow.dashboard.labels.statusDistributionChart')}</span>
                                 </span>
                                 <span className="text-[11px] text-[#6E6862]">
@@ -717,7 +717,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                                             ]}
                                             contentStyle={{
                                                 backgroundColor: '#0D0D0D',
-                                                borderColor: '#2D3F2C',
+                                                borderColor: '#037F8C',
                                                 borderRadius: '8px',
                                                 color: '#FAF8F5',
                                                 fontSize: '12px',
@@ -741,7 +741,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                         <div className="lg:col-span-5 bg-[#FAF8F5]/60 border border-[#E5E0D8] rounded-xl p-4 flex flex-col justify-between">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D0D0D]">
-                                    <PieChartIcon size={14} className="text-[#2D3F2C]" />
+                                    <PieChartIcon size={14} className="text-[#037F8C]" />
                                     <span>{t('workflow.dashboard.labels.statusShare')}</span>
                                 </span>
                                 <span className="text-[11px] font-mono text-[#6E6862]" dir="ltr">
@@ -785,7 +785,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                                             ]}
                                             contentStyle={{
                                                 backgroundColor: '#0D0D0D',
-                                                borderColor: '#2D3F2C',
+                                                borderColor: '#037F8C',
                                                 borderRadius: '8px',
                                                 color: '#FAF8F5',
                                                 fontSize: '12px',
@@ -838,7 +838,7 @@ export const WorkflowDashboardPage: React.FC = () => {
                                 >
                                     <div>
                                         <span
-                                            className="text-xs font-mono font-bold text-[#2D3F2C] block"
+                                            className="text-xs font-mono font-bold text-[#037F8C] block"
                                             dir="ltr"
                                         >
                                             {src.source}

@@ -19,6 +19,7 @@ import {
     Sparkles,
     Calendar,
     UserCheck,
+    Eye,
 } from 'lucide-react';
 
 interface CustomerKpiItem {
@@ -164,8 +165,8 @@ export const CustomerDashboardPage: React.FC = () => {
             changeLabelKey: 'customer.pages.dashboard.kpis.activeAccountsSub',
             isPositive: true,
             icon: Building2,
-            accentColor: 'text-[#2D3F2C]',
-            bgTint: 'bg-[#2D3F2C]/10',
+            accentColor: 'text-[#037F8C]',
+            bgTint: 'bg-[#037F8C]/10',
             targetRoute: '/customer/companies',
         },
         {
@@ -175,7 +176,7 @@ export const CustomerDashboardPage: React.FC = () => {
             changeLabelKey: 'customer.pages.dashboard.kpis.activeContractsSub',
             isPositive: true,
             icon: FileCheck,
-            accentColor: 'text-[#265938]',
+            accentColor: 'text-[#037F8C]',
             bgTint: 'bg-[#EAF3EC]',
             targetRoute: '/customer/contracts',
         },
@@ -211,7 +212,7 @@ export const CustomerDashboardPage: React.FC = () => {
             route: '/customer/companies',
             code: 'CST-CMP',
             icon: Building2,
-            badgeColor: 'bg-[#EFECE6] text-[#2D3F2C] border-[#D6CFC4]',
+            badgeColor: 'bg-[#EFECE6] text-[#037F8C] border-[#D6CFC4]',
         },
         {
             id: 'ql-deals',
@@ -229,7 +230,7 @@ export const CustomerDashboardPage: React.FC = () => {
             route: '/customer/contracts',
             code: 'CST-CNT',
             icon: FileCheck,
-            badgeColor: 'bg-[#EAF3EC] text-[#265938] border-[#C5DFCC]',
+            badgeColor: 'bg-[#EAF3EC] text-[#037F8C] border-[#C5DFCC]',
         },
         {
             id: 'ql-requests',
@@ -256,7 +257,7 @@ export const CustomerDashboardPage: React.FC = () => {
             route: '/customer/contacts',
             code: 'CST-CTC',
             icon: UserCheck,
-            badgeColor: 'bg-[#EFECE6] text-[#2D3F2C] border-[#D6CFC4]',
+            badgeColor: 'bg-[#EFECE6] text-[#037F8C] border-[#D6CFC4]',
         },
         {
             id: 'ql-tickets',
@@ -288,7 +289,7 @@ export const CustomerDashboardPage: React.FC = () => {
             case 'completed':
             case 'resolved':
                 return (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{isRtl ? 'مكتمل' : 'Completed'}</span>
                     </span>
@@ -321,13 +322,13 @@ export const CustomerDashboardPage: React.FC = () => {
                                 {t('customer.pages.dashboard.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-DSH
                             </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
-                                <span className="w-2 h-2 rounded-full bg-[#265938] animate-pulse" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
+                                <span className="w-2 h-2 rounded-full bg-[#037F8C] animate-pulse" />
                                 <span>{t('customer.pages.dashboard.sections.liveIndicator', 'Live Feed')}</span>
                             </span>
                         </div>
@@ -351,14 +352,19 @@ export const CustomerDashboardPage: React.FC = () => {
                             disabled={isRefreshing}
                             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#0D0D0D] shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                         >
-                            <RefreshCw className={`w-3.5 h-3.5 text-[#2D3F2C] ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-3.5 h-3.5 text-[#037F8C] ${isRefreshing ? 'animate-spin' : ''}`} />
                             <span>{isRtl ? 'تحديث البيانات' : 'Refresh'}</span>
                         </button>
+
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                            <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                            <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                        </span>
 
                         <button
                             type="button"
                             onClick={() => navigate('/customer/companies')}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
                         >
                             <Building2 className="w-3.5 h-3.5 text-[#BFAB93]" />
                             <span>{t('customer.pages.companies.title')}</span>
@@ -414,11 +420,11 @@ export const CustomerDashboardPage: React.FC = () => {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#2D3F2C]">
-                            <Sparkles className="w-3.5 h-3.5 text-[#265938]" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#037F8C]">
+                            <Sparkles className="w-3.5 h-3.5 text-[#037F8C]" />
                             <span>{isRtl ? '99.8% جاهزية الخدمات' : '99.8% Service Availability'}</span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#2D3F2C]">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#037F8C]">
                             <Clock className="w-3.5 h-3.5 text-[#8C6D3B]" />
                             <span>{isRtl ? 'متوسط سرعة المعالجة: 1.4 ساعة' : 'Avg. Turnaround: 1.4h'}</span>
                         </span>
@@ -428,13 +434,13 @@ export const CustomerDashboardPage: React.FC = () => {
                 {/* Tier Progress Bar */}
                 <div className="space-y-2">
                     <div className="w-full h-3 rounded-full bg-[#EFECE6] overflow-hidden flex">
-                        <div className="bg-[#2D3F2C] h-full" style={{ width: '45%' }} title="Enterprise (45%)" />
+                        <div className="bg-[#037F8C] h-full" style={{ width: '45%' }} title="Enterprise (45%)" />
                         <div className="bg-[#4A5D4E] h-full" style={{ width: '35%' }} title="Commercial & SMB (35%)" />
                         <div className="bg-[#BFAB93] h-full" style={{ width: '20%' }} title="Strategic Government (20%)" />
                     </div>
                     <div className="flex flex-wrap items-center justify-between text-xs text-[#6E6862] pt-1">
                         <div className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#2D3F2C]" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#037F8C]" />
                             <span>{isRtl ? 'كبار العملاء (Enterprise) — 45%' : 'Enterprise Accounts — 45% (22)'}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -469,11 +475,11 @@ export const CustomerDashboardPage: React.FC = () => {
                             <div
                                 key={link.id}
                                 onClick={() => navigate(link.route)}
-                                className="group bg-white border border-[#E5E0D8] hover:border-[#2D3F2C]/40 rounded-xl p-5 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer flex flex-col justify-between text-start"
+                                className="group bg-white border border-[#E5E0D8] hover:border-[#037F8C]/40 rounded-xl p-5 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer flex flex-col justify-between text-start"
                             >
                                 <div>
                                     <div className="flex items-center justify-between mb-3">
-                                        <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] group-hover:bg-[#2D3F2C] group-hover:border-[#2D3F2C] text-[#2D3F2C] group-hover:text-white flex items-center justify-center transition-colors shadow-2xs shrink-0">
+                                        <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] group-hover:bg-[#037F8C] group-hover:border-[#037F8C] text-[#037F8C] group-hover:text-white flex items-center justify-center transition-colors shadow-2xs shrink-0">
                                             <Icon className="w-5 h-5 transition-colors" />
                                         </div>
                                         <span
@@ -483,7 +489,7 @@ export const CustomerDashboardPage: React.FC = () => {
                                             {link.code}
                                         </span>
                                     </div>
-                                    <h3 className="text-sm font-bold text-[#0D0D0D] group-hover:text-[#2D3F2C] transition-colors">
+                                    <h3 className="text-sm font-bold text-[#0D0D0D] group-hover:text-[#037F8C] transition-colors">
                                         {t(link.titleKey)}
                                     </h3>
                                     <p className="text-xs text-[#6E6862] mt-1 line-clamp-2 leading-relaxed">
@@ -491,7 +497,7 @@ export const CustomerDashboardPage: React.FC = () => {
                                     </p>
                                 </div>
 
-                                <div className="mt-4 pt-3 border-t border-[#F0ECE6] flex items-center justify-between text-xs font-medium text-[#2D3F2C]">
+                                <div className="mt-4 pt-3 border-t border-[#F0ECE6] flex items-center justify-between text-xs font-medium text-[#037F8C]">
                                     <span>{t('customer.pages.dashboard.sections.viewAll', 'Open Section')}</span>
                                     <ArrowIcon className="w-3.5 h-3.5 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
                                 </div>
@@ -533,7 +539,7 @@ export const CustomerDashboardPage: React.FC = () => {
                                     onClick={() => setActivityFilter(filter)}
                                     className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                                         active
-                                            ? 'bg-white text-[#2D3F2C] shadow-2xs font-semibold'
+                                            ? 'bg-white text-[#037F8C] shadow-2xs font-semibold'
                                             : 'text-[#6E6862] hover:text-[#0D0D0D]'
                                     }`}
                                 >
@@ -560,12 +566,12 @@ export const CustomerDashboardPage: React.FC = () => {
                                     className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-4 hover:bg-[#FAF8F5]/80 -mx-3 px-3 rounded-lg transition-colors cursor-pointer group"
                                 >
                                     <div className="flex items-start gap-3.5 min-w-0">
-                                        <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] group-hover:border-[#BFAB93] text-[#2D3F2C] flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                                        <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] group-hover:border-[#BFAB93] text-[#037F8C] flex items-center justify-center shrink-0 mt-0.5 transition-colors">
                                             <Icon className="w-4.5 h-4.5" />
                                         </div>
                                         <div className="min-w-0">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <p className="text-sm font-semibold text-[#0D0D0D] group-hover:text-[#2D3F2C] transition-colors truncate">
+                                                <p className="text-sm font-semibold text-[#0D0D0D] group-hover:text-[#037F8C] transition-colors truncate">
                                                     {isRtl ? act.clientNameAr : act.clientNameEn}
                                                 </p>
                                                 <span className="text-[11px] font-mono text-[#857E74] bg-[#EFECE6] px-1.5 py-0.2 rounded" dir="ltr">
