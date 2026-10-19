@@ -1,37 +1,54 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     X,
-    FileText,
-    Edit3,
+    Plus,
+    Trash2,
+    Calculator,
     AlertCircle,
-    Building2,
+    Calendar,
+    User,
+    Layers,
 } from 'lucide-react';
 import {
-    CRM_QUOTATION_STATUS_VALUES,
-    crmQuotationInputSchema,
     calculateCrmQuotationLineItem,
     calculateCrmQuotationTotals,
     type CrmQuotationInput,
     type CrmQuotationRecord,
-    type CrmQuotationStatus,
-    type CrmQuotationLineItem,
     type CrmCompanyRecord,
     type CrmDealRecord,
     type CrmContactRecord,
     type CrmTaxRecord,
+    type CrmLeadRecord,
 } from '../../../schemas/crmSchema';
-import type {
-    CrmSalesEmployee,
-    CrmServiceCatalogItem,
+import {
+    crmApi,
+    type CrmSalesEmployee,
+    type CrmServiceCatalogItem,
 } from '../../../api/api';
-import { CrmLineItemsEditor } from '../shared/CrmLineItemsEditor';
+
+export type SubscriptionPeriod =
+    | 'monthly'
+    | 'quarterly'
+    | 'semi_annual'
+    | 'annual';
+
+export interface SubscriptionFormItem {
+    id: string;
+    packageId?: string;
+    packageName: string;
+    packageNameAr?: string;
+    unitPrice: number; // Price per unit per month
+    quantity: number;
+    period: SubscriptionPeriod;
+}
 
 export interface QuotationFormDrawerProps {
     isOpen: boolean;
     mode: 'create' | 'edit';
     initialData?: CrmQuotationRecord | null;
     preselectedDeal?: CrmDealRecord | null;
+    leads?: CrmLeadRecord[];
     companies: CrmCompanyRecord[];
     deals: CrmDealRecord[];
     contacts: CrmContactRecord[];
@@ -44,15 +61,68 @@ export interface QuotationFormDrawerProps {
     onSubmit: (data: CrmQuotationInput) => Promise<void> | void;
 }
 
+const PREDEFINED_SUBSCRIPTION_PACKAGES = [
+    {
+        id: 'pkg-1',
+        nameEn: 'Enterprise Corporate Bundle',
+        nameAr: 'باقة الشركات الكبرى المتكاملة',
+        unitPrice: 14500,
+    },
+    {
+        id: 'pkg-2',
+        nameEn: 'SME Comprehensive Support',
+        nameAr: 'باقة دعم المنشآت الصغيرة والمتوسطة',
+        unitPrice: 7800,
+    },
+    {
+        id: 'pkg-3',
+        nameEn: 'Workforce & Labor Package',
+        nameAr: 'باقة إدارة القوى العاملة والعمل',
+        unitPrice: 5400,
+    },
+    {
+        id: 'pkg-4',
+        nameEn: 'Premium Investor Concierge',
+        nameAr: 'باقة كونسيرج المستثمر المتميز',
+        unitPrice: 22000,
+    },
+    {
+        id: 'pkg-5',
+        nameEn: 'Digital Transformation & Cloud Retainer',
+        nameAr: 'باقة التحول الرقمي والسحابة المدارة',
+        unitPrice: 18000,
+    },
+    {
+        id: 'pkg-6',
+        nameEn: 'Corporate ZATCA & Tax Advisory',
+        nameAr: 'باقة الزكاة والضريبة والامتثال',
+        unitPrice: 9500,
+    },
+    {
+        id: 'pkg-7',
+        nameEn: 'Logistics & Fleet Operations Retainer',
+        nameAr: 'باقة العمليات اللوجستية والأسطول',
+        unitPrice: 12000,
+    },
+];
+
+const PERIOD_MULTIPLIERS: Record<SubscriptionPeriod, number> = {
+    monthly: 1,
+    quarterly: 3,
+    semi_annual: 6,
+    annual: 12,
+};
+
 export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
     isOpen,
     mode,
     initialData,
     preselectedDeal,
+    leads: externalLeads,
     companies,
-    deals,
+    deals: _deals,
     contacts,
-    taxes,
+    taxes: _taxes,
     catalogItems,
     employees,
     isSubmitting = false,
@@ -65,164 +135,277 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
 
     const defaultCompany =
         companies.find((c) => c.status === 'active') || companies[0];
-    const defaultEmployeeId = employees[0]?.id || '';
-    const todayDate = new Date();
-    const todayIso = todayDate.toISOString().split('T')[0];
-    const validUntilObj = new Date(todayDate);
+    const defaultEmployeeId = employees[0]?.id || 'emp-1';
+
+    // Lead fallback state if not supplied via props
+    const [internalLeads, setInternalLeads] = useState<CrmLeadRecord[]>([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (externalLeads && externalLeads.length > 0) return;
+        let isMounted = true;
+        crmApi.leads
+            .getAll({ limit: 200 })
+            .then((res) => {
+                if (isMounted && res?.data) {
+                    setInternalLeads(res.data);
+                }
+            })
+            .catch(() => {
+                // Ignore fallback failure
+            });
+        return () => {
+            isMounted = false;
+        };
+    }, [isOpen, externalLeads]);
+
+    const leads = useMemo(() => {
+        if (externalLeads && externalLeads.length > 0) return externalLeads;
+        return internalLeads;
+    }, [externalLeads, internalLeads]);
+
+    // Available packages dropdown list
+    const availablePackages = useMemo(() => {
+        const list: Array<{
+            id: string;
+            nameEn: string;
+            nameAr: string;
+            unitPrice: number;
+        }> = [...PREDEFINED_SUBSCRIPTION_PACKAGES];
+
+        if (Array.isArray(catalogItems)) {
+            catalogItems.forEach((ci) => {
+                if (!list.some((existing) => existing.id === ci.id)) {
+                    list.push({
+                        id: ci.id,
+                        nameEn: ci.nameEn,
+                        nameAr: ci.nameAr,
+                        unitPrice: ci.unitPrice || 10000,
+                    });
+                }
+            });
+        }
+        return list;
+    }, [catalogItems]);
+
+    // Form fields
+    const todayIso = new Date().toISOString().split('T')[0];
+    const validUntilObj = new Date();
     validUntilObj.setDate(validUntilObj.getDate() + 30);
     const validUntilIso = validUntilObj.toISOString().split('T')[0];
 
-    const defaultCatalog = catalogItems[0];
-    const defaultLineItem: CrmQuotationLineItem = calculateCrmQuotationLineItem({
-        id: 'crm-qli-init-1',
-        itemType: defaultCatalog?.itemType || 'service',
-        serviceId:
-            defaultCatalog?.itemType === 'service'
-                ? defaultCatalog.id
-                : undefined,
-        packageId:
-            defaultCatalog?.itemType === 'package'
-                ? defaultCatalog.id
-                : undefined,
-        descriptionEn:
-            defaultCatalog?.nameEn || 'Annual Statutory Financial Audit',
-        descriptionAr:
-            defaultCatalog?.nameAr || 'المراجعة القانونية السنوية للقوائم المالية',
-        quantity: 1,
-        unitPrice: defaultCatalog?.unitPrice ?? 25000,
-        discountPercent: 0,
-        taxRate: 15,
-    });
+    // Section 1: Quotation Details
+    const [selectedLeadId, setSelectedLeadId] = useState('');
+    const [quotationDate, setQuotationDate] = useState(todayIso);
+    const [quotationExpiryDate, setQuotationExpiryDate] = useState(validUntilIso);
 
-    const [formState, setFormState] = useState<CrmQuotationInput>({
-        titleEn: '',
-        titleAr: '',
-        dealId: '',
-        companyId: defaultCompany?.id || '',
-        contactId: '',
-        assignedEmployeeId: defaultEmployeeId,
-        quotationStatus: 'draft',
-        issueDate: todayIso,
-        validUntil: validUntilIso,
-        currency: 'SAR',
-        lineItems: [defaultLineItem],
-        subtotal: defaultLineItem.quantity * defaultLineItem.unitPrice,
-        discountTotal: defaultLineItem.discountAmount,
-        taxableAmount:
-            defaultLineItem.quantity * defaultLineItem.unitPrice -
-            defaultLineItem.discountAmount,
-        taxAmount: defaultLineItem.taxAmount,
-        grandTotal: defaultLineItem.lineTotal,
-        termsAndConditions:
-            '50% advance upon agreement signature, 50% upon final deliverable submission. Subject to 15% ZATCA VAT.',
-        notes: '',
-        status: 'active',
-    });
+    // Section 2: Customer Details
+    const [customerName, setCustomerName] = useState('');
+    const [customerEmail, setCustomerEmail] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
 
+    // Hidden linkages for CRM downstream workflows
+    const [companyId, setCompanyId] = useState(defaultCompany?.id || '');
+    const [contactId, setContactId] = useState('');
+    const [dealId, setDealId] = useState('');
+
+    // Section 3: Subscription Details
+    const [subscriptionItems, setSubscriptionItems] = useState<
+        SubscriptionFormItem[]
+    >([
+        {
+            id: 'sub-item-1',
+            packageId: PREDEFINED_SUBSCRIPTION_PACKAGES[0].id,
+            packageName: PREDEFINED_SUBSCRIPTION_PACKAGES[0].nameEn,
+            packageNameAr: PREDEFINED_SUBSCRIPTION_PACKAGES[0].nameAr,
+            unitPrice: PREDEFINED_SUBSCRIPTION_PACKAGES[0].unitPrice,
+            quantity: 1,
+            period: 'monthly',
+        },
+    ]);
+
+    // Section 4: Additional Details
+    const [discountApplied, setDiscountApplied] = useState<number>(0);
+    const [taxAppliedRate, setTaxAppliedRate] = useState<number>(15);
+    const [contractDurationMonths, setContractDurationMonths] =
+        useState<number>(12);
+
+    // Validation errors
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+    // Synchronize form on drawer open / mode changes
     const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${preselectedDeal?.id ?? 'none'}-${defaultCompany?.id ?? ''}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
+    const syncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${preselectedDeal?.id ?? 'none'}-${leads.length}`;
+
+    if (syncKey !== prevSyncKey) {
+        setPrevSyncKey(syncKey);
         if (isOpen) {
             setFieldErrors({});
+
             if (mode === 'edit' && initialData) {
-                setFormState({
-                    titleEn: initialData.titleEn,
-                    titleAr: initialData.titleAr || '',
-                    dealId: initialData.dealId || '',
-                    companyId: initialData.companyId,
-                    contactId: initialData.contactId || '',
-                    assignedEmployeeId: initialData.assignedEmployeeId,
-                    quotationStatus: initialData.quotationStatus,
-                    issueDate: initialData.issueDate,
-                    validUntil: initialData.validUntil,
-                    currency: initialData.currency || 'SAR',
-                    lineItems: initialData.lineItems,
-                    subtotal: initialData.subtotal,
-                    discountTotal: initialData.discountTotal,
-                    taxableAmount: initialData.taxableAmount,
-                    taxAmount: initialData.taxAmount,
-                    grandTotal: initialData.grandTotal,
-                    termsAndConditions: initialData.termsAndConditions || '',
-                    notes: initialData.notes || '',
-                    status: initialData.status || 'active',
-                });
+                // Populate existing record
+                setSelectedLeadId(initialData.leadId || '');
+                setQuotationDate(initialData.issueDate || todayIso);
+                setQuotationExpiryDate(initialData.validUntil || validUntilIso);
+                setCustomerName(
+                    initialData.customerName ||
+                        (isRtl
+                            ? initialData.companyNameAr || initialData.companyNameEn
+                            : initialData.companyNameEn) ||
+                        initialData.contactName ||
+                        ''
+                );
+                setCustomerEmail(
+                    initialData.customerEmail ||
+                        contacts.find((c) => c.id === initialData.contactId)
+                            ?.email ||
+                        ''
+                );
+                setCustomerPhone(
+                    initialData.customerPhone ||
+                        contacts.find((c) => c.id === initialData.contactId)
+                            ?.phone ||
+                        ''
+                );
+                setCompanyId(initialData.companyId);
+                setContactId(initialData.contactId || '');
+                setDealId(initialData.dealId || '');
+
+                // Parse line items into subscription items
+                if (
+                    Array.isArray(initialData.lineItems) &&
+                    initialData.lineItems.length > 0
+                ) {
+                    const parsedItems: SubscriptionFormItem[] =
+                        initialData.lineItems.map((li, idx) => {
+                            let itemPeriod: SubscriptionPeriod = 'monthly';
+                            if (li.period === 3) itemPeriod = 'quarterly';
+                            else if (li.period === 6) itemPeriod = 'semi_annual';
+                            else if (li.period === 12) itemPeriod = 'annual';
+                            else if (li.periodUnit === 'years') itemPeriod = 'annual';
+
+                            return {
+                                id: li.id || `sub-item-${idx + 1}`,
+                                packageId: li.packageId || li.serviceId || undefined,
+                                packageName:
+                                    li.descriptionEn || 'Subscription Package',
+                                packageNameAr: li.descriptionAr,
+                                unitPrice: li.unitPrice || 0,
+                                quantity: li.quantity || 1,
+                                period: itemPeriod,
+                            };
+                        });
+                    setSubscriptionItems(parsedItems);
+                }
+
+                // Discount & Tax rates
+                const derivedDiscount =
+                    initialData.discountPercent !== undefined
+                        ? initialData.discountPercent
+                        : initialData.subtotal > 0
+                          ? Math.round(
+                                (initialData.discountTotal /
+                                    initialData.subtotal) *
+                                    100
+                            )
+                          : 0;
+                setDiscountApplied(derivedDiscount);
+
+                const firstItemTaxRate = initialData.lineItems?.[0]?.taxRate;
+                setTaxAppliedRate(
+                    initialData.taxRate !== undefined
+                        ? initialData.taxRate
+                        : firstItemTaxRate !== undefined
+                          ? firstItemTaxRate
+                          : 15
+                );
+
+                setContractDurationMonths(
+                    initialData.contractDurationMonths || 12
+                );
             } else if (preselectedDeal) {
-                const dealItem = calculateCrmQuotationLineItem({
-                    id: 'crm-qli-deal-1',
-                    itemType: defaultCatalog?.itemType || 'service',
-                    serviceId:
-                        defaultCatalog?.itemType === 'service'
-                            ? defaultCatalog.id
-                            : undefined,
-                    packageId:
-                        defaultCatalog?.itemType === 'package'
-                            ? defaultCatalog.id
-                            : undefined,
-                    descriptionEn: preselectedDeal.titleEn,
-                    descriptionAr:
-                        preselectedDeal.titleAr || preselectedDeal.titleEn,
-                    quantity: 1,
-                    unitPrice: preselectedDeal.expectedValue || 50000,
-                    discountPercent: 0,
-                    taxRate: 15,
-                });
-                const totals = calculateCrmQuotationTotals([dealItem]);
-                setFormState({
-                    titleEn: `${preselectedDeal.titleEn} — Commercial Proposal`,
-                    titleAr: preselectedDeal.titleAr
-                        ? `عرض فني ومالي — ${preselectedDeal.titleAr}`
-                        : '',
-                    dealId: preselectedDeal.id,
-                    companyId: preselectedDeal.companyId,
-                    contactId: preselectedDeal.contactId || '',
-                    assignedEmployeeId:
-                        preselectedDeal.assignedEmployeeId || defaultEmployeeId,
-                    quotationStatus: 'draft',
-                    issueDate: todayIso,
-                    validUntil: validUntilIso,
-                    currency: 'SAR',
-                    lineItems: totals.lineItems,
-                    subtotal: totals.subtotal,
-                    discountTotal: totals.discountTotal,
-                    taxableAmount: totals.taxableAmount,
-                    taxAmount: totals.taxAmount,
-                    grandTotal: totals.grandTotal,
-                    termsAndConditions:
-                        '50% advance upon agreement signature, 50% upon final deliverable submission. Subject to 15% ZATCA VAT.',
-                    notes: '',
-                    status: 'active',
-                });
+                // Populate from deal
+                setDealId(preselectedDeal.id);
+                setCompanyId(preselectedDeal.companyId);
+                setContactId(preselectedDeal.contactId || '');
+
+                const linkedLead = leads.find(
+                    (l) => l.id === preselectedDeal.leadId
+                );
+                if (linkedLead) {
+                    setSelectedLeadId(linkedLead.id);
+                    setCustomerName(
+                        linkedLead.companyNameEn ||
+                            linkedLead.temporaryCompanyName ||
+                            linkedLead.contactName ||
+                            ''
+                    );
+                    setCustomerEmail(linkedLead.contactEmail || '');
+                    setCustomerPhone(linkedLead.contactPhone || '');
+                } else {
+                    const matchedCompany = companies.find(
+                        (c) => c.id === preselectedDeal.companyId
+                    );
+                    const matchedContact = contacts.find(
+                        (c) => c.id === preselectedDeal.contactId
+                    );
+                    setCustomerName(
+                        matchedCompany?.nameEn ||
+                            preselectedDeal.titleEn ||
+                            ''
+                    );
+                    setCustomerEmail(matchedContact?.email || '');
+                    setCustomerPhone(matchedContact?.phone || '');
+                }
+
+                setQuotationDate(todayIso);
+                setQuotationExpiryDate(validUntilIso);
+                setSubscriptionItems([
+                    {
+                        id: 'sub-item-1',
+                        packageId: PREDEFINED_SUBSCRIPTION_PACKAGES[0].id,
+                        packageName: preselectedDeal.titleEn,
+                        packageNameAr: preselectedDeal.titleAr,
+                        unitPrice: preselectedDeal.expectedValue || 15000,
+                        quantity: 1,
+                        period: 'monthly',
+                    },
+                ]);
+                setDiscountApplied(0);
+                setTaxAppliedRate(15);
+                setContractDurationMonths(12);
             } else {
-                const totals = calculateCrmQuotationTotals([defaultLineItem]);
-                setFormState({
-                    titleEn: '',
-                    titleAr: '',
-                    dealId: '',
-                    companyId: defaultCompany?.id || '',
-                    contactId: '',
-                    assignedEmployeeId: defaultEmployeeId,
-                    quotationStatus: 'draft',
-                    issueDate: todayIso,
-                    validUntil: validUntilIso,
-                    currency: 'SAR',
-                    lineItems: totals.lineItems,
-                    subtotal: totals.subtotal,
-                    discountTotal: totals.discountTotal,
-                    taxableAmount: totals.taxableAmount,
-                    taxAmount: totals.taxAmount,
-                    grandTotal: totals.grandTotal,
-                    termsAndConditions:
-                        '50% advance upon agreement signature, 50% upon final deliverable submission. Subject to 15% ZATCA VAT.',
-                    notes: '',
-                    status: 'active',
-                });
+                // Default fresh create form
+                setSelectedLeadId('');
+                setQuotationDate(todayIso);
+                setQuotationExpiryDate(validUntilIso);
+                setCustomerName('');
+                setCustomerEmail('');
+                setCustomerPhone('');
+                setCompanyId(defaultCompany?.id || '');
+                setContactId('');
+                setDealId('');
+                setSubscriptionItems([
+                    {
+                        id: 'sub-item-1',
+                        packageId: PREDEFINED_SUBSCRIPTION_PACKAGES[0].id,
+                        packageName: PREDEFINED_SUBSCRIPTION_PACKAGES[0].nameEn,
+                        packageNameAr:
+                            PREDEFINED_SUBSCRIPTION_PACKAGES[0].nameAr,
+                        unitPrice:
+                            PREDEFINED_SUBSCRIPTION_PACKAGES[0].unitPrice,
+                        quantity: 1,
+                        period: 'monthly',
+                    },
+                ]);
+                setDiscountApplied(0);
+                setTaxAppliedRate(15);
+                setContractDurationMonths(12);
             }
         }
     }
 
+    // Escape key listener
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -232,101 +415,299 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
-
-    const handleChange = <K extends keyof CrmQuotationInput>(
-        field: K,
-        value: CrmQuotationInput[K]
-    ) => {
-        setFormState((prev) => ({ ...prev, [field]: value }));
-        if (fieldErrors[field as string]) {
+    // Handle lead selection & auto-population
+    const handleLeadChange = (leadId: string) => {
+        setSelectedLeadId(leadId);
+        if (fieldErrors.leadId) {
             setFieldErrors((prev) => {
                 const next = { ...prev };
-                delete next[field as string];
+                delete next.leadId;
+                return next;
+            });
+        }
+
+        if (!leadId) {
+            return;
+        }
+
+        const lead = leads.find((l) => l.id === leadId);
+        if (!lead) return;
+
+        // Auto-populate customer details from selected lead
+        const resolvedName =
+            (isRtl
+                ? lead.companyNameAr || lead.companyNameEn
+                : lead.companyNameEn) ||
+            lead.temporaryCompanyName ||
+            lead.contactName ||
+            lead.title;
+
+        setCustomerName(resolvedName);
+        setCustomerEmail(lead.contactEmail || '');
+        setCustomerPhone(lead.contactPhone || '');
+
+        if (lead.companyId) {
+            setCompanyId(lead.companyId);
+        } else if (!companyId) {
+            setCompanyId(defaultCompany?.id || 'crm-comp-1');
+        }
+
+        if (fieldErrors.customerName) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.customerName;
+                return next;
+            });
+        }
+        if (fieldErrors.customerEmail) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.customerEmail;
+                return next;
+            });
+        }
+        if (fieldErrors.customerPhone) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.customerPhone;
                 return next;
             });
         }
     };
 
-    const handleDealSelect = (dealId: string) => {
-        const selectedDeal = deals.find((d) => d.id === dealId);
-        if (!selectedDeal) {
-            handleChange('dealId', '');
-            return;
-        }
-        setFormState((prev) => ({
+    // Subscription item actions
+    const handleAddNewItem = () => {
+        const nextId = `sub-item-${Date.now()}-${subscriptionItems.length + 1}`;
+        const defaultPkg =
+            availablePackages[subscriptionItems.length % availablePackages.length] ||
+            availablePackages[0];
+
+        setSubscriptionItems((prev) => [
             ...prev,
-            dealId: selectedDeal.id,
-            companyId: selectedDeal.companyId,
-            contactId: selectedDeal.contactId || prev.contactId,
-            assignedEmployeeId:
-                selectedDeal.assignedEmployeeId || prev.assignedEmployeeId,
-            titleEn:
-                prev.titleEn.trim() ||
-                `${selectedDeal.titleEn} — Commercial Proposal`,
-            titleAr:
-                prev.titleAr?.trim() ||
-                (selectedDeal.titleAr
-                    ? `عرض سعر — ${selectedDeal.titleAr}`
-                    : ''),
-        }));
+            {
+                id: nextId,
+                packageId: defaultPkg?.id,
+                packageName: defaultPkg?.nameEn || '',
+                packageNameAr: defaultPkg?.nameAr,
+                unitPrice: defaultPkg?.unitPrice || 5000,
+                quantity: 1,
+                period: 'monthly',
+            },
+        ]);
     };
 
-    const handleLineItemsChange = (items: CrmQuotationLineItem[]) => {
-        const totals = calculateCrmQuotationTotals(items);
-        setFormState((prev) => ({
-            ...prev,
-            lineItems: totals.lineItems,
-            subtotal: totals.subtotal,
-            discountTotal: totals.discountTotal,
-            taxableAmount: totals.taxableAmount,
-            taxAmount: totals.taxAmount,
-            grandTotal: totals.grandTotal,
-        }));
+    const handleRemoveItem = (index: number) => {
+        if (subscriptionItems.length <= 1) return;
+        setSubscriptionItems((prev) => prev.filter((_, idx) => idx !== index));
     };
 
-    const handleSubmit = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setFieldErrors({});
-        const totals = calculateCrmQuotationTotals(formState.lineItems);
-        const parsed = crmQuotationInputSchema.safeParse({
-            ...formState,
-            dealId: formState.dealId?.trim() || undefined,
-            contactId: formState.contactId?.trim() || undefined,
-            lineItems: totals.lineItems,
-            subtotal: totals.subtotal,
-            discountTotal: totals.discountTotal,
-            taxableAmount: totals.taxableAmount,
-            taxAmount: totals.taxAmount,
-            grandTotal: totals.grandTotal,
-        });
+    const handleUpdateItem = (
+        index: number,
+        patch: Partial<SubscriptionFormItem>
+    ) => {
+        setSubscriptionItems((prev) => {
+            const next = [...prev];
+            const current = next[index];
+            if (!current) return prev;
 
-        if (!parsed.success) {
-            const errors: Record<string, string> = {};
-            for (const issue of parsed.error.issues) {
-                const key = String(issue.path[0] || 'form');
-                if (!errors[key]) {
-                    errors[key] = issue.message;
+            const updated = { ...current, ...patch };
+
+            // If package changed, auto-update price & names
+            if (patch.packageId !== undefined) {
+                const foundPkg = availablePackages.find(
+                    (p) => p.id === patch.packageId
+                );
+                if (foundPkg) {
+                    updated.packageName = foundPkg.nameEn;
+                    updated.packageNameAr = foundPkg.nameAr;
+                    updated.unitPrice = foundPkg.unitPrice;
                 }
             }
+
+            next[index] = updated;
+            return next;
+        });
+
+        if (fieldErrors[`item_${index}`]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[`item_${index}`];
+                return next;
+            });
+        }
+    };
+
+    // Line item calculated totals
+    const lineItemCalculations = useMemo(() => {
+        return subscriptionItems.map((item) => {
+            const qty = Math.max(0.01, Number(item.quantity) || 0);
+            const price = Math.max(0, Number(item.unitPrice) || 0);
+            const periodMultiplier = PERIOD_MULTIPLIERS[item.period] || 1;
+
+            const totalMonthlyWithoutVat = Math.round(qty * price * 100) / 100;
+            const lineTotalWithoutVat =
+                Math.round(qty * price * periodMultiplier * 100) / 100;
+
+            return {
+                totalMonthlyWithoutVat,
+                lineTotalWithoutVat,
+                periodMultiplier,
+            };
+        });
+    }, [subscriptionItems]);
+
+    // Section 3: Summary Total (Without VAT)
+    const totalWithoutVat = useMemo(() => {
+        const sum = lineItemCalculations.reduce(
+            (acc, curr) => acc + curr.lineTotalWithoutVat,
+            0
+        );
+        return Math.round(sum * 100) / 100;
+    }, [lineItemCalculations]);
+
+    const totalMonthlyWithoutVat = useMemo(() => {
+        const sum = lineItemCalculations.reduce(
+            (acc, curr) => acc + curr.totalMonthlyWithoutVat,
+            0
+        );
+        return Math.round(sum * 100) / 100;
+    }, [lineItemCalculations]);
+
+    // Section 4 Calculations
+    const discountRate = Math.min(100, Math.max(0, Number(discountApplied) || 0));
+    const discountAmount =
+        Math.round(totalWithoutVat * (discountRate / 100) * 100) / 100;
+
+    const netAfterDiscount =
+        Math.round(Math.max(0, totalWithoutVat - discountAmount) * 100) / 100;
+
+    const effectiveTaxRate = Math.min(
+        100,
+        Math.max(0, Number(taxAppliedRate) || 0)
+    );
+    const vatAmount =
+        Math.round(netAfterDiscount * (effectiveTaxRate / 100) * 100) / 100;
+
+    const totalAmountWithVat =
+        Math.round((netAfterDiscount + vatAmount) * 100) / 100;
+
+    // Handle Form Submit
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        const errors: Record<string, string> = {};
+
+        if (!selectedLeadId) {
+            errors.leadId = t('crm.commercial.quotations.form.leadRequired');
+        }
+        if (!customerName.trim()) {
+            errors.customerName = t(
+                'crm.commercial.quotations.form.customerNameRequired'
+            );
+        }
+        if (!customerEmail.trim()) {
+            errors.customerEmail = t(
+                'crm.commercial.quotations.form.customerEmailRequired'
+            );
+        }
+        if (!customerPhone.trim()) {
+            errors.customerPhone = t(
+                'crm.commercial.quotations.form.customerPhoneRequired'
+            );
+        }
+
+        if (subscriptionItems.length === 0) {
+            errors.lineItems = t(
+                'crm.commercial.quotations.form.atLeastOneItem'
+            );
+        }
+
+        subscriptionItems.forEach((item, idx) => {
+            if (!item.packageName.trim()) {
+                errors[`item_${idx}`] = t(
+                    'crm.commercial.quotations.form.packageRequired'
+                );
+            }
+        });
+
+        if (Number(contractDurationMonths) <= 0) {
+            errors.contractDuration = t(
+                'crm.commercial.quotations.form.positiveDurationRequired'
+            );
+        }
+
+        if (Object.keys(errors).length > 0) {
             setFieldErrors(errors);
             return;
         }
-        await onSubmit(parsed.data);
+
+        // Convert subscription items into CRM line items
+        const rawLineItems = subscriptionItems.map((item, idx) => {
+            const periodMultiplier = PERIOD_MULTIPLIERS[item.period] || 1;
+            return calculateCrmQuotationLineItem({
+                id: item.id || `crm-qli-${idx + 1}`,
+                itemType: 'package',
+                packageId: item.packageId,
+                descriptionEn: item.packageName,
+                descriptionAr: item.packageNameAr || item.packageName,
+                quantity: Math.max(1, Number(item.quantity) || 1),
+                unitPrice: Math.max(0, Number(item.unitPrice) || 0),
+                period: periodMultiplier,
+                periodUnit: 'months',
+                discountPercent: discountRate,
+                taxRate: effectiveTaxRate,
+            });
+        });
+
+        const totals = calculateCrmQuotationTotals(rawLineItems);
+        const selectedLead = leads.find((l) => l.id === selectedLeadId);
+
+        const proposalTitleEn =
+            customerName.trim()
+                ? `${customerName.trim()} — Subscription Quotation`
+                : `${selectedLead?.title || 'Commercial'} — Subscription Quotation`;
+
+        const proposalTitleAr = customerName.trim()
+            ? `عرض سعر اشتراك — ${customerName.trim()}`
+            : `عرض سعر اشتراك — ${selectedLead?.title || ''}`;
+
+        const payload: CrmQuotationInput = {
+            titleEn: proposalTitleEn,
+            titleAr: proposalTitleAr,
+            leadId: selectedLeadId,
+            leadCode: selectedLead?.code,
+            leadTitle: selectedLead?.title,
+            dealId: dealId || undefined,
+            companyId: companyId || defaultCompany?.id || 'crm-comp-1',
+            companyNameEn: customerName,
+            contactId: contactId || undefined,
+            customerName: customerName.trim(),
+            customerEmail: customerEmail.trim(),
+            customerPhone: customerPhone.trim(),
+            contractDurationMonths: Number(contractDurationMonths) || 12,
+            contractDuration: Number(contractDurationMonths) || 12,
+            discountPercent: discountRate,
+            taxRate: effectiveTaxRate,
+            assignedEmployeeId: defaultEmployeeId,
+            quotationStatus: mode === 'edit' && initialData ? initialData.quotationStatus : 'draft',
+            issueDate: quotationDate,
+            validUntil: quotationExpiryDate,
+            currency: 'SAR',
+            lineItems: totals.lineItems,
+            subtotal: totals.subtotal,
+            discountTotal: totals.discountTotal,
+            totalDiscount: totals.discountTotal,
+            taxableAmount: totals.taxableAmount,
+            taxAmount: totals.taxAmount,
+            totalTax: totals.taxAmount,
+            totalVat: totals.taxAmount,
+            grandTotal: totals.grandTotal,
+            status: 'active',
+        };
+
+        await onSubmit(payload);
     };
 
-    const availableDeals = deals.filter(
-        (d) =>
-            !formState.companyId ||
-            d.companyId === formState.companyId ||
-            d.id === formState.dealId
-    );
-    const availableContacts = contacts.filter(
-        (c) =>
-            !formState.companyId ||
-            c.companyId === formState.companyId ||
-            c.id === formState.contactId
-    );
+    if (!isOpen) return null;
 
     return (
         <div
@@ -335,70 +716,46 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
             aria-modal="true"
             aria-labelledby="quotation-form-drawer-title"
         >
+            {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px]"
                 onClick={onClose}
             />
 
+            {/* Drawer Container */}
             <div className="relative z-10 w-full max-w-3xl bg-white h-full shadow-2xl border-s border-[#E5E0D8] flex flex-col overflow-hidden text-start">
-                {/* Header */}
-                <div className="px-6 py-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 flex items-center justify-center text-[#2D3F2C] shrink-0">
-                            {mode === 'create' ? (
-                                <FileText size={18} />
-                            ) : (
-                                <Edit3 size={18} />
-                            )}
-                        </div>
-                        <div className="min-w-0">
-                            <span
-                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
-                                dir="ltr"
-                            >
-                                {mode === 'edit' && initialData
-                                    ? initialData.code
-                                    : t('crm.commercial.quotations.badge')}
-                            </span>
-                            <h2
-                                id="quotation-form-drawer-title"
-                                className="text-base font-bold text-[#0D0D0D] truncate mt-0.5"
-                            >
-                                {mode === 'create'
-                                    ? t(
-                                          'crm.commercial.quotations.form.createTitle'
-                                      )
-                                    : t(
-                                          'crm.commercial.quotations.form.editTitle',
-                                          { code: initialData?.code || '' }
-                                      )}
-                            </h2>
-                            <p className="text-xs text-[#6E6862] truncate">
-                                {mode === 'create'
-                                    ? t(
-                                          'crm.commercial.quotations.form.createSubtitle'
-                                      )
-                                    : t(
-                                          'crm.commercial.quotations.form.editSubtitle'
-                                      )}
-                            </p>
-                        </div>
+                {/* Header: Title + Close (X) button */}
+                <div className="px-6 py-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3 shrink-0">
+                    <div>
+                        <h2
+                            id="quotation-form-drawer-title"
+                            className="text-base font-bold text-[#0D0D0D] tracking-tight"
+                        >
+                            {mode === 'create'
+                                ? t('crm.commercial.quotations.form.createTitle')
+                                : `${t('crm.commercial.quotations.form.editTitle')}${initialData?.code ? `: ${initialData.code}` : ''}`}
+                        </h2>
+                        <p className="text-xs text-[#6E6862] mt-0.5">
+                            {mode === 'create'
+                                ? t('crm.commercial.quotations.form.createSubtitle')
+                                : t('crm.commercial.quotations.form.editSubtitle')}
+                        </p>
                     </div>
 
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label={t('crm.commercial.common.close')}
+                        aria-label={t('crm.commercial.quotations.form.cancel')}
                         className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] flex items-center justify-center transition-colors cursor-pointer shrink-0"
                     >
                         <X size={16} />
                     </button>
                 </div>
 
-                {/* Form Body */}
+                {/* Form Content */}
                 <form
                     onSubmit={handleSubmit}
-                    className="flex-1 overflow-y-auto p-6 space-y-5"
+                    className="flex-1 overflow-y-auto p-6 space-y-6"
                 >
                     {serverError && (
                         <div className="rounded-xl border border-[#A63A3A]/30 bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
@@ -407,296 +764,866 @@ export const QuotationFormDrawer: React.FC<QuotationFormDrawerProps> = ({
                         </div>
                     )}
 
-                    {/* Section 1: Quotation Header & Client Linkage */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
-                            <Building2 size={14} />
-                            <span>
-                                {t('crm.commercial.quotations.form.companyLabel')}
-                            </span>
+                    {/* ========================================================================= */}
+                    {/* SECTION 1: Quotation Details                                              */}
+                    {/* ========================================================================= */}
+                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-5 space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-[#E5E0D8]/60">
+                            <Calendar size={15} className="text-[#2D3F2C]" />
+                            <h3 className="text-xs font-bold text-[#2D3F2C] tracking-wide">
+                                {t(
+                                    'crm.commercial.quotations.form.sectionQuotationDetails'
+                                )}
+                            </h3>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* 1. Select Lead * */}
+                            <div className="md:col-span-3">
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
                                     {t(
-                                        'crm.commercial.quotations.form.titleEnLabel'
+                                        'crm.commercial.quotations.form.selectLead'
                                     )}{' '}
-                                    *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.titleEn}
-                                    onChange={(e) =>
-                                        handleChange('titleEn', e.target.value)
-                                    }
-                                    placeholder={t(
-                                        'crm.commercial.quotations.form.titleEnPlaceholder'
-                                    )}
-                                    dir="ltr"
-                                    className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                                />
-                                {fieldErrors.titleEn && (
-                                    <p className="text-[11px] text-[#A63A3A] mt-1">
-                                        {fieldErrors.titleEn}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.quotations.form.titleArLabel'
-                                    )}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.titleAr || ''}
-                                    onChange={(e) =>
-                                        handleChange('titleAr', e.target.value)
-                                    }
-                                    placeholder={t(
-                                        'crm.commercial.quotations.form.titleArPlaceholder'
-                                    )}
-                                    dir="rtl"
-                                    className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.quotations.form.companyLabel'
-                                    )}{' '}
-                                    *
+                                    <span className="text-[#A63A3A]">*</span>
                                 </label>
                                 <select
-                                    value={formState.companyId}
+                                    value={selectedLeadId}
                                     onChange={(e) =>
-                                        handleChange('companyId', e.target.value)
+                                        handleLeadChange(e.target.value)
                                     }
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                                >
-                                    {companies.map((c) => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.code} —{' '}
-                                            {isRtl ? c.nameAr : c.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('crm.commercial.quotations.form.dealLabel')}
-                                </label>
-                                <select
-                                    value={formState.dealId || ''}
-                                    onChange={(e) =>
-                                        handleDealSelect(e.target.value)
-                                    }
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                                >
-                                    <option value="">
-                                        {t('crm.commercial.common.noLinkedDeal')}
-                                    </option>
-                                    {availableDeals.map((d) => (
-                                        <option key={d.id} value={d.id}>
-                                            {d.code} —{' '}
-                                            {isRtl
-                                                ? d.titleAr || d.titleEn
-                                                : d.titleEn}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.quotations.form.contactLabel'
-                                    )}
-                                </label>
-                                <select
-                                    value={formState.contactId || ''}
-                                    onChange={(e) =>
-                                        handleChange('contactId', e.target.value)
-                                    }
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                        fieldErrors.leadId
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
                                 >
                                     <option value="">
                                         {t(
-                                            'crm.commercial.common.noLinkedContact'
+                                            'crm.commercial.quotations.form.selectLeadPlaceholder'
                                         )}
                                     </option>
-                                    {availableContacts.map((cnt) => (
-                                        <option key={cnt.id} value={cnt.id}>
+                                    {leads.map((lead) => (
+                                        <option key={lead.id} value={lead.id}>
+                                            {lead.code} —{' '}
                                             {isRtl
-                                                ? cnt.fullNameAr || cnt.fullNameEn
-                                                : cnt.fullNameEn}
+                                                ? lead.companyNameAr ||
+                                                  lead.title
+                                                : lead.title}
                                         </option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.quotations.form.assignedRepLabel'
-                                    )}{' '}
-                                    *
-                                </label>
-                                <select
-                                    value={formState.assignedEmployeeId}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            'assignedEmployeeId',
-                                            e.target.value
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                                >
-                                    {employees.map((emp) => (
-                                        <option key={emp.id} value={emp.id}>
-                                            {isRtl ? emp.nameAr : emp.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.quotations.form.issueDateLabel'
-                                    )}{' '}
-                                    *
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formState.issueDate}
-                                    onChange={(e) =>
-                                        handleChange('issueDate', e.target.value)
-                                    }
-                                    dir="ltr"
-                                    className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t(
-                                        'crm.commercial.quotations.form.validUntilLabel'
-                                    )}{' '}
-                                    *
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formState.validUntil}
-                                    onChange={(e) =>
-                                        handleChange('validUntil', e.target.value)
-                                    }
-                                    dir="ltr"
-                                    className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D]"
-                                />
-                                {fieldErrors.validUntil && (
+                                {fieldErrors.leadId && (
                                     <p className="text-[11px] text-[#A63A3A] mt-1">
-                                        {fieldErrors.validUntil}
+                                        {fieldErrors.leadId}
                                     </p>
                                 )}
                             </div>
 
+                            {/* 2. Quotation Date */}
                             <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
                                     {t(
-                                        'crm.commercial.quotations.form.quotationStatusLabel'
+                                        'crm.commercial.quotations.form.quotationDate'
                                     )}
                                 </label>
-                                <select
-                                    value={formState.quotationStatus}
+                                <input
+                                    type="date"
+                                    value={quotationDate}
                                     onChange={(e) =>
-                                        handleChange(
-                                            'quotationStatus',
-                                            e.target.value as CrmQuotationStatus
-                                        )
+                                        setQuotationDate(e.target.value)
                                     }
-                                    className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                                >
-                                    {CRM_QUOTATION_STATUS_VALUES.map((st) => (
-                                        <option key={st} value={st}>
-                                            {t(
-                                                `crm.commercial.quotations.statuses.${st}`
-                                            )}
-                                        </option>
-                                    ))}
-                                </select>
+                                    dir="ltr"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors"
+                                />
+                            </div>
+
+                            {/* 3. Quotation Expiry Date */}
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.quotationExpiryDate'
+                                    )}
+                                </label>
+                                <input
+                                    type="date"
+                                    value={quotationExpiryDate}
+                                    onChange={(e) =>
+                                        setQuotationExpiryDate(e.target.value)
+                                    }
+                                    dir="ltr"
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors"
+                                />
                             </div>
                         </div>
                     </div>
 
-                    {/* Section 2: Interactive Line Items Editor */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-white p-4">
-                        <CrmLineItemsEditor
-                            lineItems={formState.lineItems as CrmQuotationLineItem[]}
-                            catalogItems={catalogItems}
-                            taxes={taxes}
-                            onChange={handleLineItemsChange}
-                            error={fieldErrors.lineItems}
-                        />
-                    </div>
-
-                    {/* Section 3: Terms & Notes */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-3.5">
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                {t('crm.commercial.quotations.form.termsLabel')}
-                            </label>
-                            <textarea
-                                rows={2}
-                                value={formState.termsAndConditions || ''}
-                                onChange={(e) =>
-                                    handleChange(
-                                        'termsAndConditions',
-                                        e.target.value
-                                    )
-                                }
-                                className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                            />
+                    {/* ========================================================================= */}
+                    {/* SECTION 2: Customer Details                                               */}
+                    {/* ========================================================================= */}
+                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-5 space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-[#E5E0D8]/60">
+                            <User size={15} className="text-[#2D3F2C]" />
+                            <h3 className="text-xs font-bold text-[#2D3F2C] tracking-wide">
+                                {t(
+                                    'crm.commercial.quotations.form.sectionCustomerDetails'
+                                )}
+                            </h3>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                {t('crm.commercial.quotations.form.notesLabel')}
-                            </label>
-                            <textarea
-                                rows={2}
-                                value={formState.notes || ''}
-                                onChange={(e) =>
-                                    handleChange('notes', e.target.value)
-                                }
-                                className="w-full px-3.5 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
-                            />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* 1. Customer Name * */}
+                            <div>
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.customerName'
+                                    )}{' '}
+                                    <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={customerName}
+                                    onChange={(e) => {
+                                        setCustomerName(e.target.value);
+                                        if (fieldErrors.customerName) {
+                                            setFieldErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.customerName;
+                                                return next;
+                                            });
+                                        }
+                                    }}
+                                    placeholder={t(
+                                        'crm.commercial.quotations.form.customerNamePlaceholder'
+                                    )}
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                        fieldErrors.customerName
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
+                                />
+                                {fieldErrors.customerName && (
+                                    <p className="text-[11px] text-[#A63A3A] mt-1">
+                                        {fieldErrors.customerName}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* 2. Customer Email * */}
+                            <div>
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.customerEmail'
+                                    )}{' '}
+                                    <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={customerEmail}
+                                    onChange={(e) => {
+                                        setCustomerEmail(e.target.value);
+                                        if (fieldErrors.customerEmail) {
+                                            setFieldErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.customerEmail;
+                                                return next;
+                                            });
+                                        }
+                                    }}
+                                    placeholder={t(
+                                        'crm.commercial.quotations.form.customerEmailPlaceholder'
+                                    )}
+                                    dir="ltr"
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                        fieldErrors.customerEmail
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
+                                />
+                                {fieldErrors.customerEmail && (
+                                    <p className="text-[11px] text-[#A63A3A] mt-1">
+                                        {fieldErrors.customerEmail}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* 3. Customer Phone * */}
+                            <div>
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.customerPhone'
+                                    )}{' '}
+                                    <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={customerPhone}
+                                    onChange={(e) => {
+                                        setCustomerPhone(e.target.value);
+                                        if (fieldErrors.customerPhone) {
+                                            setFieldErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.customerPhone;
+                                                return next;
+                                            });
+                                        }
+                                    }}
+                                    placeholder={t(
+                                        'crm.commercial.quotations.form.customerPhonePlaceholder'
+                                    )}
+                                    dir="ltr"
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-colors ${
+                                        fieldErrors.customerPhone
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
+                                />
+                                {fieldErrors.customerPhone && (
+                                    <p className="text-[11px] text-[#A63A3A] mt-1">
+                                        {fieldErrors.customerPhone}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="pt-2 flex items-center justify-end gap-2.5">
+                    {/* ========================================================================= */}
+                    {/* SECTION 3: Subscription Details                                           */}
+                    {/* ========================================================================= */}
+                    <div className="rounded-xl border border-[#E5E0D8] bg-white p-5 space-y-4">
+                        <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#E5E0D8]">
+                            <div className="flex items-center gap-2">
+                                <Layers size={15} className="text-[#2D3F2C]" />
+                                <h3 className="text-xs font-bold text-[#0D0D0D]">
+                                    {t(
+                                        'crm.commercial.quotations.form.sectionSubscriptionDetails'
+                                    )}
+                                </h3>
+                            </div>
+
+                            {/* + New Item Action */}
+                            <button
+                                type="button"
+                                onClick={handleAddNewItem}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                            >
+                                <Plus size={13} />
+                                <span>
+                                    {t(
+                                        'crm.commercial.quotations.form.newItem'
+                                    )}
+                                </span>
+                            </button>
+                        </div>
+
+                        {fieldErrors.lineItems && (
+                            <p className="text-xs text-[#A63A3A]">
+                                {fieldErrors.lineItems}
+                            </p>
+                        )}
+
+                        {/* List of subscription line items */}
+                        <div className="space-y-4">
+                            {subscriptionItems.map((item, idx) => {
+                                const calc = lineItemCalculations[idx] || {
+                                    totalMonthlyWithoutVat: 0,
+                                    lineTotalWithoutVat: 0,
+                                    periodMultiplier: 1,
+                                };
+
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className="p-4 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] space-y-3 relative group"
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[11px] font-bold text-[#2D3F2C]">
+                                                #{idx + 1}
+                                            </span>
+                                            {subscriptionItems.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleRemoveItem(idx)
+                                                    }
+                                                    aria-label="Remove Item"
+                                                    className="w-7 h-7 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FCECE9] hover:border-[#A63A3A]/40 text-[#6E6862] hover:text-[#A63A3A] flex items-center justify-center transition-colors cursor-pointer"
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+                                            {/* 1. Subscription Package Name * */}
+                                            <div className="sm:col-span-2 lg:col-span-2">
+                                                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                                                    {t(
+                                                        'crm.commercial.quotations.form.subscriptionPackageName'
+                                                    )}{' '}
+                                                    <span className="text-[#A63A3A]">
+                                                        *
+                                                    </span>
+                                                </label>
+                                                <select
+                                                    value={item.packageId || ''}
+                                                    onChange={(e) =>
+                                                        handleUpdateItem(idx, {
+                                                            packageId:
+                                                                e.target.value,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                >
+                                                    <option value="">
+                                                        {t(
+                                                            'crm.commercial.quotations.form.selectPackageName'
+                                                        )}
+                                                    </option>
+                                                    {availablePackages.map(
+                                                        (pkg) => (
+                                                            <option
+                                                                key={pkg.id}
+                                                                value={pkg.id}
+                                                            >
+                                                                {isRtl
+                                                                    ? pkg.nameAr ||
+                                                                      pkg.nameEn
+                                                                    : pkg.nameEn}
+                                                            </option>
+                                                        )
+                                                    )}
+                                                </select>
+                                                {fieldErrors[`item_${idx}`] && (
+                                                    <p className="text-[10px] text-[#A63A3A] mt-0.5">
+                                                        {
+                                                            fieldErrors[
+                                                                `item_${idx}`
+                                                            ]
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* 2. Price Per Unit Per Month * */}
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                                                    {t(
+                                                        'crm.commercial.quotations.form.pricePerUnitPerMonth'
+                                                    )}{' '}
+                                                    <span className="text-[#A63A3A]">
+                                                        *
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={item.unitPrice}
+                                                    onChange={(e) =>
+                                                        handleUpdateItem(idx, {
+                                                            unitPrice: Math.max(
+                                                                0,
+                                                                parseFloat(
+                                                                    e.target
+                                                                        .value
+                                                                ) || 0
+                                                            ),
+                                                        })
+                                                    }
+                                                    placeholder={t(
+                                                        'crm.commercial.quotations.form.priceEachUnitPlaceholder'
+                                                    )}
+                                                    dir="ltr"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                />
+                                            </div>
+
+                                            {/* 3. Quantity * */}
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                                                    {t(
+                                                        'crm.commercial.quotations.form.quantity'
+                                                    )}{' '}
+                                                    <span className="text-[#A63A3A]">
+                                                        *
+                                                    </span>
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    step="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) =>
+                                                        handleUpdateItem(idx, {
+                                                            quantity: Math.max(
+                                                                1,
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                    10
+                                                                ) || 1
+                                                            ),
+                                                        })
+                                                    }
+                                                    placeholder={t(
+                                                        'crm.commercial.quotations.form.enterQuantityPlaceholder'
+                                                    )}
+                                                    dir="ltr"
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                />
+                                            </div>
+
+                                            {/* 6. Period * (Dropdown, default: Monthly) */}
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                                                    {t(
+                                                        'crm.commercial.quotations.form.period'
+                                                    )}{' '}
+                                                    <span className="text-[#A63A3A]">
+                                                        *
+                                                    </span>
+                                                </label>
+                                                <select
+                                                    value={item.period}
+                                                    onChange={(e) =>
+                                                        handleUpdateItem(idx, {
+                                                            period: e.target
+                                                                .value as SubscriptionPeriod,
+                                                        })
+                                                    }
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                                >
+                                                    <option value="monthly">
+                                                        {t(
+                                                            'crm.commercial.quotations.form.periodMonthly'
+                                                        )}
+                                                    </option>
+                                                    <option value="quarterly">
+                                                        {t(
+                                                            'crm.commercial.quotations.form.periodQuarterly'
+                                                        )}
+                                                    </option>
+                                                    <option value="semi_annual">
+                                                        {t(
+                                                            'crm.commercial.quotations.form.periodSemiAnnual'
+                                                        )}
+                                                    </option>
+                                                    <option value="annual">
+                                                        {t(
+                                                            'crm.commercial.quotations.form.periodAnnual'
+                                                        )}
+                                                    </option>
+                                                </select>
+                                            </div>
+
+                                            {/* 4. Total * (Auto-calculated, SAR) */}
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#0D0D0D] mb-1">
+                                                    {t(
+                                                        'crm.commercial.quotations.form.lineTotal'
+                                                    )}{' '}
+                                                    *
+                                                </label>
+                                                <div
+                                                    className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#F4EFEA] text-xs font-mono tabular-nums font-bold text-[#2D3F2C] flex items-center justify-between"
+                                                    dir="ltr"
+                                                >
+                                                    <span>
+                                                        {calc.lineTotalWithoutVat.toLocaleString(
+                                                            undefined,
+                                                            {
+                                                                minimumFractionDigits: 2,
+                                                                maximumFractionDigits: 2,
+                                                            }
+                                                        )}
+                                                    </span>
+                                                    <span className="text-[10px] font-sans font-medium text-[#6E6862]">
+                                                        {t(
+                                                            'crm.commercial.quotations.form.currencySar'
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 5. Total Monthly (Without VAT) * */}
+                                        <div className="pt-2 border-t border-[#E5E0D8]/60 flex items-center justify-between text-xs">
+                                            <span className="text-[11px] font-medium text-[#6E6862]">
+                                                {t(
+                                                    'crm.commercial.quotations.form.totalMonthlyWithoutVat'
+                                                )}
+                                                :
+                                            </span>
+                                            <span
+                                                className="font-mono tabular-nums font-semibold text-[#0D0D0D]"
+                                                dir="ltr"
+                                            >
+                                                {calc.totalMonthlyWithoutVat.toLocaleString(
+                                                    undefined,
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    }
+                                                )}{' '}
+                                                {t(
+                                                    'crm.commercial.quotations.form.sarPerMonth'
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Separate Total (Without VAT) summary in SAR */}
+                        <div className="rounded-xl border border-[#2D3F2C]/20 bg-[#2D3F2C]/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <span className="text-xs font-bold text-[#2D3F2C] block">
+                                    {t(
+                                        'crm.commercial.quotations.form.totalWithoutVatSummary'
+                                    )}
+                                </span>
+                                <span className="text-[11px] text-[#6E6862]">
+                                    {t(
+                                        'crm.commercial.quotations.form.totalMonthlyWithoutVat'
+                                    )}
+                                    :{' '}
+                                    <strong
+                                        className="font-mono tabular-nums text-[#0D0D0D]"
+                                        dir="ltr"
+                                    >
+                                        {totalMonthlyWithoutVat.toLocaleString(
+                                            undefined,
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}{' '}
+                                        {t(
+                                            'crm.commercial.quotations.form.sarPerMonth'
+                                        )}
+                                    </strong>
+                                </span>
+                            </div>
+
+                            <div
+                                className="text-end font-mono tabular-nums font-bold text-lg text-[#2D3F2C]"
+                                dir="ltr"
+                            >
+                                {totalWithoutVat.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                })}{' '}
+                                <span className="text-xs font-sans font-medium text-[#6E6862]">
+                                    {t(
+                                        'crm.commercial.quotations.form.currencySar'
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ========================================================================= */}
+                    {/* SECTION 4: Additional Details                                             */}
+                    {/* ========================================================================= */}
+                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-5 space-y-4">
+                        <div className="flex items-center gap-2 pb-2 border-b border-[#E5E0D8]/60">
+                            <Calculator size={15} className="text-[#2D3F2C]" />
+                            <h3 className="text-xs font-bold text-[#2D3F2C] tracking-wide">
+                                {t(
+                                    'crm.commercial.quotations.form.sectionAdditionalDetails'
+                                )}
+                            </h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                            {/* 1. Discount Applied * */}
+                            <div>
+                                <label className="block font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.discountApplied'
+                                    )}{' '}
+                                    <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="1"
+                                        value={discountApplied}
+                                        onChange={(e) =>
+                                            setDiscountApplied(
+                                                Math.min(
+                                                    100,
+                                                    Math.max(
+                                                        0,
+                                                        parseFloat(
+                                                            e.target.value
+                                                        ) || 0
+                                                    )
+                                                )
+                                            )
+                                        }
+                                        dir="ltr"
+                                        className="w-full px-3.5 py-2.5 pe-8 rounded-xl border border-[#E5E0D8] bg-white font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                    />
+                                    <span
+                                        className="absolute inset-y-0 end-3 flex items-center text-[#6E6862] font-semibold text-xs pointer-events-none"
+                                        dir="ltr"
+                                    >
+                                        %
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 2. Discount Amount * (Calculated in SAR) */}
+                            <div>
+                                <label className="block font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.discountAmount'
+                                    )}{' '}
+                                    *
+                                </label>
+                                <div
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#F4EFEA] font-mono tabular-nums font-semibold text-[#B45309] flex items-center justify-between"
+                                    dir="ltr"
+                                >
+                                    <span>
+                                        {discountAmount.toLocaleString(
+                                            undefined,
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
+                                    </span>
+                                    <span className="text-[11px] font-sans font-normal text-[#6E6862]">
+                                        {t(
+                                            'crm.commercial.quotations.form.currencySar'
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 3. Net After Discount * (Calculated in SAR) */}
+                            <div>
+                                <label className="block font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.netAfterDiscount'
+                                    )}{' '}
+                                    *
+                                </label>
+                                <div
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#F4EFEA] font-mono tabular-nums font-semibold text-[#0D0D0D] flex items-center justify-between"
+                                    dir="ltr"
+                                >
+                                    <span>
+                                        {netAfterDiscount.toLocaleString(
+                                            undefined,
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
+                                    </span>
+                                    <span className="text-[11px] font-sans font-normal text-[#6E6862]">
+                                        {t(
+                                            'crm.commercial.quotations.form.currencySar'
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 4. Tax Applied * (Dropdown, default VAT 15%) */}
+                            <div>
+                                <label className="block font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.taxApplied'
+                                    )}{' '}
+                                    <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <select
+                                    value={taxAppliedRate}
+                                    onChange={(e) =>
+                                        setTaxAppliedRate(
+                                            parseFloat(e.target.value) || 0
+                                        )
+                                    }
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C]"
+                                >
+                                    <option value="15">
+                                        {t(
+                                            'crm.commercial.quotations.form.taxVat15'
+                                        )}
+                                    </option>
+                                    <option value="0">
+                                        {t(
+                                            'crm.commercial.quotations.form.taxVat0'
+                                        )}
+                                    </option>
+                                </select>
+                            </div>
+
+                            {/* 5. VAT Amount * (Calculated in SAR) */}
+                            <div>
+                                <label className="block font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.vatAmount'
+                                    )}{' '}
+                                    *
+                                </label>
+                                <div
+                                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#F4EFEA] font-mono tabular-nums font-semibold text-[#0D0D0D] flex items-center justify-between"
+                                    dir="ltr"
+                                >
+                                    <span>
+                                        {vatAmount.toLocaleString(undefined, {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        })}
+                                    </span>
+                                    <span className="text-[11px] font-sans font-normal text-[#6E6862]">
+                                        {t(
+                                            'crm.commercial.quotations.form.currencySar'
+                                        )}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 7. Contract Duration (In Months) * */}
+                            <div>
+                                <label className="block font-semibold text-[#0D0D0D] mb-1.5">
+                                    {t(
+                                        'crm.commercial.quotations.form.contractDurationMonths'
+                                    )}{' '}
+                                    <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="120"
+                                    step="1"
+                                    value={contractDurationMonths}
+                                    onChange={(e) => {
+                                        setContractDurationMonths(
+                                            Math.max(
+                                                1,
+                                                parseInt(e.target.value, 10) || 1
+                                            )
+                                        );
+                                        if (fieldErrors.contractDuration) {
+                                            setFieldErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.contractDuration;
+                                                return next;
+                                            });
+                                        }
+                                    }}
+                                    placeholder={t(
+                                        'crm.commercial.quotations.form.contractDurationPlaceholder'
+                                    )}
+                                    dir="ltr"
+                                    className={`w-full px-3.5 py-2.5 rounded-xl border bg-white font-mono tabular-nums text-[#0D0D0D] focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] ${
+                                        fieldErrors.contractDuration
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
+                                />
+                                {fieldErrors.contractDuration && (
+                                    <p className="text-[11px] text-[#A63A3A] mt-1">
+                                        {fieldErrors.contractDuration}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* 6. Total Amount (Including VAT) (Full-width prominent banner) */}
+                            <div className="sm:col-span-2 lg:col-span-3 pt-2">
+                                <div className="rounded-xl border-2 border-[#2D3F2C] bg-[#2D3F2C]/10 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <span className="text-xs font-bold text-[#0D0D0D] block">
+                                            {t(
+                                                'crm.commercial.quotations.form.totalAmountWithVat'
+                                            )}
+                                        </span>
+                                        <span className="text-[11px] text-[#6E6862]">
+                                            {t(
+                                                'crm.commercial.quotations.form.netAfterDiscount'
+                                            )}
+                                            :{' '}
+                                            <span
+                                                className="font-mono tabular-nums text-[#0D0D0D]"
+                                                dir="ltr"
+                                            >
+                                                {netAfterDiscount.toLocaleString(
+                                                    undefined,
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    }
+                                                )}{' '}
+                                                SAR
+                                            </span>{' '}
+                                            •{' '}
+                                            {t(
+                                                'crm.commercial.quotations.form.vatAmount'
+                                            )}
+                                            :{' '}
+                                            <span
+                                                className="font-mono tabular-nums text-[#0D0D0D]"
+                                                dir="ltr"
+                                            >
+                                                {vatAmount.toLocaleString(
+                                                    undefined,
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    }
+                                                )}{' '}
+                                                SAR
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <div
+                                        className="font-mono tabular-nums font-bold text-xl text-[#2D3F2C]"
+                                        dir="ltr"
+                                    >
+                                        {totalAmountWithVat.toLocaleString(
+                                            undefined,
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}{' '}
+                                        <span className="text-xs font-sans font-semibold text-[#2D3F2C]">
+                                            {t(
+                                                'crm.commercial.quotations.form.currencySar'
+                                            )}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer Actions: Cancel and Submit */}
+                    <div className="pt-2 pb-4 flex items-center justify-end gap-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2.5 rounded-xl border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] cursor-pointer"
+                            className="px-5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
                         >
-                            {t('crm.commercial.common.cancel')}
+                            {t('crm.commercial.quotations.form.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-5 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            className="px-6 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
                         >
                             {isSubmitting
                                 ? t('crm.commercial.common.saving')
-                                : mode === 'create'
-                                  ? t('crm.commercial.common.create')
-                                  : t('crm.commercial.common.save')}
+                                : t('crm.commercial.quotations.form.submit')}
                         </button>
                     </div>
                 </form>

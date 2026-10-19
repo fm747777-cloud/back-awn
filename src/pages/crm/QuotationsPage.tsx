@@ -132,6 +132,11 @@ export const QuotationsPage: React.FC = () => {
         queryFn: () => crmApi.contacts.getAll({ limit: 200 }),
     });
 
+    const { data: leadsRes } = useQuery({
+        queryKey: ['crm', 'leads', 'lookup'],
+        queryFn: () => crmApi.leads.getAll({ limit: 200 }),
+    });
+
     const { data: taxesRes } = useQuery({
         queryKey: ['crm', 'taxes', 'lookup'],
         queryFn: () => crmApi.getTaxes({ limit: 100 }),
@@ -268,6 +273,7 @@ export const QuotationsPage: React.FC = () => {
     const companies = companiesRes?.data || [];
     const deals = dealsRes?.data || [];
     const contacts = contactsRes?.data || [];
+    const leads = leadsRes?.data || [];
     const taxes = taxesRes?.data || [];
 
     const preselectedDeal =
@@ -970,6 +976,7 @@ export const QuotationsPage: React.FC = () => {
                 mode={formMode}
                 initialData={editingRecord}
                 preselectedDeal={preselectedDeal}
+                leads={leads}
                 companies={companies}
                 deals={deals}
                 contacts={contacts}

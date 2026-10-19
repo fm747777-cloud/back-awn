@@ -18,7 +18,10 @@
     "verify:crm:invoices": "npx tsx scripts/verify-crm-phase2-invoices.ts",
     "verify:crm:workflow": "npx tsx scripts/verify-crm-lead-to-invoice-workflow.ts",
     "verify:customer:consolidation": "npx tsx scripts/verify-customer-consolidation.ts",
-    "verify:crm:customer:deal": "npx tsx scripts/verify-crm-customer-deal-integration.ts"
+    "verify:crm:customer:deal": "npx tsx scripts/verify-crm-customer-deal-integration.ts",
+    "verify:crm:customer:invoice": "npx tsx scripts/verify-crm-customer-invoice-integration.ts",
+    "verify:crm:customer:quotation": "npx tsx scripts/verify-crm-customer-quotation-integration.ts",
+    "verify:crm:quotation:form": "npx tsx scripts/verify-crm-quotation-form-redesign.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
