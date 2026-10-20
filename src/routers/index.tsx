@@ -56,7 +56,7 @@ const AssetAuditTrailPage = () => import('../pages/asset-management/AssetAuditTr
 
 // UMS Module (User Management System)
 const UmsPage = () => import('../pages/UmsPage').then((m) => ({ Component: m.UmsPage }));
-const UmsDashboardPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsDashboardPage }));
+const UmsDashboardPage = () => import('../pages/ums/UmsDashboardPage').then((m) => ({ Component: m.UmsDashboardPage }));
 const UmsEmployeesPage = () => import('../pages/ums/UmsEmployeesPage').then((m) => ({ Component: m.UmsEmployeesPage }));
 const UmsEmployeeNewPage = () => import('../pages/ums/UmsEmployeeWizardPage').then((m) => ({ Component: m.UmsEmployeeWizardPage }));
 const UmsEmployeeDetailsPage = () => import('../pages/ums/UmsEmployeesPage').then((m) => ({ Component: m.UmsEmployeeDetailsPage }));
@@ -67,7 +67,7 @@ const UmsSecurityGroupsPage = () => import('../pages/ums/UmsSecurityGroupsPage')
 const UmsRolesPage = () => import('../pages/ums/UmsRolesPage').then((m) => ({ Component: m.UmsRolesPage }));
 const UmsBranchesPage = () => import('../pages/ums/UmsBranchesPage').then((m) => ({ Component: m.UmsBranchesPage }));
 const UmsCustomAddonsPage = () => import('../pages/ums/UmsCustomAddonsPage').then((m) => ({ Component: m.UmsCustomAddonsPage }));
-const UmsAuditTrailPage = () => import('../pages/ums/UmsPlaceholderPages').then((m) => ({ Component: m.UmsAuditTrailPage }));
+const UmsAuditTrailPage = () => import('../pages/ums/UmsAuditTrailPage').then((m) => ({ Component: m.UmsAuditTrailPage }));
 
 // CRM Module (Client Relations Management)
 const CrmPage = () => import('../pages/CrmPage').then((m) => ({ Component: m.CrmPage }));
