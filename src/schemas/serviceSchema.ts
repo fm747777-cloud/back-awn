@@ -37,7 +37,7 @@ export const INPUT_DOCUMENT_PRESETS = [
 
 export const addServiceSchema = z.object({
     group_type: z.string().optional(),
-    serviceGroup_id: z.string().optional(),
+    // serviceGroup_id: z.string().optional(),
     service_title: z.string().min(1, 'Service title is required'),
     service_description: z.string().optional(),
     servicePortal_id: z.string().min(1, 'Service portal is required'),
@@ -58,7 +58,7 @@ export const addServiceSchema = z.object({
     service_responsible_department_id: z.string().min(1, 'Responsible department is required'),
     service_submission_mode: z.string().min(1, 'Submission mode is required'),
     sadad_payment_available: z.boolean(),
-    other_payment_method_id: z.string().optional(),
+    other_payment_method: z.string().optional(),
     service_fees: z.string().optional(),
     serviceDoc_ids: z.array(z.string()).optional(),
     // input_documents: z.array(z.string()).optional(),
@@ -73,11 +73,11 @@ export const addServiceSchema = z.object({
         });
     }
     if (!data.sadad_payment_available) {
-        if (!data.other_payment_method_id || data.other_payment_method_id.trim() === '') {
+        if (!data.other_payment_method || data.other_payment_method.trim() === '') {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: 'Other payment method is required when Sadad is unavailable',
-                path: ['other_payment_method_id'],
+                path: ['other_payment_method'],
             });
         }
     }
@@ -102,12 +102,13 @@ export const serviceCategorySchema = z.object({
 
 export type ServiceCategoryFormValues = z.infer<typeof serviceCategorySchema>;
 
+
 export const servicePortalSchema = z.object({
-    name: z.string().min(1, 'Portal name is required'),
-    url: z.string().min(1, 'URL is required'),
-    contact_number: z.number().optional().or(z.string().optional()),
-    email: z.string().optional(),
-    description: z.string().optional(),
+    name: z.string().trim().min(1, "اسم البوابة مطلوب"),
+    description: z.string().trim().min(1, "وصف البوابة مطلوب"),
+    url: z.union([z.literal(""), z.string().url("رابط البوابة غير صالح")]).optional(),
+    contact_number: z.string().trim().min(1, "رقم التواصل مطلوب"),
+    email: z.string().trim().min(1, "البريد الإلكتروني مطلوب").email("البريد الإلكتروني غير صالح"),
 });
 
 export type ServicePortalFormValues = z.infer<typeof servicePortalSchema>;
@@ -121,17 +122,17 @@ export const serviceTagSchema = z.object({
 export type ServiceTagFormValues = z.infer<typeof serviceTagSchema>;
 
 export interface CreateServicePackageDto {
-    service_group_ids: string[]
+    group_ids: string[]
     package_name: string;
     unit_price: number;
-    group_type?: GroupType;
+    package_type?: GroupType;
     status?: ServiceTagStatus;
     description?: string;
 }
 
 export const servicePackageSchema = z.object({
-    group_type: z.nativeEnum(GroupType),
-    service_group_ids: z.array(z.string().uuid()).min(1, 'Please select at least one service group'),
+    package_type: z.nativeEnum(GroupType),
+    group_ids: z.array(z.string().uuid()).min(1, 'Please select at least one service group'),
     package_name: z.string().trim().min(1, 'Package Name is required'),
     unit_price: z.number().min(0, 'Unit price cannot be negative'),
     description: z.string().optional(),

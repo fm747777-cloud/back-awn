@@ -158,12 +158,15 @@ export const EdmsDocumentTemplatesPage: React.FC = () => {
         onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || t('common.error', 'Something went wrong')),
     });
     const updateMutation = useMutation({
-        mutationFn: (data: DocumentFormValues & { id: string }) => documentApi.updateDocument(data),
+        mutationFn: (data: DocumentFormValues & { id: string }) => {
+            const { id, ...restData } = data
+            return documentApi.updateDocument(data.id, restData)
+        },
         onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['documents'] }); setIsDrawerOpen(false); setEditingItem(null); toast.success(t('edms.documents.feedback.updateSuccess', 'Document updated successfully')); },
         onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || t('common.error', 'Something went wrong')),
     });
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => documentApi.deleteDocument({ data: { id } }),
+        mutationFn: (id: string) => documentApi.deleteDocument(id),
         onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['documents'] }); setDeletingItem(null); toast.success(t('edms.documents.feedback.deleteSuccess', 'Document deleted successfully')); },
         onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || t('common.error', 'Something went wrong')),
     });
@@ -182,14 +185,13 @@ export const EdmsDocumentTemplatesPage: React.FC = () => {
 
     const columns = useMemo<ColumnDef<any, unknown>[]>(() => [
         {
-            id: 'templateCode',
+            id: 'codeName',
             header: t('edms.documents.columns.templateCode', 'Template Code'),
             cell: ({ row }: { row: any }) => (
                 <span
-                    dir="ltr"
                     className="inline-flex items-center rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] px-2.5 py-1.5 font-mono text-xs font-semibold tracking-wide text-[#2D3F2C] dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-300"
                 >
-                    {generateTemplateCode(row.index)}
+                    {generateTemplateCode(row.original.codeName)}
                 </span>
             ),
         },

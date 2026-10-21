@@ -66,15 +66,24 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
     };
 
     const mutation = useMutation({
-        mutationFn: (data: ServiceTagFormValues) =>
-            serviceApi.createServiceTag({
-                ...data,
-                ...(initialData?.id ? { id: initialData.id } : {}),
-            }),
+        mutationFn: (data: ServiceTagFormValues) => {
+            if (initialData?.id) {
+                // Edit: use PATCH update API
+                return serviceApi.updateServiceTag(initialData.id, data);
+            }
+
+            // Create: use POST create API
+            return serviceApi.createServiceTag(data);
+        },
+
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["serviceTags"] });
+            queryClient.invalidateQueries({
+                queryKey: ["serviceTags"],
+            });
+
             handleCloseModal();
         },
+
         onError: (error) => {
             console.error("Failed to save service tag:", error);
         },
@@ -127,11 +136,10 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
                                 type="text"
                                 placeholder={t("tags.tagNamePlaceholder")}
                                 {...register("name")}
-                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition ${
-                                    errors.name
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition ${errors.name
                                         ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
                                         : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
-                                }`}
+                                    }`}
                             />
                             {errors.name && (
                                 <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.name.message)}</p>
@@ -145,11 +153,10 @@ export const AddServiceTagModal: React.FC<AddServiceTagModalProps> = ({
                             </label>
                             <select
                                 {...register("status")}
-                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition bg-white ${
-                                    errors.status
+                                className={`w-full border rounded-lg p-2.5 text-sm outline-none transition bg-white ${errors.status
                                         ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15"
                                         : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"
-                                }`}
+                                    }`}
                             >
                                 <option value={ServiceTagStatus.ACTIVE}>{t("common.active")}</option>
                                 <option value={ServiceTagStatus.INACTIVE}>{t("common.inactive")}</option>

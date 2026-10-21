@@ -11,7 +11,7 @@ import {
     OTHER_PAYMENT_METHODS,
     type AddServiceFormValues,
 } from "../../schemas/serviceSchema";
-import { serviceApi } from "../../api/api";
+import { documentApi, serviceApi } from "../../api/api";
 import { focusAndScrollToFirstError } from "../../utils/formValidation";
 import { translateError } from "../../i18n";
 
@@ -22,6 +22,8 @@ interface AddServiceModalProps {
         id?: string;
         [key: string]: any;
     };
+    /** عرض الخدمة فقط دون السماح بتعديل الحقول أو إرسال النموذج. */
+    isView?: boolean;
 }
 
 interface ServiceDoc {
@@ -34,6 +36,11 @@ interface ServiceDoc {
     documentType?: string | { id?: string; name?: string; type?: string };
     [key: string]: any;
 }
+
+type ServicePayload = AddServiceFormValues & {
+    id?: string;
+    document_ids: string[];
+};
 
 const extractItems = <T,>(response: any): T[] => {
     if (Array.isArray(response)) return response;
@@ -57,34 +64,74 @@ const getDocType = (doc: ServiceDoc): string => {
 const getDocName = (doc: ServiceDoc): string =>
     doc.name || doc.title || doc.code || doc.id;
 
+/**
+ * استخراج IDs المستندات المرتبطة بالخدمة.
+ * مهم: serviceDocs قد تكون سجلات ربط ServiceDoc،
+ * لذلك نأخذ document.id وليس serviceDocs[].id.
+ */
 const getInitialDocIds = (source: any): string[] => {
-    const ids = source?.serviceDoc_ids;
+    const directIds =
+        source?.document_ids ??
+        source?.documentIds ??
+        source?.Document_ids ??
+        source?.serviceDoc_ids;
 
-    if (Array.isArray(ids)) {
-        return ids.filter(
-            (id: unknown): id is string => typeof id === "string"
+    if (Array.isArray(directIds)) {
+        const ids = directIds.map((item: any) =>
+            typeof item === "string"
+                ? item
+                : item?.document?.id ?? item?.documentId ?? item?.document_id ?? item?.id ?? null
         );
+        return [...new Set(ids.filter((id: unknown): id is string => typeof id === "string"))];
     }
 
     const relatedDocs =
         source?.serviceDocs ??
         source?.serviceDoc ??
         source?.service_docs ??
+        source?.serviceDocuments ??
+        source?.service_documents ??
+        source?.documents ??
         [];
 
     if (!Array.isArray(relatedDocs)) return [];
 
-    return relatedDocs
-        .map((doc: any) => (typeof doc === "string" ? doc : doc?.id))
-        .filter(
-            (id: unknown): id is string => typeof id === "string"
-        );
+    return [
+        ...new Set(
+            relatedDocs
+                .map((item: any) => {
+                    if (typeof item === "string") return item;
+
+                    return (
+                        item?.document?.id ??
+                        item?.documentId ??
+                        item?.document_id ??
+                        item?.document?.document_id ??
+                        item?.doc?.id ??
+                        item?.document?.documentId ??
+                        item?.id ??
+                        null
+                    );
+                })
+                .filter(
+                    (id: unknown): id is string =>
+                        typeof id === "string"
+                )
+        ),
+    ];
+};
+
+const getResponseData = (response: any) => {
+    const data = response?.data?.data ?? response?.data ?? response;
+    if (Array.isArray(data)) return data[0] ?? null;
+    return data && typeof data === "object" ? data : null;
 };
 
 export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     isOpen,
     onClose,
     initialData,
+    isView = false,
 }) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
@@ -115,16 +162,14 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             group_type: "business",
             service_title: "",
             service_description: "",
-            serviceGroup_id: "",
             servicePortal_id: "",
-            service_category_id: "",
             serviceType_id: "",
             serviceTag_id: "",
             confirmation_required: false,
             delegation_required: false,
             service_submission_mode: "hybrid",
             sadad_payment_available: false,
-            other_payment_method_id: "",
+            other_payment_method: "",
             service_fees: "00",
             service_validity: "recurring",
             service_processing_time: "1",
@@ -140,53 +185,21 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         },
     });
 
-    // Service groups: API instead of hardcoded mock data.
-    const {
-        data: serviceGroupsResponse,
-        isLoading: isLoadingServiceGroups,
-        isError: isServiceGroupsError,
-        refetch: refetchServiceGroups,
-    } = useQuery({
-        queryKey: ["serviceGroups"],
-        queryFn: () => serviceApi.getServiceGroup({}),
-        enabled: isOpen,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const {
-        data: portalsResponse,
-        isLoading: isLoadingPortals,
-    } = useQuery({
+    const { data: portalsResponse, isLoading: isLoadingPortals } = useQuery({
         queryKey: ["servicePortals"],
         queryFn: () => serviceApi.getServicePortals({}),
         enabled: isOpen,
         staleTime: 5 * 60 * 1000,
     });
 
-    const {
-        data: categoriesResponse,
-        isLoading: isLoadingCategories,
-    } = useQuery({
-        queryKey: ["serviceCategories"],
-        queryFn: () => serviceApi.getServiceCategories({}),
-        enabled: isOpen,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const {
-        data: typesResponse,
-        isLoading: isLoadingTypes,
-    } = useQuery({
+    const { data: typesResponse, isLoading: isLoadingTypes } = useQuery({
         queryKey: ["serviceTypes"],
         queryFn: () => serviceApi.getServiceTypes({}),
         enabled: isOpen,
         staleTime: 5 * 60 * 1000,
     });
 
-    const {
-        data: tagsResponse,
-        isLoading: isLoadingTags,
-    } = useQuery({
+    const { data: tagsResponse, isLoading: isLoadingTags } = useQuery({
         queryKey: ["serviceTags"],
         queryFn: () => serviceApi.getServiceTags({}),
         enabled: isOpen,
@@ -200,7 +213,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         refetch: refetchServiceDocs,
     } = useQuery({
         queryKey: ["serviceDocs"],
-        queryFn: () => serviceApi.getServiceDocs({}),
+        queryFn: () => documentApi.getDocuments({}),
         enabled: isOpen,
         staleTime: 5 * 60 * 1000,
     });
@@ -214,9 +227,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         enabled: isOpen && Boolean(initialData?.id),
     });
 
-    const serviceGroups = extractItems<any>(serviceGroupsResponse);
     const portals = extractItems<any>(portalsResponse);
-    const categories = extractItems<any>(categoriesResponse);
     const types = extractItems<any>(typesResponse);
     const tags = extractItems<any>(tagsResponse);
     const serviceDocs = extractItems<ServiceDoc>(serviceDocsResponse);
@@ -240,14 +251,11 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     const serviceValidity = watch("service_validity");
     const sadadPaymentAvailable = watch("sadad_payment_available");
 
-    // Initialize the form for create/edit.
     useEffect(() => {
         if (!isOpen) return;
-
         if (initialData?.id && isLoadingServiceDetail) return;
 
-        const detail =
-            serviceDetailResponse?.data ?? serviceDetailResponse;
+        const detail = getResponseData(serviceDetailResponse);
 
         const sourceData = initialData?.id
             ? detail && typeof detail === "object"
@@ -260,16 +268,14 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 group_type: "business",
                 service_title: "",
                 service_description: "",
-                serviceGroup_id: "",
                 servicePortal_id: "",
-                service_category_id: "",
                 serviceType_id: "",
                 serviceTag_id: "",
                 confirmation_required: false,
                 delegation_required: false,
                 service_submission_mode: "hybrid",
                 sadad_payment_available: false,
-                other_payment_method_id: "",
+                other_payment_method: "",
                 service_fees: "00",
                 service_validity: "recurring",
                 service_processing_time: "1",
@@ -296,18 +302,10 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             sourceData.serviceType?.id ||
             "";
 
-        const matchedType = types.find(
-            (item: any) => item.id === resolvedTypeId
-        );
-
-        const resolvedCategoryId =
-            sourceData.service_category_id ||
-            sourceData.serviceCategory?.id ||
-            sourceData.serviceType?.serviceCategory?.id ||
-            matchedType?.serviceCategory?.id ||
-            "";
-
-        const rawValidity = sourceData.service_validity ?? sourceData.validity ?? "recurring";
+        const rawValidity =
+            sourceData.service_validity ??
+            sourceData.validity ??
+            "recurring";
 
         const resolvedValidity = [
             "oneTime",
@@ -320,35 +318,49 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
 
         const resolvedSadad =
             sourceData.sadad_payment_available !== undefined
-                ? Boolean(sourceData.sadad_payment_available)
+                ? [true, "true", "Yes", "yes", 1].includes(sourceData.sadad_payment_available)
                 : sourceData.servicePayment?.sadad_payment_available !== undefined
-                    ? String(sourceData.servicePayment.sadad_payment_available) === "true"
+                    ? String(
+                        sourceData.servicePayment.sadad_payment_available
+                    ) === "true"
                     : sourceData.sadadAvailable === "Yes";
 
         const resolvedOtherPaymentMethod =
-            sourceData.other_payment_method_id ||
+            sourceData.other_payment_method ||
             sourceData.servicePayment?.other_payment_method ||
-            (!resolvedSadad ? OTHER_PAYMENT_METHODS[0]?.id || "bank_transfer" : "");
+            (!resolvedSadad
+                ? OTHER_PAYMENT_METHODS[0]?.id || "bank_transfer"
+                : "");
 
         const serviceDocIds = getInitialDocIds(sourceData);
+
         const processDescription =
             sourceData.process_description ??
             sourceData.processDescription ??
             "";
 
         reset({
-            group_type: sourceData.group_type || sourceData.relatedTo || "business",
-            service_title: sourceData.service_title ?? sourceData.title ?? "",
+            group_type:
+                sourceData.group_type ||
+                sourceData.relatedTo ||
+                "business",
+            service_title:
+                sourceData.service_title ??
+                sourceData.title ??
+                "",
             service_description:
-                sourceData.service_description ?? sourceData.description ?? "",
-            serviceGroup_id:
-                sourceData.serviceGroup_id || sourceData.serviceGroup?.id || "",
+                sourceData.service_description ??
+                sourceData.description ??
+                "",
             servicePortal_id:
-                sourceData.servicePortal_id || sourceData.servicePortal?.id || "",
-            service_category_id: resolvedCategoryId,
+                sourceData.servicePortal_id ||
+                sourceData.servicePortal?.id ||
+                "",
             serviceType_id: resolvedTypeId,
             serviceTag_id:
-                sourceData.serviceTag_id || sourceData.serviceTag?.id || "",
+                sourceData.serviceTag_id ||
+                sourceData.serviceTag?.id ||
+                "",
             service_processing_time: String(
                 sourceData.service_processing_time ??
                 sourceData.processingTime ??
@@ -372,13 +384,14 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 sourceData.service_responsible_department_id || "dept-1",
             service_submission_mode:
                 sourceData.service_submission_mode || "hybrid",
-            confirmation_required: Boolean(sourceData.confirmation_required),
-            delegation_required: Boolean(
-                sourceData.delegation_required ??
-                sourceData.delegationRequired === "Yes"
+            confirmation_required: Boolean(
+                sourceData.confirmation_required
+            ),
+            delegation_required: [true, "true", "Yes", "yes", 1].includes(
+                sourceData.delegation_required ?? sourceData.delegationRequired
             ),
             sadad_payment_available: resolvedSadad,
-            other_payment_method_id: resolvedOtherPaymentMethod,
+            other_payment_method: resolvedOtherPaymentMethod,
             service_fees: String(
                 sourceData.service_fees ??
                 sourceData.servicePayment?.fees ??
@@ -406,7 +419,6 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         types,
     ]);
 
-    // Keep serviceDoc_ids synchronized with the selected documents.
     useEffect(() => {
         setValue("serviceDoc_ids", selectedServiceDocIds, {
             shouldDirty: true,
@@ -414,12 +426,16 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     }, [selectedServiceDocIds, setValue]);
 
     const mutation = useMutation({
-        mutationFn: (data: AddServiceFormValues & { id?: string }) => {
-            const { ...payload } = data as AddServiceFormValues;
+        mutationFn: (data: ServicePayload) => {
+            const { id, document_ids, ...formData } = data;
 
-            // return payload.id
-            //     ? serviceApi.updateService(payload.id, payload)
-            //     :
+            const payload = {
+                ...formData,
+                document_ids,
+            };
+            if (id) {
+                return serviceApi.updateService(id, payload);
+            }
             return serviceApi.createService(payload);
         },
         onSuccess: (response: any) => {
@@ -438,9 +454,12 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                     : t("services.messages.created"))
             );
 
+            isSubmittingRef.current = false;
             handleClose();
         },
         onError: (error: any) => {
+            isSubmittingRef.current = false;
+
             const message = error?.response?.data?.message;
 
             toast.error(
@@ -488,6 +507,11 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
     };
 
     const handleNext = async () => {
+        if (isView) {
+            setCurrentStep((step) => Math.min(step + 1, 4));
+            return;
+        }
+
         if (currentStep === 1) {
             const fields = getStep1Fields();
             const valid = await trigger(fields);
@@ -510,7 +534,7 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             ];
 
             if (!sadadPaymentAvailable) {
-                fields.push("other_payment_method_id");
+                fields.push("other_payment_method");
             }
 
             const valid = await trigger(fields);
@@ -527,7 +551,9 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             return;
         }
 
-        if (currentStep === 3) setCurrentStep(4);
+        if (currentStep === 3) {
+            setCurrentStep(4);
+        }
     };
 
     const handleBack = () => {
@@ -569,7 +595,9 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             setIsUnderline(document.queryCommandState("underline"));
 
             const block = document.queryCommandValue("formatBlock");
-            setIsHeading(["h1", "h2", "h3", "<h3>", "H3"].includes(block));
+            setIsHeading(
+                ["h1", "h2", "h3", "<h3>", "H3"].includes(block)
+            );
         } catch {
             // Browser formatting state may be unavailable.
         }
@@ -588,7 +616,11 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         if (!editorRef.current) return;
 
         editorRef.current.focus();
-        document.execCommand("formatBlock", false, isHeading ? "p" : "h3");
+        document.execCommand(
+            "formatBlock",
+            false,
+            isHeading ? "p" : "h3"
+        );
         syncEditorContent();
         checkActiveFormats();
     };
@@ -614,7 +646,6 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         const step1Keys = [
             "service_title",
             "servicePortal_id",
-            "service_category_id",
             "serviceType_id",
             "service_processing_time",
             "service_processing_frequen",
@@ -628,12 +659,11 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             "confirmation_required",
             "delegation_required",
             "group_type",
-            "serviceGroup_id",
         ];
 
         const step2Keys = [
             "sadad_payment_available",
-            "other_payment_method_id",
+            "other_payment_method",
             "service_fees",
         ];
 
@@ -643,7 +673,10 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             targetStep = 1;
         } else if (keys.some((key) => step2Keys.includes(key))) {
             targetStep = 2;
-        } else if (keys.includes("serviceDoc_ids")) {
+        } else if (
+            keys.includes("serviceDoc_ids") ||
+            keys.includes("document_ids")
+        ) {
             targetStep = 3;
         } else if (keys.includes("process_description")) {
             targetStep = 4;
@@ -657,7 +690,19 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
         );
     };
 
+    const isSubmittingRef = useRef(false);
     const onSubmit = (data: AddServiceFormValues) => {
+        if (isView) return;
+
+        if (currentStep !== 4) {
+            setCurrentStep(4);
+            return;
+        }
+
+        if (isSubmittingRef.current || mutation.isPending) {
+            return;
+        }
+
         const editorText = editorRef.current
             ? (
                 editorRef.current.innerText ||
@@ -667,24 +712,31 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
             : "";
 
         const processDescription = editorText
-            ? editorRef.current?.innerHTML || data.process_description || ""
+            ? editorRef.current?.innerHTML ||
+            data.process_description ||
+            ""
             : "";
 
         const {
             input_documents: _oldInputs,
             output_documents: _oldOutputs,
+            serviceDoc_ids: _oldServiceDocIds,
             ...cleanData
         } = data as AddServiceFormValues & {
             input_documents?: unknown;
             output_documents?: unknown;
+            serviceDoc_ids?: unknown;
         };
 
-        mutation.mutate({
+        const payload: ServicePayload = {
             ...cleanData,
             ...(initialData?.id ? { id: initialData.id } : {}),
             process_description: processDescription,
-            serviceDoc_ids: [...new Set(selectedServiceDocIds)],
-        });
+            document_ids: [...new Set(selectedServiceDocIds)],
+        };
+
+        isSubmittingRef.current = true;
+        mutation.mutate(payload);
     };
 
     const steps = [
@@ -707,9 +759,11 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                 <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-6 py-4">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">
-                            {initialData?.id
-                                ? t("services.modal.editTitle")
-                                : t("services.modal.addTitle")}
+                            {isView
+                                ? t("services.modal.viewTitle", "View Service")
+                                : initialData?.id
+                                    ? t("services.modal.editTitle")
+                                    : t("services.modal.addTitle")}
                         </h2>
                     </div>
 
@@ -758,696 +812,642 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                     <form
                         id="add-service-form"
                         onSubmit={handleSubmit(onSubmit, onInvalid)}
+                        onKeyDown={(event) => {
+                            if (event.key === "Enter" && currentStep < 4 && (event.target as HTMLElement).tagName !== "TEXTAREA") {
+                                event.preventDefault();
+                            }
+                        }}
                     >
-                        {/* STEP 1 */}
-                        <div className={currentStep === 1 ? "space-y-4 pt-2" : "hidden"}>
-                            <h3 className="text-sm font-bold text-slate-800">
-                                {t("services.modal.step1")}
-                            </h3>
+                        <fieldset disabled={isView} className="m-0 min-w-0 w-full border-0 p-0">
+                            {/* STEP 1 */}
+                            <div className={currentStep === 1 ? "space-y-4 pt-2" : "hidden"}>
+                                <h3 className="text-sm font-bold text-slate-800">
+                                    {t("services.modal.step1")}
+                                </h3>
 
-                            <div>
-                                <label className="mb-2 block text-xs font-semibold text-slate-700">
-                                    {t("services.relatedTo")}
-                                </label>
-
-                                <div className="flex flex-wrap gap-6 text-xs text-slate-600">
-                                    {["business", "employee", "asset"].map((item) => (
-                                        <label key={item} className="flex cursor-pointer items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                value={item}
-                                                {...register("group_type")}
-                                                className="h-4 w-4 accent-[#2D3F2C]"
-                                            />
-                                            {t(`services.entityTypes.${item}`, item)}
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div className="md:col-span-2">
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.serviceTitle")} *
-                                    </label>
-                                    <input
-                                        {...register("service_title")}
-                                        placeholder={t("services.modal.serviceTitlePlaceholder")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    />
-                                    {errors.service_title && (
-                                        <p className="mt-1 text-[10px] text-red-500">
-                                            {translateError(t, errors.service_title.message)}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.serviceDescription")}
-                                    </label>
-                                    <textarea
-                                        rows={2}
-                                        {...register("service_description")}
-                                        className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    />
-                                </div>
-
-                                {/* Service group API */}
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.serviceGroup")}
-                                    </label>
-                                    <select
-                                        {...register("serviceGroup_id")}
-                                        disabled={isLoadingServiceGroups}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs disabled:opacity-50"
-                                    >
-                                        <option value="">
-                                            {isLoadingServiceGroups
-                                                ? "Loading service groups..."
-                                                : "Select service group"}
-                                        </option>
-
-                                        {serviceGroups.map((group: any) => (
-                                            <option key={group.id} value={group.id}>
-                                                {group.name || group.group_name || group.title || group.id}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                    {isServiceGroupsError && (
-                                        <div className="mt-1 flex items-center justify-between gap-2">
-                                            <p className="text-[10px] text-red-500">
-                                                Failed to load service groups.
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() => refetchServiceGroups()}
-                                                className="text-[10px] font-semibold text-red-600 underline"
-                                            >
-                                                Retry
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.servicePortal")} *
-                                    </label>
-                                    <select
-                                        {...register("servicePortal_id")}
-                                        disabled={isLoadingPortals}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="">
-                                            {isLoadingPortals
-                                                ? "Loading..."
-                                                : t("services.modal.selectServicePortal")}
-                                        </option>
-                                        {portals.map((item: any) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name || item.title || item.name_ar || item.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.servicePortal_id && (
-                                        <p className="mt-1 text-[10px] text-red-500">
-                                            {translateError(t, errors.servicePortal_id.message)}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.serviceCategory")}
-                                    </label>
-                                    <select
-                                        {...register("service_category_id")}
-                                        disabled={isLoadingCategories}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="">
-                                            {isLoadingCategories
-                                                ? "Loading..."
-                                                : t("services.modal.selectServiceCategory")}
-                                        </option>
-                                        {categories.map((item: any) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name || item.title || item.name_ar || item.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.serviceType")} *
-                                    </label>
-                                    <select
-                                        {...register("serviceType_id")}
-                                        disabled={isLoadingTypes}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="">
-                                            {isLoadingTypes
-                                                ? "Loading..."
-                                                : t("services.modal.selectServiceType")}
-                                        </option>
-                                        {types.map((item: any) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name || item.title || item.name_ar || item.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.serviceType_id && (
-                                        <p className="mt-1 text-[10px] text-red-500">
-                                            {translateError(t, errors.serviceType_id.message)}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.processingTimeLabel")} *
-                                    </label>
-                                    <input
-                                        dir="ltr"
-                                        {...register("service_processing_time")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
-                                    />
-                                    {errors.service_processing_time && (
-                                        <p className="mt-1 text-[10px] text-red-500">
-                                            {translateError(t, errors.service_processing_time.message)}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.processingFrequencyLabel")} *
-                                    </label>
-                                    <select
-                                        {...register("service_processing_frequen")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="hours">{t("services.hours")}</option>
-                                        <option value="days">{t("services.days")}</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.serviceTag")} *
-                                    </label>
-                                    <select
-                                        {...register("serviceTag_id")}
-                                        disabled={isLoadingTags}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="">
-                                            {isLoadingTags
-                                                ? "Loading..."
-                                                : t("services.modal.selectServiceTag")}
-                                        </option>
-                                        {tags.map((item: any) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.name || item.title || item.name_ar || item.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.validity")} *
-                                    </label>
-                                    <select
-                                        {...register("service_validity")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="recurring">{t("services.recurring")}</option>
-                                        <option value="oneTime">{t("services.oneTime")}</option>
-                                    </select>
-                                </div>
-
-                                {serviceValidity === "recurring" && (
-                                    <>
-                                        <div>
-                                            <label className="mb-1 block text-xs font-medium text-slate-700">
-                                                {t("services.modal.recurringType")}
-                                            </label>
-                                            <select
-                                                {...register("recurring_type")}
-                                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                            >
-                                                <option value="monthly">{t("services.monthly")}</option>
-                                                <option value="yearly">{t("services.yearly")}</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-1 block text-xs font-medium text-slate-700">
-                                                {t("services.modal.serviceDueDate")}
-                                            </label>
-                                            <input
-                                                type="date"
-                                                dir="ltr"
-                                                {...register("service_due_date")}
-                                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-1 block text-xs font-medium text-slate-700">
-                                                {t("services.modal.servicePeriod")} *
-                                            </label>
-                                            <input
-                                                dir="ltr"
-                                                {...register("service_period")}
-                                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
-                                            />
-                                            {errors.service_period && (
-                                                <p className="mt-1 text-[10px] text-red-500">
-                                                    {translateError(t, errors.service_period.message)}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-1 block text-xs font-medium text-slate-700">
-                                                {t("services.modal.periodType")}
-                                            </label>
-                                            <select
-                                                {...register("period_type")}
-                                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                            >
-                                                <option value="days">{t("services.days")}</option>
-                                                <option value="months">{t("services.months")}</option>
-                                                <option value="years">{t("services.years")}</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="mb-1 block text-xs font-medium text-slate-700">
-                                                {t("services.modal.serviceEventDate")}
-                                            </label>
-                                            <input
-                                                type="date"
-                                                dir="ltr"
-                                                {...register("service_event_date")}
-                                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
-                                            />
-                                        </div>
-                                    </>
-                                )}
-
-                                <div>
-                                    <label className="mb-2 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.confirmationRequired")}
-                                    </label>
-                                    <div className="flex gap-4 text-xs">
-                                        {[true, false].map((value) => (
-                                            <label key={String(value)} className="flex items-center gap-1.5">
-                                                <input
-                                                    type="radio"
-                                                    checked={watch("confirmation_required") === value}
-                                                    onChange={() =>
-                                                        setValue("confirmation_required", value, {
-                                                            shouldDirty: true,
-                                                        })
-                                                    }
-                                                    className="h-4 w-4 accent-[#2D3F2C]"
-                                                />
-                                                {value ? t("common.yes") : t("common.no")}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="mb-2 block text-xs font-medium text-slate-700">
-                                        {t("services.delegationRequired")}
-                                    </label>
-                                    <div className="flex gap-4 text-xs">
-                                        {[true, false].map((value) => (
-                                            <label key={String(value)} className="flex items-center gap-1.5">
-                                                <input
-                                                    type="radio"
-                                                    checked={watch("delegation_required") === value}
-                                                    onChange={() =>
-                                                        setValue("delegation_required", value, {
-                                                            shouldDirty: true,
-                                                        })
-                                                    }
-                                                    className="h-4 w-4 accent-[#2D3F2C]"
-                                                />
-                                                {value ? t("common.yes") : t("common.no")}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.responsibleDepartment")} *
-                                    </label>
-                                    <select
-                                        {...register("service_responsible_department_id")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        {["dept-1", "dept-2", "dept-3", "dept-4"].map((id) => (
-                                            <option key={id} value={id}>
-                                                {t(`services.departments.${id}`)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-slate-700">
-                                        {t("services.modal.submissionMode")} *
-                                    </label>
-                                    <select
-                                        {...register("service_submission_mode")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
-                                    >
-                                        <option value="hybrid">{t("services.submissionModes.hybrid")}</option>
-                                        <option value="online">{t("services.submissionModes.online")}</option>
-                                        <option value="offline">{t("services.submissionModes.offline")}</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* STEP 2 */}
-                        <div className={currentStep === 2 ? "space-y-4 pt-2" : "hidden"}>
-                            <h3 className="text-sm font-bold text-slate-800">
-                                {t("services.modal.step2")}
-                            </h3>
-
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div>
                                     <label className="mb-2 block text-xs font-semibold text-slate-700">
-                                        {t("services.sadadAvailable")} *
+                                        {t("services.relatedTo")}
                                     </label>
-                                    <div className="flex gap-6 text-xs">
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                checked={sadadPaymentAvailable === true}
-                                                onChange={() => {
-                                                    setValue("sadad_payment_available", true, {
-                                                        shouldDirty: true,
-                                                    });
-                                                    setValue("other_payment_method_id", "");
-                                                    clearErrors("other_payment_method_id");
-                                                }}
-                                                className="h-4 w-4 accent-[#2D3F2C]"
-                                            />
-                                            {t("common.yes")}
-                                        </label>
 
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                checked={sadadPaymentAvailable === false}
-                                                onChange={() =>
-                                                    setValue("sadad_payment_available", false, {
-                                                        shouldDirty: true,
-                                                    })
-                                                }
-                                                className="h-4 w-4 accent-[#2D3F2C]"
-                                            />
-                                            {t("common.no")}
-                                        </label>
+                                    <div className="flex flex-wrap gap-6 text-xs text-slate-600">
+                                        {["business", "employee", "asset"].map((item) => (
+                                            <label key={item} className="flex cursor-pointer items-center gap-2">
+                                                <input
+                                                    type="radio"
+                                                    value={item}
+                                                    {...register("group_type")}
+                                                    className="h-4 w-4 accent-[#2D3F2C]"
+                                                />
+                                                {t(`services.entityTypes.${item}`, item)}
+                                            </label>
+                                        ))}
                                     </div>
                                 </div>
 
-                                {!sadadPaymentAvailable && (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div className="md:col-span-2">
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.serviceTitle")} *
+                                        </label>
+                                        <input
+                                            {...register("service_title")}
+                                            placeholder={t("services.modal.serviceTitlePlaceholder")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        />
+                                        {errors.service_title && (
+                                            <p className="mt-1 text-[10px] text-red-500">
+                                                {translateError(t, errors.service_title.message)}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.modal.serviceDescription")}
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            {...register("service_description")}
+                                            className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        />
+                                    </div>
+
                                     <div>
-                                        <label className="mb-1 block text-xs font-semibold text-slate-700">
-                                            {t("services.modal.otherPaymentMethod")} *
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.servicePortal")} *
                                         </label>
                                         <select
-                                            {...register("other_payment_method_id")}
+                                            {...register("servicePortal_id")}
+                                            disabled={isLoadingPortals}
                                             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
                                         >
                                             <option value="">
-                                                {t("services.modal.selectOtherPaymentMethod")}
+                                                {isLoadingPortals
+                                                    ? "Loading..."
+                                                    : t("services.modal.selectServicePortal")}
                                             </option>
-                                            {OTHER_PAYMENT_METHODS.map((method) => (
-                                                <option key={method.id} value={method.id}>
-                                                    {t(`services.paymentMethods.${method.id}`, method.name)}
+                                            {portals.map((item: any) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name || item.title || item.name_ar || item.id}
                                                 </option>
                                             ))}
                                         </select>
-                                        {errors.other_payment_method_id && (
+                                        {errors.servicePortal_id && (
                                             <p className="mt-1 text-[10px] text-red-500">
-                                                {translateError(t, errors.other_payment_method_id.message)}
+                                                {translateError(t, errors.servicePortal_id.message)}
                                             </p>
                                         )}
                                     </div>
-                                )}
 
-                                <div>
-                                    <label className="mb-1 block text-xs font-semibold text-slate-700">
-                                        {t("services.modal.serviceFeesSar")}
-                                    </label>
-                                    <input
-                                        dir="ltr"
-                                        {...register("service_fees")}
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* STEP 3: Service documents */}
-                        <div className={currentStep === 3 ? "space-y-6 pt-2" : "hidden"}>
-                            <h3 className="text-sm font-bold text-slate-800">
-                                {t("services.modal.step3")}
-                            </h3>
-
-                            {isLoadingServiceDocs && (
-                                <p className="text-xs text-slate-500">
-                                    Loading service documents...
-                                </p>
-                            )}
-
-                            {isServiceDocsError && (
-                                <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                                    <p className="text-xs text-red-600">
-                                        Failed to load documents.
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => refetchServiceDocs()}
-                                        className="mt-2 text-xs font-semibold text-red-700 underline"
-                                    >
-                                        Retry
-                                    </button>
-                                </div>
-                            )}
-
-                            {!isLoadingServiceDocs && !isServiceDocsError && (
-                                <>
-                                    {[
-                                        {
-                                            title: "Input Documents",
-                                            docs: inputServiceDocs,
-                                        },
-                                        {
-                                            title: "Output Documents",
-                                            docs: outputServiceDocs,
-                                        },
-                                    ].map(({ title, docs }) => (
-                                        <div key={title} className="space-y-2">
-                                            <label className="block text-xs font-semibold text-slate-700">
-                                                {title}
-                                            </label>
-
-                                            <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
-                                                {docs.length === 0 ? (
-                                                    <p className="p-2 text-xs text-slate-400">
-                                                        No documents available.
-                                                    </p>
-                                                ) : (
-                                                    docs.map((doc) => (
-                                                        <label
-                                                            key={doc.id}
-                                                            className="flex cursor-pointer items-center gap-2 rounded-md p-2 text-xs text-slate-700 hover:bg-white"
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={selectedServiceDocIds.includes(doc.id)}
-                                                                onChange={() => toggleServiceDoc(doc.id)}
-                                                                className="h-4 w-4 accent-[#2D3F2C]"
-                                                            />
-                                                            <span className="min-w-0 flex-1">
-                                                                {getDocName(doc)}
-                                                            </span>
-                                                        </label>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                                        <p className="text-xs font-semibold text-slate-700">
-                                            Selected documents: {selectedServiceDocIds.length}
-                                        </p>
-
-                                        {selectedServiceDocIds.length > 0 && (
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {selectedServiceDocIds.map((id) => {
-                                                    const doc = serviceDocs.find(
-                                                        (item) => item.id === id
-                                                    );
-
-                                                    return (
-                                                        <span
-                                                            key={id}
-                                                            className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-700"
-                                                        >
-                                                            {doc ? getDocName(doc) : id}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => toggleServiceDoc(id)}
-                                                                aria-label="Remove document"
-                                                                className="text-slate-400 hover:text-red-500"
-                                                            >
-                                                                <X size={12} />
-                                                            </button>
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.serviceType")} *
+                                        </label>
+                                        <select
+                                            {...register("serviceType_id")}
+                                            disabled={isLoadingTypes}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        >
+                                            <option value="">
+                                                {isLoadingTypes
+                                                    ? "Loading..."
+                                                    : t("services.modal.selectServiceType")}
+                                            </option>
+                                            {types.map((item: any) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name || item.title || item.name_ar || item.id}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.serviceType_id && (
+                                            <p className="mt-1 text-[10px] text-red-500">
+                                                {translateError(t, errors.serviceType_id.message)}
+                                            </p>
                                         )}
                                     </div>
-                                </>
-                            )}
-                        </div>
 
-                        {/* STEP 4: Process description */}
-                        <div className={currentStep === 4 ? "space-y-4 pt-2" : "hidden"}>
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-slate-800">
-                                    {t("services.modal.step4")}
-                                </h3>
-                                <span className="text-xs text-slate-400">
-                                    {t("services.modal.direction")}: {editorDirection.toUpperCase()}
-                                </span>
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.modal.processingTimeLabel")} *
+                                        </label>
+                                        <input
+                                            dir="ltr"
+                                            {...register("service_processing_time")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
+                                        />
+                                        {errors.service_processing_time && (
+                                            <p className="mt-1 text-[10px] text-red-500">
+                                                {translateError(t, errors.service_processing_time.message)}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.modal.processingFrequencyLabel")} *
+                                        </label>
+                                        <select
+                                            {...register("service_processing_frequen")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        >
+                                            <option value="hours">{t("services.hours")}</option>
+                                            <option value="days">{t("services.days")}</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.serviceTag")} *
+                                        </label>
+                                        <select
+                                            {...register("serviceTag_id")}
+                                            disabled={isLoadingTags}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        >
+                                            <option value="">
+                                                {isLoadingTags
+                                                    ? "Loading..."
+                                                    : t("services.modal.selectServiceTag")}
+                                            </option>
+                                            {tags.map((item: any) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name || item.title || item.name_ar || item.id}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.validity")} *
+                                        </label>
+                                        <select
+                                            {...register("service_validity")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        >
+                                            <option value="recurring">{t("services.recurring")}</option>
+                                            <option value="oneTime">{t("services.oneTime")}</option>
+                                        </select>
+                                    </div>
+
+                                    {serviceValidity === "recurring" && (
+                                        <>
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-slate-700">
+                                                    {t("services.modal.recurringType")}
+                                                </label>
+                                                <select
+                                                    {...register("recurring_type")}
+                                                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                                >
+                                                    <option value="monthly">{t("services.monthly")}</option>
+                                                    <option value="yearly">{t("services.yearly")}</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-slate-700">
+                                                    {t("services.modal.serviceDueDate")}
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    dir="ltr"
+                                                    {...register("service_due_date")}
+                                                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-slate-700">
+                                                    {t("services.modal.servicePeriod")} *
+                                                </label>
+                                                <input
+                                                    dir="ltr"
+                                                    {...register("service_period")}
+                                                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
+                                                />
+                                                {errors.service_period && (
+                                                    <p className="mt-1 text-[10px] text-red-500">
+                                                        {translateError(t, errors.service_period.message)}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-slate-700">
+                                                    {t("services.modal.periodType")}
+                                                </label>
+                                                <select
+                                                    {...register("period_type")}
+                                                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                                >
+                                                    <option value="days">{t("services.days")}</option>
+                                                    <option value="months">{t("services.months")}</option>
+                                                    <option value="years">{t("services.years")}</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="mb-1 block text-xs font-medium text-slate-700">
+                                                    {t("services.modal.serviceEventDate")}
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    dir="ltr"
+                                                    {...register("service_event_date")}
+                                                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div>
+                                        <label className="mb-2 block text-xs font-medium text-slate-700">
+                                            {t("services.modal.confirmationRequired")}
+                                        </label>
+                                        <div className="flex gap-4 text-xs">
+                                            {[true, false].map((value) => (
+                                                <label key={String(value)} className="flex items-center gap-1.5">
+                                                    <input
+                                                        type="radio"
+                                                        checked={watch("confirmation_required") === value}
+                                                        onChange={() =>
+                                                            setValue("confirmation_required", value, {
+                                                                shouldDirty: true,
+                                                            })
+                                                        }
+                                                        className="h-4 w-4 accent-[#2D3F2C]"
+                                                    />
+                                                    {value ? t("common.yes") : t("common.no")}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-xs font-medium text-slate-700">
+                                            {t("services.delegationRequired")}
+                                        </label>
+                                        <div className="flex gap-4 text-xs">
+                                            {[true, false].map((value) => (
+                                                <label key={String(value)} className="flex items-center gap-1.5">
+                                                    <input
+                                                        type="radio"
+                                                        checked={watch("delegation_required") === value}
+                                                        onChange={() =>
+                                                            setValue("delegation_required", value, {
+                                                                shouldDirty: true,
+                                                            })
+                                                        }
+                                                        className="h-4 w-4 accent-[#2D3F2C]"
+                                                    />
+                                                    {value ? t("common.yes") : t("common.no")}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.modal.responsibleDepartment")} *
+                                        </label>
+                                        <select
+                                            {...register("service_responsible_department_id")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        >
+                                            {["dept-1", "dept-2", "dept-3", "dept-4"].map((id) => (
+                                                <option key={id} value={id}>
+                                                    {t(`services.departments.${id}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-1 block text-xs font-medium text-slate-700">
+                                            {t("services.modal.submissionMode")} *
+                                        </label>
+                                        <select
+                                            {...register("service_submission_mode")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                        >
+                                            <option value="hybrid">{t("services.submissionModes.hybrid")}</option>
+                                            <option value="online">{t("services.submissionModes.online")}</option>
+                                            <option value="offline">{t("services.submissionModes.offline")}</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
-                            <label className="block text-xs font-medium text-slate-700">
-                                {t("services.modal.processDescription")}
-                            </label>
+                            {/* STEP 2 */}
+                            <div className={currentStep === 2 ? "space-y-4 pt-2" : "hidden"}>
+                                <h3 className="text-sm font-bold text-slate-800">
+                                    {t("services.modal.step2")}
+                                </h3>
 
-                            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-                                <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 p-2">
-                                    {[
-                                        {
-                                            label: "B",
-                                            active: isBold,
-                                            command: "bold",
-                                            style: "font-bold",
-                                        },
-                                        {
-                                            label: "I",
-                                            active: isItalic,
-                                            command: "italic",
-                                            style: "italic",
-                                        },
-                                        {
-                                            label: "U",
-                                            active: isUnderline,
-                                            command: "underline",
-                                            style: "underline",
-                                        },
-                                    ].map((item) => (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div>
+                                        <label className="mb-2 block text-xs font-semibold text-slate-700">
+                                            {t("services.sadadAvailable")} *
+                                        </label>
+                                        <div className="flex gap-6 text-xs">
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="radio"
+                                                    checked={sadadPaymentAvailable === true}
+                                                    onChange={() => {
+                                                        setValue("sadad_payment_available", true, {
+                                                            shouldDirty: true,
+                                                        });
+                                                        setValue("other_payment_method", "");
+                                                        clearErrors("other_payment_method");
+                                                    }}
+                                                    className="h-4 w-4 accent-[#2D3F2C]"
+                                                />
+                                                {t("common.yes")}
+                                            </label>
+
+                                            <label className="flex items-center gap-2">
+                                                <input
+                                                    type="radio"
+                                                    checked={sadadPaymentAvailable === false}
+                                                    onChange={() =>
+                                                        setValue("sadad_payment_available", false, {
+                                                            shouldDirty: true,
+                                                        })
+                                                    }
+                                                    className="h-4 w-4 accent-[#2D3F2C]"
+                                                />
+                                                {t("common.no")}
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {!sadadPaymentAvailable && (
+                                        <div>
+                                            <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                                {t("services.modal.otherPaymentMethod")} *
+                                            </label>
+                                            <select
+                                                {...register("other_payment_method")}
+                                                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                                            >
+                                                <option value="">
+                                                    {t("services.modal.selectOtherPaymentMethod")}
+                                                </option>
+                                                {OTHER_PAYMENT_METHODS.map((method) => (
+                                                    <option key={method.id} value={method.id}>
+                                                        {t(`services.paymentMethods.${method.id}`, method.name)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {errors.other_payment_method && (
+                                                <p className="mt-1 text-[10px] text-red-500">
+                                                    {translateError(t, errors.other_payment_method.message)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="mb-1 block text-xs font-semibold text-slate-700">
+                                            {t("services.modal.serviceFeesSar")}
+                                        </label>
+                                        <input
+                                            dir="ltr"
+                                            {...register("service_fees")}
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-start text-xs"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* STEP 3: Service documents */}
+                            <div className={currentStep === 3 ? "space-y-6 pt-2" : "hidden"}>
+                                <h3 className="text-sm font-bold text-slate-800">
+                                    {t("services.modal.step3")}
+                                </h3>
+
+                                {isLoadingServiceDocs && (
+                                    <p className="text-xs text-slate-500">
+                                        Loading service documents...
+                                    </p>
+                                )}
+
+                                {isServiceDocsError && (
+                                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                                        <p className="text-xs text-red-600">
+                                            Failed to load documents.
+                                        </p>
                                         <button
-                                            key={item.command}
+                                            type="button"
+                                            onClick={() => refetchServiceDocs()}
+                                            className="mt-2 text-xs font-semibold text-red-700 underline"
+                                        >
+                                            Retry
+                                        </button>
+                                    </div>
+                                )}
+
+                                {!isLoadingServiceDocs && !isServiceDocsError && (
+                                    <>
+                                        {[
+                                            {
+                                                title: "Input Documents",
+                                                docs: inputServiceDocs,
+                                            },
+                                            {
+                                                title: "Output Documents",
+                                                docs: outputServiceDocs,
+                                            },
+                                        ].map(({ title, docs }) => (
+                                            <div key={title} className="space-y-2">
+                                                <label className="block text-xs font-semibold text-slate-700">
+                                                    {title}
+                                                </label>
+
+                                                <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
+                                                    {docs.length === 0 ? (
+                                                        <p className="p-2 text-xs text-slate-400">
+                                                            No documents available.
+                                                        </p>
+                                                    ) : (
+                                                        docs.map((doc) => (
+                                                            <label
+                                                                key={doc.id}
+                                                                className="flex cursor-pointer items-center gap-2 rounded-md p-2 text-xs text-slate-700 hover:bg-white"
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedServiceDocIds.includes(doc.id)}
+                                                                    onChange={() => toggleServiceDoc(doc.id)}
+                                                                    className="h-4 w-4 accent-[#2D3F2C]"
+                                                                />
+                                                                <span className="min-w-0 flex-1">
+                                                                    {getDocName(doc)}
+                                                                </span>
+                                                            </label>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                            <p className="text-xs font-semibold text-slate-700">
+                                                Selected documents: {selectedServiceDocIds.length}
+                                            </p>
+
+                                            {selectedServiceDocIds.length > 0 && (
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    {selectedServiceDocIds.map((id) => {
+                                                        const doc = serviceDocs.find(
+                                                            (item) => item.id === id
+                                                        );
+
+                                                        return (
+                                                            <span
+                                                                key={id}
+                                                                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-700"
+                                                            >
+                                                                {doc ? getDocName(doc) : id}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => toggleServiceDoc(id)}
+                                                                    aria-label="Remove document"
+                                                                    className="text-slate-400 hover:text-red-500"
+                                                                >
+                                                                    <X size={12} />
+                                                                </button>
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* STEP 4: Process description */}
+                            <div className={currentStep === 4 ? "space-y-4 pt-2" : "hidden"}>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-slate-800">
+                                        {t("services.modal.step4")}
+                                    </h3>
+                                    <span className="text-xs text-slate-400">
+                                        {t("services.modal.direction")}: {editorDirection.toUpperCase()}
+                                    </span>
+                                </div>
+
+                                <label className="block text-xs font-medium text-slate-700">
+                                    {t("services.modal.processDescription")}
+                                </label>
+
+                                <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                    <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-slate-50 p-2">
+                                        {[
+                                            {
+                                                label: "B",
+                                                active: isBold,
+                                                command: "bold",
+                                                style: "font-bold",
+                                            },
+                                            {
+                                                label: "I",
+                                                active: isItalic,
+                                                command: "italic",
+                                                style: "italic",
+                                            },
+                                            {
+                                                label: "U",
+                                                active: isUnderline,
+                                                command: "underline",
+                                                style: "underline",
+                                            },
+                                        ].map((item) => (
+                                            <button
+                                                key={item.command}
+                                                type="button"
+                                                onMouseDown={(event) => {
+                                                    event.preventDefault();
+                                                    executeEditorCommand(item.command);
+                                                }}
+                                                className={`rounded border px-2.5 py-1 text-xs ${item.style} ${item.active
+                                                    ? "border-[#2D3F2C] bg-[#2D3F2C] text-white"
+                                                    : "border-slate-200 bg-white text-slate-700"
+                                                    }`}
+                                            >
+                                                {item.label}
+                                            </button>
+                                        ))}
+
+                                        <button
                                             type="button"
                                             onMouseDown={(event) => {
                                                 event.preventDefault();
-                                                executeEditorCommand(item.command);
+                                                toggleHeading();
                                             }}
-                                            className={`rounded border px-2.5 py-1 text-xs ${item.style} ${item.active
+                                            className={`rounded border px-2.5 py-1 text-xs font-bold ${isHeading
                                                 ? "border-[#2D3F2C] bg-[#2D3F2C] text-white"
                                                 : "border-slate-200 bg-white text-slate-700"
                                                 }`}
                                         >
-                                            {item.label}
+                                            H
                                         </button>
-                                    ))}
 
-                                    <button
-                                        type="button"
-                                        onMouseDown={(event) => {
-                                            event.preventDefault();
-                                            toggleHeading();
-                                        }}
-                                        className={`rounded border px-2.5 py-1 text-xs font-bold ${isHeading
-                                            ? "border-[#2D3F2C] bg-[#2D3F2C] text-white"
-                                            : "border-slate-200 bg-white text-slate-700"
-                                            }`}
-                                    >
-                                        H
-                                    </button>
+                                        <span className="mx-1 h-4 w-px bg-slate-200" />
 
-                                    <span className="mx-1 h-4 w-px bg-slate-200" />
+                                        {(["rtl", "ltr"] as const).map((direction) => (
+                                            <button
+                                                key={direction}
+                                                type="button"
+                                                onMouseDown={(event) => {
+                                                    event.preventDefault();
+                                                    handleSetDirection(direction);
+                                                }}
+                                                className={`rounded px-2.5 py-1 text-xs font-semibold ${editorDirection === direction
+                                                    ? "bg-[#2D3F2C] text-white"
+                                                    : "border border-slate-200 bg-white text-slate-700"
+                                                    }`}
+                                            >
+                                                {direction.toUpperCase()}
+                                            </button>
+                                        ))}
+                                    </div>
 
-                                    {(["rtl", "ltr"] as const).map((direction) => (
-                                        <button
-                                            key={direction}
-                                            type="button"
-                                            onMouseDown={(event) => {
-                                                event.preventDefault();
-                                                handleSetDirection(direction);
-                                            }}
-                                            className={`rounded px-2.5 py-1 text-xs font-semibold ${editorDirection === direction
-                                                ? "bg-[#2D3F2C] text-white"
-                                                : "border border-slate-200 bg-white text-slate-700"
-                                                }`}
-                                        >
-                                            {direction.toUpperCase()}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="relative">
-                                    <div
-                                        ref={editorRef}
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                        dir={editorDirection}
-                                        onInput={syncEditorContent}
-                                        onBlur={syncEditorContent}
-                                        onKeyUp={checkActiveFormats}
-                                        onMouseUp={checkActiveFormats}
-                                        className={`min-h-[160px] w-full p-3 text-xs leading-relaxed outline-none ${editorDirection === "rtl"
-                                            ? "text-right"
-                                            : "text-left"
-                                            } [&_h1]:my-2 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:my-2 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:my-2 [&_h3]:text-base [&_h3]:font-bold [&_p]:my-1.5`}
-                                    />
-
-                                    {!hasEditorContent && (
+                                    <div className="relative">
                                         <div
-                                            onClick={() => editorRef.current?.focus()}
-                                            className={`pointer-events-none absolute top-3 select-none text-xs text-slate-400 ${editorDirection === "rtl"
-                                                ? "right-3 text-right"
-                                                : "left-3 text-left"
-                                                }`}
-                                        >
-                                            {t("services.modal.processPlaceholder")}
-                                        </div>
-                                    )}
+                                            ref={editorRef}
+                                            contentEditable={!isView}
+                                            suppressContentEditableWarning
+                                            dir={editorDirection}
+                                            onInput={syncEditorContent}
+                                            onBlur={syncEditorContent}
+                                            onKeyUp={checkActiveFormats}
+                                            onMouseUp={checkActiveFormats}
+                                            className={`min-h-[160px] w-full p-3 text-xs leading-relaxed outline-none ${editorDirection === "rtl"
+                                                ? "text-right"
+                                                : "text-left"
+                                                } [&_h1]:my-2 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:my-2 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:my-2 [&_h3]:text-base [&_h3]:font-bold [&_p]:my-1.5`}
+                                        />
+
+                                        {!hasEditorContent && (
+                                            <div
+                                                onClick={() => { if (!isView) editorRef.current?.focus(); }}
+                                                className={`pointer-events-none absolute top-3 select-none text-xs text-slate-400 ${editorDirection === "rtl"
+                                                    ? "right-3 text-right"
+                                                    : "left-3 text-left"
+                                                    }`}
+                                            >
+                                                {t("services.modal.processPlaceholder")}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </fieldset>
                     </form>
                 </div>
 
@@ -1467,19 +1467,23 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({
                         onClick={handleClose}
                         className="rounded-lg bg-slate-100 px-5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-200"
                     >
-                        {t("common.cancel")}
+                        {isView ? t("common.close") : t("common.cancel")}
                     </button>
 
-                    {currentStep < 4 ? (
+                    {currentStep < 4 && (
                         <button
+                            key="next-btn"
                             type="button"
                             onClick={handleNext}
                             className="rounded-lg bg-[#2D3F2C] px-6 py-2 text-xs font-medium text-white hover:bg-[#233222]"
                         >
                             {t("common.next")}
                         </button>
-                    ) : (
+                    )}
+
+                    {currentStep === 4 && !isView && (
                         <button
+                            key="submit-btn"
                             type="submit"
                             form="add-service-form"
                             disabled={mutation.isPending}

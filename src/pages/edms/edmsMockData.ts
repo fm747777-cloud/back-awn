@@ -1681,7 +1681,7 @@ export function removeDemoTemplate(id: string): void {
 
 export interface EdmsDocumentCategory {
     id: string;
-    categoryCode: string;
+    codeName?: string;
     categoryName: string;
     description: string;
     createdByInitials: string;
@@ -1690,60 +1690,6 @@ export interface EdmsDocumentCategory {
     status: 'Active';
 }
 
-export const EDMS_DEMO_CATEGORIES: EdmsDocumentCategory[] = [
-    {
-        id: 'cat-3',
-        categoryCode: 'DCG003',
-        categoryName: 'اصول',
-        description: 'اصول .',
-        createdByInitials: 'UU',
-        createdByEn: 'Unknown User',
-        createdByAr: 'مستخدم غير معروف',
-        status: 'Active',
-    },
-    {
-        id: 'cat-2',
-        categoryCode: 'DCG002',
-        categoryName: 'موظفيين',
-        description: 'موظفيين .',
-        createdByInitials: 'UU',
-        createdByEn: 'Unknown User',
-        createdByAr: 'مستخدم غير معروف',
-        status: 'Active',
-    },
-    {
-        id: 'cat-1',
-        categoryCode: 'DCG001',
-        categoryName: 'منشأت',
-        description: 'Business .',
-        createdByInitials: 'UU',
-        createdByEn: 'Unknown User',
-        createdByAr: 'مستخدم غير معروف',
-        status: 'Active',
-    },
-];
-
-export function prependDemoCategory(newItem: EdmsDocumentCategory): void {
-    EDMS_DEMO_CATEGORIES.unshift(newItem);
-}
-
-export function updateDemoCategory(updatedItem: EdmsDocumentCategory): void {
-    const idx = EDMS_DEMO_CATEGORIES.findIndex((item) => item.id === updatedItem.id);
-    if (idx !== -1) {
-        EDMS_DEMO_CATEGORIES[idx] = updatedItem;
-    }
-}
-
-export function removeDemoCategory(id: string): void {
-    const idx = EDMS_DEMO_CATEGORIES.findIndex((item) => item.id === id);
-    if (idx !== -1) {
-        EDMS_DEMO_CATEGORIES.splice(idx, 1);
-    }
-}
-
-export function getEdmsCategories(): EdmsDocumentCategory[] {
-    return EDMS_DEMO_CATEGORIES;
-}
 
 // ============================================================================
 // EDMS Document Types Master Dataset (34 Initial Document Types: DTY034 - DTY001)
@@ -2191,49 +2137,6 @@ export function removeDemoDocumentType(id: string): void {
     }
 }
 
-export function getEdmsTemplateDocTypeOptions(): EdmsTemplateDocTypeOption[] {
-    const seen = new Set<string>();
-    const result: EdmsTemplateDocTypeOption[] = [];
-
-    // 1. Canonical template document type options resolved against live categories/types
-    for (const baseOpt of EDMS_TEMPLATE_DOC_TYPE_OPTIONS) {
-        const liveType = EDMS_DEMO_DOCUMENT_TYPES.find(
-            (dt) => dt.typeName.toLowerCase() === baseOpt.value.toLowerCase()
-        );
-        const liveCat = liveType
-            ? EDMS_DEMO_CATEGORIES.find((cat) => cat.id === liveType.categoryId)
-            : EDMS_DEMO_CATEGORIES.find((cat) => cat.categoryName === baseOpt.categoryAr);
-
-        const resolvedCategory =
-            liveCat?.categoryName || liveType?.categoryName || baseOpt.categoryAr;
-
-        seen.add(baseOpt.value.toLowerCase());
-        result.push({
-            ...baseOpt,
-            categoryAr: formatEdmsCategoryLabel(resolvedCategory, true),
-            categoryEn: formatEdmsCategoryLabel(resolvedCategory, false),
-        });
-    }
-
-    // 2. Any additional / newly created document types from EDMS_DEMO_DOCUMENT_TYPES
-    for (const dt of EDMS_DEMO_DOCUMENT_TYPES) {
-        const key = dt.typeName.toLowerCase();
-        if (!seen.has(key)) {
-            seen.add(key);
-            const liveCat = EDMS_DEMO_CATEGORIES.find((cat) => cat.id === dt.categoryId);
-            const resolvedCategory = liveCat?.categoryName || dt.categoryName || 'منشأت';
-            result.push({
-                value: dt.typeName,
-                labelEn: dt.typeName,
-                labelAr: dt.typeName,
-                categoryAr: formatEdmsCategoryLabel(resolvedCategory, true),
-                categoryEn: formatEdmsCategoryLabel(resolvedCategory, false),
-            });
-        }
-    }
-
-    return result;
-}
 
 // ============================================================================
 // EDMS Audit Trail Dataset (28 Coherent EDMS Audit Records)

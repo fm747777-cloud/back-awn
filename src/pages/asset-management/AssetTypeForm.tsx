@@ -8,7 +8,18 @@ export interface AssetType {
     name: string;
     description?: string | null;
     assetsCategoryId: string;
-    service_package_ids?: string[];
+    documentTemplate_ids?: string[];
+    assetDocumentTemplates?: Array<{
+        id?: string;
+        documentTemplate?: {
+            id?: string;
+            name?: string;
+        };
+    }> | null;
+    documentTemplate?: {
+        id?: string;
+        name?: string;
+    } | null;
     assetsCategory?: {
         id: string;
         name?: string;
@@ -23,7 +34,7 @@ export interface AssetTypeFormData {
     name: string;
     description: string;
     assetsCategoryId: string;
-    service_package_ids: string[];
+    documentTemplate_ids: string[];
 }
 
 interface Option {
@@ -36,7 +47,7 @@ interface AssetTypeFormProps {
     editingItem: AssetType | null;
     isSubmitting: boolean;
     categories: Option[];
-    servicePackages: Option[];
+    documentTemplates: Option[];
     onClose: () => void;
     onSubmit: (data: AssetTypeFormData) => void;
 }
@@ -46,7 +57,7 @@ const DEFAULT_FORM: AssetTypeFormData = {
     name: '',
     description: '',
     assetsCategoryId: '',
-    service_package_ids: [],
+    documentTemplate_ids: [],
 };
 
 const INPUT_CLASS =
@@ -55,12 +66,30 @@ const INPUT_CLASS =
 const LABEL_CLASS =
     'mb-1.5 block text-sm font-semibold text-[#0D0D0D] dark:text-slate-100';
 
+const normalizeIds = (item: AssetType | null): string[] => {
+    if (!item) return [];
+
+    const ids = [
+        ...(Array.isArray(item.documentTemplate_ids)
+            ? item.documentTemplate_ids
+            : []),
+        ...(Array.isArray(item.assetDocumentTemplates)
+            ? item.assetDocumentTemplates
+                .map((relation) => relation.documentTemplate?.id)
+                .filter((id): id is string => Boolean(id))
+            : []),
+        ...(item.documentTemplate?.id ? [item.documentTemplate.id] : []),
+    ];
+
+    return Array.from(new Set(ids.map(String).filter(Boolean)));
+};
+
 const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
     isOpen,
     editingItem,
     isSubmitting,
     categories,
-    servicePackages,
+    documentTemplates,
     onClose,
     onSubmit,
 }) => {
@@ -69,8 +98,9 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
 
     const [form, setForm] = useState<AssetTypeFormData>(DEFAULT_FORM);
     const [error, setError] = useState('');
-    const [packageSearch, setPackageSearch] = useState('');
-    const [isPackagesOpen, setIsPackagesOpen] = useState(false);
+    const [documentTemplateSearch, setDocumentTemplateSearch] = useState('');
+    const [isDocumentTemplatesOpen, setIsDocumentTemplatesOpen] =
+        useState(false);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -81,15 +111,18 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                     type: editingItem.type || '',
                     name: editingItem.name || '',
                     description: editingItem.description || '',
-                    assetsCategoryId: editingItem.assetsCategoryId || '',
-                    service_package_ids: editingItem.service_package_ids || [],
+                    assetsCategoryId:
+                        editingItem.assetsCategoryId ||
+                        editingItem.assetsCategory?.id ||
+                        '',
+                    documentTemplate_ids: normalizeIds(editingItem),
                 }
                 : { ...DEFAULT_FORM },
         );
 
         setError('');
-        setPackageSearch('');
-        setIsPackagesOpen(false);
+        setDocumentTemplateSearch('');
+        setIsDocumentTemplatesOpen(false);
     }, [isOpen, editingItem]);
 
     useEffect(() => {
@@ -97,7 +130,11 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && !isSubmitting) {
-                setIsPackagesOpen(false);
+                if (isDocumentTemplatesOpen) {
+                    setIsDocumentTemplatesOpen(false);
+                    return;
+                }
+
                 onClose();
             }
         };
@@ -105,7 +142,7 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
         window.addEventListener('keydown', handleKeyDown);
 
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, isSubmitting, onClose]);
+    }, [isOpen, isSubmitting, isDocumentTemplatesOpen, onClose]);
 
     const updateField = <K extends keyof AssetTypeFormData>(
         key: K,
@@ -114,21 +151,32 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
         setForm((previous) => ({ ...previous, [key]: value }));
     };
 
-    const togglePackage = (id: string) => {
+    const toggleDocumentTemplate = (id: string) => {
         setForm((previous) => ({
             ...previous,
-            service_package_ids: previous.service_package_ids.includes(id)
-                ? previous.service_package_ids.filter((item) => item !== id)
-                : [...previous.service_package_ids, id],
+            documentTemplate_ids: previous.documentTemplate_ids.includes(id)
+                ? previous.documentTemplate_ids.filter((item) => item !== id)
+                : [...previous.documentTemplate_ids, id],
         }));
     };
 
-    const selectedPackages = servicePackages.filter((item) =>
-        form.service_package_ids.includes(item.id),
+    const normalizedTemplates: Option[] = Array.isArray(documentTemplates)
+        ? documentTemplates
+            .filter((item) => item && item.id != null)
+            .map((item) => ({
+                id: String(item.id),
+                name: String(item.name ?? item.id),
+            }))
+        : [];
+
+    const selectedDocumentTemplates = normalizedTemplates.filter((item) =>
+        form.documentTemplate_ids.includes(item.id),
     );
 
-    const filteredPackages = servicePackages.filter((item) =>
-        item.name.toLowerCase().includes(packageSearch.toLowerCase()),
+    const filteredDocumentTemplates = normalizedTemplates.filter((item) =>
+        item.name
+            .toLocaleLowerCase()
+            .includes(documentTemplateSearch.toLocaleLowerCase()),
     );
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -152,7 +200,9 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
 
         if (!form.assetsCategoryId) {
             setError(
-                isRtl ? 'يرجى اختيار قسم الأصل' : 'Please select an asset category',
+                isRtl
+                    ? 'يرجى اختيار قسم الأصل'
+                    : 'Please select an asset category',
             );
             return;
         }
@@ -164,7 +214,9 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
             name: form.name.trim(),
             description: form.description.trim(),
             assetsCategoryId: form.assetsCategoryId,
-            service_package_ids: form.service_package_ids,
+            documentTemplate_ids: Array.from(
+                new Set(form.documentTemplate_ids),
+            ),
         });
     };
 
@@ -187,7 +239,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                 onSubmit={handleSubmit}
                 className="animate-in slide-in-from-right absolute end-0 top-0 flex h-full w-full max-w-lg flex-col overflow-y-auto border-s border-[#E5E0D8] bg-white shadow-2xl duration-300 dark:border-slate-800 dark:bg-slate-900"
             >
-                {/* Header */}
                 <div className="flex items-center justify-between gap-3 border-b border-[#E5E0D8] bg-[#FAF8F5] px-6 py-5 dark:border-slate-800 dark:bg-slate-800/50">
                     <div>
                         <h2 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">
@@ -217,7 +268,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                     </button>
                 </div>
 
-                {/* Form Fields */}
                 <div className="flex-1 space-y-5 p-6">
                     {error && (
                         <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">
@@ -226,7 +276,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                         </div>
                     )}
 
-                    {/* Asset Type */}
                     <div>
                         <label className={LABEL_CLASS}>
                             {isRtl ? 'نوع الأصل' : 'Asset Type'} *
@@ -250,10 +299,11 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                                     onClick={() =>
                                         updateField('type', option.value)
                                     }
-                                    className={`rounded-lg border px-4 py-3 text-sm font-semibold transition-colors ${form.type === option.value
+                                    className={`rounded-lg border px-4 py-3 text-sm font-semibold transition-colors ${
+                                        form.type === option.value
                                             ? 'border-[#2D3F2C] bg-[#2D3F2C]/10 text-[#2D3F2C] dark:text-green-300'
                                             : 'border-[#E5E0D8] bg-white text-[#6E6862] hover:border-[#2D3F2C] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                                        }`}
+                                    }`}
                                 >
                                     {option.label}
                                     {form.type === option.value && (
@@ -267,7 +317,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                         </div>
                     </div>
 
-                    {/* Name */}
                     <div>
                         <label className={LABEL_CLASS}>
                             {isRtl ? 'اسم نوع الأصل' : 'Asset Type Name'} *
@@ -288,7 +337,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                         />
                     </div>
 
-                    {/* Category */}
                     <div>
                         <label className={LABEL_CLASS}>
                             {isRtl ? 'قسم الأصل' : 'Asset Category'} *
@@ -331,41 +379,40 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                         )}
                     </div>
 
-                    {/* Service Packages - Multi Select Dropdown */}
                     <div className="relative">
                         <label className={LABEL_CLASS}>
-                            {isRtl ? 'باقات الخدمات' : 'Service Packages'}
+                            {isRtl ? 'الملفات' : 'Document Templates'}
                         </label>
 
                         <button
                             type="button"
                             disabled={isSubmitting}
                             onClick={() =>
-                                setIsPackagesOpen((previous) => !previous)
+                                setIsDocumentTemplatesOpen((previous) => !previous)
                             }
                             className={`${INPUT_CLASS} flex items-center justify-between gap-2 text-start`}
                         >
                             <span className="truncate">
-                                {selectedPackages.length > 0
+                                {selectedDocumentTemplates.length > 0
                                     ? isRtl
-                                        ? `تم اختيار ${selectedPackages.length} باقة`
-                                        : `${selectedPackages.length} package(s) selected`
+                                        ? `تم اختيار ${selectedDocumentTemplates.length} قالب مستند`
+                                        : `${selectedDocumentTemplates.length} document template(s) selected`
                                     : isRtl
-                                        ? 'اختر باقات الخدمات'
-                                        : 'Select service packages'}
+                                        ? 'اختر قوالب المستندات'
+                                        : 'Select Document Templates'}
                             </span>
 
                             <ChevronDown
                                 size={17}
-                                className={`shrink-0 transition-transform ${isPackagesOpen ? 'rotate-180' : ''
-                                    }`}
+                                className={`shrink-0 transition-transform ${
+                                    isDocumentTemplatesOpen ? 'rotate-180' : ''
+                                }`}
                             />
                         </button>
 
-                        {/* Selected package chips */}
-                        {selectedPackages.length > 0 && (
+                        {selectedDocumentTemplates.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
-                                {selectedPackages.map((item) => (
+                                {selectedDocumentTemplates.map((item) => (
                                     <span
                                         key={item.id}
                                         className="inline-flex items-center gap-1.5 rounded-md bg-[#2D3F2C]/10 px-2.5 py-1.5 text-xs font-medium text-[#2D3F2C] dark:text-green-300"
@@ -376,7 +423,7 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                                             type="button"
                                             disabled={isSubmitting}
                                             onClick={() =>
-                                                togglePackage(item.id)
+                                                toggleDocumentTemplate(item.id)
                                             }
                                             aria-label={`Remove ${item.name}`}
                                         >
@@ -387,7 +434,7 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                             </div>
                         )}
 
-                        {isPackagesOpen && (
+                        {isDocumentTemplatesOpen && (
                             <div className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-[#E5E0D8] bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
                                 <div className="border-b border-[#E5E0D8] p-2 dark:border-slate-700">
                                     <div className="flex items-center gap-2 rounded-lg border border-[#E5E0D8] px-3 dark:border-slate-700">
@@ -397,16 +444,16 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                                         />
 
                                         <input
-                                            value={packageSearch}
+                                            value={documentTemplateSearch}
                                             onChange={(event) =>
-                                                setPackageSearch(
+                                                setDocumentTemplateSearch(
                                                     event.target.value,
                                                 )
                                             }
                                             placeholder={
                                                 isRtl
-                                                    ? 'ابحث عن باقة...'
-                                                    : 'Search packages...'
+                                                    ? 'ابحث عن قالب مستند...'
+                                                    : 'Search document templates...'
                                             }
                                             className="w-full bg-transparent py-2 text-sm outline-none dark:text-white"
                                         />
@@ -414,16 +461,16 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                                 </div>
 
                                 <div className="max-h-52 overflow-y-auto p-1.5">
-                                    {filteredPackages.length === 0 ? (
+                                    {filteredDocumentTemplates.length === 0 ? (
                                         <p className="p-3 text-center text-sm text-[#857E74]">
                                             {isRtl
-                                                ? 'لا توجد باقات'
-                                                : 'No packages found'}
+                                                ? 'لا توجد قوالب مستندات'
+                                                : 'No document templates found'}
                                         </p>
                                     ) : (
-                                        filteredPackages.map((item) => {
+                                        filteredDocumentTemplates.map((item) => {
                                             const checked =
-                                                form.service_package_ids.includes(
+                                                form.documentTemplate_ids.includes(
                                                     item.id,
                                                 );
 
@@ -431,16 +478,18 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                                                 <button
                                                     key={item.id}
                                                     type="button"
+                                                    disabled={isSubmitting}
                                                     onClick={() =>
-                                                        togglePackage(item.id)
+                                                        toggleDocumentTemplate(item.id)
                                                     }
-                                                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start text-sm hover:bg-[#FAF8F5] dark:hover:bg-slate-700"
+                                                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-start text-sm hover:bg-[#FAF8F5] disabled:opacity-60 dark:hover:bg-slate-700"
                                                 >
                                                     <span
-                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked
+                                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                                                            checked
                                                                 ? 'border-[#2D3F2C] bg-[#2D3F2C] text-white'
                                                                 : 'border-gray-300 dark:border-slate-500'
-                                                            }`}
+                                                        }`}
                                                     >
                                                         {checked && (
                                                             <Check size={12} />
@@ -459,14 +508,14 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                                 <div className="flex items-center justify-between border-t border-[#E5E0D8] px-3 py-2 dark:border-slate-700">
                                     <span className="text-xs text-[#857E74]">
                                         {isRtl
-                                            ? `المحدد: ${selectedPackages.length}`
-                                            : `Selected: ${selectedPackages.length}`}
+                                            ? `القوالب المحددة: ${selectedDocumentTemplates.length}`
+                                            : `Selected: ${selectedDocumentTemplates.length}`}
                                     </span>
 
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setIsPackagesOpen(false)
+                                            setIsDocumentTemplatesOpen(false)
                                         }
                                         className="rounded-md bg-[#2D3F2C] px-3 py-1.5 text-xs font-medium text-white"
                                     >
@@ -477,7 +526,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                         )}
                     </div>
 
-                    {/* Description */}
                     <div>
                         <label className={LABEL_CLASS}>
                             {isRtl ? 'الوصف' : 'Description'}
@@ -498,7 +546,6 @@ const AssetTypeForm: React.FC<AssetTypeFormProps> = ({
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="flex justify-end gap-2 border-t border-[#E5E0D8] bg-[#FAF8F5] px-6 py-4 dark:border-slate-800 dark:bg-slate-800/50">
                     <button
                         type="button"

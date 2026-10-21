@@ -160,18 +160,6 @@ export const TicketTypesPage = () => {
                 ),
             },
             {
-                id: 'ticketsCount',
-                header: t('ticketing.ticketTypes.columns.ticketsCount'),
-                cell: ({ row }) => (
-                    <span
-                        className="inline-flex items-center rounded-full border border-[#2D3F2C]/20 bg-[#2D3F2C]/10 px-2.5 py-0.5 font-mono text-xs font-bold text-[#2D3F2C]"
-                        dir="ltr"
-                    >
-                        {row.original.ticketsCount ?? 0}
-                    </span>
-                ),
-            },
-            {
                 accessorKey: 'createdBy',
                 header: t('ticketing.ticketTypes.columns.createdBy'),
                 cell: ({ row }) => (
@@ -183,11 +171,25 @@ export const TicketTypesPage = () => {
             {
                 accessorKey: 'createdAt',
                 header: t('ticketing.ticketTypes.columns.createdAt'),
-                cell: ({ row }) => (
-                    <span className="font-mono text-xs text-[#6E6862]" dir="ltr">
-                        {row.original.createdAt || '—'}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const rawDate = row.original.createdAt;
+                    if (!rawDate) return <span className="text-xs text-[#6E6862]">—</span>;
+
+                    const formattedDate = new Intl.DateTimeFormat('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                    }).format(new Date(rawDate));
+
+                    return (
+                        <span className="text-xs text-[#6E6862]">
+                            {formattedDate}
+                        </span>
+                    );
+                },
             },
             {
                 id: 'actions',
