@@ -38,7 +38,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
     const [nameAr, setNameAr] = useState('');
     const [stageOrder, setStageOrder] = useState<string>('1');
     const [probability, setProbability] = useState<string>('10');
-    const [colorCode, setColorCode] = useState<string>('#2D3F2C');
+    const [colorCode, setColorCode] = useState<string>('#037F8C');
     const [isDefault, setIsDefault] = useState<boolean>(false);
     const [isClosingStage, setIsClosingStage] = useState<boolean>(false);
     const [closingOutcome, setClosingOutcome] = useState<CrmLeadStatusClosingOutcome>('none');
@@ -57,7 +57,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
             setNameAr(editingRecord.nameAr);
             setStageOrder(String(editingRecord.stageOrder));
             setProbability(String(editingRecord.probability));
-            setColorCode(editingRecord.colorCode || '#2D3F2C');
+            setColorCode(editingRecord.colorCode || '#037F8C');
             setIsDefault(Boolean(editingRecord.isDefault));
             setIsClosingStage(Boolean(editingRecord.isClosingStage));
             setClosingOutcome(editingRecord.closingOutcome || 'none');
@@ -71,7 +71,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
             setNameAr('');
             setStageOrder(String(nextOrder));
             setProbability('20');
-            setColorCode('#2D3F2C');
+            setColorCode('#037F8C');
             setIsDefault(false);
             setIsClosingStage(false);
             setClosingOutcome('none');
@@ -226,7 +226,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                     )}
 
                     {isSystemDefault && (
-                        <div className="rounded-xl border border-[#C5DFCC] bg-[#EAF3EC] p-3.5 flex items-start gap-2.5 text-xs text-[#265938]">
+                        <div className="rounded-xl border border-[#C5DFCC] bg-[#EAF3EC] p-3.5 flex items-start gap-2.5 text-xs text-[#037F8C]">
                             <ShieldCheck size={16} className="shrink-0 mt-0.5" />
                             <span>{t('crm.master.form.systemProtectedNotice')}</span>
                         </div>
@@ -257,7 +257,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                 className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                     fieldErrors.nameEn
                                         ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                        : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                        : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                 }`}
                             />
                             {fieldErrors.nameEn && (
@@ -290,7 +290,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                 className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                     fieldErrors.nameAr
                                         ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                        : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                        : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                 }`}
                             />
                             {fieldErrors.nameAr && (
@@ -327,7 +327,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                 className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                     fieldErrors.stageOrder
                                         ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                        : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                        : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                 }`}
                             />
                             {fieldErrors.stageOrder ? (
@@ -366,7 +366,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                 className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                     fieldErrors.probability
                                         ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                        : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                        : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                 }`}
                             />
                             {fieldErrors.probability ? (
@@ -421,7 +421,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                         setStatus('active');
                                     }
                                 }}
-                                className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                             />
                             <div>
                                 <span className="block text-xs font-semibold text-[#0D0D0D]">
@@ -447,7 +447,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                             setClosingOutcome('none');
                                         }
                                     }}
-                                    className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                    className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                 />
                                 <div>
                                     <span className="block text-xs font-semibold text-[#0D0D0D]">
@@ -473,7 +473,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                             }}
                                             className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
                                                 closingOutcome === 'won'
-                                                    ? 'bg-[#EAF3EC] border-[#265938] text-[#265938]'
+                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
                                                     : 'bg-white border-[#E5E0D8] text-[#6E6862]'
                                             }`}
                                         >
@@ -514,7 +514,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                             value={descriptionEn}
                             onChange={(e) => setDescriptionEn(e.target.value)}
                             placeholder={t('crm.master.form.descriptionEnPlaceholder')}
-                            className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                            className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
                     </div>
 
@@ -532,7 +532,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                             value={descriptionAr}
                             onChange={(e) => setDescriptionAr(e.target.value)}
                             placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                            className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
                     </div>
 
@@ -557,8 +557,8 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                                                 ? 'opacity-50 cursor-not-allowed bg-[#FAF8F5] border-[#E5E0D8] text-[#857E74]'
                                                 : selected
                                                   ? option === 'active'
-                                                      ? 'bg-[#EAF3EC] border-[#265938] text-[#265938] cursor-pointer'
-                                                      : 'bg-[#FAF8F5] border-[#2D3F2C] text-[#0D0D0D] cursor-pointer'
+                                                      ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C] cursor-pointer'
+                                                      : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D] cursor-pointer'
                                                   : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5] cursor-pointer'
                                         }`}
                                     >
@@ -590,7 +590,7 @@ export const LeadStatusFormDrawer: React.FC<LeadStatusFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
+                            className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
                         >
                             {isSubmitting
                                 ? t('crm.master.common.saving')

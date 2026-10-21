@@ -252,7 +252,7 @@ export const AssetTagsPage: React.FC = () => {
 
             // 'ar-SA' لعرض الشهور والأرقام بالعربية الهجرية
             return new Intl.DateTimeFormat('ar-SA', options).format(date);
-        } catch (error) {
+        } catch {
             return '—';
         }
     };
@@ -284,7 +284,7 @@ export const AssetTagsPage: React.FC = () => {
             return stringValue;
         };
 
-        const rows = result.items.map((item, index) => [
+        const rows = result.items.map((item) => [
             escapeCsv(item.codeName),
             escapeCsv(item.name),
             escapeCsv(item.description),
@@ -307,7 +307,7 @@ export const AssetTagsPage: React.FC = () => {
         URL.revokeObjectURL(url);
 
         toast.success(t('assetTags.feedback.exportSuccess', 'Export completed'));
-    }, [result.items, pageIndex, pageSize, t]);
+    }, [result.items, t]);
 
     const columns = useMemo<ColumnDef<any, unknown>[]>(
         () => [
@@ -403,7 +403,7 @@ export const AssetTagsPage: React.FC = () => {
                 ),
             },
         ],
-        [handleOpenEdit, pageIndex, pageSize, result.items, t],
+        [handleOpenEdit, t],
     );
 
     return (

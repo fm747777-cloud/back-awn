@@ -116,7 +116,7 @@ export const InvoicePaymentModal: React.FC<InvoicePaymentModalProps> = ({
                         </div>
                         <div className="space-y-1">
                             <span
-                                className="inline-block px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                className="inline-block px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {invoice.invoiceNumber}
@@ -217,7 +217,7 @@ export const InvoicePaymentModal: React.FC<InvoicePaymentModalProps> = ({
                                 onClick={() =>
                                     setAmount(invoice.remainingAmount)
                                 }
-                                className="text-[11px] font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
+                                className="text-[11px] font-semibold text-[#037F8C] hover:underline cursor-pointer"
                             >
                                 {t(
                                     'crm.commercial.invoices.paymentModal.payFullBalance'

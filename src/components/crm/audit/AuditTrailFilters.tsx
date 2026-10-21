@@ -59,7 +59,7 @@ export const AuditTrailFilters: React.FC<AuditTrailFiltersProps> = ({
                         onClick={() => onActionFilterChange('all')}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                             actionFilter === 'all'
-                                ? 'bg-[#2D3F2C] text-white'
+                                ? 'bg-[#037F8C] text-white'
                                 : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
                         }`}
                     >
@@ -74,7 +74,7 @@ export const AuditTrailFilters: React.FC<AuditTrailFiltersProps> = ({
                             onClick={() => onActionFilterChange(act)}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                                 actionFilter === act
-                                    ? 'bg-[#2D3F2C] text-white'
+                                    ? 'bg-[#037F8C] text-white'
                                     : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
                             }`}
                         >
@@ -109,7 +109,7 @@ export const AuditTrailFilters: React.FC<AuditTrailFiltersProps> = ({
                         placeholder={t(
                             'crm.workflow.auditTrails.filters.searchPlaceholder'
                         )}
-                        className="w-full ps-9 pe-8 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                        className="w-full ps-9 pe-8 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                     />
                     {search && (
                         <button

@@ -23,6 +23,7 @@ import {
     Wallet,
     ChevronLeft,
     ChevronRight,
+    ArrowRightLeft,
 } from 'lucide-react';
 import {
     crmApi,
@@ -34,6 +35,7 @@ import {
     type CrmInvoiceInput,
     type CrmInvoiceRecord,
     type CrmInvoiceStatus,
+    type CrmInvoiceType,
     type CrmRecordStatus,
 } from '../../schemas/crmSchema';
 import { InvoiceFormDrawer } from '../../components/crm/invoices/InvoiceFormDrawer';
@@ -50,6 +52,9 @@ export const InvoicesPage: React.FC = () => {
     const initialDealParam = searchParams.get('dealId') || 'all';
 
     const [search, setSearch] = useState('');
+    const [invoiceTypeFilter, setInvoiceTypeFilter] = useState<
+        CrmInvoiceType | 'all'
+    >('all');
     const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<
         CrmInvoiceStatus | 'all'
     >('all');
@@ -92,6 +97,7 @@ export const InvoicesPage: React.FC = () => {
             'invoices',
             {
                 search,
+                invoiceType: invoiceTypeFilter,
                 invoiceStatus: invoiceStatusFilter,
                 dealId: dealFilter,
                 companyId: companyFilter,
@@ -104,6 +110,7 @@ export const InvoicesPage: React.FC = () => {
         queryFn: () =>
             crmApi.invoices.getAll({
                 search,
+                invoiceType: invoiceTypeFilter,
                 invoiceStatus: invoiceStatusFilter,
                 dealId: dealFilter,
                 companyId: companyFilter,
@@ -137,6 +144,16 @@ export const InvoicesPage: React.FC = () => {
     const { data: contractsRes } = useQuery({
         queryKey: ['crm', 'contracts', 'lookup'],
         queryFn: () => crmApi.contracts.getAll({ limit: 200 }),
+    });
+
+    const { data: taxesRes } = useQuery({
+        queryKey: ['crm', 'taxes', 'lookup'],
+        queryFn: () => crmApi.getTaxes({ limit: 100 }),
+    });
+
+    const { data: catalogItems = [] } = useQuery({
+        queryKey: ['crm', 'service-catalog'],
+        queryFn: () => crmApi.quotations.getServiceCatalog(),
     });
 
     const invalidateAll = () => {
@@ -257,6 +274,29 @@ export const InvoicesPage: React.FC = () => {
         onError: (err: Error) => showToast(err.message, 'error'),
     });
 
+    const convertMutation = useMutation({
+        mutationFn: (proformaId: string) =>
+            crmApi.invoices.convertProformaToFinal(proformaId),
+        onSuccess: (result) => {
+            invalidateAll();
+            showToast(
+                t('crm.commercial.invoices.feedback.convertedSuccess', {
+                    proformaNumber: result.proforma.invoiceNumber,
+                    invoiceNumber: result.finalInvoice.invoiceNumber,
+                })
+            );
+            setViewingRecord(result.finalInvoice);
+        },
+        onError: (err: Error) => {
+            showToast(
+                t('crm.commercial.invoices.feedback.convertFailed', {
+                    error: err.message,
+                }),
+                'error'
+            );
+        },
+    });
+
     const records = invoicesResponse?.data || [];
     const totalRecords = invoicesResponse?.total || 0;
     const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
@@ -273,9 +313,11 @@ export const InvoicesPage: React.FC = () => {
     const handleExportCsv = () => {
         const headers = [
             'Invoice Number',
+            'Type',
             'Title (EN)',
             'Billed Client',
             'Contract #',
+            'Source Proforma',
             'Issue Date',
             'Due Date',
             'Total Amount (SAR)',
@@ -285,9 +327,13 @@ export const InvoicesPage: React.FC = () => {
         ];
         const rows = records.map((r) => [
             r.invoiceNumber,
+            r.invoiceType === 'proforma' || r.invoiceNumber.startsWith('PI-')
+                ? 'Proforma'
+                : 'Final Tax',
             `"${r.titleEn.replace(/"/g, '""')}"`,
             `"${(r.companyNameEn || '').replace(/"/g, '""')}"`,
             r.contractNumber || '',
+            r.sourceProformaInvoiceNumber || '',
             r.issueDate,
             r.dueDate,
             String(r.totalAmount),
@@ -312,6 +358,7 @@ export const InvoicesPage: React.FC = () => {
 
     const handleResetFilters = () => {
         setSearch('');
+        setInvoiceTypeFilter('all');
         setInvoiceStatusFilter('all');
         setDealFilter('all');
         setCompanyFilter('all');
@@ -344,7 +391,7 @@ export const InvoicesPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.commercial.invoices.badge')}
@@ -379,7 +426,7 @@ export const InvoicesPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         {t('crm.commercial.invoices.newButton')}
@@ -410,7 +457,7 @@ export const InvoicesPage: React.FC = () => {
                             )}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <Receipt size={19} />
                     </div>
                 </div>
@@ -514,7 +561,7 @@ export const InvoicesPage: React.FC = () => {
                             placeholder={t(
                                 'crm.commercial.invoices.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -540,7 +587,28 @@ export const InvoicesPage: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 pt-1">
+                    <select
+                        value={invoiceTypeFilter}
+                        onChange={(e) => {
+                            setInvoiceTypeFilter(
+                                e.target.value as CrmInvoiceType | 'all'
+                            );
+                            setPage(1);
+                        }}
+                        className="px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D]"
+                    >
+                        <option value="all">
+                            {t('crm.commercial.invoices.allInvoiceTypes')}
+                        </option>
+                        <option value="final_tax">
+                            {t('crm.commercial.invoices.types.final_tax')}
+                        </option>
+                        <option value="proforma">
+                            {t('crm.commercial.invoices.types.proforma')}
+                        </option>
+                    </select>
+
                     <select
                         value={invoiceStatusFilter}
                         onChange={(e) => {
@@ -652,6 +720,11 @@ export const InvoicesPage: React.FC = () => {
                                 </th>
                                 <th className="py-3.5 px-4 text-start">
                                     {t(
+                                        'crm.commercial.invoices.columns.invoiceType'
+                                    )}
+                                </th>
+                                <th className="py-3.5 px-4 text-start">
+                                    {t(
                                         'crm.commercial.invoices.columns.titleAndLinks'
                                     )}
                                 </th>
@@ -689,7 +762,7 @@ export const InvoicesPage: React.FC = () => {
                             {isLoading ? (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={9}
                                         className="py-12 text-center text-[#6E6862]"
                                     >
                                         Loading invoices...
@@ -698,7 +771,7 @@ export const InvoicesPage: React.FC = () => {
                             ) : records.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={9}
                                         className="py-12 text-center"
                                     >
                                         <div className="max-w-sm mx-auto space-y-1">
@@ -723,11 +796,23 @@ export const InvoicesPage: React.FC = () => {
                                     >
                                         <td className="py-3.5 px-4">
                                             <span
-                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {inv.invoiceNumber}
                                             </span>
+                                        </td>
+                                        <td className="py-3.5 px-4">
+                                            {inv.invoiceType === 'proforma' ||
+                                            inv.invoiceNumber.startsWith('PI-') ? (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F3EEFA] text-[#5B21B6] border border-[#DDD6FE]">
+                                                    {t('crm.commercial.invoices.types.proformaShort')}
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
+                                                    {t('crm.commercial.invoices.types.finalTaxShort')}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="py-3.5 px-4">
                                             <div className="font-bold text-[#0D0D0D]">
@@ -744,6 +829,26 @@ export const InvoicesPage: React.FC = () => {
                                                     inv.dealCode ||
                                                     ''}
                                             </div>
+                                            {inv.sourceProformaInvoiceNumber && (
+                                                <div
+                                                    className="text-[10px] text-[#5B21B6] font-mono mt-0.5"
+                                                    dir="ltr"
+                                                >
+                                                    {t('crm.commercial.invoices.viewDrawer.convertedFromBanner', {
+                                                        code: inv.sourceProformaInvoiceNumber,
+                                                    })}
+                                                </div>
+                                            )}
+                                            {inv.convertedToInvoiceNumber && (
+                                                <div
+                                                    className="text-[10px] text-[#2E6B4E] font-mono mt-0.5"
+                                                    dir="ltr"
+                                                >
+                                                    {t('crm.commercial.invoices.viewDrawer.convertedToBanner', {
+                                                        code: inv.convertedToInvoiceNumber,
+                                                    })}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="py-3.5 px-4">
                                             <div className="font-semibold text-[#0D0D0D]">
@@ -824,6 +929,21 @@ export const InvoicesPage: React.FC = () => {
                                         </td>
                                         <td className="py-3.5 px-4 text-end">
                                             <div className="inline-flex items-center gap-1.5">
+                                                {(inv.invoiceType === 'proforma' ||
+                                                    inv.invoiceNumber.startsWith('PI-')) &&
+                                                    !inv.convertedToInvoiceId && (
+                                                        <button
+                                                            type="button"
+                                                            disabled={convertMutation.isPending}
+                                                            onClick={() => convertMutation.mutate(inv.id)}
+                                                            title={t(
+                                                                'crm.commercial.invoices.viewDrawer.convertAction'
+                                                            )}
+                                                            className="p-1.5 rounded-lg border border-[#DDD6FE] bg-white hover:bg-[#F3EEFA] text-[#5B21B6] disabled:opacity-50 cursor-pointer"
+                                                        >
+                                                            <ArrowRightLeft size={14} />
+                                                        </button>
+                                                    )}
                                                 {inv.remainingAmount > 0 &&
                                                     inv.invoiceStatus !==
                                                         'cancelled' && (
@@ -946,6 +1066,8 @@ export const InvoicesPage: React.FC = () => {
                 quotations={quotations}
                 contracts={contracts}
                 employees={CRM_SALES_EMPLOYEES}
+                catalogItems={catalogItems}
+                taxes={taxesRes?.data || []}
                 isSubmitting={
                     createMutation.isPending || updateMutation.isPending
                 }
@@ -970,6 +1092,7 @@ export const InvoicesPage: React.FC = () => {
             <InvoiceViewDrawer
                 isOpen={Boolean(viewingRecord)}
                 record={viewingRecord}
+                isConverting={convertMutation.isPending}
                 onClose={() => setViewingRecord(null)}
                 onEdit={(rec) => {
                     setViewingRecord(null);
@@ -985,6 +1108,15 @@ export const InvoicesPage: React.FC = () => {
                 onTransitionStatus={(id, invoiceStatus) =>
                     transitionStatusMutation.mutate({ id, invoiceStatus })
                 }
+                onConvertToFinal={(rec) => convertMutation.mutate(rec.id)}
+                onViewLinkedInvoice={async (invoiceId) => {
+                    try {
+                        const linked = await crmApi.getInvoiceById(invoiceId);
+                        setViewingRecord(linked);
+                    } catch {
+                        // ignore if not found
+                    }
+                }}
             />
 
             <InvoicePaymentModal

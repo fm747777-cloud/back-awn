@@ -205,7 +205,7 @@ export const SectorFormDrawer: React.FC<SectorFormDrawerProps> = ({
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameEn
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                             }`}
                         />
                         {fieldErrors.nameEn && (
@@ -239,7 +239,7 @@ export const SectorFormDrawer: React.FC<SectorFormDrawerProps> = ({
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameAr
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                             }`}
                         />
                         {fieldErrors.nameAr && (
@@ -264,7 +264,7 @@ export const SectorFormDrawer: React.FC<SectorFormDrawerProps> = ({
                             value={descriptionEn}
                             onChange={(e) => setDescriptionEn(e.target.value)}
                             placeholder={t('crm.master.form.descriptionEnPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
                     </div>
 
@@ -283,7 +283,7 @@ export const SectorFormDrawer: React.FC<SectorFormDrawerProps> = ({
                             value={descriptionAr}
                             onChange={(e) => setDescriptionAr(e.target.value)}
                             placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
                     </div>
 
@@ -303,8 +303,8 @@ export const SectorFormDrawer: React.FC<SectorFormDrawerProps> = ({
                                         className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
                                             selected
                                                 ? option === 'active'
-                                                    ? 'bg-[#EAF3EC] border-[#265938] text-[#265938]'
-                                                    : 'bg-[#FAF8F5] border-[#2D3F2C] text-[#0D0D0D]'
+                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
+                                                    : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D]'
                                                 : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5]'
                                         }`}
                                     >
@@ -339,7 +339,7 @@ export const SectorFormDrawer: React.FC<SectorFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
+                            className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
                         >
                             {isSubmitting
                                 ? t('crm.master.common.saving')

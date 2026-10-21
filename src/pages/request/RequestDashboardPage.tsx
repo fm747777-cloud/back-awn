@@ -89,7 +89,7 @@ const DEMO_BUSINESS_VOLUME: BusinessVolumeRecord[] = [
         shortEn: 'Al-Wataniya',
         shortAr: 'الوطنية اللوجستية',
         requestsCount: 36,
-        color: '#2D3F2C',
+        color: '#037F8C',
     },
     {
         id: 'biz-riyadh-tech',
@@ -98,7 +98,7 @@ const DEMO_BUSINESS_VOLUME: BusinessVolumeRecord[] = [
         shortEn: 'Riyadh Tech',
         shortAr: 'حلول الرياض',
         requestsCount: 29,
-        color: '#265938',
+        color: '#037F8C',
     },
     {
         id: 'biz-saudi-gulf',
@@ -146,7 +146,7 @@ const DEMO_SERVICE_GROUPS: ServiceGroupVolumeRecord[] = [
         shortEn: 'Gov Relations',
         shortAr: 'العلاقات الحكومية',
         requestsCount: 38,
-        color: '#2D3F2C',
+        color: '#037F8C',
     },
     {
         id: 'sg-hr',
@@ -155,7 +155,7 @@ const DEMO_SERVICE_GROUPS: ServiceGroupVolumeRecord[] = [
         shortEn: 'HR Services',
         shortAr: 'الموارد البشرية',
         requestsCount: 31,
-        color: '#265938',
+        color: '#037F8C',
     },
     {
         id: 'sg-visa',
@@ -398,8 +398,8 @@ export const RequestDashboardPage: React.FC = () => {
                 count: REQUEST_DASHBOARD_TOTAL,
                 percent: '100%',
                 icon: ClipboardList,
-                accentClass: 'bg-[#2D3F2C]/10 border-[#2D3F2C]/20 text-[#2D3F2C]',
-                badgeClass: 'bg-[#2D3F2C]/10 text-[#2D3F2C]',
+                accentClass: 'bg-[#037F8C]/10 border-[#037F8C]/20 text-[#037F8C]',
+                badgeClass: 'bg-[#037F8C]/10 text-[#037F8C]',
             },
             {
                 key: 'assigned',
@@ -408,8 +408,8 @@ export const RequestDashboardPage: React.FC = () => {
                 count: REQUEST_DASHBOARD_ASSIGNED,
                 percent: `${safePct(REQUEST_DASHBOARD_ASSIGNED)}%`,
                 icon: UserCheck,
-                accentClass: 'bg-[#265938]/10 border-[#265938]/20 text-[#265938]',
-                badgeClass: 'bg-[#265938]/10 text-[#265938]',
+                accentClass: 'bg-[#037F8C]/10 border-[#037F8C]/20 text-[#037F8C]',
+                badgeClass: 'bg-[#037F8C]/10 text-[#037F8C]',
             },
             {
                 key: 'unassigned',
@@ -428,8 +428,8 @@ export const RequestDashboardPage: React.FC = () => {
                 count: REQUEST_DASHBOARD_COMPLETED,
                 percent: `${safePct(REQUEST_DASHBOARD_COMPLETED)}%`,
                 icon: CheckCircle2,
-                accentClass: 'bg-[#6A7358]/15 border-[#6A7358]/25 text-[#2D3F2C]',
-                badgeClass: 'bg-[#6A7358]/15 text-[#2D3F2C]',
+                accentClass: 'bg-[#6A7358]/15 border-[#6A7358]/25 text-[#037F8C]',
+                badgeClass: 'bg-[#6A7358]/15 text-[#037F8C]',
             },
             {
                 key: 'rejected',
@@ -449,7 +449,7 @@ export const RequestDashboardPage: React.FC = () => {
                 percent: `${safePct(REQUEST_DASHBOARD_ACTIVE_TASKS)}%`,
                 icon: CheckSquare,
                 accentClass: 'bg-[#857E74]/15 border-[#857E74]/30 text-[#595550]',
-                badgeClass: 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]',
+                badgeClass: 'bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]',
             },
         ],
         [t]
@@ -487,14 +487,14 @@ export const RequestDashboardPage: React.FC = () => {
                 name: t('request.dashboard.assignmentStatuses.completed'),
                 count: REQUEST_DASHBOARD_COMPLETED,
                 percent: safePct(REQUEST_DASHBOARD_COMPLETED),
-                color: '#2D3F2C',
+                color: '#037F8C',
             },
             {
                 key: 'assigned',
                 name: t('request.dashboard.assignmentStatuses.assigned'),
                 count: REQUEST_DASHBOARD_ASSIGNED,
                 percent: safePct(REQUEST_DASHBOARD_ASSIGNED),
-                color: '#265938',
+                color: '#037F8C',
             },
             {
                 key: 'unassigned',
@@ -536,7 +536,7 @@ export const RequestDashboardPage: React.FC = () => {
                 name: t('request.dashboard.priorities.high'),
                 count: 39,
                 percent: safePct(39),
-                color: '#2D3F2C',
+                color: '#037F8C',
             },
             {
                 key: 'critical',
@@ -574,14 +574,14 @@ export const RequestDashboardPage: React.FC = () => {
                 name: t('request.dashboard.executionStatuses.completedWithinSla'),
                 count: 64,
                 percent: safePct(64),
-                color: '#2D3F2C',
+                color: '#037F8C',
             },
             {
                 key: 'inExecutionOnTrack',
                 name: t('request.dashboard.executionStatuses.inExecutionOnTrack'),
                 count: 38,
                 percent: safePct(38),
-                color: '#265938',
+                color: '#037F8C',
             },
             {
                 key: 'pendingExternalApproval',
@@ -647,7 +647,7 @@ export const RequestDashboardPage: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-medium text-[#2D3F2C] shadow-2xs">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-medium text-[#037F8C] shadow-2xs">
                         <Calendar size={13} className="text-[#857E74]" />
                         <span>{currentMonthYearLabel}</span>
                     </span>
@@ -669,7 +669,7 @@ export const RequestDashboardPage: React.FC = () => {
                     return (
                         <div
                             key={card.key}
-                            className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs hover:border-[#2D3F2C]/40 transition-colors"
+                            className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs hover:border-[#037F8C]/40 transition-colors"
                         >
                             <div className="flex items-center justify-between">
                                 <div
@@ -721,7 +721,7 @@ export const RequestDashboardPage: React.FC = () => {
                             </h2>
                         </div>
                         <span
-                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('request.dashboard.labels.businessesCount', {
@@ -787,7 +787,7 @@ export const RequestDashboardPage: React.FC = () => {
                                                 ]}
                                                 contentStyle={{
                                                     backgroundColor: '#0D0D0D',
-                                                    borderColor: '#2D3F2C',
+                                                    borderColor: '#037F8C',
                                                     borderRadius: '8px',
                                                     color: '#FAF8F5',
                                                     fontSize: '12px',
@@ -795,7 +795,7 @@ export const RequestDashboardPage: React.FC = () => {
                                             />
                                             <Bar
                                                 dataKey="count"
-                                                fill="#2D3F2C"
+                                                fill="#037F8C"
                                                 radius={[4, 4, 0, 0]}
                                                 barSize={26}
                                                 isAnimationActive={false}
@@ -870,7 +870,7 @@ export const RequestDashboardPage: React.FC = () => {
                             </h2>
                         </div>
                         <span
-                            className="text-xs font-mono font-bold text-[#265938]"
+                            className="text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('request.dashboard.labels.serviceGroupsCount', {
@@ -936,7 +936,7 @@ export const RequestDashboardPage: React.FC = () => {
                                                 ]}
                                                 contentStyle={{
                                                     backgroundColor: '#0D0D0D',
-                                                    borderColor: '#265938',
+                                                    borderColor: '#037F8C',
                                                     borderRadius: '8px',
                                                     color: '#FAF8F5',
                                                     fontSize: '12px',
@@ -944,7 +944,7 @@ export const RequestDashboardPage: React.FC = () => {
                                             />
                                             <Bar
                                                 dataKey="count"
-                                                fill="#265938"
+                                                fill="#037F8C"
                                                 radius={[4, 4, 0, 0]}
                                                 barSize={26}
                                                 isAnimationActive={false}
@@ -1022,7 +1022,7 @@ export const RequestDashboardPage: React.FC = () => {
                             </h2>
                         </div>
                         <span
-                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('request.dashboard.labels.requestsCount', {
@@ -1061,7 +1061,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         <Tooltip
                                             contentStyle={{
                                                 backgroundColor: '#0D0D0D',
-                                                borderColor: '#2D3F2C',
+                                                borderColor: '#037F8C',
                                                 borderRadius: '8px',
                                                 color: '#FAF8F5',
                                                 fontSize: '12px',
@@ -1107,7 +1107,7 @@ export const RequestDashboardPage: React.FC = () => {
                                                 </span>
                                             </div>
                                             <span
-                                                className="text-xs font-mono font-bold text-[#2D3F2C]"
+                                                className="text-xs font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {item.percent}%
@@ -1207,7 +1207,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         ]}
                                         contentStyle={{
                                             backgroundColor: '#0D0D0D',
-                                            borderColor: '#2D3F2C',
+                                            borderColor: '#037F8C',
                                             borderRadius: '8px',
                                             color: '#FAF8F5',
                                             fontSize: '12px',
@@ -1295,7 +1295,7 @@ export const RequestDashboardPage: React.FC = () => {
                             </h2>
                         </div>
                         <span
-                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('request.dashboard.labels.specialistsCount', {
@@ -1346,7 +1346,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         cursor={{ fill: '#F8F6F2' }}
                                         contentStyle={{
                                             backgroundColor: '#0D0D0D',
-                                            borderColor: '#2D3F2C',
+                                            borderColor: '#037F8C',
                                             borderRadius: '8px',
                                             color: '#FAF8F5',
                                             fontSize: '12px',
@@ -1359,7 +1359,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         dataKey="assigned"
                                         name={t('request.dashboard.labels.activeAssigned')}
                                         stackId="resource"
-                                        fill="#265938"
+                                        fill="#037F8C"
                                         radius={[0, 0, 0, 0]}
                                         barSize={24}
                                         isAnimationActive={false}
@@ -1368,7 +1368,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         dataKey="completed"
                                         name={t('request.dashboard.labels.completedRequests')}
                                         stackId="resource"
-                                        fill="#2D3F2C"
+                                        fill="#037F8C"
                                         radius={[4, 4, 0, 0]}
                                         barSize={24}
                                         isAnimationActive={false}
@@ -1395,10 +1395,10 @@ export const RequestDashboardPage: React.FC = () => {
                                         className="flex items-center gap-2 shrink-0"
                                         dir="ltr"
                                     >
-                                        <span className="px-2 py-0.5 rounded-md bg-[#265938]/10 text-[#265938] font-mono font-bold text-[11px]">
+                                        <span className="px-2 py-0.5 rounded-md bg-[#037F8C]/10 text-[#037F8C] font-mono font-bold text-[11px]">
                                             {res.assigned} {t('request.dashboard.kpis.assigned')}
                                         </span>
-                                        <span className="px-2 py-0.5 rounded-md bg-[#2D3F2C]/10 text-[#2D3F2C] font-mono font-bold text-[11px]">
+                                        <span className="px-2 py-0.5 rounded-md bg-[#037F8C]/10 text-[#037F8C] font-mono font-bold text-[11px]">
                                             {res.completed} {t('request.dashboard.kpis.completed')}
                                         </span>
                                         <span className="font-mono font-bold text-[#0D0D0D] w-7 text-end">
@@ -1427,7 +1427,7 @@ export const RequestDashboardPage: React.FC = () => {
                             </h2>
                         </div>
                         <span
-                            className="text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('request.dashboard.labels.requestsCount', {
@@ -1482,7 +1482,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         ]}
                                         contentStyle={{
                                             backgroundColor: '#0D0D0D',
-                                            borderColor: '#2D3F2C',
+                                            borderColor: '#037F8C',
                                             borderRadius: '8px',
                                             color: '#FAF8F5',
                                             fontSize: '12px',
@@ -1560,12 +1560,12 @@ export const RequestDashboardPage: React.FC = () => {
                         </h2>
                     </div>
                     <div className="flex items-center gap-3" dir="ltr">
-                        <span className="text-xs font-mono font-bold text-[#265938] bg-[#265938]/10 px-2.5 py-0.5 rounded-md">
+                        <span className="text-xs font-mono font-bold text-[#037F8C] bg-[#037F8C]/10 px-2.5 py-0.5 rounded-md">
                             {t('request.dashboard.labels.overallSla', {
                                 rate: overallSlaRate,
                             })}
                         </span>
-                        <span className="text-xs font-mono font-bold text-[#2D3F2C]">
+                        <span className="text-xs font-mono font-bold text-[#037F8C]">
                             {t('request.dashboard.labels.unitsCount', {
                                 count: teamPerformanceData.length,
                             })}
@@ -1612,7 +1612,7 @@ export const RequestDashboardPage: React.FC = () => {
                                     cursor={{ fill: '#F8F6F2' }}
                                     contentStyle={{
                                         backgroundColor: '#0D0D0D',
-                                        borderColor: '#2D3F2C',
+                                        borderColor: '#037F8C',
                                         borderRadius: '8px',
                                         color: '#FAF8F5',
                                         fontSize: '12px',
@@ -1624,7 +1624,7 @@ export const RequestDashboardPage: React.FC = () => {
                                 <Bar
                                     dataKey="completedRequests"
                                     name={t('request.dashboard.labels.completedRequests')}
-                                    fill="#2D3F2C"
+                                    fill="#037F8C"
                                     radius={[4, 4, 0, 0]}
                                     barSize={24}
                                     isAnimationActive={false}
@@ -1674,7 +1674,7 @@ export const RequestDashboardPage: React.FC = () => {
                                         </td>
                                         <td className="py-3 px-4 whitespace-nowrap">
                                             <span
-                                                className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 text-[#2D3F2C] font-mono font-bold text-[11px]"
+                                                className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 text-[#037F8C] font-mono font-bold text-[11px]"
                                                 dir="ltr"
                                             >
                                                 {unit.completedRequests}
@@ -1705,13 +1705,13 @@ export const RequestDashboardPage: React.FC = () => {
                                             >
                                                 <div className="w-24 bg-[#FAF8F5] rounded-full h-1.5 overflow-hidden border border-[#E5E0D8] hidden sm:block">
                                                     <div
-                                                        className="h-full rounded-full bg-[#265938]"
+                                                        className="h-full rounded-full bg-[#037F8C]"
                                                         style={{
                                                             width: `${unit.slaCompliance}%`,
                                                         }}
                                                     />
                                                 </div>
-                                                <span className="font-mono font-bold text-[#265938] w-10 text-end">
+                                                <span className="font-mono font-bold text-[#037F8C] w-10 text-end">
                                                     {unit.slaCompliance}%
                                                 </span>
                                             </div>

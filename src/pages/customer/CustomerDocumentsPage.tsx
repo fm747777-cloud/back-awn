@@ -57,14 +57,10 @@ export interface CustomerDocumentItem {
 
 const STORAGE_KEY = 'awn_customer_documents_v1';
 
-const DEMO_COMPANIES = [
-    { id: 'cmp-1', nameEn: 'Al-Fursan Logistics Co.', nameAr: 'شركة الفرسان اللوجستية', crNumber: '1010345678' },
-    { id: 'cmp-2', nameEn: 'Rawabi Energy Services', nameAr: 'خدمات الروابي للطاقة', crNumber: '2050123456' },
-    { id: 'cmp-3', nameEn: 'Madaen Real Estate Group', nameAr: 'مجموعة مدائن العقارية', crNumber: '4030654321' },
-    { id: 'cmp-4', nameEn: 'Safwa Medical Healthcare', nameAr: 'صفوة الرعاية الطبية', crNumber: '1010987654' },
-    { id: 'cmp-5', nameEn: 'Horizon Digital Technologies', nameAr: 'تقنيات الأفق الرقمية', crNumber: '7001234567' },
-    { id: 'cmp-6', nameEn: 'Red Sea Hospitality & Resorts', nameAr: 'الضيافة والمنتجعات بالبحر الأحمر', crNumber: '4031987654' },
-];
+import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
+
+const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
+
 
 const SEED_DOCUMENTS: CustomerDocumentItem[] = [
     {
@@ -504,7 +500,7 @@ export const CustomerDocumentsPage: React.FC = () => {
         <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#265938] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#037F8C] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
                     <CheckCircle2 className="w-5 h-5 text-white" />
                     <span>{toastMessage}</span>
                 </div>
@@ -514,7 +510,7 @@ export const CustomerDocumentsPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#265938] dark:text-emerald-400">
+                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#037F8C] dark:text-emerald-400">
                             <FileText className="w-6 h-6" />
                         </div>
                         <div>
@@ -536,13 +532,10 @@ export const CustomerDocumentsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <button
-                        onClick={handleStartAdd}
-                        className="bg-[#265938] hover:bg-[#1E472D] text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>{isRtl ? 'وثيقة جديدة' : 'Add Document'}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
             </div>
 
@@ -557,7 +550,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                             {kpis.total}
                         </p>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#265938] dark:text-emerald-400">
+                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#037F8C] dark:text-emerald-400">
                         <FileText className="w-6 h-6" />
                     </div>
                 </div>
@@ -615,7 +608,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={isRtl ? 'البحث بالرمز، عنوان الوثيقة، المنشأة، أو المرجع...' : 'Search by code, title, company, or reference...'}
-                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -632,7 +625,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الحالات' : 'All Statuses'}</option>
                             <option value="active">{isRtl ? 'سارية / معتمدة' : 'Active'}</option>
@@ -646,7 +639,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                         <select
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع التصنيفات' : 'All Types'}</option>
                             <option value="commercial_registration">{isRtl ? 'سجل تجاري' : 'Commercial Registration'}</option>
@@ -661,7 +654,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                         <select
                             value={companyFilter}
                             onChange={(e) => setCompanyFilter(e.target.value)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الشركات' : 'All Companies'}</option>
                             {DEMO_COMPANIES.map((c) => (
@@ -761,30 +754,6 @@ export const CustomerDocumentsPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleStartEdit(doc)}
-                                                    title={isRtl ? 'تعديل' : 'Edit'}
-                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-                                                {doc.status !== 'active' ? (
-                                                    <button
-                                                        onClick={() => handleRenewDocument(doc.id)}
-                                                        title={isRtl ? 'تجديد الوثيقة' : 'Renew Document'}
-                                                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors"
-                                                    >
-                                                        <RefreshCw className="w-4 h-4" />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleMarkExpired(doc.id)}
-                                                        title={isRtl ? 'تعيين كمنتهي' : 'Mark Expired'}
-                                                        className="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-colors"
-                                                    >
-                                                        <AlertTriangle className="w-4 h-4" />
-                                                    </button>
-                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -805,7 +774,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                         <div className="space-y-6">
                             <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/50 rounded-xl text-[#265938] dark:text-emerald-400">
+                                    <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/50 rounded-xl text-[#037F8C] dark:text-emerald-400">
                                         <FileText className="w-6 h-6" />
                                     </div>
                                     <div>
@@ -895,31 +864,13 @@ export const CustomerDocumentsPage: React.FC = () => {
                         </div>
 
                         {/* Actions */}
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-3">
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end">
                             <button
-                                onClick={() => handleStartEdit(viewingDoc)}
-                                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                                onClick={() => setViewingDoc(null)}
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors cursor-pointer"
                             >
-                                <Edit3 className="w-4 h-4" />
-                                <span>{isRtl ? 'تعديل البيانات' : 'Edit Metadata'}</span>
+                                {isRtl ? 'إغلاق' : 'Close'}
                             </button>
-                            {viewingDoc.status !== 'active' ? (
-                                <button
-                                    onClick={() => handleRenewDocument(viewingDoc.id)}
-                                    className="flex-1 py-2.5 px-4 rounded-xl bg-[#265938] hover:bg-[#1E472D] text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <RefreshCw className="w-4 h-4" />
-                                    <span>{isRtl ? 'تجديد الوثيقة' : 'Renew Document'}</span>
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => handleMarkExpired(viewingDoc.id)}
-                                    className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <AlertTriangle className="w-4 h-4" />
-                                    <span>{isRtl ? 'تعيين كمنتهي' : 'Mark Expired'}</span>
-                                </button>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -956,7 +907,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                         type="text"
                                         value={formData.code}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="DOC-107"
                                     />
                                     {formErrors.code && <p className="text-xs text-red-500 mt-1">{formErrors.code}</p>}
@@ -969,7 +920,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         {DEMO_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -989,7 +940,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                         type="text"
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="مثال: شهادة التأهيل الفني"
                                     />
                                 </div>
@@ -1001,7 +952,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                         type="text"
                                         value={formData.titleEn}
                                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="e.g. Technical Accreditation Cert"
                                     />
                                 </div>
@@ -1016,7 +967,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                     <select
                                         value={formData.documentType}
                                         onChange={(e) => setFormData({ ...formData, documentType: e.target.value as DocumentType })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="commercial_registration">{isRtl ? 'سجل تجاري' : 'Commercial Registration'}</option>
                                         <option value="tax_certificate">{isRtl ? 'شهادة الزكاة والضريبة' : 'Tax & Zakat Certificate'}</option>
@@ -1036,7 +987,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                         type="text"
                                         value={formData.linkedEntityRef}
                                         onChange={(e) => setFormData({ ...formData, linkedEntityRef: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="CR-1010345678"
                                     />
                                 </div>
@@ -1051,7 +1002,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                         type="text"
                                         value={formData.version}
                                         onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="v1.0"
                                     />
                                 </div>
@@ -1063,7 +1014,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                         type="date"
                                         value={formData.expiryDate}
                                         onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1073,7 +1024,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as DocumentStatus })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="active">{isRtl ? 'سارية / معتمدة' : 'Active'}</option>
                                         <option value="expiring_soon">{isRtl ? 'تنتهي قريباً' : 'Expiring Soon'}</option>
@@ -1092,7 +1043,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                     rows={2}
                                     value={formData.notesAr}
                                     onChange={(e) => setFormData({ ...formData, notesAr: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     placeholder="ملاحظات المراجعة والاعتماد..."
                                 />
                             </div>
@@ -1107,7 +1058,7 @@ export const CustomerDocumentsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 rounded-lg bg-[#265938] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
+                                    className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
                                 >
                                     {editingDocId ? (isRtl ? 'حفظ التعديلات' : 'Save Changes') : (isRtl ? 'إضافة الوثيقة' : 'Add Document')}
                                 </button>

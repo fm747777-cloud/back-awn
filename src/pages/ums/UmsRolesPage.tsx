@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     UserCheck,
     CheckCircle2,
     Users,
-    Search,
     X,
     RotateCcw,
     Download,
@@ -13,8 +14,6 @@ import {
     Pencil,
     Trash2,
     Power,
-    ChevronLeft,
-    ChevronRight,
     Shield,
     ShieldAlert,
     Copy,
@@ -24,32 +23,21 @@ import {
     Square,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DataTable } from '../../components/DataTable';
+import { umsApi } from '../../api/api';
+import { RoleForm, type RoleFormData } from '../../components/ums/RoleForm';
 import {
     loadRoles,
     saveRoles,
-    loadSecurityGroups,
     loadEmployees,
     generateNextRoleCode,
-    checkRoleDeletionEligibility,
     recordUmsAuditEvent,
     escapeSafeCsvCell,
     syncMasterEntityEmployeeCounts,
-    UMS_PAGE_SIZE_OPTIONS,
     type RoleRecord,
     type SecurityGroupRecord,
     type EmployeeRecord,
 } from './umsMockData';
-
-interface RoleFormData {
-    code: string;
-    nameEn: string;
-    nameAr: string;
-    securityGroupId: string;
-    level: number;
-    descriptionEn: string;
-    descriptionAr: string;
-    status: 'Active' | 'Inactive';
-}
 
 const DEFAULT_FORM: RoleFormData = {
     code: '',
@@ -64,23 +52,81 @@ const DEFAULT_FORM: RoleFormData = {
 
 export const UmsRolesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
+    const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
-    // Data State
-    const [roles, setRoles] = useState<RoleRecord[]>(() => loadRoles());
-    const [securityGroups] = useState<SecurityGroupRecord[]>(() => loadSecurityGroups());
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    // Server / Repository State via TanStack Query & umsApi
+    const { data: roles = [] } = useQuery<RoleRecord[]>({
+        queryKey: ['ums', 'roles'],
+        queryFn: async () => umsApi.listRoles(),
+    });
+
+    const { data: securityGroups = [] } = useQuery<SecurityGroupRecord[]>({
+        queryKey: ['ums', 'security-groups'],
+        queryFn: async () => umsApi.listSecurityGroups(),
+    });
+
+    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
+        queryKey: ['ums', 'employees'],
+        queryFn: async () => {
+            const res = await umsApi.listEmployees();
+            return res.data ?? loadEmployees();
+        },
+    });
+
+    const upsertRoleMutation = useMutation({
+        mutationFn: async (role: RoleRecord) => {
+            const res = await umsApi.upsertRole(role);
+            if (!res.ok) {
+                throw new Error(
+                    (isRtl ? res.messageAr : res.messageEn) ||
+                        res.messageEn ||
+                        'Failed to save role'
+                );
+            }
+            return res.data ?? role;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ums', 'roles'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'security-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
+
+    const deleteRoleMutation = useMutation({
+        mutationFn: async (roleId: string) => {
+            const check = umsApi.checkRoleDeletionEligibility(roleId, employees);
+            if (!check.canDelete) {
+                throw new Error(
+                    (isRtl ? check.reasonAr : check.reasonEn) ||
+                        'Cannot delete role with assigned employees'
+                );
+            }
+            const remaining = loadRoles().filter((r) => r.id !== roleId);
+            saveRoles(remaining);
+            syncMasterEntityEmployeeCounts(loadEmployees());
+            return roleId;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ums', 'roles'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'security-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
 
     // Resolve live Security Group display name in active language
-    const resolveSecurityGroupDisplayName = (item: RoleRecord): string => {
-        if (item.securityGroupId) {
-            const grp = securityGroups.find((g) => g.id === item.securityGroupId);
-            if (grp) {
-                return isRtl ? grp.nameAr || grp.nameEn : grp.nameEn;
+    const resolveSecurityGroupDisplayName = useCallback(
+        (item: RoleRecord): string => {
+            if (item.securityGroupId) {
+                const grp = securityGroups.find((g) => g.id === item.securityGroupId);
+                if (grp) {
+                    return isRtl ? grp.nameAr || grp.nameEn : grp.nameEn;
+                }
             }
-        }
-        return item.securityGroupName;
-    };
+            return item.securityGroupName;
+        },
+        [securityGroups, isRtl]
+    );
 
     // Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
@@ -116,13 +162,20 @@ export const UmsRolesPage: React.FC = () => {
         return securityGroups.filter((g) => g.status === 'Active');
     }, [securityGroups]);
 
-    // Sync roles state with localStorage
-    const persistRoles = (updated: RoleRecord[]) => {
-        saveRoles(updated);
-        syncMasterEntityEmployeeCounts(employees);
-        setEmployees(loadEmployees());
-        setRoles(loadRoles());
-    };
+    // Security groups options for RoleForm (includes currently assigned group if editing an inactive one)
+    const formSecurityGroups = useMemo(() => {
+        if (!editingRole?.securityGroupId) return activeSecurityGroups;
+        const alreadyIncluded = activeSecurityGroups.some(
+            (g) => g.id === editingRole.securityGroupId
+        );
+        if (alreadyIncluded) return activeSecurityGroups;
+        const currentGroup = securityGroups.find(
+            (g) => g.id === editingRole.securityGroupId
+        );
+        return currentGroup
+            ? [currentGroup, ...activeSecurityGroups]
+            : activeSecurityGroups;
+    }, [activeSecurityGroups, editingRole, securityGroups]);
 
     // Summary KPIs
     const kpis = useMemo(() => {
@@ -134,7 +187,6 @@ export const UmsRolesPage: React.FC = () => {
             0
         );
 
-        // Tier distribution
         const tier1Count = roles.filter((r) => r.level === 1).length;
         const tier2to3Count = roles.filter((r) => r.level >= 2 && r.level <= 3).length;
 
@@ -180,7 +232,6 @@ export const UmsRolesPage: React.FC = () => {
         });
     }, [roles, searchQuery, statusFilter, securityGroupFilter, levelFilter, securityGroups]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredRoles.length / pageSize));
     const paginatedRoles = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
         return filteredRoles.slice(start, start + pageSize);
@@ -191,7 +242,7 @@ export const UmsRolesPage: React.FC = () => {
         paginatedRoles.length > 0 &&
         paginatedRoles.every((r) => selectedIds.includes(r.id));
 
-    const handleSelectAll = () => {
+    const handleSelectAll = useCallback(() => {
         if (isAllSelected) {
             setSelectedIds((prev) =>
                 prev.filter((id) => !paginatedRoles.some((r) => r.id === id))
@@ -200,21 +251,24 @@ export const UmsRolesPage: React.FC = () => {
             const pageIds = paginatedRoles.map((r) => r.id);
             setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
         }
-    };
+    }, [isAllSelected, paginatedRoles]);
 
-    const handleToggleSelect = (id: string) => {
+    const handleToggleSelect = useCallback((id: string) => {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
         );
-    };
+    }, []);
 
     // Copy Code helper
-    const handleCopyCode = (code: string) => {
-        navigator.clipboard?.writeText(code);
-        setCopiedCode(code);
-        toast.success(t('common.copiedToClipboard', { defaultValue: `Copied ${code}` }));
-        setTimeout(() => setCopiedCode(null), 2000);
-    };
+    const handleCopyCode = useCallback(
+        (code: string) => {
+            navigator.clipboard?.writeText(code);
+            setCopiedCode(code);
+            toast.success(t('common.copiedToClipboard', { defaultValue: `Copied ${code}` }));
+            setTimeout(() => setCopiedCode(null), 2000);
+        },
+        [t]
+    );
 
     // Reset Filters
     const handleResetFilters = () => {
@@ -229,6 +283,7 @@ export const UmsRolesPage: React.FC = () => {
     const handleOpenCreate = () => {
         const nextCode = generateNextRoleCode(roles);
         const defaultSecGroup = activeSecurityGroups[0]?.id || '';
+        setEditingRole(null);
         setFormData({
             ...DEFAULT_FORM,
             code: nextCode,
@@ -239,7 +294,8 @@ export const UmsRolesPage: React.FC = () => {
     };
 
     // Open Edit Modal
-    const handleOpenEdit = (role: RoleRecord) => {
+    const handleOpenEdit = useCallback((role: RoleRecord) => {
+        setIsCreateOpen(false);
         setEditingRole(role);
         setFormData({
             code: role.code,
@@ -252,6 +308,12 @@ export const UmsRolesPage: React.FC = () => {
             status: role.status,
         });
         setFormErrors({});
+    }, []);
+
+    const handleCloseForm = () => {
+        setIsCreateOpen(false);
+        setEditingRole(null);
+        setFormErrors({});
     };
 
     // Validation
@@ -262,11 +324,19 @@ export const UmsRolesPage: React.FC = () => {
             errors.nameEn = t('ums.roles.validation.nameEnRequired', {
                 defaultValue: 'English role name is required.',
             });
+        } else if (formData.nameEn.trim().length < 2) {
+            errors.nameEn = t('ums.roles.validation.nameEnMin', {
+                defaultValue: 'English role name must be at least 2 characters.',
+            });
         }
 
         if (!formData.nameAr.trim()) {
             errors.nameAr = t('ums.roles.validation.nameArRequired', {
                 defaultValue: 'Arabic role name is required.',
+            });
+        } else if (formData.nameAr.trim().length < 2) {
+            errors.nameAr = t('ums.roles.validation.nameArMin', {
+                defaultValue: 'Arabic role name must be at least 2 characters.',
             });
         }
 
@@ -310,7 +380,7 @@ export const UmsRolesPage: React.FC = () => {
     };
 
     // Save Create
-    const handleSaveCreate = (e: React.FormEvent) => {
+    const handleSaveCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm(false)) return;
 
@@ -324,6 +394,7 @@ export const UmsRolesPage: React.FC = () => {
             nameAr: formData.nameAr.trim(),
             securityGroupId: formData.securityGroupId,
             securityGroupName: groupName,
+            securityGroupNameAr: linkedGroup?.nameAr,
             level: Number(formData.level),
             descriptionEn: formData.descriptionEn.trim(),
             descriptionAr: formData.descriptionAr.trim(),
@@ -332,30 +403,33 @@ export const UmsRolesPage: React.FC = () => {
             createdAt: new Date().toISOString().slice(0, 10),
         };
 
-        const updated = [newRole, ...roles];
-        persistRoles(updated);
+        try {
+            await upsertRoleMutation.mutateAsync(newRole);
 
-        recordUmsAuditEvent({
-            action: 'CREATED',
-            resource: 'Role',
-            resourceId: newRole.id,
-            resourceName: newRole.nameEn,
-            detailsEn: `Created role ${newRole.code} (${newRole.nameEn}) at authorization Level ${newRole.level}.`,
-            detailsAr: `إنشاء دور جديد ${newRole.code} (${newRole.nameAr}) بمستوى صلاحية ${newRole.level}.`,
-            newState: JSON.stringify(newRole),
-        });
+            recordUmsAuditEvent({
+                action: 'CREATED',
+                resource: 'Role',
+                resourceId: newRole.id,
+                resourceName: newRole.nameEn,
+                detailsEn: `Created role ${newRole.code} (${newRole.nameEn}) at authorization Level ${newRole.level}.`,
+                detailsAr: `إنشاء دور جديد ${newRole.code} (${newRole.nameAr}) بمستوى صلاحية ${newRole.level}.`,
+                newState: JSON.stringify(newRole),
+            });
 
-        toast.success(
-            t('ums.roles.feedback.created', {
-                defaultValue: `Role ${newRole.nameEn} created successfully.`,
-                name: newRole.nameEn,
-            })
-        );
-        setIsCreateOpen(false);
+            toast.success(
+                t('ums.roles.feedback.created', {
+                    defaultValue: `Role ${newRole.nameEn} created successfully.`,
+                    name: newRole.nameEn,
+                })
+            );
+            setIsCreateOpen(false);
+        } catch (err: any) {
+            toast.error(err?.message || 'Failed to create role');
+        }
     };
 
     // Save Edit
-    const handleSaveEdit = (e: React.FormEvent) => {
+    const handleSaveEdit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingRole) return;
         if (!validateForm(true, editingRole.id)) return;
@@ -369,98 +443,117 @@ export const UmsRolesPage: React.FC = () => {
             nameAr: formData.nameAr.trim(),
             securityGroupId: formData.securityGroupId,
             securityGroupName: groupName,
+            securityGroupNameAr: linkedGroup?.nameAr ?? editingRole.securityGroupNameAr,
             level: Number(formData.level),
             descriptionEn: formData.descriptionEn.trim(),
             descriptionAr: formData.descriptionAr.trim(),
             status: formData.status,
         };
 
-        const updated = roles.map((r) => (r.id === editingRole.id ? updatedRole : r));
-        persistRoles(updated);
+        try {
+            await upsertRoleMutation.mutateAsync(updatedRole);
 
-        recordUmsAuditEvent({
-            action: 'UPDATED',
-            resource: 'Role',
-            resourceId: updatedRole.id,
-            resourceName: updatedRole.nameEn,
-            detailsEn: `Updated role ${updatedRole.code} (${updatedRole.nameEn}).`,
-            detailsAr: `تحديث بيانات الدور ${updatedRole.code} (${updatedRole.nameAr}).`,
-            previousState: JSON.stringify(editingRole),
-            newState: JSON.stringify(updatedRole),
-        });
+            if (viewingRole && viewingRole.id === updatedRole.id) {
+                setViewingRole(updatedRole);
+            }
 
-        toast.success(
-            t('ums.roles.feedback.updated', {
-                defaultValue: `Role ${updatedRole.nameEn} updated successfully.`,
-                name: updatedRole.nameEn,
-            })
-        );
-        setEditingRole(null);
+            recordUmsAuditEvent({
+                action: 'UPDATED',
+                resource: 'Role',
+                resourceId: updatedRole.id,
+                resourceName: updatedRole.nameEn,
+                detailsEn: `Updated role ${updatedRole.code} (${updatedRole.nameEn}).`,
+                detailsAr: `تحديث بيانات الدور ${updatedRole.code} (${updatedRole.nameAr}).`,
+                previousState: JSON.stringify(editingRole),
+                newState: JSON.stringify(updatedRole),
+            });
+
+            toast.success(
+                t('ums.roles.feedback.updated', {
+                    defaultValue: `Role ${updatedRole.nameEn} updated successfully.`,
+                    name: updatedRole.nameEn,
+                })
+            );
+            setEditingRole(null);
+        } catch (err: any) {
+            toast.error(err?.message || 'Failed to update role');
+        }
     };
 
     // Quick Status Toggle
-    const handleToggleStatus = (role: RoleRecord) => {
-        const nextStatus: 'Active' | 'Inactive' =
-            role.status === 'Active' ? 'Inactive' : 'Active';
-        const updated = roles.map((r) =>
-            r.id === role.id ? { ...r, status: nextStatus } : r
-        );
-        persistRoles(updated);
-
-        const actionType = nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED';
-        recordUmsAuditEvent({
-            action: actionType,
-            resource: 'Role',
-            resourceId: role.id,
-            resourceName: role.nameEn,
-            detailsEn: `Changed status of ${role.code} to ${nextStatus}.`,
-            detailsAr: `تغيير حالة الدور ${role.code} إلى ${nextStatus === 'Active' ? 'نشط' : 'معطل'}.`,
-        });
-
-        toast.success(
-            t('ums.roles.feedback.statusChanged', {
-                defaultValue: `Role ${role.nameEn} is now ${nextStatus}.`,
-                name: role.nameEn,
+    const handleToggleStatus = useCallback(
+        async (role: RoleRecord) => {
+            const nextStatus: 'Active' | 'Inactive' =
+                role.status === 'Active' ? 'Inactive' : 'Active';
+            const updatedRole: RoleRecord = {
+                ...role,
                 status: nextStatus,
-            })
-        );
-    };
+            };
+
+            try {
+                await upsertRoleMutation.mutateAsync(updatedRole);
+
+                if (viewingRole && viewingRole.id === role.id) {
+                    setViewingRole(updatedRole);
+                }
+
+                const actionType = nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED';
+                recordUmsAuditEvent({
+                    action: actionType,
+                    resource: 'Role',
+                    resourceId: role.id,
+                    resourceName: role.nameEn,
+                    detailsEn: `Changed status of ${role.code} to ${nextStatus}.`,
+                    detailsAr: `تغيير حالة الدور ${role.code} إلى ${nextStatus === 'Active' ? 'نشط' : 'معطل'}.`,
+                });
+
+                toast.success(
+                    t('ums.roles.feedback.statusChanged', {
+                        defaultValue: `Role ${role.nameEn} is now ${nextStatus}.`,
+                        name: role.nameEn,
+                        status: nextStatus,
+                    })
+                );
+            } catch (err: any) {
+                toast.error(err?.message || 'Failed to update role status');
+            }
+        },
+        [upsertRoleMutation, viewingRole, t]
+    );
 
     // Delete check & action
-    const handleDeleteClick = (role: RoleRecord) => {
+    const handleDeleteClick = useCallback((role: RoleRecord) => {
         setDeletingRole(role);
-    };
+    }, []);
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!deletingRole) return;
 
-        const check = checkRoleDeletionEligibility(deletingRole.id, employees);
-        if (!check.canDelete) {
-            toast.error(isRtl ? check.reasonAr : check.reasonEn);
-            return;
+        const target = deletingRole;
+        try {
+            await deleteRoleMutation.mutateAsync(target.id);
+            setSelectedIds((prev) => prev.filter((id) => id !== target.id));
+
+            recordUmsAuditEvent({
+                action: 'DELETED',
+                resource: 'Role',
+                resourceId: target.id,
+                resourceName: target.nameEn,
+                detailsEn: `Deleted role ${target.code} (${target.nameEn}).`,
+                detailsAr: `حذف الدور ${target.code} (${target.nameAr}).`,
+                previousState: JSON.stringify(target),
+            });
+
+            toast.success(
+                t('ums.roles.feedback.deleted', {
+                    defaultValue: `Role ${target.nameEn} deleted successfully.`,
+                    name: target.nameEn,
+                })
+            );
+            setDeletingRole(null);
+        } catch (err: any) {
+            toast.error(err?.message || 'Cannot delete role');
         }
-
-        const updated = roles.filter((r) => r.id !== deletingRole.id);
-        persistRoles(updated);
-        setSelectedIds((prev) => prev.filter((id) => id !== deletingRole.id));
-
-        recordUmsAuditEvent({
-            action: 'DELETED',
-            resource: 'Role',
-            resourceId: deletingRole.id,
-            resourceName: deletingRole.nameEn,
-            detailsEn: `Deleted role ${deletingRole.code} (${deletingRole.nameEn}).`,
-            detailsAr: `حذف الدور ${deletingRole.code} (${deletingRole.nameAr}).`,
-            previousState: JSON.stringify(deletingRole),
-        });
-
-        toast.success(
-            t('ums.roles.feedback.deleted', {
-                defaultValue: `Role ${deletingRole.nameEn} deleted successfully.`,
-                name: deletingRole.nameEn,
-            })
-        );
-        setDeletingRole(null);
     };
 
     // Export CSV
@@ -494,7 +587,8 @@ export const UmsRolesPage: React.FC = () => {
             escapeSafeCsvCell(r.descriptionEn || ''),
         ]);
 
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const csvContent =
+            '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -531,53 +625,288 @@ export const UmsRolesPage: React.FC = () => {
         return securityGroups.find((g) => g.id === viewingRole.securityGroupId);
     }, [viewingRole, securityGroups]);
 
-    // Deletion eligibility for modal
+    // Deletion eligibility for modal via umsApi
     const deletionEligibility = useMemo(() => {
         if (!deletingRole) return null;
-        return checkRoleDeletionEligibility(deletingRole.id, employees);
+        return umsApi.checkRoleDeletionEligibility(deletingRole.id, employees);
     }, [deletingRole, employees]);
 
     // Helper: Level description badge
-    const renderLevelBadge = (level: number) => {
-        switch (level) {
-            case 1:
-                return (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
-                        <span>{t('ums.roles.level1', { defaultValue: 'Level 1 · Super Admin' })}</span>
-                    </span>
-                );
-            case 2:
-                return (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#265938]" />
-                        <span>{t('ums.roles.level2', { defaultValue: 'Level 2 · Managerial' })}</span>
-                    </span>
-                );
-            case 3:
-                return (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#45413C] border border-[#E5E0D8]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#4A6B53]" />
-                        <span>{t('ums.roles.level3', { defaultValue: 'Level 3 · Operational' })}</span>
-                    </span>
-                );
-            case 4:
-                return (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#6E6862] border border-[#E5E0D8]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
-                        <span>{t('ums.roles.level4', { defaultValue: 'Level 4 · Specialist' })}</span>
-                    </span>
-                );
-            case 5:
-            default:
-                return (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#857E74] border border-[#E5E0D8]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#A8A298]" />
-                        <span>{t('ums.roles.level5', { defaultValue: 'Level 5 · Basic' })}</span>
-                    </span>
-                );
-        }
-    };
+    const renderLevelBadge = useCallback(
+        (level: number) => {
+            switch (level) {
+                case 1:
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
+                            <span>
+                                {t('ums.roles.level1', { defaultValue: 'Level 1 · Super Admin' })}
+                            </span>
+                        </span>
+                    );
+                case 2:
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#037F8C]" />
+                            <span>
+                                {t('ums.roles.level2', { defaultValue: 'Level 2 · Managerial' })}
+                            </span>
+                        </span>
+                    );
+                case 3:
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#45413C] border border-[#E5E0D8]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#4A6B53]" />
+                            <span>
+                                {t('ums.roles.level3', { defaultValue: 'Level 3 · Operational' })}
+                            </span>
+                        </span>
+                    );
+                case 4:
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#6E6862] border border-[#E5E0D8]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#857E74]" />
+                            <span>
+                                {t('ums.roles.level4', { defaultValue: 'Level 4 · Specialist' })}
+                            </span>
+                        </span>
+                    );
+                case 5:
+                default:
+                    return (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FAF8F5] text-[#857E74] border border-[#E5E0D8]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#A8A298]" />
+                            <span>
+                                {t('ums.roles.level5', { defaultValue: 'Level 5 · Basic' })}
+                            </span>
+                        </span>
+                    );
+            }
+        },
+        [t]
+    );
+
+    // Shared DataTable Column Definitions
+    const columns: ColumnDef<any, RoleRecord>[] = useMemo(
+        () => [
+            {
+                id: 'select',
+                header: () => (
+                    <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={handleSelectAll}
+                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
+                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                    />
+                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const isSelected = selectedIds.includes(item.id);
+                    return (
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(item.id)}
+                            aria-label={`Select ${item.nameEn}`}
+                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                        />
+                    );
+                },
+            },
+            {
+                accessorKey: 'code',
+                header: () => t('ums.roles.colCode', { defaultValue: 'Code' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex items-center gap-1.5 font-mono text-xs">
+                            <span className="font-semibold text-[#0D0D0D]">{item.code}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleCopyCode(item.code)}
+                                className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
+                                title={t('common.copy', { defaultValue: 'Copy' })}
+                            >
+                                {copiedCode === item.code ? (
+                                    <Check size={12} className="text-[#037F8C]" />
+                                ) : (
+                                    <Copy size={12} />
+                                )}
+                            </button>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'name',
+                header: () => t('ums.roles.colName', { defaultValue: 'Role Name' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex flex-col">
+                            <span className="font-bold text-[#0D0D0D]">
+                                {isRtl ? item.nameAr : item.nameEn}
+                            </span>
+                            <span className="text-[11px] text-[#6E6862]">
+                                {isRtl ? item.nameEn : item.nameAr}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'securityGroup',
+                header: () =>
+                    t('ums.roles.colSecurityGroup', { defaultValue: 'Security Group' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
+                            <Shield size={13} className="text-[#037F8C]" />
+                            <span className="font-medium">
+                                {resolveSecurityGroupDisplayName(item)}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'level',
+                header: () => t('ums.roles.colLevel', { defaultValue: 'Level' }),
+                cell: ({ row }) => renderLevelBadge(row.original.level),
+            },
+            {
+                id: 'staff',
+                header: () =>
+                    t('ums.roles.colStaff', { defaultValue: 'Assigned Users' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const staffCount = employeeCountByRole[item.id] || 0;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => setViewingRole(item)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
+                            title={t('ums.roles.staffPreview', {
+                                defaultValue: 'View assigned users',
+                            })}
+                        >
+                            <Users size={13} className="text-[#857E74]" />
+                            <span>
+                                {staffCount > 0
+                                    ? `${staffCount} ${t('ums.roles.staffPreview', {
+                                          defaultValue: 'Users',
+                                      })}`
+                                    : t('ums.roles.noStaffAssigned', {
+                                          defaultValue: 'No Users',
+                                      })}
+                            </span>
+                        </button>
+                    );
+                },
+            },
+            {
+                accessorKey: 'status',
+                header: () => t('common.status', { defaultValue: 'Status' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => handleToggleStatus(item)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
+                                item.status === 'Active'
+                                    ? 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20 hover:bg-[#EAF3EC]/80'
+                                    : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
+                            }`}
+                            title={t('common.toggleStatus', {
+                                defaultValue: 'Click to toggle status',
+                            })}
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                    item.status === 'Active'
+                                        ? 'bg-[#037F8C]'
+                                        : 'bg-[#857E74]'
+                                }`}
+                            />
+                            <span>
+                                {item.status === 'Active'
+                                    ? t('common.active', { defaultValue: 'Active' })
+                                    : t('common.inactive', { defaultValue: 'Inactive' })}
+                            </span>
+                        </button>
+                    );
+                },
+            },
+            {
+                id: 'actions',
+                header: () => t('common.actions', { defaultValue: 'Actions' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex items-center justify-end gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setViewingRole(item)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={t('common.view', { defaultValue: 'View Details' })}
+                            >
+                                <Eye size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleOpenEdit(item)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={t('common.edit', { defaultValue: 'Edit' })}
+                            >
+                                <Pencil size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleToggleStatus(item)}
+                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                    item.status === 'Active'
+                                        ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
+                                        : 'text-[#857E74] hover:bg-[#FAF8F5]'
+                                }`}
+                                title={t('common.toggleStatus', {
+                                    defaultValue: 'Toggle Status',
+                                })}
+                            >
+                                <Power size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleDeleteClick(item)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
+                                title={t('common.delete', { defaultValue: 'Delete' })}
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [
+            t,
+            isRtl,
+            isAllSelected,
+            selectedIds,
+            copiedCode,
+            employeeCountByRole,
+            handleSelectAll,
+            handleToggleSelect,
+            handleCopyCode,
+            resolveSecurityGroupDisplayName,
+            renderLevelBadge,
+            handleToggleStatus,
+            handleOpenEdit,
+            handleDeleteClick,
+        ]
+    );
 
     return (
         <div className="space-y-6 text-start">
@@ -589,7 +918,7 @@ export const UmsRolesPage: React.FC = () => {
                             {t('ums.roles.title', { defaultValue: 'Roles Master' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             ROL-MST
@@ -616,10 +945,10 @@ export const UmsRolesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={14} />
-                        <span>{t('ums.roles.addRole', { defaultValue: 'Add Role' })}</span>
+                        <span>{t('ums.roles.addRole', { defaultValue: 'Add New Role' })}</span>
                     </button>
                 </div>
             </div>
@@ -632,7 +961,7 @@ export const UmsRolesPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.roles.kpi.total', { defaultValue: 'Total Roles' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <UserCheck size={16} />
                         </div>
                     </div>
@@ -652,12 +981,12 @@ export const UmsRolesPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.roles.kpi.active', { defaultValue: 'Active Roles' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <CheckCircle2 size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#265938]">
+                        <span className="text-2xl font-bold tracking-tight text-[#037F8C]">
                             {kpis.active}
                         </span>
                         <span className="text-[11px] font-normal text-[#6E6862]">
@@ -692,7 +1021,7 @@ export const UmsRolesPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.roles.kpi.workforce', { defaultValue: 'Assigned Users' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Users size={16} />
                         </div>
                     </div>
@@ -707,41 +1036,9 @@ export const UmsRolesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Filter & Search Bar */}
+            {/* Filter Bar & Bulk Selection Toolbar */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs space-y-3">
-                <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                        <Search
-                            size={15}
-                            className="absolute top-1/2 -translate-y-1/2 text-[#857E74] pointer-events-none start-3"
-                        />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            placeholder={t('ums.roles.searchPlaceholder', {
-                                defaultValue: 'Search roles by code, name, security group, level, or description...',
-                            })}
-                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] transition-colors"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setCurrentPage(1);
-                                }}
-                                className="absolute top-1/2 -translate-y-1/2 end-2.5 text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
-                            >
-                                <X size={13} />
-                            </button>
-                        )}
-                    </div>
-
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex flex-wrap items-center gap-2.5">
                         {/* Security Group Filter */}
                         <div className="min-w-[170px]">
@@ -751,11 +1048,15 @@ export const UmsRolesPage: React.FC = () => {
                                     setSecurityGroupFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                aria-label={t('ums.roles.filterSecurityGroup', { defaultValue: 'Filter Security Group' })}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
+                                aria-label={t('ums.roles.filterSecurityGroup', {
+                                    defaultValue: 'Filter Security Group',
+                                })}
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] cursor-pointer"
                             >
                                 <option value="ALL">
-                                    {t('common.allSecurityGroups', { defaultValue: 'All Security Groups' })}
+                                    {t('common.allSecurityGroups', {
+                                        defaultValue: 'All Security Groups',
+                                    })}
                                 </option>
                                 {activeSecurityGroups.map((group) => (
                                     <option key={group.id} value={group.id}>
@@ -773,10 +1074,14 @@ export const UmsRolesPage: React.FC = () => {
                                     setLevelFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                aria-label={t('ums.roles.filterLevel', { defaultValue: 'Filter Level' })}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
+                                aria-label={t('ums.roles.filterLevel', {
+                                    defaultValue: 'Filter Level',
+                                })}
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] cursor-pointer"
                             >
-                                <option value="ALL">{t('ums.roles.allLevels', { defaultValue: 'All Levels' })}</option>
+                                <option value="ALL">
+                                    {t('ums.roles.allLevels', { defaultValue: 'All Levels' })}
+                                </option>
                                 <option value="1">Level 1 (Admin)</option>
                                 <option value="2">Level 2 (Managerial)</option>
                                 <option value="3">Level 3 (Operational)</option>
@@ -809,29 +1114,29 @@ export const UmsRolesPage: React.FC = () => {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Reset Filters */}
-                        {(searchQuery ||
-                            statusFilter !== 'ALL' ||
-                            securityGroupFilter !== 'ALL' ||
-                            levelFilter !== 'ALL') && (
-                            <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                title={t('common.resetFilters', { defaultValue: 'Reset Filters' })}
-                            >
-                                <RotateCcw size={13} />
-                                <span>{t('common.reset', { defaultValue: 'Reset' })}</span>
-                            </button>
-                        )}
                     </div>
+
+                    {/* Reset Filters */}
+                    {(searchQuery ||
+                        statusFilter !== 'ALL' ||
+                        securityGroupFilter !== 'ALL' ||
+                        levelFilter !== 'ALL') && (
+                        <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            title={t('common.resetFilters', { defaultValue: 'Reset Filters' })}
+                        >
+                            <RotateCcw size={13} />
+                            <span>{t('common.reset', { defaultValue: 'Reset' })}</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Bulk selection action bar */}
                 {selectedIds.length > 0 && (
                     <div className="flex items-center justify-between px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
-                        <span className="font-semibold text-[#2D3F2C]">
+                        <span className="font-semibold text-[#037F8C]">
                             {t('common.selectedCount', {
                                 defaultValue: `${selectedIds.length} item(s) selected`,
                                 count: selectedIds.length,
@@ -850,555 +1155,50 @@ export const UmsRolesPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Data Table */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-start text-xs">
-                        <thead>
-                            <tr className="border-b border-[#E5E0D8] bg-[#FAF8F5] text-[#6E6862] font-semibold">
-                                <th className="w-10 px-4 py-3 text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                    />
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.roles.colCode', { defaultValue: 'Code' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.roles.colName', { defaultValue: 'Role Name' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.roles.colSecurityGroup', { defaultValue: 'Security Group' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.roles.colLevel', { defaultValue: 'Level' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.roles.colStaff', { defaultValue: 'Assigned Users' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('common.status', { defaultValue: 'Status' })}
-                                </th>
-                                <th className="px-4 py-3 text-end">
-                                    {t('common.actions', { defaultValue: 'Actions' })}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#EFECE6] text-[#45413C]">
-                            {paginatedRoles.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="px-4 py-12 text-center text-[#857E74]">
-                                        <UserCheck size={32} className="mx-auto mb-2 text-[#857E74]/40" />
-                                        <p className="font-semibold text-[#0D0D0D]">
-                                            {t('common.noRecords', { defaultValue: 'No roles found' })}
-                                        </p>
-                                        <p className="text-[11px] text-[#6E6862] mt-0.5">
-                                            {searchQuery ||
-                                            statusFilter !== 'ALL' ||
-                                            securityGroupFilter !== 'ALL' ||
-                                            levelFilter !== 'ALL'
-                                                ? t('common.tryAdjustingFilters', { defaultValue: 'Try clearing your search query or filters.' })
-                                                : t('ums.roles.noRolesYet', { defaultValue: 'Get started by creating your first corporate role.' })}
-                                        </p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedRoles.map((item) => {
-                                    const staffCount = employeeCountByRole[item.id] || 0;
-                                    const isSelected = selectedIds.includes(item.id);
+            {/* Shared DataTable */}
+            <DataTable
+                columns={columns}
+                data={paginatedRoles}
+                count={filteredRoles.length}
+                pageIndex={currentPage - 1}
+                pageSize={pageSize}
+                onPageChange={(pageIdx) => setCurrentPage(pageIdx + 1)}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                }}
+                searchValue={searchQuery}
+                onSearchChange={(val) => {
+                    setSearchQuery(val);
+                    setCurrentPage(1);
+                }}
+                searchPlaceholder={t('ums.roles.searchPlaceholder', {
+                    defaultValue:
+                        'Search roles by code, name, security group, level, or description...',
+                })}
+                title={t('ums.roles.title', { defaultValue: 'Roles Master' })}
+            />
 
-                                    return (
-                                        <tr
-                                            key={item.id}
-                                            className={`hover:bg-[#FAF8F5]/60 transition-colors ${
-                                                isSelected ? 'bg-[#FAF8F5]' : ''
-                                            }`}
-                                        >
-                                            {/* Checkbox */}
-                                            <td className="w-10 px-4 py-3 text-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleToggleSelect(item.id)}
-                                                    aria-label={`Select ${item.nameEn}`}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                                />
-                                            </td>
+            {/* Standalone Create / Edit Role Form Component */}
+            <RoleForm
+                isOpen={isCreateOpen || Boolean(editingRole)}
+                isEditing={Boolean(editingRole)}
+                formData={formData}
+                formErrors={formErrors}
+                securityGroups={formSecurityGroups}
+                isSubmitting={upsertRoleMutation.isPending}
+                onChange={setFormData}
+                onClose={handleCloseForm}
+                onSubmit={editingRole ? handleSaveEdit : handleSaveCreate}
+            />
 
-                                            {/* Code */}
-                                            <td className="px-4 py-3 font-mono text-xs">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-semibold text-[#0D0D0D]">
-                                                        {item.code}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleCopyCode(item.code)}
-                                                        className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
-                                                        title={t('common.copy', { defaultValue: 'Copy' })}
-                                                    >
-                                                        {copiedCode === item.code ? (
-                                                            <Check size={12} className="text-[#265938]" />
-                                                        ) : (
-                                                            <Copy size={12} />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </td>
-
-                                            {/* Name (Bilingual) */}
-                                            <td className="px-4 py-3">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-[#0D0D0D]">
-                                                        {isRtl ? item.nameAr : item.nameEn}
-                                                    </span>
-                                                    <span className="text-[11px] text-[#6E6862]">
-                                                        {isRtl ? item.nameEn : item.nameAr}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            {/* Security Group */}
-                                            <td className="px-4 py-3">
-                                                <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
-                                                    <Shield size={13} className="text-[#2D3F2C]" />
-                                                    <span className="font-medium">
-                                                        {resolveSecurityGroupDisplayName(item)}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            {/* Level Badge */}
-                                            <td className="px-4 py-3">
-                                                {renderLevelBadge(item.level)}
-                                            </td>
-
-                                            {/* Assigned Staff */}
-                                            <td className="px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setViewingRole(item)}
-                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
-                                                    title={t('ums.roles.staffPreview', {
-                                                        defaultValue: 'View assigned users',
-                                                    })}
-                                                >
-                                                    <Users size={13} className="text-[#857E74]" />
-                                                    <span>
-                                                        {staffCount > 0
-                                                            ? `${staffCount} ${t('ums.roles.staffPreview', { defaultValue: 'Users' })}`
-                                                            : t('ums.roles.noStaffAssigned', { defaultValue: 'No Users' })}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            {/* Status */}
-                                            <td className="px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(item)}
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
-                                                        item.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938] border-[#265938]/20 hover:bg-[#EAF3EC]/80'
-                                                            : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
-                                                    }`}
-                                                    title={t('common.toggleStatus', { defaultValue: 'Click to toggle status' })}
-                                                >
-                                                    <span
-                                                        className={`w-1.5 h-1.5 rounded-full ${
-                                                            item.status === 'Active' ? 'bg-[#265938]' : 'bg-[#857E74]'
-                                                        }`}
-                                                    />
-                                                    <span>
-                                                        {item.status === 'Active'
-                                                            ? t('common.active', { defaultValue: 'Active' })
-                                                            : t('common.inactive', { defaultValue: 'Inactive' })}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td className="px-4 py-3 text-end">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    {/* View */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setViewingRole(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t('common.view', { defaultValue: 'View Details' })}
-                                                    >
-                                                        <Eye size={14} />
-                                                    </button>
-
-                                                    {/* Edit */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEdit(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t('common.edit', { defaultValue: 'Edit' })}
-                                                    >
-                                                        <Pencil size={14} />
-                                                    </button>
-
-                                                    {/* Quick Status Toggle */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(item)}
-                                                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                                                            item.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
-                                                                : 'text-[#857E74] hover:bg-[#FAF8F5]'
-                                                        }`}
-                                                        title={t('common.toggleStatus', { defaultValue: 'Toggle Status' })}
-                                                    >
-                                                        <Power size={14} />
-                                                    </button>
-
-                                                    {/* Delete */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteClick(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
-                                                        title={t('common.delete', { defaultValue: 'Delete' })}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-[#E5E0D8] bg-[#FAF8F5]/50 text-xs text-[#6E6862]">
-                    <div className="flex items-center gap-2">
-                        <span>{t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                        >
-                            {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                        <span className="ms-2">
-                            {t('common.showingPagination', {
-                                defaultValue: `Showing ${
-                                    filteredRoles.length === 0 ? 0 : (currentPage - 1) * pageSize + 1
-                                } - ${Math.min(
-                                    currentPage * pageSize,
-                                    filteredRoles.length
-                                )} of ${filteredRoles.length}`,
-                                start: filteredRoles.length === 0 ? 0 : (currentPage - 1) * pageSize + 1,
-                                end: Math.min(currentPage * pageSize, filteredRoles.length),
-                                total: filteredRoles.length,
-                            })}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.prev', { defaultValue: 'Previous Page' })}
-                        >
-                            <ChevronLeft size={14} className={isRtl ? 'rotate-180' : ''} />
-                        </button>
-
-                        <span className="px-2 font-semibold text-[#0D0D0D]">
-                            {currentPage} / {totalPages}
-                        </span>
-
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.next', { defaultValue: 'Next Page' })}
-                        >
-                            <ChevronRight size={14} className={isRtl ? 'rotate-180' : ''} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Create / Edit Drawer or Modal */}
-            {(isCreateOpen || editingRole) && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs">
-                    <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
-                            <div>
-                                <h2 className="text-base font-bold text-[#0D0D0D]">
-                                    {isCreateOpen
-                                        ? t('ums.roles.addRole', { defaultValue: 'Add Role' })
-                                        : t('ums.roles.editRole', { defaultValue: 'Edit Role' })}
-                                </h2>
-                                <p className="text-xs text-[#6E6862] mt-0.5">
-                                    {formData.code}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCreateOpen(false);
-                                    setEditingRole(null);
-                                }}
-                                className="p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] cursor-pointer"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={isCreateOpen ? handleSaveCreate : handleSaveEdit} className="p-6 space-y-4">
-                            {/* Code (Read-Only) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.roles.colCode', { defaultValue: 'Code' })}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.code}
-                                    disabled
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#6E6862] cursor-not-allowed"
-                                />
-                            </div>
-
-                            {/* Name EN & AR */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.roles.form.nameEn', { defaultValue: 'Role Name (EN)' })}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.nameEn}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({ ...prev, nameEn: e.target.value }))
-                                        }
-                                        placeholder="e.g. Operations Specialist"
-                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                            formErrors.nameEn
-                                                ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                        }`}
-                                    />
-                                    {formErrors.nameEn && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                            {formErrors.nameEn}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.roles.form.nameAr', { defaultValue: 'Role Name (AR)' })}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="rtl"
-                                        value={formData.nameAr}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({ ...prev, nameAr: e.target.value }))
-                                        }
-                                        placeholder="مثال: أخصائي عمليات تنفيذية"
-                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                            formErrors.nameAr
-                                                ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                        }`}
-                                    />
-                                    {formErrors.nameAr && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                            {formErrors.nameAr}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Security Group Selector */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.roles.form.securityGroup', { defaultValue: 'Security Group' })}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={formData.securityGroupId}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, securityGroupId: e.target.value }))
-                                    }
-                                    className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer ${
-                                        formErrors.securityGroupId
-                                            ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('common.selectSecurityGroup', { defaultValue: '-- Select Security Group --' })}
-                                    </option>
-                                    {activeSecurityGroups.map((g) => (
-                                        <option key={g.id} value={g.id}>
-                                            {g.code} — {isRtl ? g.nameAr : g.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
-                                {formErrors.securityGroupId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                        {formErrors.securityGroupId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Role Authorization Level */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.roles.form.level', { defaultValue: 'Authorization Level' })}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={formData.level}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, level: Number(e.target.value) }))
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
-                                >
-                                    <option value={1}>
-                                        {t('ums.roles.level1', { defaultValue: 'Level 1 — Executive / Super Admin' })}
-                                    </option>
-                                    <option value={2}>
-                                        {t('ums.roles.level2', { defaultValue: 'Level 2 — Departmental / Managerial' })}
-                                    </option>
-                                    <option value={3}>
-                                        {t('ums.roles.level3', { defaultValue: 'Level 3 — Operational / Supervisory' })}
-                                    </option>
-                                    <option value={4}>
-                                        {t('ums.roles.level4', { defaultValue: 'Level 4 — Specialist / Staff' })}
-                                    </option>
-                                    <option value={5}>
-                                        {t('ums.roles.level5', { defaultValue: 'Level 5 — Basic / Read-Only' })}
-                                    </option>
-                                </select>
-                            </div>
-
-                            {/* Description EN */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.roles.form.descEn', { defaultValue: 'Description (EN)' })}
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={formData.descriptionEn}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, descriptionEn: e.target.value }))
-                                    }
-                                    placeholder="Scope of authority, access policies, and responsibilities..."
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                />
-                            </div>
-
-                            {/* Description AR */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.roles.form.descAr', { defaultValue: 'Description (AR)' })}
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    dir="rtl"
-                                    value={formData.descriptionAr}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, descriptionAr: e.target.value }))
-                                    }
-                                    placeholder="نطاق الصلاحيات، سياسات الوصول والمسؤوليات..."
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                />
-                            </div>
-
-                            {/* Status */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1.5">
-                                    {t('common.status', { defaultValue: 'Status' })}
-                                </label>
-                                <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 text-xs font-medium text-[#45413C] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="roleStatus"
-                                            value="Active"
-                                            checked={formData.status === 'Active'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({ ...prev, status: 'Active' }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                        />
-                                        <span>{t('common.active', { defaultValue: 'Active' })}</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 text-xs font-medium text-[#45413C] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="roleStatus"
-                                            value="Inactive"
-                                            checked={formData.status === 'Inactive'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({ ...prev, status: 'Inactive' }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                        />
-                                        <span>{t('common.inactive', { defaultValue: 'Inactive' })}</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E5E0D8]">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsCreateOpen(false);
-                                        setEditingRole(null);
-                                    }}
-                                    className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                >
-                                    {t('common.cancel', { defaultValue: 'Cancel' })}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-                                >
-                                    {isCreateOpen
-                                        ? t('common.create', { defaultValue: 'Create' })
-                                        : t('common.saveChanges', { defaultValue: 'Save Changes' })}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* View Details Drawer or Modal */}
+            {/* View Details Modal */}
             {viewingRole && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs">
                     <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                                     <UserCheck size={18} />
                                 </div>
                                 <div>
@@ -1424,7 +1224,9 @@ export const UmsRolesPage: React.FC = () => {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 text-xs">
                                 <div>
                                     <span className="text-[#857E74] block">
-                                        {t('ums.roles.colSecurityGroup', { defaultValue: 'Security Group' })}
+                                        {t('ums.roles.colSecurityGroup', {
+                                            defaultValue: 'Security Group',
+                                        })}
                                     </span>
                                     <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
                                         {resolveSecurityGroupDisplayName(viewingRole)}
@@ -1445,7 +1247,7 @@ export const UmsRolesPage: React.FC = () => {
                                     <span
                                         className={`inline-block font-semibold mt-0.5 ${
                                             viewingRole.status === 'Active'
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -1467,13 +1269,17 @@ export const UmsRolesPage: React.FC = () => {
                             {viewedSecurityGroup && (
                                 <div>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <Shield size={14} className="text-[#2D3F2C]" />
+                                        <Shield size={14} className="text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.roles.permissionsPreview', {
                                                 defaultValue: 'Security Group Permissions Matrix',
                                             })}{' '}
                                             <span className="font-normal text-[#6E6862]">
-                                                ({viewedSecurityGroup.code} — {isRtl ? viewedSecurityGroup.nameAr : viewedSecurityGroup.nameEn})
+                                                ({viewedSecurityGroup.code} —{' '}
+                                                {isRtl
+                                                    ? viewedSecurityGroup.nameAr
+                                                    : viewedSecurityGroup.nameEn}
+                                                )
                                             </span>
                                         </h3>
                                     </div>
@@ -1485,48 +1291,79 @@ export const UmsRolesPage: React.FC = () => {
                                                     <th className="px-3 py-2 text-start">Module</th>
                                                     <th className="px-3 py-2 text-center">Read</th>
                                                     <th className="px-3 py-2 text-center">Write</th>
-                                                    <th className="px-3 py-2 text-center">Delete</th>
-                                                    <th className="px-3 py-2 text-center">Export</th>
+                                                    <th className="px-3 py-2 text-center">
+                                                        Delete
+                                                    </th>
+                                                    <th className="px-3 py-2 text-center">
+                                                        Export
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-[#EFECE6] text-[#45413C]">
-                                                {Object.entries(viewedSecurityGroup.permissions).map(
-                                                    ([modKey, perm]) => (
-                                                        <tr key={modKey} className="hover:bg-[#FAF8F5]/50">
-                                                            <td className="px-3 py-1.5 font-semibold uppercase font-mono text-[#0D0D0D]">
-                                                                {modKey}
-                                                            </td>
-                                                            <td className="px-3 py-1.5 text-center">
-                                                                {perm.read ? (
-                                                                    <CheckSquare size={13} className="inline text-[#265938]" />
-                                                                ) : (
-                                                                    <Square size={13} className="inline text-[#857E74]/40" />
-                                                                )}
-                                                            </td>
-                                                            <td className="px-3 py-1.5 text-center">
-                                                                {perm.write ? (
-                                                                    <CheckSquare size={13} className="inline text-[#265938]" />
-                                                                ) : (
-                                                                    <Square size={13} className="inline text-[#857E74]/40" />
-                                                                )}
-                                                            </td>
-                                                            <td className="px-3 py-1.5 text-center">
-                                                                {perm.delete ? (
-                                                                    <CheckSquare size={13} className="inline text-[#DC2626]" />
-                                                                ) : (
-                                                                    <Square size={13} className="inline text-[#857E74]/40" />
-                                                                )}
-                                                            </td>
-                                                            <td className="px-3 py-1.5 text-center">
-                                                                {perm.export ? (
-                                                                    <CheckSquare size={13} className="inline text-[#2D3F2C]" />
-                                                                ) : (
-                                                                    <Square size={13} className="inline text-[#857E74]/40" />
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    )
-                                                )}
+                                                {Object.entries(
+                                                    viewedSecurityGroup.permissions
+                                                ).map(([modKey, perm]) => (
+                                                    <tr
+                                                        key={modKey}
+                                                        className="hover:bg-[#FAF8F5]/50"
+                                                    >
+                                                        <td className="px-3 py-1.5 font-semibold uppercase font-mono text-[#0D0D0D]">
+                                                            {modKey}
+                                                        </td>
+                                                        <td className="px-3 py-1.5 text-center">
+                                                            {perm.read ? (
+                                                                <CheckSquare
+                                                                    size={13}
+                                                                    className="inline text-[#037F8C]"
+                                                                />
+                                                            ) : (
+                                                                <Square
+                                                                    size={13}
+                                                                    className="inline text-[#857E74]/40"
+                                                                />
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-1.5 text-center">
+                                                            {perm.write ? (
+                                                                <CheckSquare
+                                                                    size={13}
+                                                                    className="inline text-[#037F8C]"
+                                                                />
+                                                            ) : (
+                                                                <Square
+                                                                    size={13}
+                                                                    className="inline text-[#857E74]/40"
+                                                                />
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-1.5 text-center">
+                                                            {perm.delete ? (
+                                                                <CheckSquare
+                                                                    size={13}
+                                                                    className="inline text-[#DC2626]"
+                                                                />
+                                                            ) : (
+                                                                <Square
+                                                                    size={13}
+                                                                    className="inline text-[#857E74]/40"
+                                                                />
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-1.5 text-center">
+                                                            {perm.export ? (
+                                                                <CheckSquare
+                                                                    size={13}
+                                                                    className="inline text-[#037F8C]"
+                                                                />
+                                                            ) : (
+                                                                <Square
+                                                                    size={13}
+                                                                    className="inline text-[#857E74]/40"
+                                                                />
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1537,16 +1374,21 @@ export const UmsRolesPage: React.FC = () => {
                             <div className="space-y-3">
                                 <div>
                                     <h3 className="text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.roles.form.descEn', { defaultValue: 'Description (EN)' })}
+                                        {t('ums.roles.form.descEn', {
+                                            defaultValue: 'Description (EN)',
+                                        })}
                                     </h3>
                                     <p className="text-xs text-[#6E6862] bg-[#FAF8F5] p-3 rounded-lg border border-[#E5E0D8]">
-                                        {viewingRole.descriptionEn || 'No English description provided.'}
+                                        {viewingRole.descriptionEn ||
+                                            'No English description provided.'}
                                     </p>
                                 </div>
 
                                 <div>
                                     <h3 className="text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.roles.form.descAr', { defaultValue: 'Description (AR)' })}
+                                        {t('ums.roles.form.descAr', {
+                                            defaultValue: 'Description (AR)',
+                                        })}
                                     </h3>
                                     <p
                                         dir="rtl"
@@ -1561,15 +1403,20 @@ export const UmsRolesPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-xs font-bold text-[#0D0D0D]">
-                                        {t('ums.roles.staffPreview', { defaultValue: 'Assigned Users' })}{' '}
-                                        <span className="text-[#265938]">({viewedEmployees.length})</span>
+                                        {t('ums.roles.staffPreview', {
+                                            defaultValue: 'Assigned Users',
+                                        })}{' '}
+                                        <span className="text-[#037F8C]">
+                                            ({viewedEmployees.length})
+                                        </span>
                                     </h3>
                                 </div>
 
                                 {viewedEmployees.length === 0 ? (
                                     <div className="p-4 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-center text-xs text-[#857E74]">
                                         {t('ums.roles.noStaffAssigned', {
-                                            defaultValue: 'No users currently assigned to this role.',
+                                            defaultValue:
+                                                'No users currently assigned to this role.',
                                         })}
                                     </div>
                                 ) : (
@@ -1580,7 +1427,7 @@ export const UmsRolesPage: React.FC = () => {
                                                 className="flex items-center justify-between p-3 bg-white text-xs"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px]">
+                                                    <div className="w-7 h-7 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px]">
                                                         {emp.nameEn.slice(0, 2).toUpperCase()}
                                                     </div>
                                                     <div>
@@ -1588,18 +1435,24 @@ export const UmsRolesPage: React.FC = () => {
                                                             {isRtl ? emp.nameAr : emp.nameEn}
                                                         </span>
                                                         <span className="text-[11px] text-[#6E6862]">
-                                                            {emp.code} · {isRtl ? emp.departmentNameAr || emp.departmentName : emp.departmentName}
+                                                            {emp.code} ·{' '}
+                                                            {isRtl
+                                                                ? emp.departmentNameAr ||
+                                                                  emp.departmentName
+                                                                : emp.departmentName}
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <span
                                                     className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                                         emp.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938]'
+                                                            ? 'bg-[#EAF3EC] text-[#037F8C]'
                                                             : 'bg-[#FAF8F5] text-[#857E74]'
                                                     }`}
                                                 >
-                                                    {t(`ums.employees.statuses.${emp.status}`, { defaultValue: emp.status })}
+                                                    {t(`ums.employees.statuses.${emp.status}`, {
+                                                        defaultValue: emp.status,
+                                                    })}
                                                 </span>
                                             </div>
                                         ))}
@@ -1612,7 +1465,7 @@ export const UmsRolesPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingRole(null)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>
@@ -1637,7 +1490,9 @@ export const UmsRolesPage: React.FC = () => {
                                     })}
                                 </h2>
                                 <p className="text-xs text-[#6E6862] text-center mb-4">
-                                    {isRtl ? deletionEligibility.reasonAr : deletionEligibility.reasonEn}
+                                    {isRtl
+                                        ? deletionEligibility.reasonAr
+                                        : deletionEligibility.reasonEn}
                                 </p>
                                 <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#E5E0D8]">
                                     <button
@@ -1653,9 +1508,11 @@ export const UmsRolesPage: React.FC = () => {
                                             handleToggleStatus(deletingRole);
                                             setDeletingRole(null);
                                         }}
-                                        className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                        className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                     >
-                                        {t('common.deactivateInstead', { defaultValue: 'Deactivate Instead' })}
+                                        {t('common.deactivateInstead', {
+                                            defaultValue: 'Deactivate Instead',
+                                        })}
                                     </button>
                                 </div>
                             </div>
@@ -1689,7 +1546,8 @@ export const UmsRolesPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={handleConfirmDelete}
-                                        className="px-4 py-2 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold transition-colors cursor-pointer"
+                                        disabled={deleteRoleMutation.isPending}
+                                        className="px-4 py-2 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                                     >
                                         {t('common.delete', { defaultValue: 'Delete' })}
                                     </button>

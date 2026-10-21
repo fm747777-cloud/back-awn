@@ -27,7 +27,7 @@ interface AssetCategoryFormDrawerProps {
     isSubmitting?: boolean;
 }
 
-export const AssetCategoryFormDrawer: React.FC<AssetCategoryFormDrawerProps> = ({ isOpen, mode, category, generatedCode, onClose, onSubmit, isSubmitting = false }) => {
+export const AssetCategoryFormDrawer: React.FC<AssetCategoryFormDrawerProps> = ({ isOpen, mode, category, generatedCode: _generatedCode, onClose, onSubmit, isSubmitting = false }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language?.startsWith('ar') === true;
     const isReadOnly = mode === 'view';
@@ -35,7 +35,6 @@ export const AssetCategoryFormDrawer: React.FC<AssetCategoryFormDrawerProps> = (
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [nameError, setNameError] = useState('');
-    const categoryCode = mode === 'create' ? generatedCode : String(category?.categoryCode ?? '');
 
     useEffect(() => {
         if (!isOpen) return;

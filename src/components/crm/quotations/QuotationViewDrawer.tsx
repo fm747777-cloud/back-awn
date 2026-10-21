@@ -60,7 +60,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.code}
@@ -109,7 +109,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                 <div className="flex-1 overflow-y-auto p-6 space-y-5">
                     {/* Workflow & Conversion Actions */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-3">
-                        <h3 className="text-xs font-bold text-[#2D3F2C]">
+                        <h3 className="text-xs font-bold text-[#037F8C]">
                             {t(
                                 'crm.commercial.quotations.viewDrawer.workflowActions'
                             )}
@@ -174,7 +174,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                                         onClick={() =>
                                             onConvertToContract(record.id)
                                         }
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
                                     >
                                         <FileCheck2 size={14} />
                                         {t(
@@ -187,7 +187,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                                         onClick={() =>
                                             onConvertToInvoice(record.id)
                                         }
-                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#2D3F2C] bg-white hover:bg-[#FAF8F5] text-[#2D3F2C] text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#037F8C] bg-white hover:bg-[#FAF8F5] text-[#037F8C] text-xs font-semibold cursor-pointer disabled:opacity-50"
                                     >
                                         <Receipt size={14} />
                                         {t(
@@ -202,7 +202,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                     {/* Client & Deal Details */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.quotations.viewDrawer.title')}
                             </span>
@@ -272,7 +272,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                     {/* Line Items Table */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Calculator size={14} className="text-[#2D3F2C]" />
+                            <Calculator size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.common.lineItems.sectionTitle')}{' '}
                                 ({record.lineItems.length})
@@ -293,7 +293,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                                                 : li.descriptionEn}
                                         </span>
                                         <span
-                                            className="font-mono font-bold text-[#2D3F2C]"
+                                            className="font-mono font-bold text-[#037F8C]"
                                             dir="ltr"
                                         >
                                             {li.lineTotal.toLocaleString()} SAR
@@ -371,7 +371,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono text-[#2D3F2C]"
+                                    className="font-mono text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {record.grandTotal.toLocaleString()} SAR
@@ -393,7 +393,7 @@ export const QuotationViewDrawer: React.FC<QuotationViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.commercial.common.edit')}

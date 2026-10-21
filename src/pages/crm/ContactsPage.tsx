@@ -268,7 +268,7 @@ export const ContactsPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.customer.contacts.badge')}
@@ -291,7 +291,7 @@ export const ContactsPage: React.FC = () => {
                         onClick={() => setIsImportOpen(true)}
                         className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] cursor-pointer"
                     >
-                        <Upload size={14} className="text-[#2D3F2C]" />
+                        <Upload size={14} className="text-[#037F8C]" />
                         {t('crm.customer.contacts.importButton')}
                     </button>
 
@@ -312,7 +312,7 @@ export const ContactsPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <UserPlus size={15} />
                         {t('crm.customer.contacts.newButton')}
@@ -334,7 +334,7 @@ export const ContactsPage: React.FC = () => {
                             {t('crm.customer.contacts.kpis.totalContactsSub')}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <Users size={19} />
                     </div>
                 </div>
@@ -361,14 +361,14 @@ export const ContactsPage: React.FC = () => {
                         <span className="text-xs font-semibold text-[#6E6862]">
                             {t('crm.customer.contacts.kpis.companyLinked')}
                         </span>
-                        <div className="text-2xl font-bold text-[#2D3F2C] font-mono">
+                        <div className="text-2xl font-bold text-[#037F8C] font-mono">
                             {companyLinkedCount}
                         </div>
                         <span className="text-[11px] text-[#6E6862] block">
                             {t('crm.customer.contacts.kpis.companyLinkedSub')}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <Building2 size={19} />
                     </div>
                 </div>
@@ -406,7 +406,7 @@ export const ContactsPage: React.FC = () => {
                             setPage(1);
                         }}
                         placeholder={t('crm.customer.contacts.searchPlaceholder')}
-                        className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                        className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -555,7 +555,7 @@ export const ContactsPage: React.FC = () => {
                                         className="hover:bg-[#FAF8F5]/60 transition-colors"
                                     >
                                         <td
-                                            className="py-3.5 px-4 font-mono font-semibold text-[#2D3F2C]"
+                                            className="py-3.5 px-4 font-mono font-semibold text-[#037F8C]"
                                             dir="ltr"
                                         >
                                             {cnt.code}
@@ -600,14 +600,14 @@ export const ContactsPage: React.FC = () => {
                                             <div className="flex items-center gap-1 text-[#0D0D0D]">
                                                 <Mail
                                                     size={11}
-                                                    className="text-[#2D3F2C]"
+                                                    className="text-[#037F8C]"
                                                 />
                                                 <span>{cnt.email}</span>
                                             </div>
                                             <div className="flex items-center gap-1 text-[#6E6862] mt-0.5">
                                                 <Phone
                                                     size={11}
-                                                    className="text-[#2D3F2C]"
+                                                    className="text-[#037F8C]"
                                                 />
                                                 <span>{cnt.phone}</span>
                                             </div>
@@ -617,7 +617,7 @@ export const ContactsPage: React.FC = () => {
                                                 <div className="inline-flex items-center gap-1 font-medium text-[#0D0D0D]">
                                                     <Building2
                                                         size={12}
-                                                        className="text-[#2D3F2C]"
+                                                        className="text-[#037F8C]"
                                                     />
                                                     <span>
                                                         {isRtl

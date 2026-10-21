@@ -345,7 +345,7 @@ export const SectorsPage: React.FC = () => {
                             {t('crm.pages.sectors.title')}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             {t('crm.master.entities.sectors.badge')}
@@ -373,7 +373,7 @@ export const SectorsPage: React.FC = () => {
                             setApiError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
                     >
                         <Plus size={14} />
                         <span>{t('crm.master.entities.sectors.newButton')}</span>
@@ -388,7 +388,7 @@ export const SectorsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('crm.master.kpis.totalRecords')}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                             <Briefcase className="w-4 h-4" />
                         </div>
                     </div>
@@ -407,13 +407,13 @@ export const SectorsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('crm.master.kpis.activeRecords')}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#265938]/12 text-[#265938] flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-[#037F8C]/12 text-[#037F8C] flex items-center justify-center">
                             <CheckCircle2 className="w-4 h-4" />
                         </div>
                     </div>
                     <div className="mt-3">
                         <span
-                            className="text-2xl font-bold font-mono text-[#265938] tabular-nums"
+                            className="text-2xl font-bold font-mono text-[#037F8C] tabular-nums"
                             dir="ltr"
                         >
                             {kpis.active}
@@ -477,7 +477,7 @@ export const SectorsPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             placeholder={t('crm.master.common.searchPlaceholder')}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-hidden focus:bg-white focus:border-[#2D3F2C] transition-colors"
+                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-hidden focus:bg-white focus:border-[#037F8C] transition-colors"
                         />
                         {searchQuery && (
                             <button
@@ -504,7 +504,7 @@ export const SectorsPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('crm.master.common.filterByStatus')}
-                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
+                            className="px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C] cursor-pointer"
                         >
                             <option value="all">{t('crm.master.common.allStatuses')}</option>
                             <option value="active">{t('crm.master.common.active')}</option>
@@ -526,10 +526,10 @@ export const SectorsPage: React.FC = () => {
 
                 {/* Bulk Selection Action Bar */}
                 {selectedIds.length > 0 && (
-                    <div className="px-5 py-2.5 bg-[#2D3F2C]/8 border-b border-[#E5E0D8] flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-[#2D3F2C]">
+                    <div className="px-5 py-2.5 bg-[#037F8C]/8 border-b border-[#E5E0D8] flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-[#037F8C]">
                             <span
-                                className="px-2 py-0.5 rounded-md bg-[#2D3F2C] text-[#FAF8F5] font-mono"
+                                className="px-2 py-0.5 rounded-md bg-[#037F8C] text-[#FAF8F5] font-mono"
                                 dir="ltr"
                             >
                                 {selectedIds.length}
@@ -541,7 +541,7 @@ export const SectorsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleBulkStatusChange('active')}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#265938] hover:bg-[#1f492e] text-[11px] font-semibold text-white transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#037F8C] hover:bg-[#1f492e] text-[11px] font-semibold text-white transition-colors cursor-pointer"
                             >
                                 <CheckCircle2 size={13} />
                                 <span>{t('crm.master.common.activateSelected')}</span>
@@ -581,7 +581,7 @@ export const SectorsPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => refetch()}
-                            className="px-3.5 py-1.5 rounded-lg bg-[#2D3F2C] text-xs font-semibold text-[#FAF8F5] cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-lg bg-[#037F8C] text-xs font-semibold text-[#FAF8F5] cursor-pointer"
                         >
                             {t('crm.master.common.retry')}
                         </button>
@@ -597,7 +597,7 @@ export const SectorsPage: React.FC = () => {
                                             checked={isAllCurrentPageSelected}
                                             onChange={handleToggleSelectAll}
                                             aria-label={t('crm.master.common.selectAll')}
-                                            className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                         />
                                     </th>
                                     <th className="py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] text-start">
@@ -665,7 +665,7 @@ export const SectorsPage: React.FC = () => {
                                                 key={record.id}
                                                 className={`transition-colors ${
                                                     isSelected
-                                                        ? 'bg-[#2D3F2C]/5'
+                                                        ? 'bg-[#037F8C]/5'
                                                         : 'hover:bg-[#FAF8F5]/70'
                                                 }`}
                                             >
@@ -677,13 +677,13 @@ export const SectorsPage: React.FC = () => {
                                                             handleToggleSelectOne(record.id)
                                                         }
                                                         aria-label={`${t('crm.master.common.selectRow')} ${record.code}`}
-                                                        className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                        className="w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                                     />
                                                 </td>
 
                                                 <td className="py-3.5 px-4">
                                                     <span
-                                                        className="text-xs font-mono font-bold text-[#2D3F2C] tabular-nums"
+                                                        className="text-xs font-mono font-bold text-[#037F8C] tabular-nums"
                                                         dir="ltr"
                                                     >
                                                         {record.code}
@@ -696,7 +696,7 @@ export const SectorsPage: React.FC = () => {
                                                         onClick={() => setViewingRecord(record)}
                                                         className="text-start group cursor-pointer"
                                                     >
-                                                        <span className="block text-xs font-semibold text-[#0D0D0D] group-hover:text-[#2D3F2C] transition-colors">
+                                                        <span className="block text-xs font-semibold text-[#0D0D0D] group-hover:text-[#037F8C] transition-colors">
                                                             {primaryName}
                                                         </span>
                                                         <span className="block text-[11px] text-[#857E74]">
@@ -717,7 +717,7 @@ export const SectorsPage: React.FC = () => {
                                                         onClick={() => setViewingRecord(record)}
                                                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors cursor-pointer ${
                                                             refCount > 0
-                                                                ? 'bg-[#FAF8F5] border-[#E5E0D8] text-[#2D3F2C] hover:bg-[#E5E0D8]/50'
+                                                                ? 'bg-[#FAF8F5] border-[#E5E0D8] text-[#037F8C] hover:bg-[#E5E0D8]/50'
                                                                 : 'bg-white border-[#E5E0D8] text-[#857E74]'
                                                         }`}
                                                     >
@@ -734,7 +734,7 @@ export const SectorsPage: React.FC = () => {
 
                                                 <td className="py-3.5 px-4">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-[#2D3F2C]/12 text-[#2D3F2C] text-[10px] font-bold flex items-center justify-center shrink-0">
+                                                        <div className="w-6 h-6 rounded-full bg-[#037F8C]/12 text-[#037F8C] text-[10px] font-bold flex items-center justify-center shrink-0">
                                                             {getCreatorInitials(record.createdBy)}
                                                         </div>
                                                         <span className="text-xs font-medium text-[#0D0D0D]">
@@ -758,14 +758,14 @@ export const SectorsPage: React.FC = () => {
                                                         onClick={() => handleToggleStatus(record)}
                                                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors cursor-pointer ${
                                                             isActive
-                                                                ? 'bg-[#265938]/10 text-[#265938] border-[#265938]/25 hover:bg-[#265938]/18'
+                                                                ? 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/25 hover:bg-[#037F8C]/18'
                                                                 : 'bg-[#857E74]/12 text-[#6E6862] border-[#857E74]/30 hover:bg-[#857E74]/20'
                                                         }`}
                                                     >
                                                         <span
                                                             className={`w-1.5 h-1.5 rounded-full ${
                                                                 isActive
-                                                                    ? 'bg-[#265938]'
+                                                                    ? 'bg-[#037F8C]'
                                                                     : 'bg-[#857E74]'
                                                             }`}
                                                         />
@@ -798,7 +798,7 @@ export const SectorsPage: React.FC = () => {
                                                             }}
                                                             title={t('crm.master.common.edit')}
                                                             aria-label={t('crm.master.common.edit')}
-                                                            className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                                            className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                                                         >
                                                             <Pencil size={15} />
                                                         </button>
@@ -817,7 +817,7 @@ export const SectorsPage: React.FC = () => {
                                                             }
                                                             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                                                                 isActive
-                                                                    ? 'text-[#265938] hover:bg-[#265938]/10'
+                                                                    ? 'text-[#037F8C] hover:bg-[#037F8C]/10'
                                                                     : 'text-[#857E74] hover:bg-[#857E74]/15'
                                                             }`}
                                                         >
@@ -854,7 +854,7 @@ export const SectorsPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('crm.master.common.rowsPerPage')}
-                            className="px-2.5 py-1 rounded-md border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C] cursor-pointer"
+                            className="px-2.5 py-1 rounded-md border border-[#E5E0D8] bg-white text-xs font-mono text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C] cursor-pointer"
                         >
                             {CRM_PAGE_SIZE_OPTIONS.map((opt) => (
                                 <option key={opt} value={opt}>

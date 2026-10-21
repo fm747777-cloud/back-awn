@@ -132,7 +132,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
                 onClick={() => setIsOpen(true)}
                 className={`min-h-[40px] w-full px-3 py-1.5 bg-[#FAF8F5] dark:bg-slate-800/80 border rounded-lg flex flex-wrap items-center gap-1.5 cursor-text transition ${
                     isOpen
-                        ? 'border-[#2D3F2C] bg-white dark:bg-slate-800 ring-2 ring-[#2D3F2C]/15'
+                        ? 'border-[#037F8C] bg-white dark:bg-slate-800 ring-2 ring-[#037F8C]/15'
                         : 'border-[#E5E0D8] dark:border-slate-700 hover:border-[#BFAB93]'
                 }`}
             >
@@ -143,7 +143,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
                 {selectedOptions.map((opt) => (
                     <span
                         key={opt.id}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#037F8C] text-[#FAF8F5] shadow-2xs"
                     >
                         <span className="truncate max-w-[180px]">
                             {isAr ? opt.labelAr : opt.labelEn}
@@ -210,7 +210,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
                                     onClick={() => toggleOption(opt.id)}
                                     className={`w-full px-3.5 py-2 text-xs flex items-center justify-between gap-2 text-start transition cursor-pointer ${
                                         isSelected
-                                            ? 'bg-[#2D3F2C]/8 dark:bg-slate-800 font-semibold text-[#2D3F2C] dark:text-emerald-300'
+                                            ? 'bg-[#037F8C]/8 dark:bg-slate-800 font-semibold text-[#037F8C] dark:text-emerald-300'
                                             : 'text-[#0D0D0D] dark:text-slate-200 hover:bg-[#FAF8F5] dark:hover:bg-slate-800/60'
                                     }`}
                                 >
@@ -227,7 +227,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
                                     <span
                                         className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 transition ${
                                             isSelected
-                                                ? 'bg-[#2D3F2C] border-[#2D3F2C] text-[#FAF8F5]'
+                                                ? 'bg-[#037F8C] border-[#037F8C] text-[#FAF8F5]'
                                                 : 'border-[#DCD6CD] dark:border-slate-600 bg-white dark:bg-slate-800'
                                         }`}
                                     >
@@ -270,8 +270,8 @@ const ExpandableBadgesCell: React.FC<ExpandableBadgesCellProps> = ({
 
     const badgeClasses =
         variant === 'group'
-            ? 'bg-[#FAF8F5] dark:bg-slate-800 text-[#2D3F2C] dark:text-emerald-300 border-[#E5E0D8] dark:border-slate-700'
-            : 'bg-[#2D3F2C]/8 dark:bg-emerald-950/40 text-[#2D3F2C] dark:text-emerald-200 border-[#2D3F2C]/20 dark:border-emerald-800/50';
+            ? 'bg-[#FAF8F5] dark:bg-slate-800 text-[#037F8C] dark:text-emerald-300 border-[#E5E0D8] dark:border-slate-700'
+            : 'bg-[#037F8C]/8 dark:bg-emerald-950/40 text-[#037F8C] dark:text-emerald-200 border-[#037F8C]/20 dark:border-emerald-800/50';
 
     return (
         <div className="flex flex-wrap items-center gap-1.5 max-w-[300px] whitespace-normal">
@@ -367,7 +367,7 @@ const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
                     e.stopPropagation();
                     onInitiate(item);
                 }}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#2D3F2C]/10 hover:bg-[#2D3F2C] text-[#2D3F2C] hover:text-[#FAF8F5] dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-700 dark:hover:text-white border border-[#2D3F2C]/20 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#037F8C]/10 hover:bg-[#037F8C] text-[#037F8C] hover:text-[#FAF8F5] dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-700 dark:hover:text-white border border-[#037F8C]/20 transition-colors cursor-pointer"
                 title={t('request.services.actions.initiateRequest')}
             >
                 <Send size={12} className="shrink-0" />
@@ -383,7 +383,7 @@ const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
                     }}
                     className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
                         isOpen
-                            ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
+                            ? 'bg-[#037F8C] text-[#FAF8F5] border-[#037F8C]'
                             : 'border-transparent text-[#857E74] hover:bg-[#F8F6F2] dark:hover:bg-slate-800 hover:text-[#0D0D0D] dark:hover:text-slate-100'
                     }`}
                     title={t('request.services.columns.actions')}
@@ -401,7 +401,7 @@ const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
                                 setIsOpen(false);
                                 onInitiate(item);
                             }}
-                            className="w-full text-start px-3.5 py-2 text-[#2D3F2C] dark:text-emerald-300 font-semibold hover:bg-[#FAF8F5] dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
+                            className="w-full text-start px-3.5 py-2 text-[#037F8C] dark:text-emerald-300 font-semibold hover:bg-[#FAF8F5] dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
                         >
                             <Send size={14} className="shrink-0" />
                             <span>{t('request.services.actions.initiateRequest')}</span>
@@ -734,7 +734,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                     ID / Code
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C] dark:text-emerald-300 mt-0.5 inline-block"
+                                    className="font-mono font-bold text-[#037F8C] dark:text-emerald-300 mt-0.5 inline-block"
                                     dir="ltr"
                                 >
                                     {item.code}
@@ -747,14 +747,14 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                 <span
                                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium mt-0.5 ${
                                         item.status === 'Active'
-                                            ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] dark:bg-emerald-900/30 dark:text-emerald-300'
+                                            ? 'bg-[#037F8C]/10 text-[#037F8C] dark:bg-emerald-900/30 dark:text-emerald-300'
                                             : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                                     }`}
                                 >
                                     <span
                                         className={`w-1.5 h-1.5 rounded-full ${
                                             item.status === 'Active'
-                                                ? 'bg-[#2D3F2C] dark:bg-emerald-400'
+                                                ? 'bg-[#037F8C] dark:bg-emerald-400'
                                                 : 'bg-slate-500'
                                         }`}
                                     />
@@ -790,7 +790,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                 <span className="text-[11px] font-semibold text-[#6E6862] dark:text-slate-400 block mb-1">
                                     {t('request.services.columns.packageName')}
                                 </span>
-                                <span className="font-semibold text-[#2D3F2C] dark:text-emerald-300">
+                                <span className="font-semibold text-[#037F8C] dark:text-emerald-300">
                                     {isAr ? item.packageNameAr || item.packageName : item.packageName}
                                 </span>
                             </div>
@@ -819,7 +819,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                 ).map((grp, i) => (
                                     <span
                                         key={`${grp}-${i}`}
-                                        className="px-2.5 py-1 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300 font-medium"
+                                        className="px-2.5 py-1 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[#037F8C] dark:text-emerald-300 font-medium"
                                     >
                                         {grp}
                                     </span>
@@ -838,9 +838,9 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                 ).map((srv, i) => (
                                     <div
                                         key={`${srv}-${i}`}
-                                        className="px-3 py-2 rounded-lg bg-[#2D3F2C]/6 dark:bg-slate-800/80 border border-[#2D3F2C]/15 dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 font-medium flex items-center gap-2"
+                                        className="px-3 py-2 rounded-lg bg-[#037F8C]/6 dark:bg-slate-800/80 border border-[#037F8C]/15 dark:border-slate-700 text-[#0D0D0D] dark:text-slate-100 font-medium flex items-center gap-2"
                                     >
-                                        <CheckCircle2 size={14} className="text-[#2D3F2C] dark:text-emerald-400 shrink-0" />
+                                        <CheckCircle2 size={14} className="text-[#037F8C] dark:text-emerald-400 shrink-0" />
                                         <span>{srv}</span>
                                     </div>
                                 ))}
@@ -871,7 +871,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                         hasSubmitted && !ownerId
                                             ? 'border-red-400 bg-white dark:bg-slate-800'
                                             : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                    } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]`}
+                                    } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
                                 >
                                     <option value="">
                                         {t('request.services.drawer.selectBusinessOwner')}
@@ -901,7 +901,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                         hasSubmitted && !companyId
                                             ? 'border-red-400 bg-white dark:bg-slate-800'
                                             : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                    } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]`}
+                                    } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
                                 >
                                     <option value="">
                                         {t('request.services.drawer.selectCompany')}
@@ -935,7 +935,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                     hasSubmitted && !packageName.trim()
                                         ? 'border-red-400 bg-white dark:bg-slate-800'
                                         : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]`}
+                                } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
                             />
                             {hasSubmitted && !packageName.trim() && (
                                 <span className="text-[11px] text-red-500 mt-1 block font-medium">
@@ -954,7 +954,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                             onClick={() => setPackageName(preset.nameEn)}
                                             className={`px-2 py-1 rounded-md text-[11px] border transition cursor-pointer ${
                                                 packageName === preset.nameEn
-                                                    ? 'bg-[#2D3F2C] text-white border-[#2D3F2C]'
+                                                    ? 'bg-[#037F8C] text-white border-[#037F8C]'
                                                     : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#595550] dark:text-slate-300 hover:border-[#BFAB93]'
                                             }`}
                                         >
@@ -983,7 +983,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                                 type="checkbox"
                                                 checked={checked}
                                                 onChange={() => toggleGroup(grp.nameEn)}
-                                                className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                className="rounded border-[#DCD6CD] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                             />
                                             <span className="text-xs text-[#0D0D0D] dark:text-slate-200">
                                                 {isAr ? grp.nameAr : grp.nameEn}
@@ -1004,12 +1004,12 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                         }
                                     }}
                                     placeholder={t('request.services.drawer.customGroupPlaceholder')}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleAddCustomGroup}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300 hover:bg-[#EFECE6] cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-[#037F8C] dark:text-emerald-300 hover:bg-[#EFECE6] cursor-pointer"
                                 >
                                     {t('request.services.drawer.addCustomBtn')}
                                 </button>
@@ -1039,7 +1039,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                                 type="checkbox"
                                                 checked={checked}
                                                 onChange={() => toggleService(srv.nameEn)}
-                                                className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                                className="rounded border-[#DCD6CD] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                                             />
                                             <span className="text-xs text-[#0D0D0D] dark:text-slate-200">
                                                 {isAr ? srv.nameAr : srv.nameEn}
@@ -1060,12 +1060,12 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                         }
                                     }}
                                     placeholder={t('request.services.drawer.customServicePlaceholder')}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleAddCustomService}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300 hover:bg-[#EFECE6] cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-[#037F8C] dark:text-emerald-300 hover:bg-[#EFECE6] cursor-pointer"
                                 >
                                     {t('request.services.drawer.addCustomBtn')}
                                 </button>
@@ -1089,7 +1089,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                     dir="ltr"
                                     value={createdDate}
                                     onChange={(e) => setCreatedDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                                 />
                                 {hasSubmitted && !createdDate && (
                                     <span className="text-[11px] text-red-500 mt-1 block font-medium">
@@ -1108,7 +1108,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                     onChange={(e) =>
                                         setStatus(e.target.value as RequestServiceStatus)
                                     }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                                 >
                                     <option value="Active">{t('common.active')}</option>
                                     <option value="Inactive">{t('common.inactive')}</option>
@@ -1136,7 +1136,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                                     onClose();
                                     onInitiateFromView(item);
                                 }}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#2D3F2C] dark:text-emerald-300 bg-[#2D3F2C]/10 hover:bg-[#2D3F2C]/20 border border-[#2D3F2C]/25 rounded-lg transition cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#037F8C] dark:text-emerald-300 bg-[#037F8C]/10 hover:bg-[#037F8C]/20 border border-[#037F8C]/25 rounded-lg transition cursor-pointer"
                             >
                                 <Send size={13} />
                                 <span>{t('request.services.actions.initiateRequest')}</span>
@@ -1144,7 +1144,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                             <button
                                 type="button"
                                 onClick={onSwitchToEdit}
-                                className="px-5 py-2 text-xs font-semibold text-white bg-[#2D3F2C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
+                                className="px-5 py-2 text-xs font-semibold text-white bg-[#037F8C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
                             >
                                 {t('request.services.actions.editService')}
                             </button>
@@ -1153,7 +1153,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                         <button
                             type="submit"
                             form="awn-request-service-form"
-                            className="px-5 py-2 text-xs font-semibold text-white bg-[#2D3F2C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
+                            className="px-5 py-2 text-xs font-semibold text-white bg-[#037F8C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
                         >
                             {mode === 'add'
                                 ? t('request.services.drawer.saveService')
@@ -1310,7 +1310,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-900">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shrink-0">
                             <Send size={16} />
                         </div>
                         <div>
@@ -1357,7 +1357,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                             <span className="text-[10px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 block">
                                 {t('request.services.initiateModal.packageName')}
                             </span>
-                            <span className="font-semibold text-[#2D3F2C] dark:text-emerald-300 mt-0.5 block truncate">
+                            <span className="font-semibold text-[#037F8C] dark:text-emerald-300 mt-0.5 block truncate">
                                 {isAr
                                     ? serviceRecord.packageNameAr || serviceRecord.packageName
                                     : serviceRecord.packageName}
@@ -1374,7 +1374,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                             <select
                                 value={selectedGroup}
                                 onChange={(e) => setSelectedGroup(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                             >
                                 {availableGroups.map((grp) => (
                                     <option key={grp} value={grp}>
@@ -1392,7 +1392,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                             <select
                                 value={selectedService}
                                 onChange={(e) => handleServiceSelectionChange(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                             >
                                 {availableServices.map((srv) => (
                                     <option key={srv} value={srv}>
@@ -1423,7 +1423,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                                 hasSubmitted && !requestTitle.trim()
                                     ? 'border-red-400 bg-white dark:bg-slate-800'
                                     : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                            } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]`}
+                            } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
                         />
                         {hasSubmitted && !requestTitle.trim() && (
                             <span className="text-[11px] text-red-500 mt-1 block">
@@ -1448,7 +1448,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                                     hasSubmitted && !beneficiaryName.trim()
                                         ? 'border-red-400 bg-white dark:bg-slate-800'
                                         : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]`}
+                                } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
                             />
                             {hasSubmitted && !beneficiaryName.trim() && (
                                 <span className="text-[11px] text-red-500 mt-1 block">
@@ -1464,7 +1464,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                             <select
                                 value={priority}
                                 onChange={(e) => setPriority(e.target.value as RequestPriority)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="Low">{t('request.dashboard.priorities.low')}</option>
                                 <option value="Medium">{t('request.dashboard.priorities.medium')}</option>
@@ -1483,7 +1483,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                                 dir="ltr"
                                 value={requestedDueDate}
                                 onChange={(e) => setRequestedDueDate(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                             />
                         </div>
                     </div>
@@ -1498,7 +1498,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder={t('request.services.initiateModal.notesPlaceholder')}
-                            className="w-full px-3.5 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3.5 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                         />
                     </div>
 
@@ -1513,7 +1513,7 @@ const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
                         </button>
                         <button
                             type="submit"
-                            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-[#2D3F2C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-[#037F8C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
                         >
                             <Send size={13} />
                             <span>{t('request.services.initiateModal.submit')}</span>
@@ -1980,7 +1980,7 @@ export const RequestServicesPage: React.FC = () => {
             {/* 1. Page Header */}
             <div className="bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/60 border border-[#2D3F2C]/15 text-[#2D3F2C] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/60 border border-[#037F8C]/15 text-[#037F8C] dark:text-emerald-300 flex items-center justify-center shrink-0">
                         <Layers size={20} />
                     </div>
                     <div>
@@ -2000,7 +2000,7 @@ export const RequestServicesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleExportCsv}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 hover:border-[#BFAB93] text-[#2D3F2C] dark:text-slate-200 hover:bg-[#F8F6F2] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 hover:border-[#BFAB93] text-[#037F8C] dark:text-slate-200 hover:bg-[#F8F6F2] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs"
                     >
                         <Download size={14} className="text-[#6A7358]" />
                         <span>{t('request.services.exportCsv')}</span>
@@ -2009,7 +2009,7 @@ export const RequestServicesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenAdd}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-[#FAF8F5] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-[#FAF8F5] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={14} className="text-[#BFAB93]" />
                         <span>{t('request.services.addService')}</span>
@@ -2025,7 +2025,7 @@ export const RequestServicesPage: React.FC = () => {
                             <h2 className="text-sm font-bold text-[#0D0D0D] dark:text-slate-100">
                                 {t('request.services.topFilter.title')}
                             </h2>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#2D3F2C]/10 text-[#2D3F2C] dark:bg-emerald-950/60 dark:text-emerald-300 border border-[#2D3F2C]/20">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#037F8C]/10 text-[#037F8C] dark:bg-emerald-950/60 dark:text-emerald-300 border border-[#037F8C]/20">
                                 <Link2 size={11} />
                                 {t('request.services.topFilter.interconnectedBadge')}
                             </span>
@@ -2087,7 +2087,7 @@ export const RequestServicesPage: React.FC = () => {
                             {t('request.services.summary.totalServices', { count: services.length })}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] dark:bg-emerald-950/60 dark:text-emerald-300 flex items-center justify-center shrink-0">
                         <PackageCheck size={19} />
                     </div>
                 </div>
@@ -2097,11 +2097,11 @@ export const RequestServicesPage: React.FC = () => {
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 block">
                             {t('request.services.summary.activeServices')}
                         </span>
-                        <span className="text-lg font-bold text-[#2D3F2C] dark:text-emerald-300 mt-1 block font-mono">
+                        <span className="text-lg font-bold text-[#037F8C] dark:text-emerald-300 mt-1 block font-mono">
                             {activeServicesCount}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/60 text-[#2D3F2C] dark:text-emerald-300 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/60 text-[#037F8C] dark:text-emerald-300 flex items-center justify-center shrink-0">
                         <CheckCircle2 size={19} />
                     </div>
                 </div>
@@ -2151,7 +2151,7 @@ export const RequestServicesPage: React.FC = () => {
                                 setPageIndex(0);
                             }}
                             placeholder={t('request.services.filters.searchPlaceholder')}
-                            className="w-full ps-9 pe-8 py-2 bg-[#FAF8F5]/80 dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-[#2D3F2C] rounded-lg text-xs text-[#0D0D0D] dark:text-slate-100 placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/15 transition"
+                            className="w-full ps-9 pe-8 py-2 bg-[#FAF8F5]/80 dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-[#037F8C] rounded-lg text-xs text-[#0D0D0D] dark:text-slate-100 placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/15 transition"
                         />
                         {searchQuery && (
                             <button
@@ -2189,7 +2189,7 @@ export const RequestServicesPage: React.FC = () => {
                                     setPageIndex(0);
                                 }}
                                 aria-label="Show entries per page"
-                                className="px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-xs font-mono font-semibold text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-xs font-mono font-semibold text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C] cursor-pointer"
                             >
                                 {PAGE_SIZE_OPTIONS.map((size) => (
                                     <option key={size} value={size}>
@@ -2211,7 +2211,7 @@ export const RequestServicesPage: React.FC = () => {
                         <select
                             value={selectedOwnerIds.length === 1 ? selectedOwnerIds[0] : 'all'}
                             onChange={(e) => handleSingleOwnerDropdown(e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="all">{t('request.services.filters.allOwners')}</option>
                             {REQUEST_BUSINESS_OWNERS.map((owner) => (
@@ -2229,7 +2229,7 @@ export const RequestServicesPage: React.FC = () => {
                         <select
                             value={selectedCompanyIds.length === 1 ? selectedCompanyIds[0] : 'all'}
                             onChange={(e) => handleSingleCompanyDropdown(e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="all">{t('request.services.filters.allCompanies')}</option>
                             {availableCompaniesForSelectedOwners.map((comp) => (
@@ -2250,7 +2250,7 @@ export const RequestServicesPage: React.FC = () => {
                                 setSelectedServiceGroup(e.target.value);
                                 setPageIndex(0);
                             }}
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t('request.services.filters.allServiceGroups')}
@@ -2273,7 +2273,7 @@ export const RequestServicesPage: React.FC = () => {
                                 setSelectedStatus(e.target.value);
                                 setPageIndex(0);
                             }}
-                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="all">{t('request.services.filters.allStatuses')}</option>
                             <option value="Active">{t('common.active')}</option>
@@ -2357,7 +2357,7 @@ export const RequestServicesPage: React.FC = () => {
 
                                             {/* 2. Package Name */}
                                             <td className="px-4 py-3.5 whitespace-nowrap">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[#2D3F2C] dark:text-emerald-300">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-[#037F8C] dark:text-emerald-300">
                                                     {isAr
                                                         ? rec.packageNameAr || rec.packageName
                                                         : rec.packageName}
@@ -2398,14 +2398,14 @@ export const RequestServicesPage: React.FC = () => {
                                                 <span
                                                     className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                                                         rec.status === 'Active'
-                                                            ? 'bg-[#2D3F2C]/10 text-[#2D3F2C] dark:bg-emerald-900/30 dark:text-emerald-300 border-[#2D3F2C]/20 dark:border-emerald-700/40'
+                                                            ? 'bg-[#037F8C]/10 text-[#037F8C] dark:bg-emerald-900/30 dark:text-emerald-300 border-[#037F8C]/20 dark:border-emerald-700/40'
                                                             : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-300 dark:border-slate-700'
                                                     }`}
                                                 >
                                                     <span
                                                         className={`w-1.5 h-1.5 rounded-full ${
                                                             rec.status === 'Active'
-                                                                ? 'bg-[#2D3F2C] dark:bg-emerald-400'
+                                                                ? 'bg-[#037F8C] dark:bg-emerald-400'
                                                                 : 'bg-slate-400'
                                                         }`}
                                                     />
@@ -2448,7 +2448,7 @@ export const RequestServicesPage: React.FC = () => {
                         type="button"
                         onClick={() => setPageIndex((prev) => Math.max(0, prev - 1))}
                         disabled={safePageIndex <= 0}
-                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-[#DCD6CD] dark:border-slate-700 hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#2D3F2C] dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-[#DCD6CD] dark:border-slate-700 hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#037F8C] dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
                     >
                         {t('request.services.pagination.previous')}
                     </button>
@@ -2460,7 +2460,7 @@ export const RequestServicesPage: React.FC = () => {
                             onClick={() => setPageIndex(idx)}
                             className={`px-3 py-1.5 rounded-lg font-mono font-semibold min-w-8 text-center shadow-2xs transition cursor-pointer ${
                                 idx === safePageIndex
-                                    ? 'bg-[#2D3F2C] text-[#FAF8F5]'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5]'
                                     : 'bg-white dark:bg-slate-900 border border-[#DCD6CD] dark:border-slate-700 text-[#595550] dark:text-slate-300 hover:bg-[#FAF8F5]'
                             }`}
                         >
@@ -2474,7 +2474,7 @@ export const RequestServicesPage: React.FC = () => {
                             setPageIndex((prev) => Math.min(totalPages - 1, prev + 1))
                         }
                         disabled={safePageIndex >= totalPages - 1}
-                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-[#DCD6CD] dark:border-slate-700 hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#2D3F2C] dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-[#DCD6CD] dark:border-slate-700 hover:border-[#BFAB93] hover:bg-[#F8F6F2] font-medium text-[#037F8C] dark:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs cursor-pointer"
                     >
                         {t('request.services.pagination.next')}
                     </button>

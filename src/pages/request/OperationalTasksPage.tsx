@@ -60,7 +60,7 @@ const STATUS_BADGE_STYLES: Record<OperationalTaskStatus, string> = {
     Assigned: 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]',
     'In Progress': 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]',
     'Under Review': 'bg-[#F5F3FF] text-[#6D28D9] border-[#DDD6FE]',
-    Completed: 'bg-[#EAF3EC] text-[#2D3F2C] border-[#2D3F2C]/25',
+    Completed: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
     Blocked: 'bg-[#FFF7ED] text-[#C2410C] border-[#FED7AA]',
     Rejected: 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]',
 };
@@ -688,7 +688,7 @@ export const OperationalTasksPage = () => {
             {/* Page Header */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] border border-[#2D3F2C]/15 text-[#2D3F2C] flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] border border-[#037F8C]/15 text-[#037F8C] flex items-center justify-center shrink-0">
                         <CheckSquare size={20} />
                     </div>
                     <div>
@@ -715,7 +715,7 @@ export const OperationalTasksPage = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreateDrawer}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         {t('request.operationalTasks.createNewTask')}
@@ -725,7 +725,7 @@ export const OperationalTasksPage = () => {
 
             {/* Feedback Banner */}
             {feedbackBanner && (
-                <div className="bg-[#EAF3EC] border border-[#2D3F2C]/25 text-[#2D3F2C] px-4 py-3 rounded-xl flex items-center justify-between text-xs font-semibold shadow-2xs">
+                <div className="bg-[#EAF3EC] border border-[#037F8C]/25 text-[#037F8C] px-4 py-3 rounded-xl flex items-center justify-between text-xs font-semibold shadow-2xs">
                     <div className="flex items-center gap-2">
                         <CheckCircle2 size={16} />
                         <span>{feedbackBanner}</span>
@@ -733,7 +733,7 @@ export const OperationalTasksPage = () => {
                     <button
                         type="button"
                         onClick={() => setFeedbackBanner(null)}
-                        className="p-1 hover:bg-[#2D3F2C]/10 rounded-md cursor-pointer"
+                        className="p-1 hover:bg-[#037F8C]/10 rounded-md cursor-pointer"
                     >
                         <X size={14} />
                     </button>
@@ -797,7 +797,7 @@ export const OperationalTasksPage = () => {
                                     value={ownerSearch}
                                     onChange={(e) => setOwnerSearch(e.target.value)}
                                     placeholder={t('request.operationalTasks.topFilter.selectBusinessOwners')}
-                                    className="w-full px-3 py-1.5 text-xs bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg focus:outline-hidden focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-1.5 text-xs bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg focus:outline-hidden focus:border-[#037F8C]"
                                 />
                                 <div className="max-h-48 overflow-y-auto divide-y divide-[#F0ECE4]">
                                     {filteredOwnerOptions.map((owner) => {
@@ -811,7 +811,7 @@ export const OperationalTasksPage = () => {
                                                     type="checkbox"
                                                     checked={checked}
                                                     onChange={() => handleToggleOwner(owner.id)}
-                                                    className="accent-[#2D3F2C] rounded-xs"
+                                                    className="accent-[#037F8C] rounded-xs"
                                                 />
                                                 <span className="font-medium text-[#0D0D0D]">
                                                     {isAr ? owner.nameAr : owner.nameEn}
@@ -843,7 +843,7 @@ export const OperationalTasksPage = () => {
                             className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] hover:border-[#8C6046]/50 transition-colors cursor-pointer"
                         >
                             <span className="truncate flex items-center gap-2">
-                                <Building2 size={14} className="text-[#2D3F2C] shrink-0" />
+                                <Building2 size={14} className="text-[#037F8C] shrink-0" />
                                 {selectedCompanyIds.length === 0
                                     ? t('request.operationalTasks.topFilter.selectCompanies')
                                     : `${selectedCompanyIds.length} ${t('request.operationalTasks.topFilter.companies')}`}
@@ -857,7 +857,7 @@ export const OperationalTasksPage = () => {
                                     value={companySearch}
                                     onChange={(e) => setCompanySearch(e.target.value)}
                                     placeholder={t('request.operationalTasks.topFilter.selectCompanies')}
-                                    className="w-full px-3 py-1.5 text-xs bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg focus:outline-hidden focus:border-[#2D3F2C]"
+                                    className="w-full px-3 py-1.5 text-xs bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg focus:outline-hidden focus:border-[#037F8C]"
                                 />
                                 <div className="max-h-48 overflow-y-auto divide-y divide-[#F0ECE4]">
                                     {availableCompaniesForSelectedOwners.map((comp) => {
@@ -872,7 +872,7 @@ export const OperationalTasksPage = () => {
                                                         type="checkbox"
                                                         checked={checked}
                                                         onChange={() => handleToggleCompany(comp.id)}
-                                                        className="accent-[#2D3F2C] rounded-xs"
+                                                        className="accent-[#037F8C] rounded-xs"
                                                     />
                                                     <span className="font-medium text-[#0D0D0D] truncate">
                                                         {isAr ? comp.nameAr : comp.nameEn}
@@ -908,8 +908,8 @@ export const OperationalTasksPage = () => {
                     }}
                     className={`text-start p-4 rounded-xl border transition-all cursor-pointer ${
                         statusFilter === 'ALL' && assignmentFilter === 'ALL'
-                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-sm'
-                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#2D3F2C]/40'
+                            ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-sm'
+                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#037F8C]/40'
                     }`}
                 >
                     <p
@@ -1036,13 +1036,13 @@ export const OperationalTasksPage = () => {
                     }}
                     className={`text-start p-4 rounded-xl border transition-all cursor-pointer ${
                         statusFilter === 'Completed'
-                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-sm'
-                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#2D3F2C]/40'
+                            ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-sm'
+                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#037F8C]/40'
                     }`}
                 >
                     <p
                         className={`text-[11px] font-semibold uppercase tracking-wider ${
-                            statusFilter === 'Completed' ? 'text-white/80' : 'text-[#2D3F2C]'
+                            statusFilter === 'Completed' ? 'text-white/80' : 'text-[#037F8C]'
                         }`}
                     >
                         {t('request.operationalTasks.kpis.completed')}
@@ -1107,7 +1107,7 @@ export const OperationalTasksPage = () => {
                                     setCurrentPage(1);
                                 }}
                                 placeholder={t('request.operationalTasks.filters.searchPlaceholder')}
-                                className="w-full ps-9 pe-4 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#2D3F2C]"
+                                className="w-full ps-9 pe-4 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                             />
                         </div>
 
@@ -1326,7 +1326,7 @@ export const OperationalTasksPage = () => {
                                         className="hover:bg-[#FAF8F5]/80 transition-colors"
                                     >
                                         {/* Task ID */}
-                                        <td className="py-3.5 px-4 font-mono font-bold text-[#2D3F2C] whitespace-nowrap">
+                                        <td className="py-3.5 px-4 font-mono font-bold text-[#037F8C] whitespace-nowrap">
                                             <button
                                                 type="button"
                                                 onClick={() => setViewingTask(task)}
@@ -1360,7 +1360,7 @@ export const OperationalTasksPage = () => {
                                                             )}`
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#8C6046] hover:text-[#2D3F2C] hover:underline cursor-pointer"
+                                                    className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-[#8C6046] hover:text-[#037F8C] hover:underline cursor-pointer"
                                                     title={t('request.operationalTasks.actions.viewRequest')}
                                                 >
                                                     <Link2 size={13} />
@@ -1449,7 +1449,7 @@ export const OperationalTasksPage = () => {
                                                     type="button"
                                                     onClick={() => handleOpenEditDrawer(task)}
                                                     title={t('request.operationalTasks.actions.editTask')}
-                                                    className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#EAF3EC] transition-colors cursor-pointer"
+                                                    className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#037F8C] hover:bg-[#EAF3EC] transition-colors cursor-pointer"
                                                 >
                                                     <Edit3 size={15} />
                                                 </button>
@@ -1622,7 +1622,7 @@ export const OperationalTasksPage = () => {
                                                 onClick={() => setFormRequestType(cat)}
                                                 className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
                                                     formRequestType === cat
-                                                        ? 'bg-[#2D3F2C] text-white border-[#2D3F2C]'
+                                                        ? 'bg-[#037F8C] text-white border-[#037F8C]'
                                                         : 'bg-[#FAF8F5] text-[#0D0D0D] border-[#E5E0D8]'
                                                 }`}
                                             >
@@ -1851,7 +1851,7 @@ export const OperationalTasksPage = () => {
                             <button
                                 type="button"
                                 onClick={handleSaveTaskForm}
-                                className="px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold cursor-pointer"
+                                className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold cursor-pointer"
                             >
                                 {editingTask
                                     ? t('request.operationalTasks.drawer.saveChanges')
@@ -1871,7 +1871,7 @@ export const OperationalTasksPage = () => {
                         <div className="p-6 border-b border-[#E5E0D8] flex items-start justify-between gap-4 sticky top-0 bg-white z-10">
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-mono text-xs font-bold text-[#2D3F2C]">
+                                    <span className="font-mono text-xs font-bold text-[#037F8C]">
                                         {viewingTask.id}
                                     </span>
                                     <span
@@ -1939,7 +1939,7 @@ export const OperationalTasksPage = () => {
                                                 )}`
                                             )
                                         }
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-white font-semibold text-xs cursor-pointer shrink-0"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] text-white font-semibold text-xs cursor-pointer shrink-0"
                                     >
                                         <ExternalLink size={13} />
                                         {t('request.operationalTasks.actions.viewRequest')}
@@ -2057,7 +2057,7 @@ export const OperationalTasksPage = () => {
                                     <h3 className="font-bold text-[#0D0D0D]">
                                         {t('request.operationalTasks.drawer.checklistTitle')}
                                     </h3>
-                                    <span className="text-[11px] font-semibold text-[#2D3F2C]">
+                                    <span className="text-[11px] font-semibold text-[#037F8C]">
                                         {viewingTask.progress}%
                                     </span>
                                 </div>
@@ -2073,7 +2073,7 @@ export const OperationalTasksPage = () => {
                                                 onChange={() =>
                                                     handleToggleChecklistItem(viewingTask.id, chk.id)
                                                 }
-                                                className="accent-[#2D3F2C] rounded-xs"
+                                                className="accent-[#037F8C] rounded-xs"
                                             />
                                             <span
                                                 className={
@@ -2127,7 +2127,7 @@ export const OperationalTasksPage = () => {
                             <button
                                 type="button"
                                 onClick={() => handleOpenEditDrawer(viewingTask)}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold cursor-pointer"
                             >
                                 <Edit3 size={14} />
                                 {t('request.operationalTasks.actions.editTask')}
@@ -2216,7 +2216,7 @@ export const OperationalTasksPage = () => {
                             <button
                                 type="button"
                                 onClick={handleConfirmAssign}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold cursor-pointer"
                             >
                                 {t('request.operationalTasks.assignModal.confirm')}
                             </button>

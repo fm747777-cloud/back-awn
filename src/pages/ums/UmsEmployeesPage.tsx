@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     Users,
     UserCheck,
@@ -45,6 +47,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../store/useAuthStore';
+import { DataTable } from '../../components/DataTable';
+import { umsApi } from '../../api/api';
 import {
     loadEmployees,
     saveEmployees,
@@ -118,21 +122,53 @@ function formatSarCurrency(amount: number, isRtl: boolean): string {
 export const UmsEmployeesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
     const currentUser = useAuthStore((state) => state.user);
 
-    // Master & Employee Datasets loaded from UMS localStorage helpers
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
-    const [departments] = useState<DepartmentRecord[]>(() => loadDepartments());
-    const [designations] = useState<DesignationRecord[]>(() => loadDesignations());
-    const [branches] = useState<BranchRecord[]>(() => loadBranches());
-    const [roles] = useState<RoleRecord[]>(() => loadRoles());
-    const [securityGroups] = useState<SecurityGroupRecord[]>(() => loadSecurityGroups());
-    const [customAddons] = useState<CustomAddonRecord[]>(() => loadCustomAddons());
+    // Master & Employee Datasets loaded with TanStack Query + UMS localStorage helpers
+    const { data: queriedEmployees, isLoading: isEmployeesLoading } = useQuery({
+        queryKey: ['ums', 'employees'],
+        queryFn: async () => {
+            const res = await umsApi.listEmployees();
+            return res.ok && res.data ? res.data : loadEmployees();
+        },
+        initialData: () => loadEmployees(),
+    });
+
+    const { data: queriedDepartments } = useQuery({
+        queryKey: ['ums', 'departments'],
+        queryFn: async () => {
+            const res = await umsApi.listDepartments();
+            return res.ok && res.data ? res.data : loadDepartments();
+        },
+        initialData: () => loadDepartments(),
+    });
+
+    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => queriedEmployees || loadEmployees());
+    const [departments, setDepartments] = useState<DepartmentRecord[]>(() => queriedDepartments || loadDepartments());
+    const [designations] = useState<DesignationRecord[]>(() => umsApi.listDesignations());
+    const [branches] = useState<BranchRecord[]>(() => umsApi.listBranches());
+    const [roles] = useState<RoleRecord[]>(() => umsApi.listRoles());
+    const [securityGroups] = useState<SecurityGroupRecord[]>(() => umsApi.listSecurityGroups());
+    const [customAddons] = useState<CustomAddonRecord[]>(() => umsApi.listCustomAddons());
+
+    useEffect(() => {
+        if (queriedEmployees) {
+            setEmployees(queriedEmployees);
+        }
+    }, [queriedEmployees]);
+
+    useEffect(() => {
+        if (queriedDepartments) {
+            setDepartments(queriedDepartments);
+        }
+    }, [queriedDepartments]);
 
     // Search & Debounced Search State
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [isFiltersOpen, setIsFiltersOpen] = useState(true);
 
     // Filter State
     const [statusFilter, setStatusFilter] = useState<'ALL' | EmployeeStatus>('ALL');
@@ -210,11 +246,24 @@ export const UmsEmployeesPage: React.FC = () => {
     // Dynamic 8 KPI Cards derived from live employee dataset
     const kpis = useMemo(() => computeEmployeeDirectoryKpis(employees), [employees]);
 
-    // Persist employees helper
+    // Persist employees helper & TanStack Query mutation
+    const persistEmployeesMutation = useMutation({
+        mutationFn: async (updated: EmployeeRecord[]) => {
+            saveEmployees(updated);
+            syncMasterEntityEmployeeCounts(updated);
+            return updated;
+        },
+        onSuccess: (updated) => {
+            setEmployees(updated);
+            queryClient.setQueryData(['ums', 'employees'], updated);
+        },
+    });
+
     const persistEmployees = (updated: EmployeeRecord[]) => {
         setEmployees(updated);
         saveEmployees(updated);
         syncMasterEntityEmployeeCounts(updated);
+        persistEmployeesMutation.mutate(updated);
     };
 
     // Filtered Employees
@@ -653,6 +702,531 @@ export const UmsEmployeesPage: React.FC = () => {
         );
     };
 
+    // Columns for shared DataTable
+    const columns: ColumnDef<any, any>[] = useMemo(
+        () => [
+            {
+                id: 'select',
+                header: () => (
+                    <input
+                        type="checkbox"
+                        checked={allVisibleSelected}
+                        onChange={handleToggleSelectAllVisible}
+                        aria-label={t('common.selectAll', {
+                            defaultValue: 'Select all visible rows',
+                        })}
+                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                    />
+                ),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    const isSelected = selectedIds.includes(emp.id);
+                    return (
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectRow(emp.id)}
+                            aria-label={emp.code}
+                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                        />
+                    );
+                },
+            },
+            {
+                accessorKey: 'code',
+                header: t('ums.employees.table.colCode'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => navigate(`/ums/employees/${emp.id}`)}
+                            className="font-mono font-bold text-[#037F8C] hover:underline cursor-pointer"
+                            dir="ltr"
+                        >
+                            {emp.code}
+                        </button>
+                    );
+                },
+            },
+            {
+                accessorKey: 'nameEn',
+                header: t('ums.employees.table.colEmployee'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <div className="flex items-center gap-3">
+                            {emp.avatarUrl ? (
+                                <img
+                                    src={emp.avatarUrl}
+                                    alt={isRtl ? emp.nameAr || emp.nameEn : emp.nameEn}
+                                    className="w-8 h-8 rounded-full object-cover border border-[#E5E0D8] shrink-0"
+                                />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                                    {getInitials(emp.nameEn, emp.nameAr)}
+                                </div>
+                            )}
+                            <div className="min-w-0">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(`/ums/employees/${emp.id}`)}
+                                    className="font-bold text-[#0D0D0D] hover:text-[#037F8C] transition-colors text-start block truncate cursor-pointer"
+                                >
+                                    {isRtl ? emp.nameAr || emp.nameEn : emp.nameEn || emp.nameAr}
+                                </button>
+                                <span className="text-[11px] text-[#6E6862] block truncate">
+                                    {isRtl ? emp.nameEn : emp.nameAr} · {emp.nationality}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'email',
+                header: t('ums.employees.table.colEmail'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <div className="space-y-0.5">
+                            <span
+                                className="font-mono text-[#0D0D0D] block truncate max-w-[190px]"
+                                dir="ltr"
+                            >
+                                {emp.workEmail || emp.email || (
+                                    <span className="italic text-[#857E74]">
+                                        {t('ums.employees.table.noEmail')}
+                                    </span>
+                                )}
+                            </span>
+                            {emp.workEmail && emp.email && emp.workEmail !== emp.email && (
+                                <span
+                                    className="text-[11px] text-[#857E74] block truncate max-w-[190px]"
+                                    dir="ltr"
+                                >
+                                    {emp.email}
+                                </span>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'designationId',
+                header: t('ums.employees.table.colDesignation'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    const desig = designationMap.get(emp.designationId);
+                    return desig ? (
+                        <div>
+                            <span className="font-semibold text-[#0D0D0D] block">
+                                {isRtl ? desig.titleAr : desig.titleEn}
+                            </span>
+                            <span className="text-[11px] font-mono text-[#857E74]">
+                                {desig.code}
+                            </span>
+                        </div>
+                    ) : (
+                        <span className="text-[#857E74] italic">
+                            {t('ums.employees.table.unassigned')}
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'roleId',
+                header: t('ums.employees.table.colRole'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    const role = roleMap.get(emp.roleId);
+                    const secGroup = role ? securityGroupMap.get(role.securityGroupId) : undefined;
+                    return role ? (
+                        <div>
+                            <span className="font-semibold text-[#037F8C] block">
+                                {isRtl ? role.nameAr : role.nameEn}
+                            </span>
+                            {secGroup && (
+                                <span className="text-[11px] text-[#6E6862] block truncate max-w-[160px]">
+                                    {isRtl ? secGroup.nameAr : secGroup.nameEn}
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="text-[#857E74] italic">
+                            {t('ums.employees.table.unassigned')}
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'departmentId',
+                header: t('ums.employees.table.colDepartment'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    const dept = departmentMap.get(emp.departmentId);
+                    const branch = branchMap.get(emp.branchId);
+                    return dept ? (
+                        <div>
+                            <span className="font-semibold text-[#0D0D0D] block">
+                                {isRtl ? dept.nameAr : dept.nameEn}
+                            </span>
+                            {branch && (
+                                <span className="text-[11px] text-[#6E6862] block">
+                                    {isRtl ? branch.cityAr : branch.cityEn}
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="text-[#857E74] italic">
+                            {t('ums.employees.table.unassigned')}
+                        </span>
+                    );
+                },
+            },
+            {
+                id: 'completion',
+                header: t('ums.employees.table.colCompletion'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    const completion =
+                        completionByEmployeeId[emp.id] || computeEmployeeProfileCompletion(emp);
+                    return (
+                        <div className="space-y-1 min-w-[140px]">
+                            <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-mono font-bold text-[#0D0D0D]">
+                                    {completion.percentage}%
+                                </span>
+                                <span className="text-[#857E74]">
+                                    {t('ums.employees.table.completeFieldsCount', {
+                                        completed: completion.completedCount,
+                                        total: completion.totalCount,
+                                    })}
+                                </span>
+                            </div>
+                            <svg
+                                className="w-full h-1.5 rounded-full bg-[#EFECE6] overflow-hidden block"
+                                aria-hidden="true"
+                            >
+                                <rect
+                                    x="0"
+                                    y="0"
+                                    width={`${completion.percentage}%`}
+                                    height="100%"
+                                    rx="3"
+                                    className={
+                                        completion.percentage === 100
+                                            ? 'fill-[#037F8C]'
+                                            : completion.percentage >= 75
+                                            ? 'fill-[#037F8C]'
+                                            : 'fill-[#C28E3A]'
+                                    }
+                                />
+                            </svg>
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'status',
+                header: t('ums.employees.table.colStatus'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    const isProbation =
+                        Boolean(emp.isUnderProbation) || emp.contractType === 'Probation';
+                    return (
+                        <div className="flex flex-col items-start gap-1">
+                            <button
+                                type="button"
+                                onClick={() => handleToggleStatus(emp)}
+                                className={`inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors ${
+                                    emp.status === 'Active'
+                                        ? 'text-[#037F8C] hover:text-[#1B4D3E]'
+                                        : emp.status === 'Draft'
+                                        ? 'text-[#C28E3A] hover:text-[#0D0D0D]'
+                                        : 'text-[#857E74] hover:text-[#0D0D0D]'
+                                }`}
+                                title={
+                                    emp.status === 'Active'
+                                        ? t('ums.employees.actions.deactivate')
+                                        : t('ums.employees.actions.activate')
+                                }
+                            >
+                                <span
+                                    className={`w-2 h-2 rounded-full ${
+                                        emp.status === 'Active'
+                                            ? 'bg-[#037F8C]'
+                                            : emp.status === 'Draft'
+                                            ? 'bg-[#C28E3A]'
+                                            : 'bg-[#857E74]'
+                                    }`}
+                                />
+                                <span>{t(`ums.employees.statuses.${emp.status}`)}</span>
+                            </button>
+                            {isProbation && (
+                                <span className="text-[10px] font-medium text-[#C28E3A]">
+                                    {t('ums.employees.table.probationTag')}
+                                </span>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'actions',
+                header: t('ums.employees.table.colActions'),
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <div className="flex items-center justify-end gap-1">
+                            <button
+                                type="button"
+                                onClick={() => navigate(`/ums/employees/${emp.id}`)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={t('ums.employees.actions.viewDetails')}
+                            >
+                                <Eye size={14} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => navigate(`/ums/employees/${emp.id}/edit`)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={t('ums.employees.actions.editEmployee')}
+                            >
+                                <Pencil size={14} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleSendInvitation(emp)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={
+                                    computeEmployeeInvitationStatus(emp) === 'Not Sent'
+                                        ? t('ums.employees.actions.sendInvitation')
+                                        : t('ums.employees.actions.resendInvitation')
+                                }
+                            >
+                                <Send size={14} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => handleToggleStatus(emp)}
+                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                    emp.status === 'Active'
+                                        ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
+                                        : 'text-[#857E74] hover:bg-[#FAF8F5]'
+                                }`}
+                                title={
+                                    emp.status === 'Active'
+                                        ? t('ums.employees.actions.deactivate')
+                                        : t('ums.employees.actions.activate')
+                                }
+                            >
+                                <Power size={14} />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setDeletingEmployee(emp)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
+                                title={t('ums.employees.actions.delete')}
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [
+            allVisibleSelected,
+            selectedIds,
+            t,
+            isRtl,
+            navigate,
+            designationMap,
+            roleMap,
+            securityGroupMap,
+            departmentMap,
+            branchMap,
+            completionByEmployeeId,
+        ]
+    );
+
+    const filtersPanel = (
+        <div className="p-4 bg-white border border-[#E5E0D8] rounded-xl space-y-3 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="inline-flex items-center p-1 rounded-lg bg-[#EFECE6] border border-[#E5E0D8]">
+                    {(['ALL', 'Active', 'Inactive', 'Draft'] as const).map((statusOption) => {
+                        const isActive = statusFilter === statusOption;
+                        const label =
+                            statusOption === 'ALL'
+                                ? t('ums.employees.filters.allStatuses')
+                                : t(`ums.employees.statuses.${statusOption}`);
+                        return (
+                            <button
+                                key={statusOption}
+                                type="button"
+                                onClick={() => {
+                                    setStatusFilter(statusOption);
+                                    setCurrentPage(1);
+                                }}
+                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                                    isActive
+                                        ? 'bg-[#037F8C] text-white shadow-2xs'
+                                        : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                                }`}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {hasActiveFilters && (
+                    <button
+                        type="button"
+                        onClick={handleResetFilters}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                    >
+                        <RotateCcw size={13} />
+                        <span>{t('ums.employees.actions.resetFilters')}</span>
+                    </button>
+                )}
+            </div>
+
+            {/* Master-Data Dropdown Filters Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+                {/* Department Filter */}
+                <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
+                        {t('ums.employees.filters.departmentLabel')}
+                    </label>
+                    <select
+                        value={departmentFilter}
+                        onChange={(e) => {
+                            setDepartmentFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        aria-label={t('ums.employees.filters.departmentLabel')}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="ALL">{t('ums.employees.filters.allDepartments')}</option>
+                        {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>
+                                {isRtl ? dept.nameAr : dept.nameEn}
+                                {dept.status === 'Inactive'
+                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
+                                    : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Designation Filter */}
+                <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
+                        {t('ums.employees.filters.designationLabel')}
+                    </label>
+                    <select
+                        value={designationFilter}
+                        onChange={(e) => {
+                            setDesignationFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        aria-label={t('ums.employees.filters.designationLabel')}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="ALL">{t('ums.employees.filters.allDesignations')}</option>
+                        {designations.map((desig) => (
+                            <option key={desig.id} value={desig.id}>
+                                {isRtl ? desig.titleAr : desig.titleEn}
+                                {desig.status === 'Inactive'
+                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
+                                    : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Branch Filter */}
+                <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
+                        {t('ums.employees.filters.branchLabel')}
+                    </label>
+                    <select
+                        value={branchFilter}
+                        onChange={(e) => {
+                            setBranchFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        aria-label={t('ums.employees.filters.branchLabel')}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="ALL">{t('ums.employees.filters.allBranches')}</option>
+                        {branches.map((branch) => (
+                            <option key={branch.id} value={branch.id}>
+                                {isRtl ? branch.nameAr : branch.nameEn}
+                                {branch.status === 'Inactive'
+                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
+                                    : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Contract Type Filter */}
+                <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
+                        {t('ums.employees.filters.contractTypeLabel')}
+                    </label>
+                    <select
+                        value={contractTypeFilter}
+                        onChange={(e) => {
+                            setContractTypeFilter(e.target.value as 'ALL' | ContractType);
+                            setCurrentPage(1);
+                        }}
+                        aria-label={t('ums.employees.filters.contractTypeLabel')}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="ALL">{t('ums.employees.filters.allContractTypes')}</option>
+                        {CONTRACT_TYPES.map((ct) => (
+                            <option key={ct} value={ct}>
+                                {t(`ums.employees.contractTypes.${ct}`)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Probation Status Filter */}
+                <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
+                        {t('ums.employees.filters.probationLabel')}
+                    </label>
+                    <select
+                        value={probationFilter}
+                        onChange={(e) => {
+                            setProbationFilter(
+                                e.target.value as 'ALL' | 'UNDER_PROBATION' | 'CONFIRMED'
+                            );
+                            setCurrentPage(1);
+                        }}
+                        aria-label={t('ums.employees.filters.probationLabel')}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="ALL">{t('ums.employees.filters.allProbation')}</option>
+                        <option value="UNDER_PROBATION">
+                            {t('ums.employees.filters.underProbationOnly')}
+                        </option>
+                        <option value="CONFIRMED">{t('ums.employees.filters.confirmedOnly')}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="space-y-6 text-start">
             {/* ============================================================================ */}
@@ -665,7 +1239,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             {t('ums.employees.title')}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             UMS-EMP
@@ -677,32 +1251,6 @@ export const UmsEmployeesPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/ums/employees/import')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#45413C] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <Upload size={14} className="text-[#857E74]" />
-                        <span>{t('ums.employees.actions.importEmployees')}</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => handleExportCsv(false)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#45413C] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <Download size={14} className="text-[#857E74]" />
-                        <span>{t('ums.employees.actions.exportCsv')}</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => navigate('/ums/employees/new')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-                    >
-                        <Plus size={15} />
-                        <span>{t('ums.employees.actions.addEmployee')}</span>
-                    </button>
                 </div>
             </div>
 
@@ -725,7 +1273,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                         <Users size={18} />
                     </div>
                 </div>
@@ -737,15 +1285,15 @@ export const UmsEmployeesPage: React.FC = () => {
                             {t('ums.employees.kpis.activeEmployees')}
                         </p>
                         <div className="flex items-baseline gap-2 mt-1.5">
-                            <span className="text-2xl font-bold font-mono text-[#265938]">
+                            <span className="text-2xl font-bold font-mono text-[#037F8C]">
                                 {kpis.activeEmployees}
                             </span>
-                            <span className="text-[11px] text-[#265938] font-medium">
+                            <span className="text-[11px] text-[#037F8C] font-medium">
                                 {t('ums.employees.kpis.activeSub')}
                             </span>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                    <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                         <UserCheck size={18} />
                     </div>
                 </div>
@@ -837,7 +1385,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             {t('ums.employees.kpis.invitedEmployees')}
                         </p>
                         <div className="flex items-baseline gap-2 mt-1.5">
-                            <span className="text-2xl font-bold font-mono text-[#2D3F2C]">
+                            <span className="text-2xl font-bold font-mono text-[#037F8C]">
                                 {kpis.invitedEmployees}
                             </span>
                             <span className="text-[11px] text-[#6E6862]">
@@ -845,7 +1393,7 @@ export const UmsEmployeesPage: React.FC = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                         <MailCheck size={18} />
                     </div>
                 </div>
@@ -871,768 +1419,79 @@ export const UmsEmployeesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* ============================================================================ */}
-            {/* MAIN CARD: SEARCH, FILTERS, BULK BAR, TABLE & PAGINATION                     */}
-            {/* ============================================================================ */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                {/* Search & Filters Toolbar */}
-                <div className="p-4 border-b border-[#E5E0D8] bg-[#FAF8F5]/60 space-y-3">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                        {/* Debounced Multilingual Search */}
-                        <div className="relative flex-1 max-w-xl">
-                            <Search
-                                size={15}
-                                className="absolute start-3 top-1/2 -translate-y-1/2 text-[#857E74]"
-                            />
-                            <input
-                                type="text"
-                                value={searchInput}
-                                onChange={(e) => setSearchInput(e.target.value)}
-                                placeholder={t('ums.employees.filters.searchPlaceholder')}
-                                className="w-full ps-9 pe-8 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/20 focus:border-[#2D3F2C] transition-all"
-                            />
-                            {searchInput && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSearchInput('');
-                                        setDebouncedSearch('');
-                                        setCurrentPage(1);
-                                    }}
-                                    className="absolute end-2.5 top-1/2 -translate-y-1/2 text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
-                                    aria-label={t('common.clear', { defaultValue: 'Clear' })}
-                                >
-                                    <X size={14} />
-                                </button>
-                            )}
-                        </div>
+            {/* Bulk Operations Bar */}
+            {selectedIds.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#EAF3EC] border border-[#037F8C]/20 rounded-xl text-xs">
+                    <span className="font-semibold text-[#037F8C]">
+                        {t('ums.employees.table.selectedCount', {
+                            count: selectedIds.length,
+                        })}
+                    </span>
 
-                        {/* Status Segmented Filter + Reset Filters */}
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="inline-flex items-center p-1 rounded-lg bg-[#EFECE6] border border-[#E5E0D8]">
-                                {(['ALL', 'Active', 'Inactive', 'Draft'] as const).map(
-                                    (statusOption) => {
-                                        const isActive = statusFilter === statusOption;
-                                        const label =
-                                            statusOption === 'ALL'
-                                                ? t('ums.employees.filters.allStatuses')
-                                                : t(`ums.employees.statuses.${statusOption}`);
-                                        return (
-                                            <button
-                                                key={statusOption}
-                                                type="button"
-                                                onClick={() => {
-                                                    setStatusFilter(statusOption);
-                                                    setCurrentPage(1);
-                                                }}
-                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                                                    isActive
-                                                        ? 'bg-[#2D3F2C] text-white shadow-2xs'
-                                                        : 'text-[#6E6862] hover:text-[#0D0D0D]'
-                                                }`}
-                                            >
-                                                {label}
-                                            </button>
-                                        );
-                                    }
-                                )}
-                            </div>
-
-                            {hasActiveFilters && (
-                                <button
-                                    type="button"
-                                    onClick={handleResetFilters}
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                                >
-                                    <RotateCcw size={13} />
-                                    <span>{t('ums.employees.actions.resetFilters')}</span>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Master-Data Dropdown Filters Row */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
-                        {/* Department Filter */}
-                        <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                                {t('ums.employees.filters.departmentLabel')}
-                            </label>
-                            <select
-                                value={departmentFilter}
-                                onChange={(e) => {
-                                    setDepartmentFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                aria-label={t('ums.employees.filters.departmentLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                            >
-                                <option value="ALL">
-                                    {t('ums.employees.filters.allDepartments')}
-                                </option>
-                                {departments.map((dept) => (
-                                    <option key={dept.id} value={dept.id}>
-                                        {isRtl ? dept.nameAr : dept.nameEn}
-                                        {dept.status === 'Inactive'
-                                            ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                            : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Designation Filter */}
-                        <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                                {t('ums.employees.filters.designationLabel')}
-                            </label>
-                            <select
-                                value={designationFilter}
-                                onChange={(e) => {
-                                    setDesignationFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                aria-label={t('ums.employees.filters.designationLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                            >
-                                <option value="ALL">
-                                    {t('ums.employees.filters.allDesignations')}
-                                </option>
-                                {designations.map((desig) => (
-                                    <option key={desig.id} value={desig.id}>
-                                        {isRtl ? desig.titleAr : desig.titleEn}
-                                        {desig.status === 'Inactive'
-                                            ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                            : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Branch Filter */}
-                        <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                                {t('ums.employees.filters.branchLabel')}
-                            </label>
-                            <select
-                                value={branchFilter}
-                                onChange={(e) => {
-                                    setBranchFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                aria-label={t('ums.employees.filters.branchLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                            >
-                                <option value="ALL">
-                                    {t('ums.employees.filters.allBranches')}
-                                </option>
-                                {branches.map((branch) => (
-                                    <option key={branch.id} value={branch.id}>
-                                        {isRtl ? branch.nameAr : branch.nameEn}
-                                        {branch.status === 'Inactive'
-                                            ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                            : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Contract Type Filter */}
-                        <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                                {t('ums.employees.filters.contractTypeLabel')}
-                            </label>
-                            <select
-                                value={contractTypeFilter}
-                                onChange={(e) => {
-                                    setContractTypeFilter(
-                                        e.target.value as 'ALL' | ContractType
-                                    );
-                                    setCurrentPage(1);
-                                }}
-                                aria-label={t('ums.employees.filters.contractTypeLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                            >
-                                <option value="ALL">
-                                    {t('ums.employees.filters.allContractTypes')}
-                                </option>
-                                {CONTRACT_TYPES.map((ct) => (
-                                    <option key={ct} value={ct}>
-                                        {t(`ums.employees.contractTypes.${ct}`)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Probation Status Filter */}
-                        <div>
-                            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                                {t('ums.employees.filters.probationLabel')}
-                            </label>
-                            <select
-                                value={probationFilter}
-                                onChange={(e) => {
-                                    setProbationFilter(
-                                        e.target.value as 'ALL' | 'UNDER_PROBATION' | 'CONFIRMED'
-                                    );
-                                    setCurrentPage(1);
-                                }}
-                                aria-label={t('ums.employees.filters.probationLabel')}
-                                className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                            >
-                                <option value="ALL">
-                                    {t('ums.employees.filters.allProbation')}
-                                </option>
-                                <option value="UNDER_PROBATION">
-                                    {t('ums.employees.filters.underProbationOnly')}
-                                </option>
-                                <option value="CONFIRMED">
-                                    {t('ums.employees.filters.confirmedOnly')}
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bulk Operations Bar */}
-                {selectedIds.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#EAF3EC] border-b border-[#265938]/20 text-xs">
-                        <span className="font-semibold text-[#265938]">
-                            {t('ums.employees.table.selectedCount', {
-                                count: selectedIds.length,
-                            })}
-                        </span>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleBulkStatusChange('Active')}
-                                className="px-2.5 py-1 rounded bg-white text-[#265938] border border-[#265938]/30 font-semibold hover:bg-[#FAF8F5] cursor-pointer"
-                            >
-                                {t('ums.employees.actions.bulkActivate')}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleBulkStatusChange('Inactive')}
-                                className="px-2.5 py-1 rounded bg-white text-[#6E6862] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
-                            >
-                                {t('ums.employees.actions.bulkDeactivate')}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleExportCsv(true)}
-                                className="px-2.5 py-1 rounded bg-white text-[#2D3F2C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
-                            >
-                                {t('ums.employees.actions.bulkExport')}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setSelectedIds([])}
-                                className="px-2.5 py-1 text-[#6E6862] hover:text-[#0D0D0D] cursor-pointer"
-                            >
-                                {t('ums.employees.actions.clearSelection')}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Employees Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-start border-collapse">
-                        <thead>
-                            <tr className="border-b border-[#E5E0D8] bg-[#FAF8F5] text-[11px] font-semibold uppercase tracking-wider text-[#6E6862]">
-                                <th className="py-3 px-4 w-10 text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={allVisibleSelected}
-                                        onChange={handleToggleSelectAllVisible}
-                                        aria-label={t('common.selectAll', {
-                                            defaultValue: 'Select all visible rows',
-                                        })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                    />
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colCode')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colEmployee')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colEmail')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colDesignation')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colRole')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colDepartment')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colCompletion')}
-                                </th>
-                                <th className="py-3 px-4 text-start">
-                                    {t('ums.employees.table.colStatus')}
-                                </th>
-                                <th className="py-3 px-4 text-end">
-                                    {t('ums.employees.table.colActions')}
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-[#E5E0D8] text-xs">
-                            {paginatedEmployees.length === 0 ? (
-                                <tr>
-                                    <td colSpan={10} className="py-14 px-4 text-center">
-                                        <div className="max-w-sm mx-auto space-y-2">
-                                            <div className="w-10 h-10 rounded-full bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#857E74]">
-                                                <Users size={18} />
-                                            </div>
-                                            <p className="text-sm font-semibold text-[#0D0D0D]">
-                                                {hasActiveFilters
-                                                    ? t('ums.employees.empty.noFilteredTitle')
-                                                    : t('ums.employees.empty.noEmployeesTitle')}
-                                            </p>
-                                            <p className="text-xs text-[#6E6862]">
-                                                {hasActiveFilters
-                                                    ? t('ums.employees.empty.noFilteredDesc')
-                                                    : t('ums.employees.empty.noEmployeesDesc')}
-                                            </p>
-                                            {hasActiveFilters && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleResetFilters}
-                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
-                                                >
-                                                    <RotateCcw size={12} />
-                                                    <span>
-                                                        {t('ums.employees.actions.resetFilters')}
-                                                    </span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedEmployees.map((emp) => {
-                                    const isSelected = selectedIds.includes(emp.id);
-                                    const dept = departmentMap.get(emp.departmentId);
-                                    const desig = designationMap.get(emp.designationId);
-                                    const branch = branchMap.get(emp.branchId);
-                                    const role = roleMap.get(emp.roleId);
-                                    const secGroup = role
-                                        ? securityGroupMap.get(role.securityGroupId)
-                                        : undefined;
-                                    const completion =
-                                        completionByEmployeeId[emp.id] ||
-                                        computeEmployeeProfileCompletion(emp);
-                                    const isProbation =
-                                        Boolean(emp.isUnderProbation) ||
-                                        emp.contractType === 'Probation';
-
-                                    return (
-                                        <tr
-                                            key={emp.id}
-                                            className={`transition-colors ${
-                                                isSelected
-                                                    ? 'bg-[#EAF3EC]/50'
-                                                    : 'hover:bg-[#FAF8F5]/80'
-                                            }`}
-                                        >
-                                            {/* Checkbox */}
-                                            <td className="py-3 px-4 text-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleToggleSelectRow(emp.id)}
-                                                    aria-label={emp.code}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                                />
-                                            </td>
-
-                                            {/* Employee ID */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        navigate(`/ums/employees/${emp.id}`)
-                                                    }
-                                                    className="font-mono font-bold text-[#2D3F2C] hover:underline cursor-pointer"
-                                                    dir="ltr"
-                                                >
-                                                    {emp.code}
-                                                </button>
-                                            </td>
-
-                                            {/* Employee Name & Initials/Avatar */}
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center gap-3">
-                                                    {emp.avatarUrl ? (
-                                                        <img
-                                                            src={emp.avatarUrl}
-                                                            alt={
-                                                                isRtl
-                                                                    ? emp.nameAr || emp.nameEn
-                                                                    : emp.nameEn
-                                                            }
-                                                            className="w-8 h-8 rounded-full object-cover border border-[#E5E0D8] shrink-0"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-8 h-8 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                                                            {getInitials(emp.nameEn, emp.nameAr)}
-                                                        </div>
-                                                    )}
-                                                    <div className="min-w-0">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                navigate(`/ums/employees/${emp.id}`)
-                                                            }
-                                                            className="font-bold text-[#0D0D0D] hover:text-[#2D3F2C] transition-colors text-start block truncate cursor-pointer"
-                                                        >
-                                                            {isRtl
-                                                                ? emp.nameAr || emp.nameEn
-                                                                : emp.nameEn || emp.nameAr}
-                                                        </button>
-                                                        <span className="text-[11px] text-[#6E6862] block truncate">
-                                                            {isRtl
-                                                                ? emp.nameEn
-                                                                : emp.nameAr}{' '}
-                                                            · {emp.nationality}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Email */}
-                                            <td className="py-3 px-4">
-                                                <div className="space-y-0.5">
-                                                    <span
-                                                        className="font-mono text-[#0D0D0D] block truncate max-w-[190px]"
-                                                        dir="ltr"
-                                                    >
-                                                        {emp.workEmail || emp.email || (
-                                                            <span className="italic text-[#857E74]">
-                                                                {t('ums.employees.table.noEmail')}
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                    {emp.workEmail &&
-                                                        emp.email &&
-                                                        emp.workEmail !== emp.email && (
-                                                            <span
-                                                                className="text-[11px] text-[#857E74] block truncate max-w-[190px]"
-                                                                dir="ltr"
-                                                            >
-                                                                {emp.email}
-                                                            </span>
-                                                        )}
-                                                </div>
-                                            </td>
-
-                                            {/* Designation */}
-                                            <td className="py-3 px-4">
-                                                {desig ? (
-                                                    <div>
-                                                        <span className="font-semibold text-[#0D0D0D] block">
-                                                            {isRtl ? desig.titleAr : desig.titleEn}
-                                                        </span>
-                                                        <span className="text-[11px] font-mono text-[#857E74]">
-                                                            {desig.code}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[#857E74] italic">
-                                                        {t('ums.employees.table.unassigned')}
-                                                    </span>
-                                                )}
-                                            </td>
-
-                                            {/* Role */}
-                                            <td className="py-3 px-4">
-                                                {role ? (
-                                                    <div>
-                                                        <span className="font-semibold text-[#2D3F2C] block">
-                                                            {isRtl ? role.nameAr : role.nameEn}
-                                                        </span>
-                                                        {secGroup && (
-                                                            <span className="text-[11px] text-[#6E6862] block truncate max-w-[160px]">
-                                                                {isRtl
-                                                                    ? secGroup.nameAr
-                                                                    : secGroup.nameEn}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[#857E74] italic">
-                                                        {t('ums.employees.table.unassigned')}
-                                                    </span>
-                                                )}
-                                            </td>
-
-                                            {/* Department */}
-                                            <td className="py-3 px-4">
-                                                {dept ? (
-                                                    <div>
-                                                        <span className="font-semibold text-[#0D0D0D] block">
-                                                            {isRtl ? dept.nameAr : dept.nameEn}
-                                                        </span>
-                                                        {branch && (
-                                                            <span className="text-[11px] text-[#6E6862] block">
-                                                                {isRtl
-                                                                    ? branch.cityAr
-                                                                    : branch.cityEn}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[#857E74] italic">
-                                                        {t('ums.employees.table.unassigned')}
-                                                    </span>
-                                                )}
-                                            </td>
-
-                                            {/* Profile Completion Percentage */}
-                                            <td className="py-3 px-4 min-w-[140px]">
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center justify-between text-[11px]">
-                                                        <span className="font-mono font-bold text-[#0D0D0D]">
-                                                            {completion.percentage}%
-                                                        </span>
-                                                        <span className="text-[#857E74]">
-                                                            {t(
-                                                                'ums.employees.table.completeFieldsCount',
-                                                                {
-                                                                    completed:
-                                                                        completion.completedCount,
-                                                                    total: completion.totalCount,
-                                                                }
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    <svg
-                                                        className="w-full h-1.5 rounded-full bg-[#EFECE6] overflow-hidden block"
-                                                        aria-hidden="true"
-                                                    >
-                                                        <rect
-                                                            x="0"
-                                                            y="0"
-                                                            width={`${completion.percentage}%`}
-                                                            height="100%"
-                                                            rx="3"
-                                                            className={
-                                                                completion.percentage === 100
-                                                                    ? 'fill-[#265938]'
-                                                                    : completion.percentage >= 75
-                                                                    ? 'fill-[#2D3F2C]'
-                                                                    : 'fill-[#C28E3A]'
-                                                            }
-                                                        />
-                                                    </svg>
-                                                </div>
-                                            </td>
-
-                                            {/* Employment Status */}
-                                            <td className="py-3 px-4 whitespace-nowrap">
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(emp)}
-                                                        className={`inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors ${
-                                                            emp.status === 'Active'
-                                                                ? 'text-[#265938] hover:text-[#1B4D3E]'
-                                                                : emp.status === 'Draft'
-                                                                ? 'text-[#C28E3A] hover:text-[#0D0D0D]'
-                                                                : 'text-[#857E74] hover:text-[#0D0D0D]'
-                                                        }`}
-                                                        title={
-                                                            emp.status === 'Active'
-                                                                ? t(
-                                                                      'ums.employees.actions.deactivate'
-                                                                  )
-                                                                : t('ums.employees.actions.activate')
-                                                        }
-                                                    >
-                                                        <span
-                                                            className={`w-2 h-2 rounded-full ${
-                                                                emp.status === 'Active'
-                                                                    ? 'bg-[#265938]'
-                                                                    : emp.status === 'Draft'
-                                                                    ? 'bg-[#C28E3A]'
-                                                                    : 'bg-[#857E74]'
-                                                            }`}
-                                                        />
-                                                        <span>
-                                                            {t(
-                                                                `ums.employees.statuses.${emp.status}`
-                                                            )}
-                                                        </span>
-                                                    </button>
-                                                    {isProbation && (
-                                                        <span className="text-[10px] font-medium text-[#C28E3A]">
-                                                            {t('ums.employees.table.probationTag')}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            {/* Row Actions */}
-                                            <td className="py-3 px-4 text-end whitespace-nowrap">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            navigate(`/ums/employees/${emp.id}`)
-                                                        }
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t(
-                                                            'ums.employees.actions.viewDetails'
-                                                        )}
-                                                    >
-                                                        <Eye size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            navigate(
-                                                                `/ums/employees/${emp.id}/edit`
-                                                            )
-                                                        }
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t(
-                                                            'ums.employees.actions.editEmployee'
-                                                        )}
-                                                    >
-                                                        <Pencil size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleSendInvitation(emp)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={
-                                                            computeEmployeeInvitationStatus(emp) ===
-                                                            'Not Sent'
-                                                                ? t(
-                                                                      'ums.employees.actions.sendInvitation'
-                                                                  )
-                                                                : t(
-                                                                      'ums.employees.actions.resendInvitation'
-                                                                  )
-                                                        }
-                                                    >
-                                                        <Send size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(emp)}
-                                                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                                                            emp.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
-                                                                : 'text-[#857E74] hover:bg-[#FAF8F5]'
-                                                        }`}
-                                                        title={
-                                                            emp.status === 'Active'
-                                                                ? t(
-                                                                      'ums.employees.actions.deactivate'
-                                                                  )
-                                                                : t('ums.employees.actions.activate')
-                                                        }
-                                                    >
-                                                        <Power size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setDeletingEmployee(emp)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
-                                                        title={t('ums.employees.actions.delete')}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-[#E5E0D8] bg-[#FAF8F5]/50 text-xs text-[#6E6862]">
-                    <div className="flex items-center gap-2">
-                        <span>{t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                        >
-                            {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                        <span className="ms-2">
-                            {t('common.showingPagination', {
-                                defaultValue: `Showing ${
-                                    filteredEmployees.length === 0
-                                        ? 0
-                                        : (safePage - 1) * pageSize + 1
-                                } - ${Math.min(
-                                    safePage * pageSize,
-                                    filteredEmployees.length
-                                )} of ${filteredEmployees.length}`,
-                                start:
-                                    filteredEmployees.length === 0
-                                        ? 0
-                                        : (safePage - 1) * pageSize + 1,
-                                end: Math.min(safePage * pageSize, filteredEmployees.length),
-                                total: filteredEmployees.length,
-                            })}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
-                            onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
-                            disabled={safePage === 1}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.prev', { defaultValue: 'Previous Page' })}
+                            onClick={() => handleBulkStatusChange('Active')}
+                            className="px-2.5 py-1 rounded bg-white text-[#037F8C] border border-[#037F8C]/30 font-semibold hover:bg-[#FAF8F5] cursor-pointer"
                         >
-                            <ChevronLeft size={14} className={isRtl ? 'rotate-180' : ''} />
+                            {t('ums.employees.actions.bulkActivate')}
                         </button>
-
-                        <span className="px-2 font-semibold text-[#0D0D0D]">
-                            {safePage} / {totalPages}
-                        </span>
 
                         <button
                             type="button"
-                            onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
-                            disabled={safePage === totalPages}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.next', { defaultValue: 'Next Page' })}
+                            onClick={() => handleBulkStatusChange('Inactive')}
+                            className="px-2.5 py-1 rounded bg-white text-[#6E6862] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
                         >
-                            <ChevronRight size={14} className={isRtl ? 'rotate-180' : ''} />
+                            {t('ums.employees.actions.bulkDeactivate')}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => handleExportCsv(true)}
+                            className="px-2.5 py-1 rounded bg-white text-[#037F8C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
+                        >
+                            {t('ums.employees.actions.bulkExport')}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setSelectedIds([])}
+                            className="px-2.5 py-1 text-[#6E6862] hover:text-[#0D0D0D] cursor-pointer"
+                        >
+                            {t('ums.employees.actions.clearSelection')}
                         </button>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* ============================================================================ */}
+            {/* SHARED DATATABLE WITH SEARCH, FILTERS & PAGINATION                           */}
+            {/* ============================================================================ */}
+            <DataTable
+                columns={columns}
+                data={paginatedEmployees}
+                count={filteredEmployees.length}
+                loading={isEmployeesLoading || persistEmployeesMutation.isPending}
+                searchPlaceholder={t('ums.employees.filters.searchPlaceholder')}
+                pageIndex={safePage - 1}
+                pageSize={pageSize}
+                onPageChange={(newPageIndex) => setCurrentPage(newPageIndex + 1)}
+                onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setCurrentPage(1);
+                }}
+                searchValue={searchInput}
+                onSearchChange={(val) => setSearchInput(val)}
+                onAddNew={() => navigate('/ums/employees/new')}
+                addNewLabel={t('ums.employees.actions.addEmployee')}
+                onExport={() => handleExportCsv(false)}
+                title={t('ums.employees.title')}
+                description={t('ums.employees.subtitle')}
+                onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+                isFiltersOpen={isFiltersOpen}
+                hasActiveFilters={hasActiveFilters}
+                filtersContent={filtersPanel}
+            />
 
             {/* ============================================================================ */}
             {/* DELETE CONFIRMATION & DEPENDENCY PROTECTION DIALOG                           */}
@@ -1718,7 +1577,7 @@ export const UmsEmployeesPage: React.FC = () => {
                                                 handleToggleStatus(deletingEmployee);
                                                 setDeletingEmployee(null);
                                             }}
-                                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                            className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                         >
                                             {t('ums.employees.actions.deactivateInstead')}
                                         </button>
@@ -1805,7 +1664,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         {isRtl ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
                         <span>{t('ums.employees.actions.backToList')}</span>
@@ -1825,7 +1684,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/employees')}
-                        className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <span>{t('ums.employees.actions.backToList')}</span>
                     </button>
@@ -1966,7 +1825,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     : employee.nameEn || employee.nameAr}
                             </h1>
                             <span
-                                className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                 dir="ltr"
                             >
                                 {employee.code}
@@ -1992,7 +1851,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleSendInvitation}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                     >
                         <Send size={13} />
                         <span>
@@ -2018,7 +1877,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate(`/ums/employees/${employee.id}/edit`)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Pencil size={13} />
                         <span>{t('ums.employees.actions.editEmployee')}</span>
@@ -2062,7 +1921,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate(`/ums/employees/${employee.id}/edit`)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors shrink-0 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors shrink-0 cursor-pointer"
                     >
                         <Pencil size={13} />
                         <span>{t('ums.employees.actions.editEmployee')}</span>
@@ -2080,7 +1939,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             className="w-14 h-14 rounded-full object-cover border border-[#E5E0D8] shrink-0"
                         />
                     ) : (
-                        <div className="w-14 h-14 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-base shrink-0">
+                        <div className="w-14 h-14 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-base shrink-0">
                             {getInitials(employee.nameEn, employee.nameAr)}
                         </div>
                     )}
@@ -2089,7 +1948,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             <h2 className="text-lg font-bold text-[#0D0D0D]">
                                 {employee.nameEn}
                             </h2>
-                            <span className="text-sm font-semibold text-[#2D3F2C]" dir="rtl">
+                            <span className="text-sm font-semibold text-[#037F8C]" dir="rtl">
                                 ({employee.nameAr})
                             </span>
                         </div>
@@ -2123,7 +1982,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         <span className="font-semibold text-[#45413C]">
                             {t('ums.employees.details.fields.profileCompletion')}
                         </span>
-                        <span className="font-mono font-bold text-[#2D3F2C]">
+                        <span className="font-mono font-bold text-[#037F8C]">
                             {completion.percentage}%
                         </span>
                     </div>
@@ -2139,7 +1998,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             rx="4"
                             className={
                                 completion.percentage === 100
-                                    ? 'fill-[#265938]'
+                                    ? 'fill-[#037F8C]'
                                     : 'fill-[#C28E3A]'
                             }
                         />
@@ -2158,7 +2017,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 1: PERSONAL INFORMATION */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <User size={16} />
                         </div>
                         <div>
@@ -2290,7 +2149,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 2: EMPLOYMENT INFORMATION */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <Briefcase size={16} />
                         </div>
                         <div>
@@ -2372,7 +2231,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => navigate(`/ums/employees/${manager.id}`)}
-                                    className="font-semibold text-[#2D3F2C] hover:underline mt-0.5 block cursor-pointer"
+                                    className="font-semibold text-[#037F8C] hover:underline mt-0.5 block cursor-pointer"
                                 >
                                     {isRtl ? manager.nameAr : manager.nameEn} ({manager.code})
                                 </button>
@@ -2433,7 +2292,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 3: SALARY DETAILS */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <Wallet size={16} />
                         </div>
                         <div>
@@ -2496,16 +2355,16 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="p-3.5 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-between">
+                    <div className="p-3.5 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-between">
                         <div>
-                            <span className="text-xs font-bold text-[#265938] block">
+                            <span className="text-xs font-bold text-[#037F8C] block">
                                 {t('ums.employees.details.fields.grossSalary')}
                             </span>
-                            <span className="text-[11px] text-[#265938]/80">
+                            <span className="text-[11px] text-[#037F8C]/80">
                                 {t('ums.employees.details.fields.currencySar')}
                             </span>
                         </div>
-                        <span className="text-lg font-mono font-bold text-[#265938]">
+                        <span className="text-lg font-mono font-bold text-[#037F8C]">
                             {formatSarCurrency(
                                 employee.salaryDetails?.grossSalary || 0,
                                 isRtl
@@ -2557,7 +2416,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 {/* SECTION 4: DOCUMENTS & IQAMA */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start gap-3 pb-3 border-b border-[#E5E0D8]">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <FileText size={16} />
                         </div>
                         <div>
@@ -2592,7 +2451,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 <span
                                     className={`font-semibold ${
                                         iqamaStatus === 'Valid'
-                                            ? 'text-[#265938]'
+                                            ? 'text-[#037F8C]'
                                             : iqamaStatus === 'Warning'
                                             ? 'text-[#C28E3A]'
                                             : 'text-[#DC2626]'
@@ -2669,7 +2528,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                                 {Math.max(1, Math.round(doc.fileSize / 1024))} KB
                                             </span>
                                         </div>
-                                        <span className="text-[10px] font-mono text-[#265938] shrink-0">
+                                        <span className="text-[10px] font-mono text-[#037F8C] shrink-0">
                                             {doc.uploadedAt.slice(0, 10)}
                                         </span>
                                     </div>
@@ -2683,7 +2542,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
                         <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                                 <HeartHandshake size={16} />
                             </div>
                             <div>
@@ -2728,7 +2587,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     <span
                                         className={`text-[11px] font-semibold ${
                                             dep.insuranceIncluded
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -2746,7 +2605,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
                         <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                                 <ShieldCheck size={16} />
                             </div>
                             <div>
@@ -2762,7 +2621,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleSendInvitation}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
                         >
                             <Send size={12} />
                             <span>
@@ -2783,7 +2642,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     size={13}
                                     className={
                                         employee.status === 'Active'
-                                            ? 'text-[#265938]'
+                                            ? 'text-[#037F8C]'
                                             : 'text-[#C28E3A]'
                                     }
                                 />
@@ -2798,7 +2657,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             <span
                                 className={`font-bold mt-0.5 block ${
                                     invitationStatus === 'Accepted'
-                                        ? 'text-[#265938]'
+                                        ? 'text-[#037F8C]'
                                         : invitationStatus === 'Pending'
                                         ? 'text-[#C28E3A]'
                                         : 'text-[#6E6862]'
@@ -2858,7 +2717,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
                     <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
                             <History size={16} />
                         </div>
                         <div>
@@ -2874,7 +2733,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/ums/audit-trail')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
                     >
                         <History size={12} />
                         <span>{t('ums.employees.auditHistory.viewFullAudit')}</span>
@@ -2894,7 +2753,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             >
                                 <div className="space-y-0.5">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-mono font-bold text-[#2D3F2C]">
+                                        <span className="font-mono font-bold text-[#037F8C]">
                                             {ev.action}
                                         </span>
                                         <span className="text-[#0D0D0D] font-semibold">

@@ -39,7 +39,7 @@ const WorkflowSectionPlaceholder: React.FC<WorkflowSectionPlaceholderProps> = ({
                             {t(titleKey)}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             {code}
@@ -62,7 +62,7 @@ const WorkflowSectionPlaceholder: React.FC<WorkflowSectionPlaceholderProps> = ({
                     <button
                         type="button"
                         onClick={() => navigate('/workflow/workflows')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
                     >
                         <GitBranch size={14} />
                         <span>{t('workflow.placeholders.goToWorkflows')}</span>
@@ -74,7 +74,7 @@ const WorkflowSectionPlaceholder: React.FC<WorkflowSectionPlaceholderProps> = ({
             {/* Enterprise Section Placeholder Card */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-8 shadow-2xs">
                 <div className="flex items-start gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-xs shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shadow-xs shrink-0">
                         <Icon className="w-6 h-6 text-[#BFAB93]" />
                     </div>
                     <div className="min-w-0">
@@ -89,7 +89,7 @@ const WorkflowSectionPlaceholder: React.FC<WorkflowSectionPlaceholderProps> = ({
 
                 <div className="p-5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                        <ShieldCheck className="w-5 h-5 text-[#265938] shrink-0" />
+                        <ShieldCheck className="w-5 h-5 text-[#037F8C] shrink-0" />
                         <div>
                             <p className="text-sm font-semibold text-[#0D0D0D]">
                                 {t('workflow.placeholders.foundationReadyTitle')}

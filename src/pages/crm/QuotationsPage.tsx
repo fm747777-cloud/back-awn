@@ -132,6 +132,11 @@ export const QuotationsPage: React.FC = () => {
         queryFn: () => crmApi.contacts.getAll({ limit: 200 }),
     });
 
+    const { data: leadsRes } = useQuery({
+        queryKey: ['crm', 'leads', 'lookup'],
+        queryFn: () => crmApi.leads.getAll({ limit: 200 }),
+    });
+
     const { data: taxesRes } = useQuery({
         queryKey: ['crm', 'taxes', 'lookup'],
         queryFn: () => crmApi.getTaxes({ limit: 100 }),
@@ -268,6 +273,7 @@ export const QuotationsPage: React.FC = () => {
     const companies = companiesRes?.data || [];
     const deals = dealsRes?.data || [];
     const contacts = contactsRes?.data || [];
+    const leads = leadsRes?.data || [];
     const taxes = taxesRes?.data || [];
 
     const preselectedDeal =
@@ -355,7 +361,7 @@ export const QuotationsPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.commercial.quotations.badge')}
@@ -390,7 +396,7 @@ export const QuotationsPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         {t('crm.commercial.quotations.newButton')}
@@ -420,7 +426,7 @@ export const QuotationsPage: React.FC = () => {
                             )}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <FileText size={19} />
                     </div>
                 </div>
@@ -433,7 +439,7 @@ export const QuotationsPage: React.FC = () => {
                             )}
                         </span>
                         <div
-                            className="text-2xl font-bold text-[#2D3F2C] font-mono"
+                            className="text-2xl font-bold text-[#037F8C] font-mono"
                             dir="ltr"
                         >
                             {(metrics?.totalQuotedValue ?? 0).toLocaleString()}{' '}
@@ -517,7 +523,7 @@ export const QuotationsPage: React.FC = () => {
                             placeholder={t(
                                 'crm.commercial.quotations.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -730,7 +736,7 @@ export const QuotationsPage: React.FC = () => {
                                     >
                                         <td className="py-3.5 px-4">
                                             <span
-                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {q.code}
@@ -777,7 +783,7 @@ export const QuotationsPage: React.FC = () => {
                                         </td>
                                         <td className="py-3.5 px-4">
                                             <div
-                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                className="font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {q.grandTotal.toLocaleString()}{' '}
@@ -851,7 +857,7 @@ export const QuotationsPage: React.FC = () => {
                                                             title={t(
                                                                 'crm.commercial.quotations.viewDrawer.convertToContract'
                                                             )}
-                                                            className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2D3F2C] cursor-pointer"
+                                                            className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#037F8C] cursor-pointer"
                                                         >
                                                             <FileCheck2
                                                                 size={14}
@@ -970,6 +976,7 @@ export const QuotationsPage: React.FC = () => {
                 mode={formMode}
                 initialData={editingRecord}
                 preselectedDeal={preselectedDeal}
+                leads={leads}
                 companies={companies}
                 deals={deals}
                 contacts={contacts}

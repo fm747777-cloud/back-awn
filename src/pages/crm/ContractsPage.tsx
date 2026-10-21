@@ -331,7 +331,7 @@ export const ContractsPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.commercial.contracts.badge')}
@@ -366,7 +366,7 @@ export const ContractsPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         {t('crm.commercial.contracts.newButton')}
@@ -395,7 +395,7 @@ export const ContractsPage: React.FC = () => {
                             )}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <FileCheck2 size={19} />
                     </div>
                 </div>
@@ -450,7 +450,7 @@ export const ContractsPage: React.FC = () => {
                             )}
                         </span>
                         <div
-                            className="text-2xl font-bold text-[#2D3F2C] font-mono"
+                            className="text-2xl font-bold text-[#037F8C] font-mono"
                             dir="ltr"
                         >
                             {(
@@ -488,7 +488,7 @@ export const ContractsPage: React.FC = () => {
                             placeholder={t(
                                 'crm.commercial.contracts.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -699,7 +699,7 @@ export const ContractsPage: React.FC = () => {
                                     >
                                         <td className="py-3.5 px-4">
                                             <span
-                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                                className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {c.contractNumber}
@@ -752,7 +752,7 @@ export const ContractsPage: React.FC = () => {
                                         </td>
                                         <td className="py-3.5 px-4">
                                             <div
-                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                className="font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {c.totalValue.toLocaleString()}{' '}
@@ -790,20 +790,37 @@ export const ContractsPage: React.FC = () => {
                                         </td>
                                         <td className="py-3.5 px-4 text-end">
                                             <div className="inline-flex items-center gap-1.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        generateInvoiceMutation.mutate(
-                                                            c.id
-                                                        )
-                                                    }
-                                                    title={t(
-                                                        'crm.commercial.contracts.viewDrawer.generateInvoiceCta'
-                                                    )}
-                                                    className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2E6B4E] cursor-pointer"
-                                                >
-                                                    <Receipt size={14} />
-                                                </button>
+                                                {(() => {
+                                                    const isEligible = c.contractStatus === 'active';
+                                                    const isDisabled = !isEligible || generateInvoiceMutation.isPending;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isDisabled}
+                                                            onClick={() =>
+                                                                generateInvoiceMutation.mutate(
+                                                                    c.id
+                                                                )
+                                                            }
+                                                            title={
+                                                                !isEligible
+                                                                    ? t(
+                                                                          'crm.commercial.contracts.viewDrawer.generateInvoiceIneligible'
+                                                                      )
+                                                                    : t(
+                                                                          'crm.commercial.contracts.viewDrawer.generateInvoiceCta'
+                                                                      )
+                                                            }
+                                                            className={`p-1.5 rounded-lg border border-[#E5E0D8] transition-colors ${
+                                                                isDisabled
+                                                                    ? 'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400'
+                                                                    : 'bg-white hover:bg-[#FAF8F5] text-[#2E6B4E] cursor-pointer'
+                                                            }`}
+                                                        >
+                                                            <Receipt size={14} />
+                                                        </button>
+                                                    );
+                                                })()}
                                                 <button
                                                     type="button"
                                                     onClick={() =>

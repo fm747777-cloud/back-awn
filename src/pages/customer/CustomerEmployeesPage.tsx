@@ -48,14 +48,10 @@ export interface CustomerEmployeeItem {
 
 const STORAGE_KEY = 'awn_customer_employees_v1';
 
-const DEMO_COMPANIES = [
-    { id: 'cmp-1', code: 'CMP-1001', nameEn: 'Al-Wataniya Logistics Co.', nameAr: 'الشركة الوطنية للخدمات اللوجستية' },
-    { id: 'cmp-2', code: 'CMP-1002', nameEn: 'Riyadh Industrial Holdings', nameAr: 'القابضة الصناعية بالرياض' },
-    { id: 'cmp-3', code: 'CMP-1003', nameEn: 'Tamweel Capital Partners', nameAr: 'تمويل كابيتال المالية' },
-    { id: 'cmp-4', code: 'CMP-1004', nameEn: 'Najm Healthcare Network', nameAr: 'شبكة نجم للرعاية الصحية' },
-    { id: 'cmp-5', code: 'CMP-1005', nameEn: 'Horizon Digital Technologies', nameAr: 'تقنيات الأفق الرقمية' },
-    { id: 'cmp-6', code: 'CMP-1006', nameEn: 'Red Sea Hospitality & Resorts', nameAr: 'الضيافة والمنتجعات بالبحر الأحمر' },
-];
+import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
+
+const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
+
 
 const DEMO_DEPARTMENTS = [
     { id: 'dep-1', companyId: 'cmp-1', nameEn: 'Supply Chain & Fleet Operations', nameAr: 'إدارة سلاسل الإمداد وعمليات الأسطول' },
@@ -504,7 +500,7 @@ export const CustomerEmployeesPage: React.FC = () => {
         <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#265938] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#037F8C] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
                     <CheckCircle2 className="w-5 h-5 text-white" />
                     <span>{toastMessage}</span>
                 </div>
@@ -514,7 +510,7 @@ export const CustomerEmployeesPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#265938] dark:text-emerald-400">
+                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#037F8C] dark:text-emerald-400">
                             <Users className="w-6 h-6" />
                         </div>
                         <div>
@@ -534,13 +530,10 @@ export const CustomerEmployeesPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <button
-                        onClick={handleStartAdd}
-                        className="bg-[#265938] hover:bg-[#1E472D] text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>{t('customer.pages.employees.addEmployee')}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
             </div>
 
@@ -555,7 +548,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                             {kpis.total}
                         </p>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#265938] dark:text-emerald-400">
+                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#037F8C] dark:text-emerald-400">
                         <Users className="w-6 h-6" />
                     </div>
                 </div>
@@ -613,7 +606,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('customer.pages.employees.searchPlaceholder')}
-                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -630,7 +623,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{t('customer.pages.employees.statusAll')}</option>
                             <option value="active">{t('customer.pages.employees.statusActive')}</option>
@@ -642,7 +635,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                         <select
                             value={contractFilter}
                             onChange={(e) => setContractFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{t('customer.pages.employees.contractAll')}</option>
                             <option value="full_time">{t('customer.pages.employees.contracts.full_time')}</option>
@@ -654,7 +647,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                         <select
                             value={companyFilter}
                             onChange={(e) => setCompanyFilter(e.target.value)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{t('customer.pages.employees.companyAll')}</option>
                             {DEMO_COMPANIES.map((c) => (
@@ -808,28 +801,6 @@ export const CustomerEmployeesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleStartEdit(emp)}
-                                                    className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                                    title={t('customer.pages.employees.table.edit')}
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleToggleStatus(emp.id)}
-                                                    className={`p-1.5 rounded-lg transition-colors ${
-                                                        emp.status === 'active'
-                                                            ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40'
-                                                            : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                                                    }`}
-                                                    title={
-                                                        emp.status === 'active'
-                                                            ? t('customer.pages.employees.table.deactivate')
-                                                            : t('customer.pages.employees.table.activate')
-                                                    }
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -846,7 +817,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                     <div className="w-full max-w-md bg-white dark:bg-gray-800 h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-slideLeft">
                         <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
                             <div className="flex items-center gap-2.5">
-                                <div className="p-2 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-lg text-[#265938] dark:text-emerald-400">
+                                <div className="p-2 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-lg text-[#037F8C] dark:text-emerald-400">
                                     <Users className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -955,24 +926,12 @@ export const CustomerEmployeesPage: React.FC = () => {
                             )}
                         </div>
 
-                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end">
                             <button
-                                onClick={() => handleStartEdit(viewingEmployee)}
-                                className="flex-1 bg-[#265938] hover:bg-[#1E472D] text-white py-2 rounded-lg text-sm font-medium transition-colors"
+                                onClick={() => setViewingEmployee(null)}
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors cursor-pointer"
                             >
-                                {t('customer.pages.employees.details.edit')}
-                            </button>
-                            <button
-                                onClick={() => handleToggleStatus(viewingEmployee.id)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium border ${
-                                    viewingEmployee.status === 'active'
-                                        ? 'border-red-300 text-red-600 hover:bg-red-50'
-                                        : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
-                                }`}
-                            >
-                                {viewingEmployee.status === 'active'
-                                    ? t('customer.pages.employees.table.deactivate')
-                                    : t('customer.pages.employees.table.activate')}
+                                {t('customer.pages.employees.details.close')}
                             </button>
                         </div>
                     </div>
@@ -1014,7 +973,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.employeeCode}
                                         onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="EMP-301"
                                     />
                                     {formErrors.code && (
@@ -1029,7 +988,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         {DEMO_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -1048,7 +1007,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                     <select
                                         value={formData.departmentId}
                                         onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         {DEMO_DEPARTMENTS.map((d) => (
                                             <option key={d.id} value={d.id}>
@@ -1065,7 +1024,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                     <select
                                         value={formData.contractType}
                                         onChange={(e) => setFormData({ ...formData, contractType: e.target.value as ContractType })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="full_time">{t('customer.pages.employees.contracts.full_time')}</option>
                                         <option value="part_time">{t('customer.pages.employees.contracts.part_time')}</option>
@@ -1083,7 +1042,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.nameAr}
                                         onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="بندر الحربي"
                                         dir="rtl"
                                     />
@@ -1100,7 +1059,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.nameEn}
                                         onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="Bandar Al-Harbi"
                                         dir="ltr"
                                     />
@@ -1116,7 +1075,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.jobTitleAr}
                                         onChange={(e) => setFormData({ ...formData, jobTitleAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="أخصائي لوجستيات"
                                         dir="rtl"
                                     />
@@ -1130,7 +1089,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.jobTitleEn}
                                         onChange={(e) => setFormData({ ...formData, jobTitleEn: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="Logistics Specialist"
                                         dir="ltr"
                                     />
@@ -1146,7 +1105,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.nationalIdOrIqama}
                                         onChange={(e) => setFormData({ ...formData, nationalIdOrIqama: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="1088492011"
                                     />
                                     {formErrors.nationalId && (
@@ -1162,7 +1121,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.gosiNumber}
                                         onChange={(e) => setFormData({ ...formData, gosiNumber: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="90823411"
                                     />
                                 </div>
@@ -1177,7 +1136,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="text"
                                         value={formData.phone}
                                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="+966 50 119 2831"
                                         dir="ltr"
                                     />
@@ -1191,7 +1150,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="b.harbi@domain.sa"
                                         dir="ltr"
                                     />
@@ -1209,7 +1168,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as EmployeeStatus })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="active">{t('customer.pages.employees.statusActive')}</option>
                                         <option value="on_leave">{t('customer.pages.employees.statusOnLeave')}</option>
@@ -1225,7 +1184,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                         type="date"
                                         value={formData.joinDate}
                                         onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1240,7 +1199,7 @@ export const CustomerEmployeesPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 rounded-lg bg-[#265938] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
+                                    className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
                                 >
                                     {t('customer.pages.employees.modal.save')}
                                 </button>

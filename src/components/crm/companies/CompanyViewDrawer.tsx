@@ -1,5 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
     X,
     Edit3,
@@ -15,7 +17,7 @@ import {
     Link2,
 } from 'lucide-react';
 import type { CrmCompanyRecord } from '../../../schemas/crmSchema';
-import type { CrmDeletionEligibilityResult } from '../../../api/api';
+import { crmApi, type CrmDeletionEligibilityResult } from '../../../api/api';
 
 export interface CompanyViewDrawerProps {
     isOpen: boolean;
@@ -34,6 +36,14 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+    const navigate = useNavigate();
+
+    const { data: originatingLead, isLoading: isLeadLoading } = useQuery({
+        queryKey: ['crm', 'leads', record?.leadId],
+        queryFn: () => (record?.leadId ? crmApi.leads.getById(record.leadId) : null),
+        enabled: Boolean(isOpen && record?.leadId),
+        retry: false,
+    });
 
     if (!isOpen || !record) return null;
 
@@ -55,7 +65,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.code}
@@ -77,6 +87,27 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                                     { defaultValue: record.onboardingStatus }
                                 )}
                             </span>
+                            {record.leadId && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onClose();
+                                        navigate(
+                                            `/crm/leads?search=${originatingLead?.code || record.leadId}`
+                                        );
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C] hover:bg-[#037F8C]/20 transition-colors cursor-pointer"
+                                    title={t(
+                                        'crm.customer.companies.viewDrawer.viewOriginatingLead'
+                                    )}
+                                >
+                                    <Link2 size={11} className="text-[#037F8C]" />
+                                    <span>
+                                        {originatingLead?.code ||
+                                            (isLeadLoading ? '...' : record.leadId)}
+                                    </span>
+                                </button>
+                            )}
                         </div>
                         <h2
                             id="company-view-drawer-title"
@@ -101,9 +132,73 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                    {/* Originating Lead Card */}
+                    {record.leadId && (
+                        <div className="rounded-xl border border-[#037F8C]/20 bg-[#037F8C]/5 p-3.5 flex items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <Link2 size={15} className="text-[#037F8C] shrink-0" />
+                                <div className="space-y-0.5 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-semibold text-[#6E6862]">
+                                            {t(
+                                                'crm.customer.companies.viewDrawer.originatingLeadTitle'
+                                            )}:
+                                        </span>
+                                        {originatingLead ? (
+                                            <span
+                                                className="px-2 py-0.5 rounded bg-white border border-[#E5E0D8] font-mono text-[11px] font-bold text-[#037F8C] shrink-0"
+                                                dir="ltr"
+                                            >
+                                                {originatingLead.code}
+                                            </span>
+                                        ) : isLeadLoading ? (
+                                            <span className="font-mono text-[11px] text-[#6E6862] animate-pulse">
+                                                ...
+                                            </span>
+                                        ) : (
+                                            <span
+                                                className="font-mono text-[11px] text-[#6E6862]"
+                                                dir="ltr"
+                                            >
+                                                {record.leadId}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-[#0D0D0D] font-semibold truncate">
+                                        {originatingLead
+                                            ? originatingLead.title
+                                            : isLeadLoading
+                                              ? t('crm.customer.common.loading', 'Loading...')
+                                              : t(
+                                                    'crm.customer.companies.viewDrawer.leadArchivedNotice',
+                                                    { leadId: record.leadId }
+                                                )}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    onClose();
+                                    navigate(
+                                        `/crm/leads?search=${originatingLead?.code || record.leadId}`
+                                    );
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] hover:bg-[#FAF8F5] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0 shadow-xs"
+                            >
+                                <Link2 size={12} />
+                                <span>
+                                    {t(
+                                        'crm.customer.companies.viewDrawer.viewOriginatingLead'
+                                    )}
+                                </span>
+                            </button>
+                        </div>
+                    )}
+
                     {/* Step 1 Summary: Basic Info */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <Building2 size={14} />
                             <span>{t('crm.customer.companies.wizard.step1Title')}</span>
                         </div>
@@ -130,11 +225,11 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                                 </span>
                             </div>
                             <div className="p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center gap-1.5 font-mono" dir="ltr">
-                                <Phone size={12} className="text-[#2D3F2C]" />
+                                <Phone size={12} className="text-[#037F8C]" />
                                 <span>{record.phone}</span>
                             </div>
                             <div className="p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center gap-1.5 font-mono" dir="ltr">
-                                <Mail size={12} className="text-[#2D3F2C]" />
+                                <Mail size={12} className="text-[#037F8C]" />
                                 <span className="truncate">{record.email}</span>
                             </div>
                         </div>
@@ -142,7 +237,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
 
                     {/* Step 2 Summary: Business & Legal Info */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                             <FileText size={14} />
                             <span>{t('crm.customer.companies.wizard.step2Title')}</span>
                         </div>
@@ -177,7 +272,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                             </div>
                         </div>
                         <div className="p-2.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs flex items-center gap-2">
-                            <MapPin size={13} className="text-[#2D3F2C] shrink-0" />
+                            <MapPin size={13} className="text-[#037F8C] shrink-0" />
                             <span>
                                 {[
                                     record.address,
@@ -194,7 +289,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                     {/* Step 3 Summary: Owners & Shareholders */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs font-bold text-[#2D3F2C]">
+                            <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
                                 <Users size={14} />
                                 <span>
                                     {t('crm.customer.companies.wizard.step3Title')} (
@@ -217,7 +312,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                                                     : owner.fullNameEn}
                                             </span>
                                             {owner.isMainOwner && (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#2D3F2C] text-white text-[10px] font-semibold">
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#037F8C] text-white text-[10px] font-semibold">
                                                     <Crown size={10} />
                                                     {t(
                                                         'crm.customer.companies.wizard.mainOwnerBadge'
@@ -237,7 +332,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                                         </div>
                                     </div>
                                     <span
-                                        className="px-2.5 py-1 rounded-lg bg-white border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                        className="px-2.5 py-1 rounded-lg bg-white border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                         dir="ltr"
                                     >
                                         {owner.ownershipPercentage}%
@@ -270,7 +365,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono text-[#0D0D0D]"
                                             dir="ltr"
                                         >
-                                            <Link2 size={11} className="text-[#2D3F2C]" />
+                                            <Link2 size={11} className="text-[#037F8C]" />
                                             {ref}
                                         </span>
                                     ))}
@@ -292,7 +387,7 @@ export const CompanyViewDrawer: React.FC<CompanyViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.customer.common.editRecord')}

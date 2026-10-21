@@ -229,7 +229,7 @@ export const DashboardSalesPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-[#6E6862]">
                         <span
-                            className="font-mono font-bold text-[#2D3F2C]"
+                            className="font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.dashboardSales.badge')}
@@ -271,7 +271,7 @@ export const DashboardSalesPage: React.FC = () => {
                         onClick={() => navigate('/crm/deals')}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
-                        <Briefcase size={13} className="text-[#2D3F2C]" />
+                        <Briefcase size={13} className="text-[#037F8C]" />
                         {t('crm.dashboardSales.nav.deals')}
                     </button>
 
@@ -280,7 +280,7 @@ export const DashboardSalesPage: React.FC = () => {
                         onClick={() => navigate('/crm/leads')}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
-                        <Users size={13} className="text-[#2D3F2C]" />
+                        <Users size={13} className="text-[#037F8C]" />
                         {t('crm.dashboardSales.nav.leads')}
                     </button>
 
@@ -298,7 +298,7 @@ export const DashboardSalesPage: React.FC = () => {
                         onClick={() => navigate('/crm/operational-task')}
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
-                        <ClipboardList size={13} className="text-[#2D3F2C]" />
+                        <ClipboardList size={13} className="text-[#037F8C]" />
                         {t('crm.dashboardSales.nav.operationalTasks')}
                     </button>
 
@@ -306,7 +306,7 @@ export const DashboardSalesPage: React.FC = () => {
                         type="button"
                         onClick={handleRefresh}
                         disabled={isFetching}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233222] disabled:opacity-60 text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233222] disabled:opacity-60 text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
                         <RefreshCw
                             size={14}
@@ -323,7 +323,7 @@ export const DashboardSalesPage: React.FC = () => {
             <div className="rounded-2xl bg-white border border-[#E5E0D8] p-4 space-y-3 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <Calendar size={15} className="text-[#2D3F2C]" />
+                        <Calendar size={15} className="text-[#037F8C]" />
                         <span className="text-xs font-bold text-[#0D0D0D]">
                             {t('crm.dashboardSales.filters.title')}
                         </span>
@@ -354,7 +354,7 @@ export const DashboardSalesPage: React.FC = () => {
                         <select
                             value={employeeFilter}
                             onChange={(e) => setEmployeeFilter(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t('crm.dashboardSales.filters.allReps')}
@@ -376,7 +376,7 @@ export const DashboardSalesPage: React.FC = () => {
                             value={dateFrom}
                             max={dateTo || undefined}
                             onChange={(e) => setDateFrom(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono tabular-nums focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono tabular-nums focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                     </div>
 
@@ -389,7 +389,7 @@ export const DashboardSalesPage: React.FC = () => {
                             value={dateTo}
                             min={dateFrom || undefined}
                             onChange={(e) => setDateTo(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono tabular-nums focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] font-mono tabular-nums focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                     </div>
                 </div>
@@ -398,7 +398,7 @@ export const DashboardSalesPage: React.FC = () => {
             {/* Loading State */}
             {isLoading && (
                 <div className="rounded-2xl bg-white border border-[#E5E0D8] p-12 text-center space-y-3 shadow-xs">
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#2D3F2C]">
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#037F8C]">
                         <RefreshCw size={18} className="animate-spin" />
                     </div>
                     <h2 className="text-sm font-bold text-[#0D0D0D]">
@@ -427,7 +427,7 @@ export const DashboardSalesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleRefresh}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] text-[#FAF8F5] text-xs font-semibold cursor-pointer"
                     >
                         <RefreshCw size={13} />
                         {t('crm.dashboardSales.states.retry')}
@@ -485,7 +485,7 @@ export const DashboardSalesPage: React.FC = () => {
                                     })}
                                 </span>
                             </div>
-                            <div className="w-9 h-9 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C] flex items-center justify-center shrink-0">
                                 <Briefcase size={17} />
                             </div>
                         </div>
@@ -497,7 +497,7 @@ export const DashboardSalesPage: React.FC = () => {
                                     {t('crm.dashboardSales.kpis.openDeals')}
                                 </span>
                                 <div
-                                    className="text-2xl font-bold text-[#2D3F2C] font-mono tabular-nums"
+                                    className="text-2xl font-bold text-[#037F8C] font-mono tabular-nums"
                                     dir="ltr"
                                 >
                                     {dashboard.kpis.openDealsCount}
@@ -506,7 +506,7 @@ export const DashboardSalesPage: React.FC = () => {
                                     {t('crm.dashboardSales.kpis.openDealsSub')}
                                 </span>
                             </div>
-                            <div className="w-9 h-9 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center shrink-0">
                                 <TrendingUp size={17} />
                             </div>
                         </div>
@@ -612,7 +612,7 @@ export const DashboardSalesPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => navigate('/crm/deals')}
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer whitespace-nowrap shrink-0"
                                 >
                                     {t('crm.dashboardSales.nav.deals')}
                                     <ArrowUpRight size={13} />
@@ -683,7 +683,7 @@ export const DashboardSalesPage: React.FC = () => {
                                                     name={t(
                                                         'crm.dashboardSales.charts.series.expectedValue'
                                                     )}
-                                                    fill="#2D3F2C"
+                                                    fill="#037F8C"
                                                     radius={[6, 6, 0, 0]}
                                                 />
                                                 <Bar
@@ -710,7 +710,7 @@ export const DashboardSalesPage: React.FC = () => {
                                                         {st.name}
                                                     </span>
                                                     <span
-                                                        className="text-[11px] font-mono font-bold text-[#2D3F2C] tabular-nums"
+                                                        className="text-[11px] font-mono font-bold text-[#037F8C] tabular-nums"
                                                         dir="ltr"
                                                     >
                                                         {st.totalValue.toLocaleString()}{' '}
@@ -822,8 +822,8 @@ export const DashboardSalesPage: React.FC = () => {
                                                     name={t(
                                                         'crm.dashboardSales.charts.series.pipelineAdded'
                                                     )}
-                                                    stroke="#2D3F2C"
-                                                    fill="#2D3F2C"
+                                                    stroke="#037F8C"
+                                                    fill="#037F8C"
                                                     fillOpacity={0.14}
                                                     strokeWidth={2}
                                                 />
@@ -921,7 +921,7 @@ export const DashboardSalesPage: React.FC = () => {
                                     onClick={() =>
                                         navigate('/crm/operational-task')
                                     }
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer whitespace-nowrap shrink-0"
                                 >
                                     {t(
                                         'crm.dashboardSales.activities.viewAllTasks'
@@ -955,7 +955,7 @@ export const DashboardSalesPage: React.FC = () => {
                                                 <div className="space-y-1 min-w-0">
                                                     <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#6E6862]">
                                                         <span
-                                                            className="font-mono font-semibold text-[#2D3F2C]"
+                                                            className="font-mono font-semibold text-[#037F8C]"
                                                             dir="ltr"
                                                         >
                                                             {task.code}
@@ -1069,7 +1069,7 @@ export const DashboardSalesPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => navigate('/crm/deals')}
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer whitespace-nowrap shrink-0"
                                 >
                                     {t(
                                         'crm.dashboardSales.activities.viewAllDeals'
@@ -1102,7 +1102,7 @@ export const DashboardSalesPage: React.FC = () => {
                                                 <div className="space-y-1 min-w-0">
                                                     <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[#6E6862]">
                                                         <span
-                                                            className="font-mono font-semibold text-[#2D3F2C]"
+                                                            className="font-mono font-semibold text-[#037F8C]"
                                                             dir="ltr"
                                                         >
                                                             {deal.code}

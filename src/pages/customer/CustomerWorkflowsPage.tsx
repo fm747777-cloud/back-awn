@@ -623,7 +623,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
         <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto" dir={isRtl ? 'rtl' : 'ltr'}>
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#265938] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
+                <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#037F8C] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium animate-fadeIn">
                     <CheckCircle2 className="w-5 h-5 text-white" />
                     <span>{toastMessage}</span>
                 </div>
@@ -633,7 +633,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#265938] dark:text-emerald-400">
+                        <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/40 rounded-xl text-[#037F8C] dark:text-emerald-400">
                             <GitBranch className="w-6 h-6" />
                         </div>
                         <div>
@@ -654,15 +654,10 @@ export const CustomerWorkflowsPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <button
-                        onClick={handleStartAdd}
-                        className="bg-[#265938] hover:bg-[#1E472D] text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>{isRtl ? 'مسار عمل جديد' : 'New Workflow'}</span>
-                    </button>
-                </div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                    <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                    <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                </span>
             </div>
 
             {/* 4 KPI Cards */}
@@ -676,7 +671,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                             {kpis.total}
                         </p>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#265938] dark:text-emerald-400">
+                    <div className="w-12 h-12 rounded-xl bg-[#EAF3EC] dark:bg-emerald-950/50 flex items-center justify-center text-[#037F8C] dark:text-emerald-400">
                         <GitBranch className="w-6 h-6" />
                     </div>
                 </div>
@@ -734,7 +729,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={isRtl ? 'البحث برمز المسار، الاسم، التصنيف، أو الأدوار...' : 'Search by workflow code, name, category, or roles...'}
-                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="w-full ps-9 pe-9 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -751,7 +746,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع الحالات' : 'All Statuses'}</option>
                             <option value="active">{isRtl ? 'نشط' : 'Active'}</option>
@@ -762,7 +757,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                         <select
                             value={categoryFilter}
                             onChange={(e) => setCategoryFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع التصنيفات' : 'All Categories'}</option>
                             <option value="onboarding">{isRtl ? 'تأهيل وامتثال العميل' : 'Onboarding'}</option>
@@ -776,7 +771,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                         <select
                             value={triggerFilter}
                             onChange={(e) => setTriggerFilter(e.target.value as any)}
-                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                         >
                             <option value="all">{isRtl ? 'جميع أنواع التفعيل' : 'All Triggers'}</option>
                             <option value="automatic">{isRtl ? 'آلي فوري' : 'Automated'}</option>
@@ -885,7 +880,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                                 <button
                                                     onClick={() => handleStartSimulation(w)}
                                                     title={isRtl ? 'تشغيل محاكاة المسار' : 'Simulate Workflow'}
-                                                    className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                                                    className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                                                 >
                                                     <Play className="w-3 h-3 fill-current" />
                                                     <span>{isRtl ? 'محاكاة' : 'Simulate'}</span>
@@ -893,27 +888,9 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                                 <button
                                                     onClick={() => setViewingWorkflow(w)}
                                                     title={isRtl ? 'عرض المراحل' : 'View Stages'}
-                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                                                 >
                                                     <Eye className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleStartEdit(w)}
-                                                    title={isRtl ? 'تعديل' : 'Edit'}
-                                                    className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleToggleStatus(w.id)}
-                                                    title={w.status === 'active' ? (isRtl ? 'تعطيل' : 'Deactivate') : (isRtl ? 'تفعيل' : 'Activate')}
-                                                    className={`p-1.5 rounded-lg transition-colors ${
-                                                        w.status === 'active'
-                                                            ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40'
-                                                            : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
-                                                    }`}
-                                                >
-                                                    {w.status === 'active' ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                                                 </button>
                                             </div>
                                         </td>
@@ -935,7 +912,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                         <div className="space-y-6">
                             <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/50 rounded-xl text-[#265938] dark:text-emerald-400">
+                                    <div className="p-2.5 bg-[#EAF3EC] dark:bg-emerald-950/50 rounded-xl text-[#037F8C] dark:text-emerald-400">
                                         <GitBranch className="w-6 h-6" />
                                     </div>
                                     <div>
@@ -983,7 +960,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex items-start gap-3">
-                                                    <span className="w-6 h-6 rounded-full bg-[#265938] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                                                    <span className="w-6 h-6 rounded-full bg-[#037F8C] text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                                                         {step.stepNumber}
                                                     </span>
                                                     <div>
@@ -1021,16 +998,17 @@ export const CustomerWorkflowsPage: React.FC = () => {
                         <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-3">
                             <button
                                 onClick={() => handleStartSimulation(viewingWorkflow)}
-                                className="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                                className="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Play className="w-4 h-4 fill-current" />
                                 <span>{isRtl ? 'بدء محاكاة المسار' : 'Simulate Run'}</span>
                             </button>
                             <button
-                                onClick={() => handleStartEdit(viewingWorkflow)}
-                                className="py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                type="button"
+                                onClick={() => setViewingWorkflow(null)}
+                                className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                             >
-                                <Edit3 className="w-4 h-4" />
+                                {isRtl ? 'إغلاق' : 'Close'}
                             </button>
                         </div>
                     </div>
@@ -1174,7 +1152,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                 {!simulation.completed ? (
                                     <button
                                         onClick={handleNextSimulationStep}
-                                        className="px-5 py-2.5 rounded-xl bg-[#265938] hover:bg-[#1E472D] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2"
+                                        className="px-5 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#1E472D] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2"
                                     >
                                         <span>{isRtl ? 'اعتماد المرحلة الحالية والمتابعة' : 'Approve Stage & Advance'}</span>
                                         {isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
@@ -1224,7 +1202,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                         type="text"
                                         value={formData.code}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="WFL-306"
                                     />
                                     {formErrors.code && <p className="text-xs text-red-500 mt-1">{formErrors.code}</p>}
@@ -1237,7 +1215,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                     <select
                                         value={formData.category}
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value as WorkflowCategory })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="onboarding">{isRtl ? 'تأهيل وامتثال العميل' : 'Client Onboarding'}</option>
                                         <option value="contract_renewal">{isRtl ? 'تجديد وتمديد العقود' : 'Contract Renewal'}</option>
@@ -1257,7 +1235,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                         type="text"
                                         value={formData.nameAr}
                                         onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="مثال: مسار الفحص الفني الدوري"
                                     />
                                 </div>
@@ -1269,7 +1247,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                         type="text"
                                         value={formData.nameEn}
                                         onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                         placeholder="e.g. Periodic Inspection Chain"
                                     />
                                 </div>
@@ -1284,7 +1262,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                     <select
                                         value={formData.triggerType}
                                         onChange={(e) => setFormData({ ...formData, triggerType: e.target.value as WorkflowTrigger })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="automatic">{isRtl ? 'آلي فوري' : 'Automated'}</option>
                                         <option value="scheduled">{isRtl ? 'مجدول' : 'Scheduled'}</option>
@@ -1299,7 +1277,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                     <select
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     >
                                         <option value="active">{isRtl ? 'نشط' : 'Active'}</option>
                                         <option value="inactive">{isRtl ? 'معطل' : 'Inactive'}</option>
@@ -1361,7 +1339,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                     rows={2}
                                     value={formData.descriptionAr}
                                     onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#265938]"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#037F8C]"
                                     placeholder="شرح آلية عمل المسار وقواعد التصعيد..."
                                 />
                             </div>
@@ -1376,7 +1354,7 @@ export const CustomerWorkflowsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 rounded-lg bg-[#265938] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
+                                    className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#1E472D] text-white text-sm font-medium transition-colors"
                                 >
                                     {editingWorkflowId ? (isRtl ? 'حفظ التعديلات' : 'Save Changes') : (isRtl ? 'إنشاء المسار' : 'Create Workflow')}
                                 </button>

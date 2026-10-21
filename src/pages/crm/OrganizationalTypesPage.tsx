@@ -387,7 +387,7 @@ export const OrganizationalTypesPage: React.FC = () => {
             {/* 1. Page Header Row */}
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[#265938] uppercase">
+                    <div className="flex items-center gap-2 text-xs font-semibold tracking-wider text-[#037F8C] uppercase">
                         <span>{t('crm.groups.master', 'Master')}</span>
                         <span>/</span>
                         <span>
@@ -421,7 +421,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                         <Download className="h-4 w-4 text-[#6B7280]" />
                         {t('crm.master.common.exportCsv', 'Export CSV')}
                         {selectedIds.length > 0 && (
-                            <span className="rounded-full bg-[#265938]/10 px-2 py-0.5 text-xs font-semibold text-[#265938]">
+                            <span className="rounded-full bg-[#037F8C]/10 px-2 py-0.5 text-xs font-semibold text-[#037F8C]">
                                 {selectedIds.length}
                             </span>
                         )}
@@ -430,7 +430,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#265938] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1e472c]"
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#037F8C] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1e472c]"
                     >
                         <Plus className="h-4 w-4" />
                         {t(
@@ -444,7 +444,7 @@ export const OrganizationalTypesPage: React.FC = () => {
             {/* 2. Summary KPI Strip */}
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="flex items-center gap-4 rounded-xl border border-[#E5E7EB] bg-white p-5 shadow-xs">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#265938]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#037F8C]">
                         <Building2 className="h-6 w-6" />
                     </div>
                     <div>
@@ -523,7 +523,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                 'crm.master.common.searchBilingualPlaceholder',
                                 'Search by English name, Arabic name, code, or creator...'
                             )}
-                            className="h-10 w-full rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] ps-10 pe-9 text-sm text-[#111827] placeholder-[#9CA3AF] transition-colors focus:border-[#265938] focus:bg-white focus:ring-2 focus:ring-[#265938]/15 focus:outline-none"
+                            className="h-10 w-full rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] ps-10 pe-9 text-sm text-[#111827] placeholder-[#9CA3AF] transition-colors focus:border-[#037F8C] focus:bg-white focus:ring-2 focus:ring-[#037F8C]/15 focus:outline-none"
                         />
                         {searchQuery && (
                             <button
@@ -551,7 +551,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                 setCurrentPage(1);
                             }}
                             aria-label={t('crm.master.common.status', 'Status')}
-                            className="h-10 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3.5 text-sm font-medium text-[#374151] transition-colors focus:border-[#265938] focus:bg-white focus:outline-none"
+                            className="h-10 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] px-3.5 text-sm font-medium text-[#374151] transition-colors focus:border-[#037F8C] focus:bg-white focus:outline-none"
                         >
                             <option value="all">
                                 {t('crm.master.common.allStatuses', 'All Statuses')}
@@ -600,7 +600,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => refetch()}
-                            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#265938] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1e472c]"
+                            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#037F8C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1e472c]"
                         >
                             <RotateCcw className="h-4 w-4" />
                             {t('crm.master.common.retry', 'Retry')}
@@ -644,7 +644,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={handleOpenCreate}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-[#265938] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1e472c]"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-[#037F8C] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1e472c]"
                                 >
                                     <Plus className="h-4 w-4" />
                                     {t(
@@ -670,7 +670,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                                     'common.selectAll',
                                                     'Select all'
                                                 )}
-                                                className="h-4 w-4 rounded border-gray-300 text-[#265938] focus:ring-[#265938]"
+                                                className="h-4 w-4 rounded border-gray-300 text-[#037F8C] focus:ring-[#037F8C]"
                                             />
                                         </th>
                                         <th className="px-4 py-3.5 text-start text-xs font-semibold tracking-wider text-[#6B7280] uppercase">
@@ -755,7 +755,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                                             )
                                                         }
                                                         aria-label={primaryName}
-                                                        className="h-4 w-4 rounded border-gray-300 text-[#265938] focus:ring-[#265938]"
+                                                        className="h-4 w-4 rounded border-gray-300 text-[#037F8C] focus:ring-[#037F8C]"
                                                     />
                                                 </td>
 
@@ -771,7 +771,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                                         onClick={() =>
                                                             setViewingRecord(item)
                                                         }
-                                                        className="text-start font-semibold text-[#111827] hover:text-[#265938] hover:underline"
+                                                        className="text-start font-semibold text-[#111827] hover:text-[#037F8C] hover:underline"
                                                     >
                                                         {primaryName}
                                                     </button>
@@ -810,7 +810,7 @@ export const OrganizationalTypesPage: React.FC = () => {
 
                                                 <td className="px-4 py-3.5 whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#265938]/10 text-xs font-bold text-[#265938]">
+                                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#037F8C]/10 text-xs font-bold text-[#037F8C]">
                                                             {getCreatorInitials(
                                                                 item.createdBy
                                                             )}
@@ -882,7 +882,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                                                 'crm.master.common.edit',
                                                                 'Edit'
                                                             )}
-                                                            className="rounded-lg p-1.5 text-[#6B7280] transition-colors hover:bg-gray-100 hover:text-[#265938]"
+                                                            className="rounded-lg p-1.5 text-[#6B7280] transition-colors hover:bg-gray-100 hover:text-[#037F8C]"
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </button>
@@ -991,7 +991,7 @@ export const OrganizationalTypesPage: React.FC = () => {
                                         'crm.master.common.rowsPerPage',
                                         'Rows per page'
                                     )}
-                                    className="h-8 rounded-md border border-[#E5E7EB] bg-white px-2 text-xs font-medium text-[#374151] focus:border-[#265938] focus:outline-none"
+                                    className="h-8 rounded-md border border-[#E5E7EB] bg-white px-2 text-xs font-medium text-[#374151] focus:border-[#037F8C] focus:outline-none"
                                 >
                                     {CRM_PAGE_SIZE_OPTIONS.map((opt) => (
                                         <option key={opt} value={opt}>

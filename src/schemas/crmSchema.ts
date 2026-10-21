@@ -488,6 +488,7 @@ export const crmCompanyInputSchema = z.object({
     onboardingStatus: crmCompanyOnboardingStatusSchema.default('pre_onboarding'),
     status: crmRecordStatusSchema.default('active'),
     notes: z.string().trim().max(1000).optional(),
+    leadId: z.string().trim().optional(),
 });
 
 export const crmCompanySchema = crmCompanyInputSchema.extend({
@@ -790,6 +791,9 @@ export function calculateCrmQuotationTotals(
 export const crmQuotationInputSchema = z.object({
     titleEn: z.string().trim().min(1, 'Quotation title is required').max(200),
     titleAr: z.string().trim().max(200).optional(),
+    leadId: z.string().trim().optional(),
+    leadCode: z.string().trim().optional(),
+    leadTitle: z.string().trim().optional(),
     dealId: z.string().trim().optional(),
     dealCode: z.string().trim().optional(),
     dealTitle: z.string().trim().optional(),
@@ -800,6 +804,13 @@ export const crmQuotationInputSchema = z.object({
     companyNameAr: z.string().trim().optional(),
     contactId: z.string().trim().optional(),
     contactName: z.string().trim().optional(),
+    customerName: z.string().trim().max(200).optional(),
+    customerEmail: z.string().trim().max(160).optional(),
+    customerPhone: z.string().trim().max(50).optional(),
+    contractDurationMonths: z.number().min(1).max(120).optional(),
+    contractDuration: z.number().optional(),
+    discountPercent: crmPercentageSchema.optional(),
+    taxRate: crmPercentageSchema.optional(),
     assignedEmployeeId: z.string().trim().min(1, 'Assigned sales employee is required').default('emp-1'),
     assignedEmployeeNameEn: z.string().trim().optional(),
     assignedEmployeeNameAr: z.string().trim().optional(),
@@ -897,6 +908,7 @@ export const crmContractInputSchema = z.object({
     billingCycle: crmBillingCycleSchema.default('annual'),
     subtotal: crmNonNegativeAmountSchema.default(0),
     discountTotal: crmNonNegativeAmountSchema.default(0),
+    taxRate: crmPercentageSchema.optional(),
     taxAmount: crmNonNegativeAmountSchema.default(0),
     totalValue: crmNonNegativeAmountSchema.default(0),
     contractValue: crmNonNegativeAmountSchema.default(0),
@@ -928,6 +940,7 @@ export function calculateCrmInvoiceAmounts(input: {
     vatRate?: number;
     taxAmount?: number;
     paidAmount?: number;
+    lineItems?: Array<Partial<CrmQuotationLineItemInput> & { id?: string }>;
 }): {
     subtotal: number;
     discountTotal: number;
@@ -941,7 +954,43 @@ export function calculateCrmInvoiceAmounts(input: {
     paidAmount: number;
     remainingAmount: number;
     balanceDue: number;
+    lineItems?: CrmQuotationLineItem[];
 } {
+    if (input.lineItems && input.lineItems.length > 0) {
+        const computedTotals = calculateCrmQuotationTotals(input.lineItems);
+        const subtotal = computedTotals.subtotal;
+        const discountTotal = computedTotals.discountTotal;
+        const taxableAmount = computedTotals.taxableAmount;
+        const taxAmount = computedTotals.taxAmount;
+        const totalAmount = computedTotals.grandTotal;
+        const paidAmount = roundCrmCurrency(
+            Math.min(totalAmount, Math.max(0, Number(input.paidAmount ?? 0)))
+        );
+        const remainingAmount = roundCrmCurrency(
+            Math.max(0, totalAmount - paidAmount)
+        );
+        const effectiveRate =
+            computedTotals.lineItems[0]?.taxRate ??
+            computedTotals.lineItems[0]?.vatRate ??
+            15;
+
+        return {
+            subtotal,
+            discountTotal,
+            discountAmount: discountTotal,
+            taxableAmount,
+            taxRate: effectiveRate,
+            taxAmount,
+            vatRate: effectiveRate,
+            vatAmount: taxAmount,
+            totalAmount,
+            paidAmount,
+            remainingAmount,
+            balanceDue: remainingAmount,
+            lineItems: computedTotals.lineItems,
+        };
+    }
+
     const subtotal = roundCrmCurrency(Math.max(0, Number(input.subtotal ?? 0)));
     const rawDiscount = input.discountTotal ?? input.discountAmount ?? 0;
     const discountTotal = roundCrmCurrency(
@@ -980,8 +1029,67 @@ export function calculateCrmInvoiceAmounts(input: {
     };
 }
 
+export const CRM_INVOICE_TYPE_VALUES = ['proforma', 'final_tax'] as const;
+export const crmInvoiceTypeSchema = z.enum(CRM_INVOICE_TYPE_VALUES);
+export type CrmInvoiceType = z.infer<typeof crmInvoiceTypeSchema>;
+
+export function generateCrmInvoiceNumberAndCode(
+    type: CrmInvoiceType,
+    existingList: Array<{ code?: string; invoiceNumber?: string; invoiceType?: string }>,
+    currentYear: number = new Date().getFullYear()
+): { invoiceNumber: string; code: string } {
+    const isProforma = type === 'proforma';
+    const prefix = isProforma ? 'PI' : 'INV';
+
+    const matchingRecords = existingList.filter((inv) => {
+        const invType =
+            inv.invoiceType ||
+            (inv.code?.startsWith('PI-') || inv.invoiceNumber?.startsWith('PI-')
+                ? 'proforma'
+                : 'final_tax');
+        return invType === type;
+    });
+
+    let maxNum = 0;
+    for (const record of matchingRecords) {
+        if (record.invoiceNumber) {
+            const numMatch =
+                record.invoiceNumber.match(/(?:PI|INV)-\d{4}-(\d+)/i) ||
+                record.invoiceNumber.match(/(?:PI|INV)-(\d+)/i);
+            if (numMatch && numMatch[1]) {
+                const parsed = parseInt(numMatch[1], 10);
+                if (!isNaN(parsed) && parsed > maxNum) maxNum = parsed;
+            }
+        }
+        if (record.code) {
+            const codeMatch = record.code.match(/(?:PI|INV)-(\d+)/i);
+            if (codeMatch && codeMatch[1]) {
+                const parsed = parseInt(codeMatch[1], 10);
+                if (!isNaN(parsed) && parsed > maxNum) maxNum = parsed;
+            }
+        }
+    }
+
+    const nextSeq = maxNum + 1;
+    const seqStr = String(nextSeq).padStart(3, '0');
+    return {
+        code: `${prefix}-${seqStr}`,
+        invoiceNumber: `${prefix}-${currentYear}-${seqStr}`,
+    };
+}
+
+export const crmInvoiceLineItemSchema = crmQuotationLineItemSchema;
+export type CrmInvoiceLineItem = CrmQuotationLineItem;
+export type CrmInvoiceLineItemInput = CrmQuotationLineItemInput;
+
 export const crmInvoiceInputSchema = z.object({
     invoiceNumber: z.string().trim().max(100).optional(),
+    invoiceType: crmInvoiceTypeSchema.default('final_tax'),
+    sourceProformaInvoiceId: z.string().trim().optional(),
+    sourceProformaInvoiceNumber: z.string().trim().optional(),
+    convertedToInvoiceId: z.string().trim().optional(),
+    convertedToInvoiceNumber: z.string().trim().optional(),
+    convertedAt: crmOptionalDateStringSchema,
     titleEn: z.string().trim().min(1, 'Invoice title is required').max(200),
     titleAr: z.string().trim().max(200).optional(),
     companyId: z.string().trim().min(1, 'Company is required'),
@@ -1003,6 +1111,7 @@ export const crmInvoiceInputSchema = z.object({
     assignedEmployeeNameAr: z.string().trim().optional(),
     issueDate: crmIsoDateStringSchema,
     dueDate: crmIsoDateStringSchema,
+    lineItems: z.array(crmQuotationLineItemSchema).optional(),
     subtotal: crmNonNegativeAmountSchema.default(0),
     discountTotal: crmNonNegativeAmountSchema.default(0),
     discountAmount: crmNonNegativeAmountSchema.default(0),

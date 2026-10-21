@@ -15,165 +15,15 @@ import {
     Mail,
 } from 'lucide-react';
 
-export interface CustomerCompanyItem {
-    id: string;
-    code: string;
-    nameEn: string;
-    nameAr: string;
-    crNumber: string;
-    taxNumber: string;
-    sectorKey: string;
-    sectorEn: string;
-    sectorAr: string;
-    cityEn: string;
-    cityAr: string;
-    status: 'active' | 'inactive' | 'pending';
-    activeContractsCount: number;
-    activeRequestsCount: number;
-    primaryContactName: string;
-    primaryContactPhone: string;
-    primaryContactEmail: string;
-    establishedYear: number;
-    createdAt: string;
-}
+import {
+    type CustomerCompanyItem,
+    CANONICAL_CUSTOMER_COMPANIES,
+    SECTORS_LIST,
+} from './customerMockData';
 
-const INITIAL_COMPANIES: CustomerCompanyItem[] = [
-    {
-        id: 'cmp-1',
-        code: 'CMP-1001',
-        nameEn: 'Al-Wataniya Logistics Co.',
-        nameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        crNumber: '1010482910',
-        taxNumber: '300482918200003',
-        sectorKey: 'logistics',
-        sectorEn: 'Logistics & Supply Chain',
-        sectorAr: 'الخدمات اللوجستية والإمداد',
-        cityEn: 'Riyadh',
-        cityAr: 'الرياض',
-        status: 'active',
-        activeContractsCount: 12,
-        activeRequestsCount: 5,
-        primaryContactName: 'Eng. Fahad Al-Otaibi',
-        primaryContactPhone: '+966 50 123 4567',
-        primaryContactEmail: 'f.otaibi@wataniya-log.sa',
-        establishedYear: 2014,
-        createdAt: '2024-01-15',
-    },
-    {
-        id: 'cmp-2',
-        code: 'CMP-1002',
-        nameEn: 'Riyadh Tech Solutions',
-        nameAr: 'شركة حلول الرياض التقنية',
-        crNumber: '1010928472',
-        taxNumber: '300928471200003',
-        sectorKey: 'technology',
-        sectorEn: 'Technology & Cloud Systems',
-        sectorAr: 'التقنية والأنظمة السحابية',
-        cityEn: 'Riyadh',
-        cityAr: 'الرياض',
-        status: 'active',
-        activeContractsCount: 8,
-        activeRequestsCount: 3,
-        primaryContactName: 'Sara Al-Ghamdi',
-        primaryContactPhone: '+966 55 987 6543',
-        primaryContactEmail: 'sara@riyadhtech.com.sa',
-        establishedYear: 2018,
-        createdAt: '2024-03-20',
-    },
-    {
-        id: 'cmp-3',
-        code: 'CMP-1003',
-        nameEn: 'Gulf Energy Trading Corp',
-        nameAr: 'مؤسسة طاقة الخليج التجارية',
-        crNumber: '2050198273',
-        taxNumber: '300198273400003',
-        sectorKey: 'energy',
-        sectorEn: 'Energy & Petrochemicals',
-        sectorAr: 'الطاقة والبتروكيماويات',
-        cityEn: 'Khobar',
-        cityAr: 'الخبر',
-        status: 'pending',
-        activeContractsCount: 2,
-        activeRequestsCount: 4,
-        primaryContactName: 'Khalid Al-Dossary',
-        primaryContactPhone: '+966 53 456 7890',
-        primaryContactEmail: 'khalid@gulfenergy.com.sa',
-        establishedYear: 2016,
-        createdAt: '2025-06-10',
-    },
-    {
-        id: 'cmp-4',
-        code: 'CMP-1004',
-        nameEn: 'Najm Financial Advisory Group',
-        nameAr: 'مجموعة نجم للاستشارات المالية',
-        crNumber: '1010372849',
-        taxNumber: '300372849100003',
-        sectorKey: 'financial',
-        sectorEn: 'Financial Services & Investment',
-        sectorAr: 'الخدمات المالية والاستثمار',
-        cityEn: 'Riyadh',
-        cityAr: 'الرياض',
-        status: 'active',
-        activeContractsCount: 15,
-        activeRequestsCount: 2,
-        primaryContactName: 'Abdullah Al-Shehri',
-        primaryContactPhone: '+966 54 321 0987',
-        primaryContactEmail: 'a.shehri@najmfinancial.sa',
-        establishedYear: 2011,
-        createdAt: '2023-11-05',
-    },
-    {
-        id: 'cmp-5',
-        code: 'CMP-1005',
-        nameEn: 'Arabian Horizon Contracting',
-        nameAr: 'شركة الأفق العربي للمقاولات',
-        crNumber: '4030283746',
-        taxNumber: '300283746500003',
-        sectorKey: 'contracting',
-        sectorEn: 'Construction & Real Estate',
-        sectorAr: 'المقاولات والتطوير العقاري',
-        cityEn: 'Jeddah',
-        cityAr: 'جدة',
-        status: 'active',
-        activeContractsCount: 6,
-        activeRequestsCount: 8,
-        primaryContactName: 'Majed Al-Harbi',
-        primaryContactPhone: '+966 56 789 0123',
-        primaryContactEmail: 'majed@arabianhorizon.com',
-        establishedYear: 2009,
-        createdAt: '2024-02-18',
-    },
-    {
-        id: 'cmp-6',
-        code: 'CMP-1006',
-        nameEn: 'Modern Infrastructure LLC',
-        nameAr: 'شركة البنية التحتية الحديثة',
-        crNumber: '4030594837',
-        taxNumber: '300594837200003',
-        sectorKey: 'infrastructure',
-        sectorEn: 'Infrastructure & Engineering',
-        sectorAr: 'البنية التحتية والهندسة',
-        cityEn: 'Dammam',
-        cityAr: 'الدمام',
-        status: 'inactive',
-        activeContractsCount: 0,
-        activeRequestsCount: 0,
-        primaryContactName: 'Tariq Al-Zahrani',
-        primaryContactPhone: '+966 59 876 5432',
-        primaryContactEmail: 'tariq@moderninfra.sa',
-        establishedYear: 2017,
-        createdAt: '2024-08-12',
-    },
-];
+export type { CustomerCompanyItem };
+const INITIAL_COMPANIES: CustomerCompanyItem[] = CANONICAL_CUSTOMER_COMPANIES;
 
-const SECTORS_LIST = [
-    { key: 'logistics', en: 'Logistics & Supply Chain', ar: 'الخدمات اللوجستية والإمداد' },
-    { key: 'technology', en: 'Technology & Cloud Systems', ar: 'التقنية والأنظمة السحابية' },
-    { key: 'energy', en: 'Energy & Petrochemicals', ar: 'الطاقة والبتروكيماويات' },
-    { key: 'financial', en: 'Financial Services & Investment', ar: 'الخدمات المالية والاستثمار' },
-    { key: 'contracting', en: 'Construction & Real Estate', ar: 'المقاولات والتطوير العقاري' },
-    { key: 'infrastructure', en: 'Infrastructure & Engineering', ar: 'البنية التحتية والهندسة' },
-];
 
 export const CustomerCompaniesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -312,7 +162,7 @@ export const CustomerCompaniesPage: React.FC = () => {
         switch (status) {
             case 'active':
                 return (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>{t('customer.pages.companies.statusActive')}</span>
                     </span>
@@ -338,7 +188,7 @@ export const CustomerCompaniesPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -353,7 +203,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                                 {t('customer.pages.companies.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-CMP
@@ -364,14 +214,10 @@ export const CustomerCompaniesPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer self-start sm:self-center shrink-0"
-                    >
-                        <Plus className="w-4 h-4 text-[#BFAB93]" />
-                        <span>{t('customer.pages.companies.addCompany')}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* KPI Metrics Summary Strip */}
@@ -383,10 +229,10 @@ export const CustomerCompaniesPage: React.FC = () => {
                         <p className="text-lg font-bold text-[#0D0D0D] mt-0.5">{stats.total}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                        <p className="text-[11px] font-semibold text-[#265938]">
+                        <p className="text-[11px] font-semibold text-[#037F8C]">
                             {t('customer.pages.companies.activeCompanies')}
                         </p>
-                        <p className="text-lg font-bold text-[#265938] mt-0.5">{stats.active}</p>
+                        <p className="text-lg font-bold text-[#037F8C] mt-0.5">{stats.active}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
                         <p className="text-[11px] font-semibold text-[#8C6D3B]">
@@ -413,7 +259,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.companies.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -432,7 +278,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
                         aria-label={t('customer.pages.companies.statusAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.companies.statusAll')}</option>
                         <option value="active">{t('customer.pages.companies.statusActive')}</option>
@@ -444,7 +290,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                         value={sectorFilter}
                         onChange={(e) => setSectorFilter(e.target.value)}
                         aria-label={t('customer.pages.companies.sectorAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.companies.sectorAll')}</option>
                         {SECTORS_LIST.map((s) => (
@@ -493,7 +339,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
+                                                className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline"
                                             >
                                                 {t('customer.pages.companies.feedback.resetFilters')}
                                             </button>
@@ -506,8 +352,8 @@ export const CustomerCompaniesPage: React.FC = () => {
                                         {/* Company Name & Code */}
                                         <td className="px-5 py-3.5 font-medium text-[#0D0D0D]">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
-                                                    <Building2 className="w-4 h-4 text-[#2D3F2C]" />
+                                                <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
+                                                    <Building2 className="w-4 h-4 text-[#037F8C]" />
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-sm text-[#0D0D0D]">
@@ -570,22 +416,6 @@ export const CustomerCompaniesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(c.id)}
-                                                    title={
-                                                        c.status === 'active'
-                                                            ? t('customer.pages.companies.table.deactivate')
-                                                            : t('customer.pages.companies.table.activate')
-                                                    }
-                                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                                        c.status === 'active'
-                                                            ? 'text-[#265938] hover:bg-[#EAF3EC]'
-                                                            : 'text-[#857E74] hover:bg-[#EFECE6]'
-                                                    }`}
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -603,7 +433,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                         {/* Drawer Header */}
                         <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-11 h-11 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-11 h-11 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <Building2 className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -611,7 +441,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                                         <h2 className="text-lg font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingCompany.nameAr : viewingCompany.nameEn}
                                         </h2>
-                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#2D3F2C] rounded-md font-semibold" dir="ltr">
+                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#037F8C] rounded-md font-semibold" dir="ltr">
                                             {viewingCompany.code}
                                         </span>
                                     </div>
@@ -637,15 +467,6 @@ export const CustomerCompaniesPage: React.FC = () => {
                                 </span>
                                 {getStatusBadge(viewingCompany.status)}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => handleToggleStatus(viewingCompany.id)}
-                                className="text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
-                            >
-                                {viewingCompany.status === 'active'
-                                    ? t('customer.pages.companies.details.deactivate')
-                                    : t('customer.pages.companies.details.activate')}
-                            </button>
                         </div>
 
                         {/* Legal & Registration Grid */}
@@ -711,7 +532,7 @@ export const CustomerCompaniesPage: React.FC = () => {
                                     <span className="text-[#6E6862]">
                                         {isRtl ? 'العقود المعتمدة' : 'Active Contracts'}
                                     </span>
-                                    <span className="font-bold text-[#2D3F2C] text-sm">
+                                    <span className="font-bold text-[#037F8C] text-sm">
                                         {viewingCompany.activeContractsCount}
                                     </span>
                                 </div>
@@ -736,198 +557,6 @@ export const CustomerCompaniesPage: React.FC = () => {
                                 {t('customer.pages.companies.details.close')}
                             </button>
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Add Company Modal */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-7 space-y-6 text-start">
-                        {/* Modal Header */}
-                        <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
-                            <div>
-                                <h2 className="text-lg font-bold text-[#0D0D0D]">
-                                    {t('customer.pages.companies.modal.addTitle')}
-                                </h2>
-                                <p className="text-xs text-[#857E74] mt-0.5">
-                                    {t('customer.pages.companies.modal.addSubtitle')}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsAddModalOpen(false)}
-                                className="p-1 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Form */}
-                        <form onSubmit={handleAddCompany} className="space-y-4 text-xs">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.nameAr')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.nameAr}
-                                        onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                                        placeholder="مثال: شركة الرواد للتجارة"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.nameEn')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.nameEn}
-                                        onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                                        placeholder="e.g. Al-Rowad Trading Co."
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.cr')} *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        maxLength={10}
-                                        value={formData.crNumber}
-                                        onChange={(e) => setFormData({ ...formData, crNumber: e.target.value })}
-                                        placeholder="1010XXXXXX"
-                                        dir="ltr"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.tax')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength={15}
-                                        value={formData.taxNumber}
-                                        onChange={(e) => setFormData({ ...formData, taxNumber: e.target.value })}
-                                        placeholder="300XXXXXXXXXXXX"
-                                        dir="ltr"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.sector')}
-                                    </label>
-                                    <select
-                                        value={formData.sectorKey}
-                                        onChange={(e) => setFormData({ ...formData, sectorKey: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                                    >
-                                        {SECTORS_LIST.map((s) => (
-                                            <option key={s.key} value={s.key}>
-                                                {isRtl ? s.ar : s.en}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.companies.modal.city')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={isRtl ? formData.cityAr : formData.cityEn}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                cityEn: e.target.value,
-                                                cityAr: e.target.value,
-                                            })
-                                        }
-                                        placeholder={isRtl ? 'الرياض' : 'Riyadh'}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="pt-2 border-t border-[#F0ECE6]">
-                                <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#857E74] mb-2">
-                                    {t('customer.pages.companies.details.primaryContact')}
-                                </h3>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                            {t('customer.pages.companies.modal.contactName')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.contactName}
-                                            onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                                            placeholder="Eng. Ahmed..."
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                                {t('customer.pages.companies.modal.contactPhone')}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.contactPhone}
-                                                onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                                                placeholder="+966 5X XXX XXXX"
-                                                dir="ltr"
-                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                                {t('customer.pages.companies.modal.contactEmail')}
-                                            </label>
-                                            <input
-                                                type="email"
-                                                value={formData.contactEmail}
-                                                onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                                                placeholder="representative@domain.sa"
-                                                dir="ltr"
-                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Submit Buttons */}
-                            <div className="pt-4 border-t border-[#F0ECE6] flex items-center justify-end gap-2.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAddModalOpen(false)}
-                                    className="px-4 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#6E6862] transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.companies.modal.cancel')}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.companies.modal.save')}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}

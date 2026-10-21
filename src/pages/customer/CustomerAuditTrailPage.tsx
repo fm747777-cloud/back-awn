@@ -73,14 +73,10 @@ export interface CustomerAuditItem {
 
 const STORAGE_KEY = 'awn_customer_audit_trail_v1';
 
-const DEMO_COMPANIES = [
-    { id: 'cmp-1', nameEn: 'Al-Fursan Logistics Co.', nameAr: 'شركة الفرسان اللوجستية' },
-    { id: 'cmp-2', nameEn: 'Rawabi Energy Services', nameAr: 'خدمات الروابي للطاقة' },
-    { id: 'cmp-3', nameEn: 'Madaen Real Estate Group', nameAr: 'مجموعة مدائن العقارية' },
-    { id: 'cmp-4', nameEn: 'Safwa Medical Healthcare', nameAr: 'صفوة الرعاية الطبية' },
-    { id: 'cmp-5', nameEn: 'Horizon Digital Technologies', nameAr: 'تقنيات الأفق الرقمية' },
-    { id: 'cmp-6', nameEn: 'Red Sea Hospitality & Resorts', nameAr: 'الضيافة والمنتجعات بالبحر الأحمر' },
-];
+import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
+
+const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
+
 
 const SEED_AUDIT_LOGS: CustomerAuditItem[] = [
     {
@@ -654,28 +650,17 @@ export const CustomerAuditTrailPage: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={handleResetDemoData}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-colors"
-                        title={isRtl ? 'إعادة ضبط البيانات التجريبية' : 'Reset Demo Data'}
-                    >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>{isRtl ? 'استعادة السجلات' : 'Reset'}</span>
-                    </button>
-                    <button
                         onClick={handleExportAuditTrail}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer"
                         title={isRtl ? 'تصدير السجل بصيغة JSON' : 'Export Audit Log'}
                     >
                         <Download className="w-3.5 h-3.5" />
                         <span>{isRtl ? 'تصدير السجل' : 'Export'}</span>
                     </button>
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm hover:shadow transition-all"
-                    >
-                        <Plus className="w-4 h-4" />
-                        <span>{isRtl ? 'تسجيل حدث امتثال' : 'Record Audit Event'}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
             </div>
 

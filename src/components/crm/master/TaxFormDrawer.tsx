@@ -225,7 +225,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameEn
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                             }`}
                         />
                         {fieldErrors.nameEn && (
@@ -259,7 +259,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameAr
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
                             }`}
                         />
                         {fieldErrors.nameAr && (
@@ -282,7 +282,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                                 id="crm-tax-type"
                                 value={taxType}
                                 onChange={(e) => setTaxType(e.target.value as CrmTaxType)}
-                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] cursor-pointer"
+                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] cursor-pointer"
                             >
                                 <option value="VAT">{t('crm.master.form.taxTypeVat')}</option>
                                 <option value="Tax">{t('crm.master.form.taxTypeTax')}</option>
@@ -316,7 +316,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                                     className={`w-full ps-3.5 pe-8 py-2.5 rounded-lg border text-xs font-mono text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                         fieldErrors.rate
                                             ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                            : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                     }`}
                                 />
                                 <Percent
@@ -349,7 +349,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                                         setStatus('active');
                                     }
                                 }}
-                                className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
+                                className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
                             />
                             <div>
                                 <span className="block text-xs font-semibold text-[#0D0D0D]">
@@ -377,7 +377,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                             value={descriptionEn}
                             onChange={(e) => setDescriptionEn(e.target.value)}
                             placeholder={t('crm.master.form.descriptionEnPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
                     </div>
 
@@ -395,7 +395,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                             value={descriptionAr}
                             onChange={(e) => setDescriptionAr(e.target.value)}
                             placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#2D3F2C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
                     </div>
 
@@ -415,8 +415,8 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                                         className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
                                             selected
                                                 ? option === 'active'
-                                                    ? 'bg-[#EAF3EC] border-[#265938] text-[#265938]'
-                                                    : 'bg-[#FAF8F5] border-[#2D3F2C] text-[#0D0D0D]'
+                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
+                                                    : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D]'
                                                 : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5]'
                                         }`}
                                     >
@@ -448,7 +448,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
+                            className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
                         >
                             {isSubmitting
                                 ? t('crm.master.common.saving')

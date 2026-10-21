@@ -159,7 +159,7 @@ export const DataTable = <TData,>({
                                         className="text-center py-16 text-[#857E74]"
                                     >
                                         <div className="flex flex-col items-center justify-center gap-2">
-                                            <div className="w-6 h-6 border-2 border-[#2D3F2C] border-t-transparent rounded-full animate-spin" />
+                                            <div className="w-6 h-6 border-2 border-[#037F8C] border-t-transparent rounded-full animate-spin" />
                                             <span className="text-xs font-medium">{t('common.loadingData')}</span>
                                         </div>
                                     </td>

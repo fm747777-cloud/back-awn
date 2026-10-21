@@ -29,6 +29,7 @@ export interface CompanyPreOnboardingModalProps {
     isOpen: boolean;
     mode: 'create' | 'edit';
     initialData?: CrmCompanyRecord | null;
+    prefillData?: Partial<CrmCompanyInput> | null;
     organizationalTypes: CrmOrganizationalTypeRecord[];
     ownershipTypes: CrmOwnershipTypeRecord[];
     sectors: CrmSectorRecord[];
@@ -44,6 +45,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     isOpen,
     mode,
     initialData,
+    prefillData = null,
     organizationalTypes,
     ownershipTypes,
     sectors,
@@ -113,7 +115,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     });
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${defaultOrgTypeId}-${defaultOwnTypeId}-${defaultSectorId}`;
+    const currentSyncKey = `${isOpen}-${mode}-${initialData?.id ?? 'new'}-${prefillData?.nameEn ?? ''}-${prefillData?.email ?? ''}-${prefillData?.leadId ?? ''}-${defaultOrgTypeId}-${defaultOwnTypeId}-${defaultSectorId}`;
     if (currentSyncKey !== prevSyncKey) {
         setPrevSyncKey(currentSyncKey);
         if (isOpen) {
@@ -148,31 +150,42 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                             : [createBlankOwner(true)],
                     notes: initialData.notes || '',
                     status: initialData.status,
+                    leadId: initialData.leadId,
                 });
             } else {
                 setFormState({
-                    nameEn: '',
-                    nameAr: '',
-                    businessName: '',
-                    organizationalTypeId: defaultOrgTypeId,
-                    ownershipTypeId: defaultOwnTypeId,
-                    sectorId: defaultSectorId,
-                    assignedEmployeeId: '',
-                    crNumber: '',
-                    unifiedNumber: '',
-                    taxNumber: '',
-                    email: '',
-                    phone: '',
-                    website: '',
-                    country: 'Saudi Arabia',
-                    state: 'Riyadh Province',
-                    city: 'Riyadh',
-                    pinCode: '',
-                    address: '',
-                    onboardingStatus: 'pre_onboarding',
-                    owners: [createBlankOwner(true)],
-                    notes: '',
+                    nameEn: prefillData?.nameEn || '',
+                    nameAr: prefillData?.nameAr || prefillData?.nameEn || '',
+                    businessName:
+                        prefillData?.businessName ||
+                        prefillData?.nameEn ||
+                        '',
+                    businessType: prefillData?.businessType || 'existing_business',
+                    organizationalTypeId:
+                        prefillData?.organizationalTypeId || defaultOrgTypeId,
+                    ownershipTypeId:
+                        prefillData?.ownershipTypeId || defaultOwnTypeId,
+                    sectorId: prefillData?.sectorId || defaultSectorId,
+                    assignedEmployeeId: prefillData?.assignedEmployeeId || '',
+                    crNumber: prefillData?.crNumber || '',
+                    unifiedNumber: prefillData?.unifiedNumber || '',
+                    taxNumber: prefillData?.taxNumber || '',
+                    email: prefillData?.email || '',
+                    phone: prefillData?.phone || '',
+                    website: prefillData?.website || '',
+                    country: prefillData?.country || 'Saudi Arabia',
+                    state: prefillData?.state || 'Riyadh Province',
+                    city: prefillData?.city || 'Riyadh',
+                    pinCode: prefillData?.pinCode || '',
+                    address: prefillData?.address || '',
+                    onboardingStatus: prefillData?.onboardingStatus || 'pre_onboarding',
+                    owners:
+                        prefillData?.owners && prefillData.owners.length > 0
+                            ? prefillData.owners.map((o) => ({ ...o }))
+                            : [createBlankOwner(true)],
+                    notes: prefillData?.notes || '',
                     status: 'active',
+                    leadId: prefillData?.leadId,
                 });
             }
         }
@@ -410,7 +423,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="company-preonboarding-wizard-title"
@@ -424,13 +437,13 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C] shrink-0">
                             <Building2 size={19} />
                         </div>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
                                 <span
-                                    className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                    className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {mode === 'edit' && initialData
@@ -512,7 +525,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 }}
                                 className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-start transition-colors cursor-pointer ${
                                     isActive
-                                        ? 'border-[#2D3F2C] bg-[#2D3F2C]/5'
+                                        ? 'border-[#037F8C] bg-[#037F8C]/5'
                                         : isDone
                                           ? 'border-[#2E6B4E]/30 bg-[#E9F5EE]/50'
                                           : 'border-[#E5E0D8] bg-[#FAF8F5]'
@@ -521,7 +534,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 <div
                                     className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
                                         isActive
-                                            ? 'bg-[#2D3F2C] text-white'
+                                            ? 'bg-[#037F8C] text-white'
                                             : isDone
                                               ? 'bg-[#2E6B4E] text-white'
                                               : 'bg-white border border-[#E5E0D8] text-[#6E6862]'
@@ -976,7 +989,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                     <button
                                         type="button"
                                         onClick={handleAddOwnerRow}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                                     >
                                         <Plus size={13} />
                                         {t('crm.customer.companies.wizard.addOwnerRow')}
@@ -1013,7 +1026,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                         type="button"
                                         onClick={handleLinkDirectoryOwner}
                                         disabled={!selectedDirectoryOwnerId}
-                                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#2D3F2C] cursor-pointer disabled:opacity-50"
+                                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#037F8C] cursor-pointer disabled:opacity-50"
                                     >
                                         <UserPlus size={13} />
                                         {t(
@@ -1030,7 +1043,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                         key={idx}
                                         className={`rounded-xl border p-4 space-y-3 ${
                                             owner.isMainOwner
-                                                ? 'border-[#2D3F2C] bg-[#FAF8F5]'
+                                                ? 'border-[#037F8C] bg-[#FAF8F5]'
                                                 : 'border-[#E5E0D8] bg-white'
                                         }`}
                                     >
@@ -1041,7 +1054,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                                     onClick={() => handleSetMainOwner(idx)}
                                                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border cursor-pointer ${
                                                         owner.isMainOwner
-                                                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C]'
+                                                            ? 'bg-[#037F8C] text-white border-[#037F8C]'
                                                             : 'bg-white text-[#6E6862] border-[#E5E0D8] hover:text-[#0D0D0D]'
                                                     }`}
                                                 >
@@ -1370,7 +1383,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 <button
                                     type="button"
                                     onClick={handleNextStep}
-                                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                                 >
                                     <span>{t('crm.customer.common.nextStep')}</span>
                                     {isRtl ? (
@@ -1383,7 +1396,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                    className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
                                 >
                                     <CheckCircle2 size={14} />
                                     {isSubmitting

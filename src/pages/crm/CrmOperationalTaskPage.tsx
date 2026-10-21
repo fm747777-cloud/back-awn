@@ -320,7 +320,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
             case 'Under Review':
                 return 'bg-indigo-50 text-indigo-700 border-indigo-200';
             case 'Assigned':
-                return 'bg-[#2D3F2C]/10 text-[#2D3F2C] border-[#2D3F2C]/20';
+                return 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/20';
             case 'Blocked':
             case 'Rejected':
                 return 'bg-rose-50 text-rose-700 border-rose-200';
@@ -366,7 +366,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
             {/* Page Header */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-[#E5E0D8] shadow-xs">
                 <div className="flex items-start gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                         <ClipboardList size={24} />
                     </div>
                     <div>
@@ -374,7 +374,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                             <h1 className="text-xl font-bold text-[#0D0D0D]">
                                 {t('crm.workflow.operationalTasks.title')}
                             </h1>
-                            <span className="px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]">
+                            <span className="px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]">
                                 {totalCount}
                             </span>
                         </div>
@@ -398,7 +398,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={15} />
                         {t('crm.workflow.operationalTasks.actions.createTask')}
@@ -417,7 +417,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                             {metrics?.totalTasks ?? 0}
                         </p>
                     </div>
-                    <div className="w-11 h-11 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-11 h-11 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C] flex items-center justify-center">
                         <ClipboardList size={20} />
                     </div>
                 </div>
@@ -491,7 +491,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                             }}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                                 statusFilter === 'all'
-                                    ? 'bg-[#2D3F2C] text-white'
+                                    ? 'bg-[#037F8C] text-white'
                                     : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
                             }`}
                         >
@@ -509,7 +509,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                                 }}
                                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                                     statusFilter === st
-                                        ? 'bg-[#2D3F2C] text-white'
+                                        ? 'bg-[#037F8C] text-white'
                                         : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
                                 }`}
                             >
@@ -549,7 +549,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                             placeholder={t(
                                 'crm.workflow.operationalTasks.filters.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -659,7 +659,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
             <div className="bg-white rounded-2xl border border-[#E5E0D8] overflow-hidden shadow-xs">
                 {isLoading ? (
                     <div className="p-12 text-center space-y-3">
-                        <div className="w-8 h-8 rounded-full border-2 border-[#2D3F2C] border-t-transparent animate-spin mx-auto" />
+                        <div className="w-8 h-8 rounded-full border-2 border-[#037F8C] border-t-transparent animate-spin mx-auto" />
                         <p className="text-xs font-medium text-[#6E6862]">
                             {t('crm.commercial.common.loading')}
                         </p>
@@ -678,7 +678,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => refetch()}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] text-white text-xs font-semibold cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] text-white text-xs font-semibold cursor-pointer"
                         >
                             <RotateCcw size={14} />
                             {t('crm.commercial.common.retry')}
@@ -771,7 +771,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                                                 {/* Task Code */}
                                                 <td className="py-3.5 px-4 whitespace-nowrap">
                                                     <span
-                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                                         dir="ltr"
                                                     >
                                                         {task.code}
@@ -787,7 +787,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                                                                 task
                                                             )
                                                         }
-                                                        className="font-bold text-[#0D0D0D] hover:text-[#2D3F2C] text-start line-clamp-1 cursor-pointer"
+                                                        className="font-bold text-[#0D0D0D] hover:text-[#037F8C] text-start line-clamp-1 cursor-pointer"
                                                     >
                                                         {isRtl
                                                             ? task.titleAr ||
@@ -809,7 +809,7 @@ export const CrmOperationalTaskPage: React.FC = () => {
                                                 {/* Related Entity */}
                                                 <td className="py-3.5 px-4 whitespace-nowrap">
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className="px-2 py-0.5 rounded bg-[#2D3F2C]/10 text-[#2D3F2C] text-[11px] font-semibold">
+                                                        <span className="px-2 py-0.5 rounded bg-[#037F8C]/10 text-[#037F8C] text-[11px] font-semibold">
                                                             {t(
                                                                 `crm.workflow.operationalTasks.entityTypes.${task.relatedEntityType}`
                                                             )}

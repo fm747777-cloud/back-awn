@@ -58,7 +58,7 @@ export const TicketTypesPage = () => {
             }),
     });
 
-    const ticketTypes = response?.data ?? [];
+    const ticketTypes = useMemo(() => response?.data ?? [], [response?.data]);
     const totalCount = response?.count ?? 0;
 
     const createTicketTypeMutation = useMutation({
@@ -219,7 +219,7 @@ export const TicketTypesPage = () => {
                 ),
             },
         ],
-        [t, pageIndex, pageSize],
+        [t],
     );
 
     const handleCreateTicketType = (data: CreateTicketTypeDto) => {
@@ -321,7 +321,7 @@ export const TicketTypesPage = () => {
                 defaultValue: 'Export completed successfully.',
             }),
         );
-    }, [ticketTypes, pageIndex, pageSize, t, i18n]);
+    }, [ticketTypes, pageIndex, pageSize, t]);
 
     return (
         <div className="space-y-4">

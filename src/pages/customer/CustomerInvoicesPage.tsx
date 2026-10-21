@@ -16,7 +16,16 @@ import {
     DollarSign,
     FileCheck,
     CreditCard,
+    Lock,
+    ShieldCheck,
 } from 'lucide-react';
+import { CUSTOMER_COMPANIES_SIMPLE_OPTIONS } from './customerMockData';
+import {
+    UnifiedCustomerInvoiceItem,
+    InvoiceOriginSource,
+    loadMappedCrmInvoicesSync,
+    loadMappedCrmInvoices,
+} from './crmCustomerInvoiceAdapter';
 
 export type CustomerInvoiceStatus =
     | 'draft'
@@ -186,14 +195,7 @@ const INITIAL_INVOICES: CustomerInvoiceItem[] = [
     },
 ];
 
-const AVAILABLE_COMPANIES = [
-    { id: 'cmp-1', en: 'Al-Wataniya Logistics Co.', ar: 'الشركة الوطنية للخدمات اللوجستية' },
-    { id: 'cmp-2', en: 'Riyadh Tech Solutions', ar: 'شركة حلول الرياض التقنية' },
-    { id: 'cmp-3', en: 'Gulf Energy Trading Corp', ar: 'مؤسسة طاقة الخليج التجارية' },
-    { id: 'cmp-4', en: 'Najm Financial Advisory Group', ar: 'مجموعة نجم للاستشارات المالية' },
-    { id: 'cmp-5', en: 'Arabian Horizon Contracting', ar: 'شركة الأفق العربي للمقاولات' },
-    { id: 'cmp-6', en: 'Modern Infrastructure LLC', ar: 'شركة البنية التحتية الحديثة' },
-];
+const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
 
 const AVAILABLE_CONTRACTS = [
     { id: 'none', number: '— None / Ad-hoc Invoice —', numberAr: '— بدون عقد / فاتورة مباشرة —', companyId: '' },
@@ -209,8 +211,8 @@ export const CustomerInvoicesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language?.startsWith('ar');
 
-    // Persistence in awn_customer_invoices_v1
-    const [invoices, setInvoices] = useState<CustomerInvoiceItem[]>(() => {
+    // Persistence in awn_customer_invoices_v1 (Strictly isolated from CRM collections)
+    const [customerInvoices, setCustomerInvoices] = useState<CustomerInvoiceItem[]>(() => {
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
                 const stored = localStorage.getItem(STORAGE_KEY);
@@ -227,22 +229,53 @@ export const CustomerInvoicesPage: React.FC = () => {
         return INITIAL_INVOICES;
     });
 
+    // Mapped CRM Invoices (Read-Only Demo Integration, never persisted to awn_customer_invoices_v1)
+    const [crmInvoices, setCrmInvoices] = useState<UnifiedCustomerInvoiceItem[]>(() => {
+        return loadMappedCrmInvoicesSync();
+    });
+
+    useEffect(() => {
+        let isMounted = true;
+        loadMappedCrmInvoices().then((mapped) => {
+            if (isMounted) {
+                setCrmInvoices(mapped);
+            }
+        });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Strict persistence: ONLY customerInvoices are saved to awn_customer_invoices_v1
     useEffect(() => {
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(invoices));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(customerInvoices));
             }
         } catch {
             // ignore
         }
-    }, [invoices]);
+    }, [customerInvoices]);
+
+    // Unified Invoices: Wraps customer & read-only CRM invoices with source tagging & zero collision
+    const unifiedInvoices: UnifiedCustomerInvoiceItem[] = useMemo(() => {
+        const customerAdapted: UnifiedCustomerInvoiceItem[] = customerInvoices.map((inv) => ({
+            ...inv,
+            source: 'customer' as const,
+            compositeId: `customer:${inv.id}`,
+            isReadOnly: false,
+        }));
+        return [...customerAdapted, ...crmInvoices];
+    }, [customerInvoices, crmInvoices]);
 
     // Filters
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | CustomerInvoiceStatus>('all');
+    const [companyFilter, setCompanyFilter] = useState<'all' | string>('all');
+    const [sourceFilter, setSourceFilter] = useState<'all' | InvoiceOriginSource>('all');
 
     // Modal & Drawer States
-    const [viewingInvoice, setViewingInvoice] = useState<CustomerInvoiceItem | null>(null);
+    const [viewingInvoice, setViewingInvoice] = useState<UnifiedCustomerInvoiceItem | null>(null);
     const [editingInvoice, setEditingInvoice] = useState<CustomerInvoiceItem | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -288,9 +321,9 @@ export const CustomerInvoicesPage: React.FC = () => {
         return Math.max(0, calculatedTotal - paid);
     }, [calculatedTotal, formData.paidAmount]);
 
-    // Filtered Invoices
+    // Filtered Unified Invoices
     const filteredInvoices = useMemo(() => {
-        return invoices.filter((inv) => {
+        return unifiedInvoices.filter((inv) => {
             const matchesSearch =
                 !search.trim() ||
                 inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -302,28 +335,30 @@ export const CustomerInvoicesPage: React.FC = () => {
                     inv.linkedContractNumber.toLowerCase().includes(search.toLowerCase()));
 
             const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
+            const matchesCompany = companyFilter === 'all' || inv.companyId === companyFilter;
+            const matchesSource = sourceFilter === 'all' || inv.source === sourceFilter;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesCompany && matchesSource;
         });
-    }, [invoices, search, statusFilter]);
+    }, [unifiedInvoices, search, statusFilter, companyFilter, sourceFilter]);
 
-    // 4 KPI Cards
+    // 4 KPI Cards calculated over active unified invoices
     const kpis = useMemo(() => {
-        const totalCount = invoices.length;
-        const totalValue = invoices.reduce((sum, inv) => sum + inv.total, 0);
+        const totalCount = unifiedInvoices.length;
+        const totalValue = unifiedInvoices.reduce((sum, inv) => sum + inv.total, 0);
 
         // Outstanding Balance (excluding cancelled)
-        const outstandingBalance = invoices
+        const outstandingBalance = unifiedInvoices
             .filter((inv) => inv.status !== 'cancelled')
             .reduce((sum, inv) => sum + inv.balanceDue, 0);
 
         // Paid Invoices
-        const paidInvoicesList = invoices.filter((inv) => inv.status === 'paid');
+        const paidInvoicesList = unifiedInvoices.filter((inv) => inv.status === 'paid');
         const paidCount = paidInvoicesList.length;
-        const totalCollected = invoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
+        const totalCollected = unifiedInvoices.reduce((sum, inv) => sum + inv.paidAmount, 0);
 
         // Overdue Invoices
-        const overdueInvoicesList = invoices.filter((inv) => inv.status === 'overdue');
+        const overdueInvoicesList = unifiedInvoices.filter((inv) => inv.status === 'overdue');
         const overdueCount = overdueInvoicesList.length;
         const overdueValue = overdueInvoicesList.reduce((sum, inv) => sum + inv.balanceDue, 0);
 
@@ -336,15 +371,18 @@ export const CustomerInvoicesPage: React.FC = () => {
             overdueCount,
             overdueValue,
         };
-    }, [invoices]);
+    }, [unifiedInvoices]);
 
     // Currency Formatter
     const formatCurrency = (val: number) => {
         return `${val.toLocaleString()} ${isRtl ? 'ر.س' : 'SAR'}`;
     };
 
-    // Open Edit Modal
-    const handleStartEdit = (inv: CustomerInvoiceItem) => {
+    // Open Edit Modal (strictly forbidden for read-only CRM invoices)
+    const handleStartEdit = (inv: UnifiedCustomerInvoiceItem) => {
+        if (inv.isReadOnly) {
+            return;
+        }
         setEditingInvoice(inv);
         setFormData({
             titleEn: inv.titleEn,
@@ -380,7 +418,7 @@ export const CustomerInvoicesPage: React.FC = () => {
         setIsAddModalOpen(true);
     };
 
-    // Save (Add or Edit) Invoice
+    // Save (Add or Edit) Invoice - Only applies to customerInvoices
     const handleSaveInvoice = (e: React.FormEvent) => {
         e.preventDefault();
         const selectedComp =
@@ -414,7 +452,7 @@ export const CustomerInvoicesPage: React.FC = () => {
         }
 
         if (editingInvoice) {
-            setInvoices((prev) =>
+            setCustomerInvoices((prev) =>
                 prev.map((inv) =>
                     inv.id === editingInvoice.id
                         ? {
@@ -446,7 +484,7 @@ export const CustomerInvoicesPage: React.FC = () => {
             setEditingInvoice(null);
             showToast(t('customer.pages.invoices.feedback.invoiceUpdated'));
         } else {
-            const nextCodeNum = invoices.length + 101;
+            const nextCodeNum = customerInvoices.length + 101;
             const newCode = `INV-2026-${nextCodeNum}`;
 
             const newInvoice: CustomerInvoiceItem = {
@@ -475,16 +513,16 @@ export const CustomerInvoicesPage: React.FC = () => {
                 createdAt: new Date().toISOString().split('T')[0],
             };
 
-            setInvoices([newInvoice, ...invoices]);
+            setCustomerInvoices([newInvoice, ...customerInvoices]);
             setIsAddModalOpen(false);
             showToast(t('customer.pages.invoices.feedback.invoiceAdded'));
         }
     };
 
-    // Record Payment Handler with rigorous validation
+    // Record Payment Handler (strictly forbidden for read-only CRM invoices)
     const handleRecordPayment = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!viewingInvoice) return;
+        if (!viewingInvoice || viewingInvoice.isReadOnly) return;
 
         const pAmt = Number(paymentAmount);
         if (isNaN(pAmt) || pAmt <= 0) {
@@ -509,10 +547,15 @@ export const CustomerInvoicesPage: React.FC = () => {
             status: newStatus,
         };
 
-        setInvoices((prev) =>
+        setCustomerInvoices((prev) =>
             prev.map((inv) => (inv.id === viewingInvoice.id ? updatedInvoice : inv))
         );
-        setViewingInvoice(updatedInvoice);
+        setViewingInvoice({
+            ...viewingInvoice,
+            paidAmount: newPaidAmount,
+            balanceDue: newBalance,
+            status: newStatus,
+        });
         setIsPaymentFormOpen(false);
         setPaymentAmount(0);
         setPaymentError(null);
@@ -522,13 +565,15 @@ export const CustomerInvoicesPage: React.FC = () => {
     const resetFilters = () => {
         setSearch('');
         setStatusFilter('all');
+        setCompanyFilter('all');
+        setSourceFilter('all');
     };
 
     const getStatusBadge = (status: CustomerInvoiceStatus) => {
         switch (status) {
             case 'paid':
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{t('customer.pages.invoices.statusPaid')}</span>
                     </span>
@@ -575,7 +620,7 @@ export const CustomerInvoicesPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -590,7 +635,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 {t('customer.pages.invoices.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-INV
@@ -605,14 +650,10 @@ export const CustomerInvoicesPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.invoices.addInvoice')}</span>
-                        </button>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                            <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                            <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                        </span>
                     </div>
                 </div>
 
@@ -624,7 +665,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.invoices.kpis.totalInvoices')}
                             </span>
-                            <Receipt className="w-4 h-4 text-[#2D3F2C]" />
+                            <Receipt className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <div className="flex items-baseline gap-2 mt-2">
                             <p className="text-2xl font-bold text-[#0D0D0D]">{kpis.totalCount}</p>
@@ -653,10 +694,10 @@ export const CustomerInvoicesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.invoices.kpis.paidInvoices')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <div className="flex items-baseline gap-2 mt-2">
-                            <p className="text-2xl font-bold text-[#265938]">{kpis.paidCount}</p>
+                            <p className="text-2xl font-bold text-[#037F8C]">{kpis.paidCount}</p>
                             <span className="text-xs text-[#857E74] font-mono">
                                 ({formatCurrency(kpis.totalCollected)})
                             </span>
@@ -681,7 +722,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Filter Bar */}
+            {/* Filter Bar with Search, Company, Source, and Status Filters */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                 {/* Search */}
                 <div className="relative flex-1">
@@ -691,7 +732,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.invoices.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -704,13 +745,41 @@ export const CustomerInvoicesPage: React.FC = () => {
                     )}
                 </div>
 
-                {/* Status Filter Select */}
+                {/* Filters Row */}
                 <div className="flex flex-wrap items-center gap-2">
+                    {/* Company Filter Select */}
+                    <select
+                        value={companyFilter}
+                        onChange={(e) => setCompanyFilter(e.target.value)}
+                        aria-label={t('customer.pages.invoices.filterCompany')}
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="all">{t('customer.pages.invoices.companyAll')}</option>
+                        {AVAILABLE_COMPANIES.map((c) => (
+                            <option key={c.id} value={c.id}>
+                                {isRtl ? c.ar : c.en}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Source Filter Select (Customer vs CRM) */}
+                    <select
+                        value={sourceFilter}
+                        onChange={(e) => setSourceFilter(e.target.value as any)}
+                        aria-label={t('customer.pages.invoices.filterSource')}
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="all">{t('customer.pages.invoices.sourceAll')}</option>
+                        <option value="customer">{t('customer.pages.invoices.sourceCustomer')}</option>
+                        <option value="crm">{t('customer.pages.invoices.sourceCrm')}</option>
+                    </select>
+
+                    {/* Status Filter Select */}
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
                         aria-label={t('customer.pages.invoices.statusAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.invoices.statusAll')}</option>
                         <option value="draft">{t('customer.pages.invoices.statusDraft')}</option>
@@ -721,7 +790,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                         <option value="cancelled">{t('customer.pages.invoices.statusCancelled')}</option>
                     </select>
 
-                    {(search || statusFilter !== 'all') && (
+                    {(search || statusFilter !== 'all' || companyFilter !== 'all' || sourceFilter !== 'all') && (
                         <button
                             type="button"
                             onClick={resetFilters}
@@ -763,7 +832,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
+                                                className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
                                             >
                                                 {t('customer.pages.invoices.feedback.resetFilters')}
                                             </button>
@@ -772,14 +841,34 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </tr>
                             ) : (
                                 filteredInvoices.map((inv) => (
-                                    <tr key={inv.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
-                                        {/* Invoice # & Title */}
+                                    <tr key={inv.compositeId} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                                        {/* Invoice #, Source Badge & Title */}
                                         <td className="px-5 py-3.5">
                                             <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-mono font-semibold text-[#2D3F2C] bg-[#EFECE6] px-1.5 py-0.5 rounded text-[11px]" dir="ltr">
+                                                <div className="flex flex-wrap items-center gap-1.5">
+                                                    <span className="font-mono font-semibold text-[#037F8C] bg-[#EFECE6] px-1.5 py-0.5 rounded text-[11px]" dir="ltr">
                                                         {inv.invoiceNumber}
                                                     </span>
+                                                    {inv.source === 'crm' ? (
+                                                        <span
+                                                            className="inline-flex items-center gap-1 font-mono font-semibold px-1.5 py-0.5 rounded text-[10px] bg-[#FAF4E8] text-[#8C6D3B] border border-[#E9DFCB]"
+                                                            title={t('customer.pages.invoices.crmReadOnlyTooltip')}
+                                                        >
+                                                            <ShieldCheck className="w-2.5 h-2.5 text-[#8C6D3B]" />
+                                                            <span>{t('customer.pages.invoices.badgeCrm')}</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center font-mono font-semibold px-1.5 py-0.5 rounded text-[10px] bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
+                                                            <span>{t('customer.pages.invoices.badgeCustomer')}</span>
+                                                        </span>
+                                                    )}
+                                                    {inv.crmInvoiceType && (
+                                                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[#857E74] border border-[#E5E0D8]">
+                                                            {inv.crmInvoiceType === 'proforma'
+                                                                ? t('customer.pages.invoices.proformaBadge')
+                                                                : t('customer.pages.invoices.finalTaxBadge')}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <span className="font-semibold text-[#0D0D0D] mt-1 line-clamp-1">
                                                     {isRtl ? inv.titleAr : inv.titleEn}
@@ -825,7 +914,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         </td>
 
                                         {/* Paid */}
-                                        <td className="px-5 py-3.5 font-mono text-[#265938] font-medium">
+                                        <td className="px-5 py-3.5 font-mono text-[#037F8C] font-medium">
                                             {formatCurrency(inv.paidAmount)}
                                         </td>
 
@@ -836,14 +925,14 @@ export const CustomerInvoicesPage: React.FC = () => {
                                                     {formatCurrency(inv.balanceDue)}
                                                 </span>
                                             ) : (
-                                                <span className="text-[#265938]">0.00</span>
+                                                <span className="text-[#037F8C]">0.00</span>
                                             )}
                                         </td>
 
                                         {/* Status */}
                                         <td className="px-5 py-3.5">{getStatusBadge(inv.status)}</td>
 
-                                        {/* Actions */}
+                                        {/* Actions: View (all), Edit (customer only, lock badge for CRM) */}
                                         <td className="px-5 py-3.5 text-end">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <button
@@ -859,14 +948,6 @@ export const CustomerInvoicesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(inv)}
-                                                    title={t('customer.pages.invoices.table.edit')}
-                                                    className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -877,14 +958,14 @@ export const CustomerInvoicesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Invoice Details Modal with Payment Form */}
+            {/* Invoice Details Modal */}
             {viewingInvoice && (
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
                     <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-7 space-y-6 text-start">
                         {/* Header */}
                         <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-11 h-11 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-11 h-11 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <Receipt className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -892,9 +973,14 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         <h2 className="text-lg font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingInvoice.titleAr : viewingInvoice.titleEn}
                                         </h2>
-                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#2D3F2C] rounded-md font-semibold" dir="ltr">
+                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#037F8C] rounded-md font-semibold" dir="ltr">
                                             {viewingInvoice.invoiceNumber}
                                         </span>
+                                        {viewingInvoice.source === 'crm' && (
+                                            <span className="font-mono text-[10px] px-2 py-0.5 bg-[#FAF4E8] text-[#8C6D3B] border border-[#E9DFCB] rounded-md font-semibold">
+                                                {t('customer.pages.invoices.crmReadOnlyBadge')}
+                                            </span>
+                                        )}
                                     </div>
                                     <p className="text-xs text-[#857E74] mt-0.5">
                                         {isRtl ? viewingInvoice.titleEn : viewingInvoice.titleAr}
@@ -912,6 +998,21 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
+
+                        {/* CRM Read-Only Explanatory Banner */}
+                        {viewingInvoice.isReadOnly && (
+                            <div className="p-3.5 rounded-xl bg-[#FAF4E8] border border-[#E9DFCB] flex items-start gap-3 text-xs">
+                                <ShieldCheck className="w-4 h-4 text-[#8C6D3B] shrink-0 mt-0.5" />
+                                <div>
+                                    <span className="font-bold text-[#8C6D3B] block">
+                                        {t('customer.pages.invoices.crmNoticeTitle')}
+                                    </span>
+                                    <p className="text-[#6E6862] text-[11px] mt-0.5 leading-relaxed">
+                                        {t('customer.pages.invoices.crmNoticeDesc')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Company & Status Strip */}
                         <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
@@ -946,17 +1047,17 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </div>
                                 <div className="pt-2 border-t border-[#E5E0D8] flex items-center justify-between font-bold text-sm text-[#0D0D0D]">
                                     <span>{t('customer.pages.invoices.table.total')}</span>
-                                    <span className="text-[#2D3F2C]">{formatCurrency(viewingInvoice.total)}</span>
+                                    <span className="text-[#037F8C]">{formatCurrency(viewingInvoice.total)}</span>
                                 </div>
                                 <div className="pt-2 border-t border-[#E5E0D8] flex items-center justify-between text-xs font-semibold">
-                                    <span className="text-[#265938]">{t('customer.pages.invoices.table.paidAmount')}</span>
-                                    <span className="font-mono text-[#265938]">{formatCurrency(viewingInvoice.paidAmount)}</span>
+                                    <span className="text-[#037F8C]">{t('customer.pages.invoices.table.paidAmount')}</span>
+                                    <span className="font-mono text-[#037F8C]">{formatCurrency(viewingInvoice.paidAmount)}</span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs font-bold">
                                     <span className={viewingInvoice.balanceDue > 0 ? 'text-[#991B1B]' : 'text-[#857E74]'}>
                                         {t('customer.pages.invoices.table.balanceDue')}
                                     </span>
-                                    <span className={`font-mono text-sm ${viewingInvoice.balanceDue > 0 ? 'text-[#991B1B]' : 'text-[#265938]'}`}>
+                                    <span className={`font-mono text-sm ${viewingInvoice.balanceDue > 0 ? 'text-[#991B1B]' : 'text-[#037F8C]'}`}>
                                         {formatCurrency(viewingInvoice.balanceDue)}
                                     </span>
                                 </div>
@@ -979,7 +1080,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                             </div>
                             <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
                                 <span className="text-[#857E74] block">{t('customer.pages.invoices.table.linkedContract')}</span>
-                                <span className="font-mono font-bold text-[#2D3F2C] mt-0.5 block" dir="ltr">
+                                <span className="font-mono font-bold text-[#037F8C] mt-0.5 block" dir="ltr">
                                     {viewingInvoice.linkedContractNumber || '—'}
                                 </span>
                             </div>
@@ -995,101 +1096,12 @@ export const CustomerInvoicesPage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Payment Recording Module inside Details */}
-                        {viewingInvoice.balanceDue > 0 && viewingInvoice.status !== 'cancelled' && (
-                            <div className="border border-[#BFAB93]/40 rounded-xl p-4 bg-[#FAF8F5]">
-                                {!isPaymentFormOpen ? (
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-xs font-bold text-[#0D0D0D]">
-                                                {t('customer.pages.invoices.details.recordPayment')}
-                                            </p>
-                                            <p className="text-[11px] text-[#857E74] mt-0.5">
-                                                {t('customer.pages.invoices.details.recordPaymentDesc')}
-                                            </p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setIsPaymentFormOpen(true);
-                                                setPaymentAmount(viewingInvoice.balanceDue);
-                                                setPaymentError(null);
-                                            }}
-                                            className="px-3.5 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                                        >
-                                            {t('customer.pages.invoices.details.recordPayment')}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <form onSubmit={handleRecordPayment} className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-[#0D0D0D]">
-                                                {t('customer.pages.invoices.details.recordPayment')}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsPaymentFormOpen(false)}
-                                                className="text-xs text-[#857E74] hover:text-[#0D0D0D]"
-                                            >
-                                                {t('customer.pages.invoices.modal.cancel')}
-                                            </button>
-                                        </div>
+                        {/* Payment Recording Module (Disabled in view-only Customer Portal) */}
+                        {!viewingInvoice.isReadOnly && null}
 
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                                {t('customer.pages.invoices.details.paymentAmount')} *
-                                            </label>
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    required
-                                                    min={1}
-                                                    max={viewingInvoice.balanceDue}
-                                                    step={100}
-                                                    value={paymentAmount}
-                                                    onChange={(e) => {
-                                                        setPaymentAmount(Number(e.target.value));
-                                                        setPaymentError(null);
-                                                    }}
-                                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPaymentAmount(viewingInvoice.balanceDue)}
-                                                    className="shrink-0 px-2.5 py-2 rounded-lg bg-white border border-[#E5E0D8] text-[11px] font-semibold text-[#2D3F2C] hover:bg-[#FAF8F5]"
-                                                >
-                                                    {t('customer.pages.invoices.details.payFullBalance')}
-                                                </button>
-                                            </div>
-                                            {paymentError && (
-                                                <p className="text-[11px] text-[#991B1B] font-medium mt-1">
-                                                    {paymentError}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="flex justify-end gap-2 pt-2">
-                                            <button
-                                                type="submit"
-                                                className="px-4 py-1.5 rounded-lg bg-[#265938] hover:bg-[#1E462C] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                                            >
-                                                {t('customer.pages.invoices.details.confirmPayment')}
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Footer */}
+                        {/* Footer: View Only in Customer Portal */}
                         <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-[#F0ECE6]">
-                            <button
-                                type="button"
-                                onClick={() => handleStartEdit(viewingInvoice)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                            >
-                                {t('customer.pages.invoices.modal.editTitle')}
-                            </button>
+                            {!viewingInvoice.isReadOnly && null}
                             <button
                                 type="button"
                                 onClick={() => {
@@ -1105,7 +1117,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Add / Edit Invoice Modal */}
+            {/* Add / Edit Invoice Modal (Only for Customer Invoices) */}
             {(isAddModalOpen || editingInvoice) && (
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
                     <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl p-6 sm:p-7 space-y-6 text-start">
@@ -1148,7 +1160,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
                                         placeholder="مثال: فاتورة الدفعة الأولى"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1160,8 +1172,8 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         required
                                         value={formData.titleEn}
                                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
-                                        placeholder="e.g. Milestone 1 Tax Invoice"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        placeholder="e.g., Initial Phase Tax Invoice"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1169,12 +1181,12 @@ export const CustomerInvoicesPage: React.FC = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.invoices.modal.company')}
+                                        {t('customer.pages.invoices.modal.company')} *
                                     </label>
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -1185,61 +1197,23 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.invoices.modal.status')}
-                                    </label>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                status: e.target.value as CustomerInvoiceStatus,
-                                            })
-                                        }
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                                    >
-                                        <option value="draft">{t('customer.pages.invoices.statusDraft')}</option>
-                                        <option value="issued">{t('customer.pages.invoices.statusIssued')}</option>
-                                        <option value="partially_paid">{t('customer.pages.invoices.statusPartiallyPaid')}</option>
-                                        <option value="paid">{t('customer.pages.invoices.statusPaid')}</option>
-                                        <option value="overdue">{t('customer.pages.invoices.statusOverdue')}</option>
-                                        <option value="cancelled">{t('customer.pages.invoices.statusCancelled')}</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
                                         {t('customer.pages.invoices.modal.linkedContract')}
                                     </label>
                                     <select
                                         value={formData.linkedContractId}
                                         onChange={(e) => setFormData({ ...formData, linkedContractId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
-                                        {AVAILABLE_CONTRACTS.map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {isRtl ? c.numberAr : c.number}
+                                        {AVAILABLE_CONTRACTS.map((cnt) => (
+                                            <option key={cnt.id} value={cnt.id}>
+                                                {isRtl ? cnt.numberAr : cnt.number}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
-                                        {t('customer.pages.invoices.modal.paidAmount')}
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        step={500}
-                                        value={formData.paidAmount}
-                                        onChange={(e) => setFormData({ ...formData, paidAmount: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                                    />
-                                </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
                                     <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
                                         {t('customer.pages.invoices.modal.subtotal')} *
@@ -1247,11 +1221,11 @@ export const CustomerInvoicesPage: React.FC = () => {
                                     <input
                                         type="number"
                                         required
-                                        min={0}
+                                        min={100}
                                         step={1000}
                                         value={formData.subtotal}
                                         onChange={(e) => setFormData({ ...formData, subtotal: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1264,8 +1238,25 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         step={500}
                                         value={formData.discount}
                                         onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-semibold text-[#857E74] mb-1">
+                                        {t('customer.pages.invoices.modal.status')}
+                                    </label>
+                                    <select
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                                    >
+                                        <option value="draft">{t('customer.pages.invoices.statusDraft')}</option>
+                                        <option value="issued">{t('customer.pages.invoices.statusIssued')}</option>
+                                        <option value="partially_paid">{t('customer.pages.invoices.statusPartiallyPaid')}</option>
+                                        <option value="paid">{t('customer.pages.invoices.statusPaid')}</option>
+                                        <option value="overdue">{t('customer.pages.invoices.statusOverdue')}</option>
+                                        <option value="cancelled">{t('customer.pages.invoices.statusCancelled')}</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -1277,11 +1268,11 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </div>
                                 <div>
                                     <span className="text-[#857E74] block text-[11px]">{t('customer.pages.invoices.table.total')}</span>
-                                    <span className="font-mono font-bold text-sm text-[#2D3F2C]">{formatCurrency(calculatedTotal)}</span>
+                                    <span className="font-mono font-bold text-sm text-[#037F8C]">{formatCurrency(calculatedTotal)}</span>
                                 </div>
                                 <div>
                                     <span className="text-[#857E74] block text-[11px]">{t('customer.pages.invoices.table.balanceDue')}</span>
-                                    <span className={`font-mono font-bold text-sm ${calculatedBalanceDue > 0 ? 'text-[#991B1B]' : 'text-[#265938]'}`}>
+                                    <span className={`font-mono font-bold text-sm ${calculatedBalanceDue > 0 ? 'text-[#991B1B]' : 'text-[#037F8C]'}`}>
                                         {formatCurrency(calculatedBalanceDue)}
                                     </span>
                                 </div>
@@ -1297,7 +1288,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         required
                                         value={formData.issueDate}
                                         onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1309,7 +1300,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                         required
                                         value={formData.dueDate}
                                         onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1323,7 +1314,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Payment reference, bank wire directions, tax receipt serial..."
-                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                 />
                             </div>
 
@@ -1341,7 +1332,7 @@ export const CustomerInvoicesPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.invoices.modal.save')}
                                 </button>

@@ -79,7 +79,7 @@ export const CrmCommercialDeleteModal: React.FC<CrmCommercialDeleteModalProps> =
                         </div>
                         <div className="space-y-1">
                             <span
-                                className="inline-block px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                className="inline-block px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {recordCode}

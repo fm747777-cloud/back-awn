@@ -74,12 +74,12 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {record.code}
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 text-[#2D3F2C] text-xs font-semibold">
+                            <span className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 text-[#037F8C] text-xs font-semibold">
                                 {t(`crm.commercial.deals.stages.${record.stage}`)} (
                                 {record.probability}%)
                             </span>
@@ -112,7 +112,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     {/* Quick Stage Switcher & Quotation CTA */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                                 <TrendingUp size={14} />
                                 {t('crm.commercial.deals.viewDrawer.quickStageTitle')}
                             </h3>
@@ -120,7 +120,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => onCreateQuotationForDeal(record)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-[11px] font-semibold cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-[11px] font-semibold cursor-pointer"
                                 >
                                     <PlusCircle size={12} />
                                     {t(
@@ -151,7 +151,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     {/* Valuation & Customer Summary */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-3">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Building2 size={14} className="text-[#2D3F2C]" />
+                            <Building2 size={14} className="text-[#037F8C]" />
                             <span>{t('crm.commercial.deals.viewDrawer.title')}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-xs">
@@ -170,7 +170,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                                     {t('crm.commercial.deals.form.expectedValueLabel')}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C]"
+                                    className="font-mono font-bold text-[#037F8C]"
                                     dir="ltr"
                                 >
                                     {record.expectedValue.toLocaleString()} SAR
@@ -236,7 +236,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     {/* Linked Quotations */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <FileText size={14} className="text-[#2D3F2C]" />
+                            <FileText size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.deals.viewDrawer.linkedQuotations', {
                                     count: dealQuotations.length,
@@ -256,7 +256,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                                     >
                                         <div>
                                             <span
-                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                className="font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {q.code}
@@ -282,7 +282,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     {/* Linked Contracts */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <FileCheck2 size={14} className="text-[#2D3F2C]" />
+                            <FileCheck2 size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.deals.viewDrawer.linkedContracts', {
                                     count: dealContracts.length,
@@ -302,7 +302,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                                     >
                                         <div>
                                             <span
-                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                className="font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {c.contractNumber}
@@ -328,7 +328,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     {/* Linked Invoices */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-white p-4 space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-bold text-[#0D0D0D]">
-                            <Receipt size={14} className="text-[#2D3F2C]" />
+                            <Receipt size={14} className="text-[#037F8C]" />
                             <span>
                                 {t('crm.commercial.deals.viewDrawer.linkedInvoices', {
                                     count: dealInvoices.length,
@@ -348,7 +348,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                                     >
                                         <div>
                                             <span
-                                                className="font-mono font-bold text-[#2D3F2C]"
+                                                className="font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {inv.invoiceNumber}
@@ -385,7 +385,7 @@ export const DealViewDrawer: React.FC<DealViewDrawerProps> = ({
                     <button
                         type="button"
                         onClick={() => onEdit(record)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Edit3 size={14} />
                         {t('crm.commercial.common.edit')}

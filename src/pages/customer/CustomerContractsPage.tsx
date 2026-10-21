@@ -161,14 +161,10 @@ const INITIAL_CONTRACTS: CustomerContractItem[] = [
     },
 ];
 
-const AVAILABLE_COMPANIES = [
-    { id: 'cmp-1', en: 'Al-Wataniya Logistics Co.', ar: 'الشركة الوطنية للخدمات اللوجستية' },
-    { id: 'cmp-2', en: 'Riyadh Tech Solutions', ar: 'شركة حلول الرياض التقنية' },
-    { id: 'cmp-3', en: 'Gulf Energy Trading Corp', ar: 'مؤسسة طاقة الخليج التجارية' },
-    { id: 'cmp-4', en: 'Najm Financial Advisory Group', ar: 'مجموعة نجم للاستشارات المالية' },
-    { id: 'cmp-5', en: 'Arabian Horizon Contracting', ar: 'شركة الأفق العربي للمقاولات' },
-    { id: 'cmp-6', en: 'Modern Infrastructure LLC', ar: 'شركة البنية التحتية الحديثة' },
-];
+import { CUSTOMER_COMPANIES_SIMPLE_OPTIONS } from './customerMockData';
+
+const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
+
 
 const AVAILABLE_QUOTATIONS = [
     { id: 'none', number: '— None / Direct Contract —', numberAr: '— بدون عرض سعر / عقد مباشر —', companyId: '' },
@@ -401,7 +397,7 @@ export const CustomerContractsPage: React.FC = () => {
         switch (status) {
             case 'active':
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{t('customer.pages.contracts.statusActive')}</span>
                     </span>
@@ -442,7 +438,7 @@ export const CustomerContractsPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -457,7 +453,7 @@ export const CustomerContractsPage: React.FC = () => {
                                 {t('customer.pages.contracts.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-CNT
@@ -472,14 +468,10 @@ export const CustomerContractsPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.contracts.addContract')}</span>
-                        </button>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                            <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                            <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                        </span>
                     </div>
                 </div>
 
@@ -490,7 +482,7 @@ export const CustomerContractsPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.contracts.kpis.totalContracts')}
                             </span>
-                            <FileCheck className="w-4 h-4 text-[#2D3F2C]" />
+                            <FileCheck className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -512,10 +504,10 @@ export const CustomerContractsPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.contracts.kpis.activeContracts')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <div className="flex items-baseline gap-2 mt-2">
-                            <p className="text-2xl font-bold text-[#265938]">{kpis.activeCount}</p>
+                            <p className="text-2xl font-bold text-[#037F8C]">{kpis.activeCount}</p>
                             <span className="text-xs text-[#857E74] font-mono">
                                 ({formatCurrency(kpis.activeValue)})
                             </span>
@@ -524,7 +516,7 @@ export const CustomerContractsPage: React.FC = () => {
 
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.contracts.kpis.pendingSignature')}
                             </span>
                             <Clock className="w-4 h-4 text-[#2A4365]" />
@@ -544,7 +536,7 @@ export const CustomerContractsPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.contracts.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -563,7 +555,7 @@ export const CustomerContractsPage: React.FC = () => {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
                         aria-label={t('customer.pages.contracts.statusAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.contracts.statusAll')}</option>
                         <option value="draft">{t('customer.pages.contracts.statusDraft')}</option>
@@ -613,7 +605,7 @@ export const CustomerContractsPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
+                                                className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline"
                                             >
                                                 {t('customer.pages.contracts.feedback.resetFilters')}
                                             </button>
@@ -627,7 +619,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         <td className="px-5 py-3.5">
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-mono font-semibold text-[#2D3F2C] bg-[#EFECE6] px-1.5 py-0.5 rounded text-[11px]" dir="ltr">
+                                                    <span className="font-mono font-semibold text-[#037F8C] bg-[#EFECE6] px-1.5 py-0.5 rounded text-[11px]" dir="ltr">
                                                         {c.contractNumber}
                                                     </span>
                                                 </div>
@@ -686,14 +678,6 @@ export const CustomerContractsPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(c)}
-                                                    title={t('customer.pages.contracts.table.edit')}
-                                                    className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -711,7 +695,7 @@ export const CustomerContractsPage: React.FC = () => {
                         {/* Header */}
                         <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-11 h-11 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-11 h-11 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <FileCheck className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -719,7 +703,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         <h2 className="text-lg font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingContract.titleAr : viewingContract.titleEn}
                                         </h2>
-                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#2D3F2C] rounded-md font-semibold" dir="ltr">
+                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#037F8C] rounded-md font-semibold" dir="ltr">
                                             {viewingContract.contractNumber}
                                         </span>
                                     </div>
@@ -754,7 +738,7 @@ export const CustomerContractsPage: React.FC = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                                 <span className="text-[#857E74] block">{t('customer.pages.contracts.table.contractValue')}</span>
-                                <span className="font-mono font-bold text-base text-[#2D3F2C] mt-1 block">
+                                <span className="font-mono font-bold text-base text-[#037F8C] mt-1 block">
                                     {formatCurrency(viewingContract.contractValue)}
                                 </span>
                             </div>
@@ -792,46 +776,8 @@ export const CustomerContractsPage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Fast Status Transition Buttons */}
-                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#F0ECE6]">
-                            {viewingContract.status !== 'active' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickStatusChange(viewingContract.id, 'active')}
-                                    className="px-3 py-1.5 rounded-lg bg-[#EAF3EC] hover:bg-[#D5EAD9] text-[#265938] text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.contracts.details.activate')}
-                                </button>
-                            )}
-                            {viewingContract.status !== 'pending_signature' && viewingContract.status === 'draft' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickStatusChange(viewingContract.id, 'pending_signature')}
-                                    className="px-3 py-1.5 rounded-lg bg-[#EAEFF8] hover:bg-[#DCE6F5] text-[#2A4365] text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.contracts.details.sendForSignature')}
-                                </button>
-                            )}
-                            {viewingContract.status !== 'terminated' && viewingContract.status !== 'expired' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickStatusChange(viewingContract.id, 'terminated')}
-                                    className="px-3 py-1.5 rounded-lg bg-[#FDF2F2] hover:bg-[#FEE2E2] text-[#991B1B] text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.contracts.details.terminate')}
-                                </button>
-                            )}
-                        </div>
-
                         {/* Footer */}
-                        <div className="pt-2 flex items-center justify-end gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => handleStartEdit(viewingContract)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                            >
-                                {t('customer.pages.contracts.modal.editTitle')}
-                            </button>
+                        <div className="pt-2 flex items-center justify-end">
                             <button
                                 type="button"
                                 onClick={() => setViewingContract(null)}
@@ -887,7 +833,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
                                         placeholder="مثال: اتفاقية تقديم خدمات الحراسة"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -900,7 +846,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         value={formData.titleEn}
                                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
                                         placeholder="e.g. Master Services Agreement"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -913,7 +859,7 @@ export const CustomerContractsPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -934,7 +880,7 @@ export const CustomerContractsPage: React.FC = () => {
                                                 status: e.target.value as CustomerContractStatus,
                                             })
                                         }
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         <option value="draft">{t('customer.pages.contracts.statusDraft')}</option>
                                         <option value="pending_signature">{t('customer.pages.contracts.statusPendingSignature')}</option>
@@ -953,7 +899,7 @@ export const CustomerContractsPage: React.FC = () => {
                                     <select
                                         value={formData.linkedQuotationId}
                                         onChange={(e) => setFormData({ ...formData, linkedQuotationId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_QUOTATIONS.map((q) => (
                                             <option key={q.id} value={q.id}>
@@ -973,7 +919,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         step={1000}
                                         value={formData.contractValue}
                                         onChange={(e) => setFormData({ ...formData, contractValue: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -988,7 +934,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         required
                                         value={formData.startDate}
                                         onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -1000,7 +946,7 @@ export const CustomerContractsPage: React.FC = () => {
                                         required
                                         value={formData.endDate}
                                         onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1014,7 +960,7 @@ export const CustomerContractsPage: React.FC = () => {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="SLA details, scope inclusions, penalty clauses..."
-                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                 />
                             </div>
 
@@ -1032,7 +978,7 @@ export const CustomerContractsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.contracts.modal.save')}
                                 </button>

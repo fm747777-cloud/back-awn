@@ -783,7 +783,7 @@ export const RequestsPage = () => {
             {/* Page Header */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] border border-[#2D3F2C]/15 text-[#2D3F2C] flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] border border-[#037F8C]/15 text-[#037F8C] flex items-center justify-center shrink-0">
                         <ClipboardList size={20} />
                     </div>
                     <div>
@@ -811,7 +811,7 @@ export const RequestsPage = () => {
                     <button
                         type="button"
                         onClick={scrollToCreateForm}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223021] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223021] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         <span>{t('request.requests.createNewRequest')}</span>
@@ -821,7 +821,7 @@ export const RequestsPage = () => {
 
             {/* Feedback Banner */}
             {feedbackMessage && (
-                <div className="bg-[#EAF3EC] border border-[#2D6A4F]/30 text-[#2D3F2C] px-4 py-3 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+                <div className="bg-[#EAF3EC] border border-[#2D6A4F]/30 text-[#037F8C] px-4 py-3 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
                     <div className="flex items-center gap-2.5 text-xs font-semibold">
                         <CheckCircle2 size={16} className="text-[#2D6A4F] shrink-0" />
                         <span>{feedbackMessage}</span>
@@ -829,7 +829,7 @@ export const RequestsPage = () => {
                     <button
                         type="button"
                         onClick={() => setFeedbackMessage(null)}
-                        className="text-[#2D3F2C]/70 hover:text-[#2D3F2C] p-1 rounded-lg cursor-pointer"
+                        className="text-[#037F8C]/70 hover:text-[#037F8C] p-1 rounded-lg cursor-pointer"
                     >
                         <X size={14} />
                     </button>
@@ -872,7 +872,7 @@ export const RequestsPage = () => {
                         <select
                             value={selectedOwnerId}
                             onChange={(e) => handleOwnerFilterChange(e.target.value)}
-                            className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t('request.requests.topFilter.selectBusinessOwners')}
@@ -892,7 +892,7 @@ export const RequestsPage = () => {
                         <select
                             value={selectedCompanyId}
                             onChange={(e) => handleCompanyFilterChange(e.target.value)}
-                            className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="all">
                                 {t('request.requests.topFilter.selectCompanies')}
@@ -921,7 +921,7 @@ export const RequestsPage = () => {
                             {t('request.requests.summary.allRequestsSub')}
                         </p>
                     </div>
-                    <div className="w-11 h-11 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-[#037F8C] flex items-center justify-center shrink-0">
                         <ClipboardList size={20} />
                     </div>
                 </div>
@@ -985,7 +985,7 @@ export const RequestsPage = () => {
             >
                 <div className="px-6 py-4 bg-[#FAF8F5] border-b border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] text-white flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-lg bg-[#037F8C] text-white flex items-center justify-center shrink-0">
                             <Plus size={18} />
                         </div>
                         <div>
@@ -1037,7 +1037,7 @@ export const RequestsPage = () => {
                                                 : t('request.requests.createForm.crNotProvided')}
                                         </span>
                                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white border border-[#E5E0D8] text-[#6E6862]">
-                                            <Hash size={11} className="text-[#2D3F2C]" />
+                                            <Hash size={11} className="text-[#037F8C]" />
                                             {selectedCreateBusinessObj
                                                 ? `${t('request.requests.createForm.unifiedPrefix')}: ${getCompanyUnifiedNumber(selectedCreateBusinessObj.id)}`
                                                 : t('request.requests.createForm.unifiedNotProvided')}
@@ -1061,7 +1061,7 @@ export const RequestsPage = () => {
                                                 onClick={() => setCreateRequestType(rt)}
                                                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                                                     active
-                                                        ? 'bg-[#2D3F2C] text-white shadow-2xs'
+                                                        ? 'bg-[#037F8C] text-white shadow-2xs'
                                                         : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5]'
                                                 }`}
                                             >
@@ -1091,7 +1091,7 @@ export const RequestsPage = () => {
                                         className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
                                             createErrors.customer
                                                 ? 'border-[#EF4444]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     >
                                         <option value="">
@@ -1122,7 +1122,7 @@ export const RequestsPage = () => {
                                         className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
                                             createErrors.business
                                                 ? 'border-[#EF4444]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     >
                                         <option value="">
@@ -1159,7 +1159,7 @@ export const RequestsPage = () => {
                                         className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
                                             createErrors.service
                                                 ? 'border-[#EF4444]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
+                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
                                         }`}
                                     >
                                         <option value="">
@@ -1202,7 +1202,7 @@ export const RequestsPage = () => {
                                         onChange={(e) =>
                                             setCreatePriority(e.target.value as RequestPriority)
                                         }
-                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                                     >
                                         {REQUEST_PRIORITIES.map((p) => (
                                             <option key={p} value={p}>
@@ -1221,7 +1221,7 @@ export const RequestsPage = () => {
                                         type="date"
                                         value={createDueDateIso}
                                         onChange={(e) => setCreateDueDateIso(e.target.value)}
-                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                                     />
                                 </div>
 
@@ -1237,7 +1237,7 @@ export const RequestsPage = () => {
                                         placeholder={t(
                                             'request.requests.createForm.descriptionPlaceholder'
                                         )}
-                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#6E6862]/70 focus:outline-none focus:border-[#2D3F2C]"
+                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#6E6862]/70 focus:outline-none focus:border-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1254,7 +1254,7 @@ export const RequestsPage = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223021] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223021] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                             >
                                 <Sparkles size={14} />
                                 <span>{t('request.requests.createForm.submitRequest')}</span>
@@ -1273,7 +1273,7 @@ export const RequestsPage = () => {
                             <h2 className="text-base font-bold text-[#0D0D0D]">
                                 {t('request.requests.table.allRequestsHeading')}
                             </h2>
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#EAF3EC] text-[#2D3F2C]">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#EAF3EC] text-[#037F8C]">
                                 {totalEntries}
                             </span>
                         </div>
@@ -1293,7 +1293,7 @@ export const RequestsPage = () => {
                                         setCurrentPage(1);
                                     }}
                                     placeholder={t('request.requests.filters.searchPlaceholder')}
-                                    className="w-full h-9 ps-9 pe-8 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#6E6862]/70 focus:outline-none focus:border-[#2D3F2C]"
+                                    className="w-full h-9 ps-9 pe-8 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#6E6862]/70 focus:outline-none focus:border-[#037F8C]"
                                 />
                                 {searchQuery && (
                                     <button
@@ -1317,7 +1317,7 @@ export const RequestsPage = () => {
                                         setPageSize(Number(e.target.value));
                                         setCurrentPage(1);
                                     }}
-                                    className="h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                    className="h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                                 >
                                     {PAGE_SIZE_OPTIONS.map((size) => (
                                         <option key={size} value={size}>
@@ -1340,7 +1340,7 @@ export const RequestsPage = () => {
                             <select
                                 value={selectedOwnerId}
                                 onChange={(e) => handleOwnerFilterChange(e.target.value)}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">{t('request.requests.filters.allOwners')}</option>
                                 {REQUEST_BUSINESS_OWNERS.map((o) => (
@@ -1359,7 +1359,7 @@ export const RequestsPage = () => {
                             <select
                                 value={selectedCompanyId}
                                 onChange={(e) => handleCompanyFilterChange(e.target.value)}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">
                                     {t('request.requests.filters.allBusinesses')}
@@ -1383,7 +1383,7 @@ export const RequestsPage = () => {
                                     setServiceGroupFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">
                                     {t('request.requests.filters.allServiceGroups')}
@@ -1407,7 +1407,7 @@ export const RequestsPage = () => {
                                     setAssignmentStatusFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">
                                     {t('request.requests.filters.allAssignments')}
@@ -1432,7 +1432,7 @@ export const RequestsPage = () => {
                                     setManagerFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">
                                     {t('request.requests.filters.allManagers')}
@@ -1459,7 +1459,7 @@ export const RequestsPage = () => {
                                     setPriorityFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">
                                     {t('request.requests.filters.allPriorities')}
@@ -1483,7 +1483,7 @@ export const RequestsPage = () => {
                                     setStatusFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">
                                     {t('request.requests.filters.allStatuses')}
@@ -1507,7 +1507,7 @@ export const RequestsPage = () => {
                                     setTypeFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             >
                                 <option value="all">{t('request.requests.filters.allTypes')}</option>
                                 {REQUEST_TYPES.map((rt) => (
@@ -1530,7 +1530,7 @@ export const RequestsPage = () => {
                                     setDateFromFilter(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             />
                         </div>
 
@@ -1547,7 +1547,7 @@ export const RequestsPage = () => {
                                         setDateToFilter(e.target.value);
                                         setCurrentPage(1);
                                     }}
-                                    className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                    className="w-full h-9 px-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                                 />
                             </div>
                             <button
@@ -1640,7 +1640,7 @@ export const RequestsPage = () => {
                                             className="hover:bg-[#FAF8F5]/80 transition-colors"
                                         >
                                             {/* ID */}
-                                            <td className="py-3.5 px-4 font-bold text-[#2D3F2C] whitespace-nowrap tabular-nums">
+                                            <td className="py-3.5 px-4 font-bold text-[#037F8C] whitespace-nowrap tabular-nums">
                                                 #{rec.id}
                                             </td>
 
@@ -1649,7 +1649,7 @@ export const RequestsPage = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => openViewDrawer(rec)}
-                                                    className="font-bold text-[#0D0D0D] hover:text-[#2D3F2C] text-start line-clamp-1 cursor-pointer"
+                                                    className="font-bold text-[#0D0D0D] hover:text-[#037F8C] text-start line-clamp-1 cursor-pointer"
                                                     title={displayTitle}
                                                 >
                                                     {displayTitle}
@@ -1759,7 +1759,7 @@ export const RequestsPage = () => {
                                                         type="button"
                                                         onClick={() => openViewDrawer(rec)}
                                                         title={t('request.requests.actions.viewDetails')}
-                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#EAF3EC] transition-colors cursor-pointer"
+                                                        className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#037F8C] hover:bg-[#EAF3EC] transition-colors cursor-pointer"
                                                     >
                                                         <Eye size={15} />
                                                     </button>
@@ -1836,7 +1836,7 @@ export const RequestsPage = () => {
                                 onClick={() => setCurrentPage(pageNum)}
                                 className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                                     pageNum === safePage
-                                        ? 'bg-[#2D3F2C] text-white'
+                                        ? 'bg-[#037F8C] text-white'
                                         : 'bg-white border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#FAF8F5]'
                                 }`}
                             >
@@ -1864,7 +1864,7 @@ export const RequestsPage = () => {
                         {/* Drawer Header */}
                         <div className="p-6 bg-[#FAF8F5] border-b border-[#E5E0D8] flex items-start justify-between gap-4 sticky top-0 z-10">
                             <div>
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#EAF3EC] text-[#2D3F2C] text-[11px] font-bold mb-1.5">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#EAF3EC] text-[#037F8C] text-[11px] font-bold mb-1.5">
                                     #{activeRequest.id}
                                 </span>
                                 <h2 className="text-base font-bold text-[#0D0D0D]">
@@ -2030,7 +2030,7 @@ export const RequestsPage = () => {
                                         <p className="text-[11px] font-semibold text-[#6E6862] mt-2">
                                             {t('request.requests.drawer.selectedService')}
                                         </p>
-                                        <p className="font-medium text-[#2D3F2C] mt-0.5">
+                                        <p className="font-medium text-[#037F8C] mt-0.5">
                                             {isRtl
                                                 ? activeRequest.serviceNameAr ||
                                                   activeRequest.serviceName
@@ -2066,7 +2066,7 @@ export const RequestsPage = () => {
                                                 <p className="text-[11px] font-semibold text-[#6E6862]">
                                                     {t('request.requests.drawer.operationalTask')}
                                                 </p>
-                                                <p className="font-bold text-[#2D3F2C] mt-0.5">
+                                                <p className="font-bold text-[#037F8C] mt-0.5">
                                                     {activeRequest.operationalTaskId ||
                                                         t(
                                                             'request.requests.drawer.noOperationalTask'
@@ -2082,7 +2082,7 @@ export const RequestsPage = () => {
                                                         )}&requestId=${encodeURIComponent(activeRequest.id)}`
                                                     )
                                                 }
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EAF3EC] text-[#2D3F2C] text-[11px] font-semibold hover:bg-[#D8E9DC] cursor-pointer"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EAF3EC] text-[#037F8C] text-[11px] font-semibold hover:bg-[#D8E9DC] cursor-pointer"
                                             >
                                                 <span>
                                                     {t(
@@ -2112,7 +2112,7 @@ export const RequestsPage = () => {
                                     <button
                                         type="button"
                                         onClick={() => openEditDrawer(activeRequest)}
-                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
                                     >
                                         <Edit3 size={14} />
                                         <span>{t('request.requests.actions.editRequest')}</span>
@@ -2330,7 +2330,7 @@ export const RequestsPage = () => {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
+                                        className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
                                     >
                                         {t('request.requests.drawer.saveChanges')}
                                     </button>
@@ -2446,7 +2446,7 @@ export const RequestsPage = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
                             >
                                 {t('request.requests.assignModal.confirm')}
                             </button>
@@ -2526,7 +2526,7 @@ export const RequestsPage = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223021] text-white text-xs font-semibold cursor-pointer"
                             >
                                 {t('request.requests.statusModal.confirm')}
                             </button>

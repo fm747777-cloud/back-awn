@@ -1,5 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     Landmark,
     HeartHandshake,
@@ -17,8 +19,6 @@ import {
     Pencil,
     Trash2,
     Power,
-    ChevronLeft,
-    ChevronRight,
     ShieldAlert,
     Copy,
     Check,
@@ -26,34 +26,24 @@ import {
     Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DataTable } from '../../components/DataTable';
+import {
+    CustomAddonForm,
+    type CustomAddonFormData,
+} from '../../components/ums/CustomAddonForm';
+import { umsApi } from '../../api/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
-    loadCustomAddons,
-    saveCustomAddons,
-    loadEmployees,
     generateNextCustomAddonCode,
     normalizeCustomAddonText,
     getCustomAddonLinkedEmployees,
-    checkCustomAddonDeletionEligibility,
     recordUmsAuditEvent,
     escapeSafeCsvCell,
     syncMasterEntityEmployeeCounts,
-    UMS_PAGE_SIZE_OPTIONS,
     type CustomAddonRecord,
     type CustomAddonType,
     type EmployeeRecord,
 } from './umsMockData';
-
-interface CustomAddonFormData {
-    code: string;
-    type: CustomAddonType;
-    nameEn: string;
-    nameAr: string;
-    descriptionEn: string;
-    descriptionAr: string;
-    gradeLevel: number;
-    status: 'Active' | 'Inactive';
-}
 
 const DEFAULT_FORM: CustomAddonFormData = {
     code: '',
@@ -72,10 +62,36 @@ export const UmsCustomAddonsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
     const currentUser = useAuthStore((state) => state.user);
+    const queryClient = useQueryClient();
 
-    // Master Data State
-    const [addons, setAddons] = useState<CustomAddonRecord[]>(() => loadCustomAddons());
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    // TanStack Query — Custom Addons & Employees via existing umsApi
+    const { data: addons = [] } = useQuery<CustomAddonRecord[]>({
+        queryKey: ['ums', 'custom-addons'],
+        queryFn: () => umsApi.listCustomAddons(),
+    });
+
+    const { data: employeesResult } = useQuery({
+        queryKey: ['ums', 'employees'],
+        queryFn: () => umsApi.listEmployees(),
+    });
+
+    const employees = useMemo<EmployeeRecord[]>(
+        () => employeesResult?.data ?? [],
+        [employeesResult]
+    );
+
+    const saveAddonsMutation = useMutation({
+        mutationFn: async (updated: CustomAddonRecord[]) => {
+            umsApi.saveCustomAddons(updated);
+            syncMasterEntityEmployeeCounts(employees);
+            return umsApi.listCustomAddons();
+        },
+        onSuccess: (nextAddons) => {
+            queryClient.setQueryData(['ums', 'custom-addons'], nextAddons);
+            queryClient.invalidateQueries({ queryKey: ['ums', 'custom-addons'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
 
     // Active Category Tab
     const [activeTab, setActiveTab] = useState<CustomAddonType>('bank');
@@ -146,26 +162,21 @@ export const UmsCustomAddonsPage: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [deletingAddon, viewingAddon, isCreateOpen, editingAddon]);
 
-    // Persist helper
-    const persistAddons = (updated: CustomAddonRecord[]) => {
-        saveCustomAddons(updated);
-        syncMasterEntityEmployeeCounts(employees);
-        setEmployees(loadEmployees());
-        setAddons(loadCustomAddons());
-    };
-
     // Category label helpers
-    const getCategoryLabel = (type: CustomAddonType) =>
-        t(`ums.customAddons.tabs.${type}`, {
-            defaultValue:
-                type === 'bank'
-                    ? 'Bank'
-                    : type === 'religion'
-                    ? 'Religion'
-                    : type === 'job_title'
-                    ? 'Job Title'
-                    : 'Job Grade',
-        });
+    const getCategoryLabel = useCallback(
+        (type: CustomAddonType) =>
+            t(`ums.customAddons.tabs.${type}`, {
+                defaultValue:
+                    type === 'bank'
+                        ? 'Bank'
+                        : type === 'religion'
+                        ? 'Religion'
+                        : type === 'job_title'
+                        ? 'Job Title'
+                        : 'Job Grade',
+            }),
+        [t]
+    );
 
     const getCategoryIcon = (type: CustomAddonType, size = 16) => {
         switch (type) {
@@ -180,7 +191,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
         }
     };
 
-    // Linked Employees Map by Addon ID (for modeled dependencies: bank, religion, job_grade)
+    // Linked Employees Map by Addon ID (for modeled dependencies: bank, religion, job_grade, job_title)
     const linkedEmployeesByAddonId = useMemo(() => {
         const map: Record<string, EmployeeRecord[]> = {};
         for (const addon of addons) {
@@ -240,12 +251,15 @@ export const UmsCustomAddonsPage: React.FC = () => {
         setPageByTab((prev) => ({ ...prev, [activeTab]: 1 }));
     };
 
-    const updateSelectedIds = (updater: (prevIds: string[]) => string[]) => {
-        setSelectedIdsByTab((prev) => ({
-            ...prev,
-            [activeTab]: updater(prev[activeTab]),
-        }));
-    };
+    const updateSelectedIds = useCallback(
+        (updater: (prevIds: string[]) => string[]) => {
+            setSelectedIdsByTab((prev) => ({
+                ...prev,
+                [activeTab]: updater(prev[activeTab]),
+            }));
+        },
+        [activeTab]
+    );
 
     // Dynamic KPI calculations for active tab
     const kpis = useMemo(() => {
@@ -329,7 +343,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
         paginatedRecords.length > 0 &&
         paginatedRecords.every((r) => selectedIds.includes(r.id));
 
-    const handleSelectAll = () => {
+    const handleSelectAll = useCallback(() => {
         if (isAllSelected) {
             updateSelectedIds((prev) =>
                 prev.filter((id) => !paginatedRecords.some((r) => r.id === id))
@@ -338,21 +352,27 @@ export const UmsCustomAddonsPage: React.FC = () => {
             const pageIds = paginatedRecords.map((r) => r.id);
             updateSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
         }
-    };
+    }, [isAllSelected, paginatedRecords, updateSelectedIds]);
 
-    const handleToggleSelect = (id: string) => {
-        updateSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
-    };
+    const handleToggleSelect = useCallback(
+        (id: string) => {
+            updateSelectedIds((prev) =>
+                prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+            );
+        },
+        [updateSelectedIds]
+    );
 
     // Copy Code
-    const handleCopyCode = (code: string) => {
-        navigator.clipboard?.writeText(code);
-        setCopiedCode(code);
-        toast.success(t('common.copiedToClipboard', { defaultValue: `Copied ${code}` }));
-        setTimeout(() => setCopiedCode(null), 2000);
-    };
+    const handleCopyCode = useCallback(
+        (code: string) => {
+            navigator.clipboard?.writeText(code);
+            setCopiedCode(code);
+            toast.success(t('common.copiedToClipboard', { defaultValue: `Copied ${code}` }));
+            setTimeout(() => setCopiedCode(null), 2000);
+        },
+        [t]
+    );
 
     // Reset Filters for Active Tab
     const handleResetFilters = () => {
@@ -381,7 +401,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
     };
 
     // Open Edit Drawer
-    const handleOpenEdit = (addon: CustomAddonRecord) => {
+    const handleOpenEdit = useCallback((addon: CustomAddonRecord) => {
         setIsCreateOpen(false);
         setEditingAddon(addon);
         setFormData({
@@ -395,7 +415,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
             status: addon.status,
         });
         setFormErrors({});
-    };
+    }, []);
 
     // Form Validation per Category
     const validateForm = (isEditing = false, currentId?: string): boolean => {
@@ -523,28 +543,36 @@ export const UmsCustomAddonsPage: React.FC = () => {
             updatedAt: todayIso,
         };
 
+        const parsed = umsApi.schemas.umsCustomAddonSchema.safeParse(newRecord);
+        if (!parsed.success) {
+            toast.error(parsed.error.issues[0]?.message || 'Validation failed');
+            return;
+        }
+
         const updated = [newRecord, ...addons];
-        persistAddons(updated);
+        saveAddonsMutation.mutate(updated, {
+            onSuccess: () => {
+                const catLabel = getCategoryLabel(categoryType);
+                recordUmsAuditEvent({
+                    action: 'CREATED',
+                    resource: 'Custom Addon',
+                    resourceId: newRecord.id,
+                    resourceName: newRecord.nameEn,
+                    detailsEn: `Created ${categoryType.replace('_', ' ')} custom addon ${newRecord.code} (${newRecord.nameEn}).`,
+                    detailsAr: `إضافة سجل جديد (${newRecord.code} - ${newRecord.nameAr}) ضمن فئة ${catLabel}.`,
+                    newState: `Code: ${newRecord.code} | Name: ${newRecord.nameEn} | Status: ${newRecord.status}`,
+                });
 
-        const catLabel = getCategoryLabel(categoryType);
-        recordUmsAuditEvent({
-            action: 'CREATED',
-            resource: 'Custom Addon',
-            resourceId: newRecord.id,
-            resourceName: newRecord.nameEn,
-            detailsEn: `Created ${categoryType.replace('_', ' ')} custom addon ${newRecord.code} (${newRecord.nameEn}).`,
-            detailsAr: `إضافة سجل جديد (${newRecord.code} - ${newRecord.nameAr}) ضمن فئة ${catLabel}.`,
-            newState: `Code: ${newRecord.code} | Name: ${newRecord.nameEn} | Status: ${newRecord.status}`,
+                toast.success(
+                    t('ums.customAddons.feedback.created', {
+                        defaultValue: `${catLabel} "${isRtl ? newRecord.nameAr : newRecord.nameEn}" created successfully.`,
+                        category: catLabel,
+                        name: isRtl ? newRecord.nameAr : newRecord.nameEn,
+                    })
+                );
+                setIsCreateOpen(false);
+            },
         });
-
-        toast.success(
-            t('ums.customAddons.feedback.created', {
-                defaultValue: `${catLabel} "${isRtl ? newRecord.nameAr : newRecord.nameEn}" created successfully.`,
-                category: catLabel,
-                name: isRtl ? newRecord.nameAr : newRecord.nameEn,
-            })
-        );
-        setIsCreateOpen(false);
     };
 
     // Handle Save Edit
@@ -575,66 +603,79 @@ export const UmsCustomAddonsPage: React.FC = () => {
             updatedAt: todayIso,
         };
 
+        const parsed = umsApi.schemas.umsCustomAddonSchema.safeParse(updatedRecord);
+        if (!parsed.success) {
+            toast.error(parsed.error.issues[0]?.message || 'Validation failed');
+            return;
+        }
+
         const updated = addons.map((a) => (a.id === editingAddon.id ? updatedRecord : a));
-        persistAddons(updated);
+        saveAddonsMutation.mutate(updated, {
+            onSuccess: () => {
+                const catLabel = getCategoryLabel(categoryType);
+                recordUmsAuditEvent({
+                    action: 'UPDATED',
+                    resource: 'Custom Addon',
+                    resourceId: updatedRecord.id,
+                    resourceName: updatedRecord.nameEn,
+                    detailsEn: `Updated ${categoryType.replace('_', ' ')} custom addon ${updatedRecord.code} (${updatedRecord.nameEn}).`,
+                    detailsAr: `تحديث بيانات السجل ${updatedRecord.code} (${updatedRecord.nameAr}) في فئة ${catLabel}.`,
+                    previousState: `Code: ${editingAddon.code} | Name: ${editingAddon.nameEn} | Status: ${editingAddon.status}`,
+                    newState: `Code: ${updatedRecord.code} | Name: ${updatedRecord.nameEn} | Status: ${updatedRecord.status}`,
+                });
 
-        const catLabel = getCategoryLabel(categoryType);
-        recordUmsAuditEvent({
-            action: 'UPDATED',
-            resource: 'Custom Addon',
-            resourceId: updatedRecord.id,
-            resourceName: updatedRecord.nameEn,
-            detailsEn: `Updated ${categoryType.replace('_', ' ')} custom addon ${updatedRecord.code} (${updatedRecord.nameEn}).`,
-            detailsAr: `تحديث بيانات السجل ${updatedRecord.code} (${updatedRecord.nameAr}) في فئة ${catLabel}.`,
-            previousState: `Code: ${editingAddon.code} | Name: ${editingAddon.nameEn} | Status: ${editingAddon.status}`,
-            newState: `Code: ${updatedRecord.code} | Name: ${updatedRecord.nameEn} | Status: ${updatedRecord.status}`,
+                toast.success(
+                    t('ums.customAddons.feedback.updated', {
+                        defaultValue: `${catLabel} "${isRtl ? updatedRecord.nameAr : updatedRecord.nameEn}" updated successfully.`,
+                        category: catLabel,
+                        name: isRtl ? updatedRecord.nameAr : updatedRecord.nameEn,
+                    })
+                );
+                setEditingAddon(null);
+            },
         });
-
-        toast.success(
-            t('ums.customAddons.feedback.updated', {
-                defaultValue: `${catLabel} "${isRtl ? updatedRecord.nameAr : updatedRecord.nameEn}" updated successfully.`,
-                category: catLabel,
-                name: isRtl ? updatedRecord.nameAr : updatedRecord.nameEn,
-            })
-        );
-        setEditingAddon(null);
     };
 
     // Single Record Status Toggle
-    const handleToggleStatus = (addon: CustomAddonRecord) => {
-        const nextStatus: 'Active' | 'Inactive' =
-            addon.status === 'Active' ? 'Inactive' : 'Active';
-        const todayIso = new Date().toISOString().slice(0, 10);
+    const handleToggleStatus = useCallback(
+        (addon: CustomAddonRecord) => {
+            const nextStatus: 'Active' | 'Inactive' =
+                addon.status === 'Active' ? 'Inactive' : 'Active';
+            const todayIso = new Date().toISOString().slice(0, 10);
 
-        const updated = addons.map((a) =>
-            a.id === addon.id ? { ...a, status: nextStatus, updatedAt: todayIso } : a
-        );
-        persistAddons(updated);
+            const updated = addons.map((a) =>
+                a.id === addon.id ? { ...a, status: nextStatus, updatedAt: todayIso } : a
+            );
+            saveAddonsMutation.mutate(updated, {
+                onSuccess: () => {
+                    const actionType = nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED';
+                    const catLabel = getCategoryLabel(addon.type);
 
-        const actionType = nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED';
-        const catLabel = getCategoryLabel(addon.type);
+                    recordUmsAuditEvent({
+                        action: actionType,
+                        resource: 'Custom Addon',
+                        resourceId: addon.id,
+                        resourceName: addon.nameEn,
+                        detailsEn: `Changed status of ${addon.type.replace('_', ' ')} ${addon.code} (${addon.nameEn}) to ${nextStatus}.`,
+                        detailsAr: `تغيير حالة السجل ${addon.code} (${addon.nameAr}) إلى ${nextStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
+                    });
 
-        recordUmsAuditEvent({
-            action: actionType,
-            resource: 'Custom Addon',
-            resourceId: addon.id,
-            resourceName: addon.nameEn,
-            detailsEn: `Changed status of ${addon.type.replace('_', ' ')} ${addon.code} (${addon.nameEn}) to ${nextStatus}.`,
-            detailsAr: `تغيير حالة السجل ${addon.code} (${addon.nameAr}) إلى ${nextStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
-        });
-
-        toast.success(
-            t('ums.customAddons.feedback.statusChanged', {
-                defaultValue: `${catLabel} "${isRtl ? addon.nameAr : addon.nameEn}" is now ${nextStatus}.`,
-                category: catLabel,
-                name: isRtl ? addon.nameAr : addon.nameEn,
-                status:
-                    nextStatus === 'Active'
-                        ? t('common.active', { defaultValue: 'Active' })
-                        : t('common.inactive', { defaultValue: 'Inactive' }),
-            })
-        );
-    };
+                    toast.success(
+                        t('ums.customAddons.feedback.statusChanged', {
+                            defaultValue: `${catLabel} "${isRtl ? addon.nameAr : addon.nameEn}" is now ${nextStatus}.`,
+                            category: catLabel,
+                            name: isRtl ? addon.nameAr : addon.nameEn,
+                            status:
+                                nextStatus === 'Active'
+                                    ? t('common.active', { defaultValue: 'Active' })
+                                    : t('common.inactive', { defaultValue: 'Inactive' }),
+                        })
+                    );
+                },
+            });
+        },
+        [addons, getCategoryLabel, isRtl, saveAddonsMutation, t]
+    );
 
     // Bulk Status Update
     const handleBulkStatusChange = (targetStatus: 'Active' | 'Inactive') => {
@@ -645,37 +686,39 @@ export const UmsCustomAddonsPage: React.FC = () => {
         const updated = addons.map((a) =>
             selectedSet.has(a.id) ? { ...a, status: targetStatus, updatedAt: todayIso } : a
         );
-        persistAddons(updated);
+        saveAddonsMutation.mutate(updated, {
+            onSuccess: () => {
+                const catLabel = getCategoryLabel(activeTab);
+                recordUmsAuditEvent({
+                    action: targetStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
+                    resource: 'Custom Addon',
+                    resourceId: 'BULK',
+                    resourceName: `${catLabel} (${selectedIds.length})`,
+                    detailsEn: `Bulk updated ${selectedIds.length} ${activeTab.replace('_', ' ')} record(s) to ${targetStatus}.`,
+                    detailsAr: `تحديث جماعي لحالة ${selectedIds.length} سجل في ${catLabel} إلى ${targetStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
+                });
 
-        const catLabel = getCategoryLabel(activeTab);
-        recordUmsAuditEvent({
-            action: targetStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-            resource: 'Custom Addon',
-            resourceId: 'BULK',
-            resourceName: `${catLabel} (${selectedIds.length})`,
-            detailsEn: `Bulk updated ${selectedIds.length} ${activeTab.replace('_', ' ')} record(s) to ${targetStatus}.`,
-            detailsAr: `تحديث جماعي لحالة ${selectedIds.length} سجل في ${catLabel} إلى ${targetStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
+                toast.success(
+                    t('ums.customAddons.feedback.bulkStatusChanged', {
+                        defaultValue: `Updated status for ${selectedIds.length} ${catLabel} record(s) to ${targetStatus}.`,
+                        count: selectedIds.length,
+                        category: catLabel,
+                        status:
+                            targetStatus === 'Active'
+                                ? t('common.active', { defaultValue: 'Active' })
+                                : t('common.inactive', { defaultValue: 'Inactive' }),
+                    })
+                );
+                updateSelectedIds(() => []);
+            },
         });
-
-        toast.success(
-            t('ums.customAddons.feedback.bulkStatusChanged', {
-                defaultValue: `Updated status for ${selectedIds.length} ${catLabel} record(s) to ${targetStatus}.`,
-                count: selectedIds.length,
-                category: catLabel,
-                status:
-                    targetStatus === 'Active'
-                        ? t('common.active', { defaultValue: 'Active' })
-                        : t('common.inactive', { defaultValue: 'Inactive' }),
-            })
-        );
-        updateSelectedIds(() => []);
     };
 
     // Delete Confirmation
     const handleConfirmDelete = () => {
         if (!deletingAddon) return;
 
-        const eligibility = checkCustomAddonDeletionEligibility(
+        const eligibility = umsApi.checkCustomAddonDeletionEligibility(
             deletingAddon.id,
             addons,
             employees
@@ -686,28 +729,31 @@ export const UmsCustomAddonsPage: React.FC = () => {
         }
 
         const updated = addons.filter((a) => a.id !== deletingAddon.id);
-        persistAddons(updated);
-        updateSelectedIds((prev) => prev.filter((id) => id !== deletingAddon.id));
+        saveAddonsMutation.mutate(updated, {
+            onSuccess: () => {
+                updateSelectedIds((prev) => prev.filter((id) => id !== deletingAddon.id));
 
-        const catLabel = getCategoryLabel(deletingAddon.type);
-        recordUmsAuditEvent({
-            action: 'DELETED',
-            resource: 'Custom Addon',
-            resourceId: deletingAddon.id,
-            resourceName: deletingAddon.nameEn,
-            detailsEn: `Deleted ${deletingAddon.type.replace('_', ' ')} custom addon ${deletingAddon.code} (${deletingAddon.nameEn}).`,
-            detailsAr: `حذف السجل ${deletingAddon.code} (${deletingAddon.nameAr}) من فئة ${catLabel}.`,
-            previousState: `Code: ${deletingAddon.code} | Name: ${deletingAddon.nameEn} | Status: ${deletingAddon.status}`,
+                const catLabel = getCategoryLabel(deletingAddon.type);
+                recordUmsAuditEvent({
+                    action: 'DELETED',
+                    resource: 'Custom Addon',
+                    resourceId: deletingAddon.id,
+                    resourceName: deletingAddon.nameEn,
+                    detailsEn: `Deleted ${deletingAddon.type.replace('_', ' ')} custom addon ${deletingAddon.code} (${deletingAddon.nameEn}).`,
+                    detailsAr: `حذف السجل ${deletingAddon.code} (${deletingAddon.nameAr}) من فئة ${catLabel}.`,
+                    previousState: `Code: ${deletingAddon.code} | Name: ${deletingAddon.nameEn} | Status: ${deletingAddon.status}`,
+                });
+
+                toast.success(
+                    t('ums.customAddons.feedback.deleted', {
+                        defaultValue: `${catLabel} "${isRtl ? deletingAddon.nameAr : deletingAddon.nameEn}" deleted successfully.`,
+                        category: catLabel,
+                        name: isRtl ? deletingAddon.nameAr : deletingAddon.nameEn,
+                    })
+                );
+                setDeletingAddon(null);
+            },
         });
-
-        toast.success(
-            t('ums.customAddons.feedback.deleted', {
-                defaultValue: `${catLabel} "${isRtl ? deletingAddon.nameAr : deletingAddon.nameEn}" deleted successfully.`,
-                category: catLabel,
-                name: isRtl ? deletingAddon.nameAr : deletingAddon.nameEn,
-            })
-        );
-        setDeletingAddon(null);
     };
 
     // Export CSV (either all filtered records in active tab or selected records)
@@ -847,7 +893,11 @@ export const UmsCustomAddonsPage: React.FC = () => {
     // Deletion eligibility for currently selected delete target
     const deletionEligibility = useMemo(() => {
         if (!deletingAddon) return null;
-        return checkCustomAddonDeletionEligibility(deletingAddon.id, addons, employees);
+        return umsApi.checkCustomAddonDeletionEligibility(
+            deletingAddon.id,
+            addons,
+            employees
+        );
     }, [deletingAddon, addons, employees]);
 
     // Linked employees for currently viewed addon
@@ -855,6 +905,401 @@ export const UmsCustomAddonsPage: React.FC = () => {
         if (!viewingAddon) return [];
         return linkedEmployeesByAddonId[viewingAddon.id] || [];
     }, [viewingAddon, linkedEmployeesByAddonId]);
+
+    // Dynamic DataTable columns per active category
+    const columns = useMemo<ColumnDef<any, CustomAddonRecord>[]>(() => {
+        const selectColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'select',
+            header: () => (
+                <div className="text-center">
+                    <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={handleSelectAll}
+                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
+                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                    />
+                </div>
+            ),
+            cell: ({ row }) => {
+                const item = row.original;
+                const isSelected = selectedIds.includes(item.id);
+                return (
+                    <div className="text-center">
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(item.id)}
+                            aria-label={`Select ${item.nameEn}`}
+                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                        />
+                    </div>
+                );
+            },
+        };
+
+        const codeColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'code',
+            header: () => t('ums.customAddons.columns.code', { defaultValue: 'Code' }),
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <div className="flex items-center gap-1.5 font-mono text-xs whitespace-nowrap">
+                        <span
+                            className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-semibold text-[#037F8C]"
+                            dir="ltr"
+                        >
+                            {item.code}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => handleCopyCode(item.code)}
+                            className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
+                            title={t('common.copy', { defaultValue: 'Copy' })}
+                        >
+                            {copiedCode === item.code ? (
+                                <Check size={12} className="text-[#037F8C]" />
+                            ) : (
+                                <Copy size={12} />
+                            )}
+                        </button>
+                    </div>
+                );
+            },
+        };
+
+        const linkedEmployeesColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'linkedEmployees',
+            header: () =>
+                t('ums.customAddons.columns.linkedEmployees', {
+                    defaultValue: 'Linked Employees',
+                }),
+            cell: ({ row }) => {
+                const item = row.original;
+                const linkedCount = (linkedEmployeesByAddonId[item.id] || []).length;
+                return (
+                    <button
+                        type="button"
+                        onClick={() => setViewingAddon(item)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] hover:bg-[#EFECE6] cursor-pointer transition-colors whitespace-nowrap"
+                    >
+                        <Users size={12} className="text-[#857E74]" />
+                        <span>
+                            {linkedCount > 0
+                                ? t('ums.customAddons.badges.employeesCount', {
+                                      count: linkedCount,
+                                  })
+                                : t('ums.customAddons.badges.noEmployees')}
+                        </span>
+                    </button>
+                );
+            },
+        };
+
+        const createdDateColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'createdAt',
+            header: () =>
+                t('ums.customAddons.columns.createdAt', {
+                    defaultValue: 'Created Date',
+                }),
+            cell: ({ row }) => (
+                <span className="font-mono text-xs text-[#6E6862] whitespace-nowrap">
+                    {row.original.createdAt}
+                </span>
+            ),
+        };
+
+        const descriptionColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'description',
+            header: () =>
+                t('ums.customAddons.columns.description', {
+                    defaultValue: 'Description',
+                }),
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <div className="max-w-xs">
+                        {item.descriptionEn || item.descriptionAr ? (
+                            <span className="text-xs text-[#45413C] line-clamp-2">
+                                {isRtl
+                                    ? item.descriptionAr || item.descriptionEn
+                                    : item.descriptionEn || item.descriptionAr}
+                            </span>
+                        ) : (
+                            <span className="text-[11px] italic text-[#857E74]">
+                                {t('ums.customAddons.badges.noDescription')}
+                            </span>
+                        )}
+                    </div>
+                );
+            },
+        };
+
+        const statusColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'status',
+            header: () => t('ums.customAddons.columns.status', { defaultValue: 'Status' }),
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <button
+                        type="button"
+                        onClick={() => handleToggleStatus(item)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors whitespace-nowrap ${
+                            item.status === 'Active'
+                                ? 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20 hover:bg-[#EAF3EC]/80'
+                                : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
+                        }`}
+                        title={t('common.toggleStatus', {
+                            defaultValue: 'Click to toggle status',
+                        })}
+                    >
+                        <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                                item.status === 'Active' ? 'bg-[#037F8C]' : 'bg-[#857E74]'
+                            }`}
+                        />
+                        <span>
+                            {item.status === 'Active'
+                                ? t('common.active', { defaultValue: 'Active' })
+                                : t('common.inactive', { defaultValue: 'Inactive' })}
+                        </span>
+                    </button>
+                );
+            },
+        };
+
+        const actionsColumn: ColumnDef<any, CustomAddonRecord> = {
+            id: 'actions',
+            header: () => (
+                <div className="text-end">
+                    {t('ums.customAddons.columns.actions', { defaultValue: 'Actions' })}
+                </div>
+            ),
+            cell: ({ row }) => {
+                const item = row.original;
+                return (
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                        <button
+                            type="button"
+                            onClick={() => setViewingAddon(item)}
+                            className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            title={t('common.view', { defaultValue: 'View Details' })}
+                        >
+                            <Eye size={14} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => handleOpenEdit(item)}
+                            className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            title={t('common.edit', { defaultValue: 'Edit' })}
+                        >
+                            <Pencil size={14} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => handleToggleStatus(item)}
+                            className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                item.status === 'Active'
+                                    ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
+                                    : 'text-[#857E74] hover:bg-[#FAF8F5]'
+                            }`}
+                            title={t('common.toggleStatus', {
+                                defaultValue: 'Toggle Status',
+                            })}
+                        >
+                            <Power size={14} />
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setDeletingAddon(item)}
+                            className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
+                            title={t('common.delete', { defaultValue: 'Delete' })}
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
+                );
+            },
+        };
+
+        if (activeTab === 'bank') {
+            return [
+                selectColumn,
+                codeColumn,
+                {
+                    id: 'bankName',
+                    header: () =>
+                        t('ums.customAddons.columns.bankName', {
+                            defaultValue: 'Bank Name',
+                        }),
+                    cell: ({ row }) => {
+                        const item = row.original;
+                        return (
+                            <div className="flex flex-col">
+                                <span className="font-bold text-[#0D0D0D]">
+                                    {isRtl ? item.nameAr || item.nameEn : item.nameEn}
+                                </span>
+                                {item.nameAr && item.nameAr !== item.nameEn && (
+                                    <span className="text-[11px] text-[#6E6862]">
+                                        {isRtl ? item.nameEn : item.nameAr}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    },
+                },
+                descriptionColumn,
+                linkedEmployeesColumn,
+                {
+                    id: 'createdBy',
+                    header: () =>
+                        t('ums.customAddons.columns.createdBy', {
+                            defaultValue: 'Created By',
+                        }),
+                    cell: ({ row }) => (
+                        <div className="inline-flex items-center gap-1.5 text-xs text-[#45413C] whitespace-nowrap">
+                            <User size={12} className="text-[#857E74]" />
+                            <span>{row.original.createdBy || 'Karim Wagdi'}</span>
+                        </div>
+                    ),
+                },
+                createdDateColumn,
+                statusColumn,
+                actionsColumn,
+            ];
+        }
+
+        if (activeTab === 'religion') {
+            return [
+                selectColumn,
+                codeColumn,
+                {
+                    id: 'nameEn',
+                    header: () =>
+                        t('ums.customAddons.columns.nameEn', {
+                            defaultValue: 'English Name',
+                        }),
+                    cell: ({ row }) => (
+                        <span className="font-bold text-[#0D0D0D]">{row.original.nameEn}</span>
+                    ),
+                },
+                {
+                    id: 'nameAr',
+                    header: () =>
+                        t('ums.customAddons.columns.nameAr', {
+                            defaultValue: 'Arabic Name',
+                        }),
+                    cell: ({ row }) => (
+                        <span className="font-semibold text-[#037F8C]" dir="rtl">
+                            {row.original.nameAr}
+                        </span>
+                    ),
+                },
+                linkedEmployeesColumn,
+                createdDateColumn,
+                statusColumn,
+                actionsColumn,
+            ];
+        }
+
+        if (activeTab === 'job_title') {
+            return [
+                selectColumn,
+                codeColumn,
+                {
+                    id: 'titleEn',
+                    header: () =>
+                        t('ums.customAddons.columns.titleEn', {
+                            defaultValue: 'English Title',
+                        }),
+                    cell: ({ row }) => (
+                        <span className="font-bold text-[#0D0D0D]">{row.original.nameEn}</span>
+                    ),
+                },
+                {
+                    id: 'titleAr',
+                    header: () =>
+                        t('ums.customAddons.columns.titleAr', {
+                            defaultValue: 'Arabic Title',
+                        }),
+                    cell: ({ row }) => (
+                        <span className="font-semibold text-[#037F8C]" dir="rtl">
+                            {row.original.nameAr}
+                        </span>
+                    ),
+                },
+                descriptionColumn,
+                linkedEmployeesColumn,
+                createdDateColumn,
+                statusColumn,
+                actionsColumn,
+            ];
+        }
+
+        // job_grade
+        return [
+            selectColumn,
+            codeColumn,
+            {
+                id: 'gradeName',
+                header: () =>
+                    t('ums.customAddons.columns.gradeName', {
+                        defaultValue: 'Job Grade',
+                    }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex flex-col">
+                            <span className="font-bold text-[#0D0D0D]">
+                                {isRtl ? item.nameAr : item.nameEn}
+                            </span>
+                            <span className="text-[11px] text-[#6E6862]">
+                                {isRtl ? item.nameEn : item.nameAr}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'gradeLevel',
+                header: () =>
+                    t('ums.customAddons.columns.gradeLevel', {
+                        defaultValue: 'Grade Rank / Level',
+                    }),
+                cell: ({ row }) => (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8] whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
+                        <span>
+                            {t('ums.customAddons.badges.rankLevel', {
+                                level: row.original.gradeLevel ?? 1,
+                            })}
+                        </span>
+                    </span>
+                ),
+            },
+            descriptionColumn,
+            linkedEmployeesColumn,
+            createdDateColumn,
+            statusColumn,
+            actionsColumn,
+        ];
+    }, [
+        activeTab,
+        copiedCode,
+        handleCopyCode,
+        handleOpenEdit,
+        handleSelectAll,
+        handleToggleSelect,
+        handleToggleStatus,
+        isAllSelected,
+        isRtl,
+        linkedEmployeesByAddonId,
+        selectedIds,
+        t,
+    ]);
 
     return (
         <div className="space-y-6 text-start">
@@ -866,7 +1311,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             {t('ums.customAddons.title', { defaultValue: 'Custom Addons Master' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             UMS-ADD
@@ -895,7 +1340,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={14} />
                         <span>
@@ -908,7 +1353,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
             </div>
 
             {/* Unified 4-Tab Bar */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl p-1.5 shadow-2xs flex flex-wrap items-center gap-1.5" role="tablist">
+            <div
+                className="bg-white border border-[#E5E0D8] rounded-xl p-1.5 shadow-2xs flex flex-wrap items-center gap-1.5"
+                role="tablist"
+            >
                 {TAB_ORDER.map((tabKey) => {
                     const isActive = activeTab === tabKey;
                     const tabCount = recordsByTab[tabKey].length;
@@ -921,7 +1369,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             onClick={() => setActiveTab(tabKey)}
                             className={`flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                 isActive
-                                    ? 'bg-[#2D3F2C] text-white shadow-xs'
+                                    ? 'bg-[#037F8C] text-white shadow-xs'
                                     : 'bg-transparent text-[#45413C] hover:bg-[#FAF8F5] hover:text-[#0D0D0D]'
                             }`}
                         >
@@ -933,7 +1381,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                 className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-md ${
                                     isActive
                                         ? 'bg-white/20 text-white'
-                                        : 'bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]'
+                                        : 'bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]'
                                 }`}
                             >
                                 {tabCount}
@@ -951,7 +1399,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t(`ums.customAddons.kpi.${activeTab}.total`)}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             {getCategoryIcon(activeTab, 16)}
                         </div>
                     </div>
@@ -971,12 +1419,12 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t(`ums.customAddons.kpi.${activeTab}.active`)}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <CheckCircle2 size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#265938]">
+                        <span className="text-2xl font-bold tracking-tight text-[#037F8C]">
                             {kpis.active}
                         </span>
                         <span className="text-[11px] font-normal text-[#6E6862]">
@@ -1040,7 +1488,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             value={searchQuery}
                             onChange={(e) => updateSearchQuery(e.target.value)}
                             placeholder={t(`ums.customAddons.searchPlaceholder.${activeTab}`)}
-                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] transition-colors"
+                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] transition-colors"
                         />
                         {searchQuery && (
                             <button
@@ -1094,7 +1542,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                 {/* Bulk Selection Action Bar */}
                 {selectedIds.length > 0 && (
                     <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
-                        <span className="font-semibold text-[#2D3F2C]">
+                        <span className="font-semibold text-[#037F8C]">
                             {t('ums.customAddons.bulk.selectedCount', {
                                 defaultValue: `${selectedIds.length} record(s) selected`,
                                 count: selectedIds.length,
@@ -1105,7 +1553,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleBulkStatusChange('Active')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#EAF3EC] text-[#265938] border border-[#265938]/20 font-semibold hover:bg-[#EAF3EC]/80 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#EAF3EC] text-[#037F8C] border border-[#037F8C]/20 font-semibold hover:bg-[#EAF3EC]/80 transition-colors cursor-pointer"
                             >
                                 <CheckCircle2 size={12} />
                                 <span>
@@ -1131,7 +1579,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleExportCsv(true)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white text-[#2D3F2C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white text-[#037F8C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                             >
                                 <Download size={12} />
                                 <span>
@@ -1155,1124 +1603,37 @@ export const UmsCustomAddonsPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Category-Specific Data Table */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-start text-xs">
-                        <thead>
-                            <tr className="border-b border-[#E5E0D8] bg-[#FAF8F5] text-[#6E6862] font-semibold">
-                                <th className="w-10 px-4 py-3 text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                    />
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.customAddons.columns.code', { defaultValue: 'Code' })}
-                                </th>
-
-                                {/* Category-specific primary name columns */}
-                                {activeTab === 'bank' && (
-                                    <>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.bankName', {
-                                                defaultValue: 'Bank Name',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.description', {
-                                                defaultValue: 'Description',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.linkedEmployees', {
-                                                defaultValue: 'Linked Employees',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.createdBy', {
-                                                defaultValue: 'Created By',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.createdAt', {
-                                                defaultValue: 'Created Date',
-                                            })}
-                                        </th>
-                                    </>
-                                )}
-
-                                {activeTab === 'religion' && (
-                                    <>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.nameEn', {
-                                                defaultValue: 'English Name',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.nameAr', {
-                                                defaultValue: 'Arabic Name',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.linkedEmployees', {
-                                                defaultValue: 'Linked Employees',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.createdAt', {
-                                                defaultValue: 'Created Date',
-                                            })}
-                                        </th>
-                                    </>
-                                )}
-
-                                {activeTab === 'job_title' && (
-                                    <>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.titleEn', {
-                                                defaultValue: 'English Title',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.titleAr', {
-                                                defaultValue: 'Arabic Title',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.description', {
-                                                defaultValue: 'Description',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.linkedEmployees', {
-                                                defaultValue: 'Linked Employees',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.createdAt', {
-                                                defaultValue: 'Created Date',
-                                            })}
-                                        </th>
-                                    </>
-                                )}
-
-                                {activeTab === 'job_grade' && (
-                                    <>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.gradeName', {
-                                                defaultValue: 'Job Grade',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.gradeLevel', {
-                                                defaultValue: 'Grade Rank / Level',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.description', {
-                                                defaultValue: 'Description',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.linkedEmployees', {
-                                                defaultValue: 'Linked Employees',
-                                            })}
-                                        </th>
-                                        <th className="px-4 py-3 text-start">
-                                            {t('ums.customAddons.columns.createdAt', {
-                                                defaultValue: 'Created Date',
-                                            })}
-                                        </th>
-                                    </>
-                                )}
-
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.customAddons.columns.status', { defaultValue: 'Status' })}
-                                </th>
-                                <th className="px-4 py-3 text-end">
-                                    {t('ums.customAddons.columns.actions', { defaultValue: 'Actions' })}
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-[#EFECE6] text-[#45413C]">
-                            {paginatedRecords.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={activeTab === 'religion' ? 8 : 9}
-                                        className="px-4 py-12 text-center text-[#857E74]"
-                                    >
-                                        <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto mb-2.5 text-[#857E74]">
-                                            {getCategoryIcon(activeTab, 20)}
-                                        </div>
-                                        <p className="font-semibold text-[#0D0D0D]">
-                                            {searchQuery || statusFilter !== 'ALL'
-                                                ? t('ums.customAddons.empty.noSearchMatch', {
-                                                      category: getCategoryLabel(activeTab),
-                                                  })
-                                                : t('ums.customAddons.empty.noRecordsYet', {
-                                                      category: getCategoryLabel(activeTab),
-                                                  })}
-                                        </p>
-                                        {(searchQuery || statusFilter !== 'ALL') && (
-                                            <button
-                                                type="button"
-                                                onClick={handleResetFilters}
-                                                className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
-                                            >
-                                                <RotateCcw size={12} />
-                                                <span>{t('common.reset', { defaultValue: 'Reset Filters' })}</span>
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedRecords.map((item) => {
-                                    const isSelected = selectedIds.includes(item.id);
-                                    const linkedEmployees = linkedEmployeesByAddonId[item.id] || [];
-                                    const linkedCount = linkedEmployees.length;
-
-                                    return (
-                                        <tr
-                                            key={item.id}
-                                            className={`hover:bg-[#FAF8F5]/60 transition-colors ${
-                                                isSelected ? 'bg-[#FAF8F5]' : ''
-                                            }`}
-                                        >
-                                            {/* Checkbox */}
-                                            <td className="w-10 px-4 py-3 text-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleToggleSelect(item.id)}
-                                                    aria-label={`Select ${item.nameEn}`}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                                />
-                                            </td>
-
-                                            {/* Code */}
-                                            <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span
-                                                        className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8] font-semibold text-[#2D3F2C]"
-                                                        dir="ltr"
-                                                    >
-                                                        {item.code}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleCopyCode(item.code)}
-                                                        className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
-                                                        title={t('common.copy', { defaultValue: 'Copy' })}
-                                                    >
-                                                        {copiedCode === item.code ? (
-                                                            <Check size={12} className="text-[#265938]" />
-                                                        ) : (
-                                                            <Copy size={12} />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </td>
-
-                                            {/* BANK COLUMNS */}
-                                            {activeTab === 'bank' && (
-                                                <>
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-[#0D0D0D]">
-                                                                {isRtl ? item.nameAr || item.nameEn : item.nameEn}
-                                                            </span>
-                                                            {item.nameAr && item.nameAr !== item.nameEn && (
-                                                                <span className="text-[11px] text-[#6E6862]">
-                                                                    {isRtl ? item.nameEn : item.nameAr}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 max-w-xs">
-                                                        {item.descriptionEn || item.descriptionAr ? (
-                                                            <span className="text-xs text-[#45413C] line-clamp-2">
-                                                                {isRtl
-                                                                    ? item.descriptionAr || item.descriptionEn
-                                                                    : item.descriptionEn || item.descriptionAr}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-[11px] italic text-[#857E74]">
-                                                                {t('ums.customAddons.badges.noDescription')}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
-                                                        >
-                                                            <Users size={12} className="text-[#857E74]" />
-                                                            <span>
-                                                                {linkedCount > 0
-                                                                    ? t('ums.customAddons.badges.employeesCount', {
-                                                                          count: linkedCount,
-                                                                      })
-                                                                    : t('ums.customAddons.badges.noEmployees')}
-                                                            </span>
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="inline-flex items-center gap-1.5 text-xs text-[#45413C]">
-                                                            <User size={12} className="text-[#857E74]" />
-                                                            <span>{item.createdBy || 'Karim Wagdi'}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 font-mono text-xs text-[#6E6862] whitespace-nowrap">
-                                                        {item.createdAt}
-                                                    </td>
-                                                </>
-                                            )}
-
-                                            {/* RELIGION COLUMNS */}
-                                            {activeTab === 'religion' && (
-                                                <>
-                                                    <td className="px-4 py-3 font-bold text-[#0D0D0D]">
-                                                        {item.nameEn}
-                                                    </td>
-                                                    <td className="px-4 py-3 font-semibold text-[#2D3F2C]" dir="rtl">
-                                                        {item.nameAr}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
-                                                        >
-                                                            <Users size={12} className="text-[#857E74]" />
-                                                            <span>
-                                                                {linkedCount > 0
-                                                                    ? t('ums.customAddons.badges.employeesCount', {
-                                                                          count: linkedCount,
-                                                                      })
-                                                                    : t('ums.customAddons.badges.noEmployees')}
-                                                            </span>
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-4 py-3 font-mono text-xs text-[#6E6862] whitespace-nowrap">
-                                                        {item.createdAt}
-                                                    </td>
-                                                </>
-                                            )}
-
-                                            {/* JOB TITLE COLUMNS */}
-                                            {activeTab === 'job_title' && (
-                                                <>
-                                                    <td className="px-4 py-3 font-bold text-[#0D0D0D]">
-                                                        {item.nameEn}
-                                                    </td>
-                                                    <td className="px-4 py-3 font-semibold text-[#2D3F2C]" dir="rtl">
-                                                        {item.nameAr}
-                                                    </td>
-                                                    <td className="px-4 py-3 max-w-xs">
-                                                        {item.descriptionEn || item.descriptionAr ? (
-                                                            <span className="text-xs text-[#45413C] line-clamp-2">
-                                                                {isRtl
-                                                                    ? item.descriptionAr || item.descriptionEn
-                                                                    : item.descriptionEn || item.descriptionAr}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-[11px] italic text-[#857E74]">
-                                                                {t('ums.customAddons.badges.noDescription')}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
-                                                        >
-                                                            <Users size={12} className="text-[#857E74]" />
-                                                            <span>
-                                                                {linkedCount > 0
-                                                                    ? t('ums.customAddons.badges.employeesCount', {
-                                                                          count: linkedCount,
-                                                                      })
-                                                                    : t('ums.customAddons.badges.noEmployees')}
-                                                            </span>
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-4 py-3 font-mono text-xs text-[#6E6862] whitespace-nowrap">
-                                                        {item.createdAt}
-                                                    </td>
-                                                </>
-                                            )}
-
-                                            {/* JOB GRADE COLUMNS */}
-                                            {activeTab === 'job_grade' && (
-                                                <>
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-[#0D0D0D]">
-                                                                {isRtl ? item.nameAr : item.nameEn}
-                                                            </span>
-                                                            <span className="text-[11px] text-[#6E6862]">
-                                                                {isRtl ? item.nameEn : item.nameAr}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
-                                                            <span>
-                                                                {t('ums.customAddons.badges.rankLevel', {
-                                                                    level: item.gradeLevel ?? 1,
-                                                                })}
-                                                            </span>
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-3 max-w-xs">
-                                                        {item.descriptionEn || item.descriptionAr ? (
-                                                            <span className="text-xs text-[#45413C] line-clamp-2">
-                                                                {isRtl
-                                                                    ? item.descriptionAr || item.descriptionEn
-                                                                    : item.descriptionEn || item.descriptionAr}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-[11px] italic text-[#857E74]">
-                                                                {t('ums.customAddons.badges.noDescription')}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setViewingAddon(item)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#2D3F2C] hover:bg-[#EFECE6] cursor-pointer transition-colors"
-                                                        >
-                                                            <Users size={12} className="text-[#857E74]" />
-                                                            <span>
-                                                                {linkedCount > 0
-                                                                    ? t('ums.customAddons.badges.employeesCount', {
-                                                                          count: linkedCount,
-                                                                      })
-                                                                    : t('ums.customAddons.badges.noEmployees')}
-                                                            </span>
-                                                        </button>
-                                                    </td>
-                                                    <td className="px-4 py-3 font-mono text-xs text-[#6E6862] whitespace-nowrap">
-                                                        {item.createdAt}
-                                                    </td>
-                                                </>
-                                            )}
-
-                                            {/* Status */}
-                                            <td className="px-4 py-3 whitespace-nowrap">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(item)}
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
-                                                        item.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938] border-[#265938]/20 hover:bg-[#EAF3EC]/80'
-                                                            : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
-                                                    }`}
-                                                    title={t('common.toggleStatus', {
-                                                        defaultValue: 'Click to toggle status',
-                                                    })}
-                                                >
-                                                    <span
-                                                        className={`w-1.5 h-1.5 rounded-full ${
-                                                            item.status === 'Active'
-                                                                ? 'bg-[#265938]'
-                                                                : 'bg-[#857E74]'
-                                                        }`}
-                                                    />
-                                                    <span>
-                                                        {item.status === 'Active'
-                                                            ? t('common.active', { defaultValue: 'Active' })
-                                                            : t('common.inactive', { defaultValue: 'Inactive' })}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td className="px-4 py-3 text-end whitespace-nowrap">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setViewingAddon(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t('common.view', { defaultValue: 'View Details' })}
-                                                    >
-                                                        <Eye size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEdit(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t('common.edit', { defaultValue: 'Edit' })}
-                                                    >
-                                                        <Pencil size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(item)}
-                                                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                                                            item.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
-                                                                : 'text-[#857E74] hover:bg-[#FAF8F5]'
-                                                        }`}
-                                                        title={t('common.toggleStatus', {
-                                                            defaultValue: 'Toggle Status',
-                                                        })}
-                                                    >
-                                                        <Power size={14} />
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setDeletingAddon(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
-                                                        title={t('common.delete', { defaultValue: 'Delete' })}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-[#E5E0D8] bg-[#FAF8F5]/50 text-xs text-[#6E6862]">
-                    <div className="flex items-center gap-2">
-                        <span>{t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => updatePageSize(Number(e.target.value))}
-                            aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                        >
-                            {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                        <span className="ms-2">
-                            {t('common.showingPagination', {
-                                defaultValue: `Showing ${
-                                    filteredRecords.length === 0 ? 0 : (safePage - 1) * pageSize + 1
-                                } - ${Math.min(
-                                    safePage * pageSize,
-                                    filteredRecords.length
-                                )} of ${filteredRecords.length}`,
-                                start:
-                                    filteredRecords.length === 0
-                                        ? 0
-                                        : (safePage - 1) * pageSize + 1,
-                                end: Math.min(safePage * pageSize, filteredRecords.length),
-                                total: filteredRecords.length,
-                            })}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => updateCurrentPage(Math.max(1, safePage - 1))}
-                            disabled={safePage === 1}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.prev', { defaultValue: 'Previous Page' })}
-                        >
-                            <ChevronLeft size={14} className={isRtl ? 'rotate-180' : ''} />
-                        </button>
-
-                        <span className="px-2 font-semibold text-[#0D0D0D]">
-                            {safePage} / {totalPages}
-                        </span>
-
-                        <button
-                            type="button"
-                            onClick={() => updateCurrentPage(Math.min(totalPages, safePage + 1))}
-                            disabled={safePage === totalPages}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.next', { defaultValue: 'Next Page' })}
-                        >
-                            <ChevronRight size={14} className={isRtl ? 'rotate-180' : ''} />
-                        </button>
-                    </div>
-                </div>
-            </div>
+            {/* Category-Specific Shared DataTable */}
+            <DataTable
+                columns={columns}
+                data={paginatedRecords}
+                count={filteredRecords.length}
+                pageIndex={safePage}
+                pageSize={pageSize}
+                onPageChange={(page) => updateCurrentPage(page)}
+                onPageSizeChange={(size) => updatePageSize(size)}
+                onSearchChange={(val) => updateSearchQuery(val)}
+                searchValue={searchQuery}
+                searchPlaceholder={t(`ums.customAddons.searchPlaceholder.${activeTab}`)}
+                title={getCategoryLabel(activeTab)}
+            />
 
             {/* ============================================================================ */}
-            {/* SLIDE-OVER DRAWER FOR ADD & EDIT                                             */}
+            {/* STANDALONE CUSTOM ADDON FORM (CREATE & EDIT DRAWER)                          */}
             {/* ============================================================================ */}
             {(isCreateOpen || editingAddon) && (
-                <div
-                    className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-2xs"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div className="w-full max-w-lg bg-white h-full border-s border-[#E5E0D8] shadow-2xl flex flex-col justify-between overflow-y-auto">
-                        {/* Drawer Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5]/60 sticky top-0 z-10">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] text-white flex items-center justify-center shrink-0">
-                                    {getCategoryIcon(formData.type, 18)}
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h2 className="text-base font-bold text-[#0D0D0D]">
-                                            {isCreateOpen
-                                                ? t(`ums.customAddons.addButton.${formData.type}`)
-                                                : t(`ums.customAddons.editTitle.${formData.type}`)}
-                                        </h2>
-                                        <span
-                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#2D3F2C] border border-[#E5E0D8]"
-                                            dir="ltr"
-                                        >
-                                            {formData.code}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-[#6E6862] mt-0.5">
-                                        {isCreateOpen
-                                            ? t('ums.customAddons.form.drawerSubtitleCreate', {
-                                                  category: getCategoryLabel(formData.type),
-                                              })
-                                            : t('ums.customAddons.form.drawerSubtitleEdit', {
-                                                  code: formData.code,
-                                                  category: getCategoryLabel(formData.type),
-                                              })}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCreateOpen(false);
-                                    setEditingAddon(null);
-                                }}
-                                className="p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-white cursor-pointer"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-
-                        {/* Drawer Form Body */}
-                        <form
-                            onSubmit={isCreateOpen ? handleSaveCreate : handleSaveEdit}
-                            className="p-6 space-y-5 flex-1"
-                        >
-                            {/* Automatically Generated Code */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.customAddons.form.code', {
-                                        defaultValue: 'Addon Code (Auto-generated)',
-                                    })}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.code}
-                                    disabled
-                                    dir="ltr"
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono font-semibold text-[#6E6862] cursor-not-allowed"
-                                />
-                            </div>
-
-                            {/* Category 1: BANK FORM */}
-                            {formData.type === 'bank' && (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.bankNameEn')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.nameEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.bankNameEnPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameEn
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameEn && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameEn}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.bankNameAr')}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            dir="rtl"
-                                            value={formData.nameAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.bankNameArPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameAr
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameAr && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameAr}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.descriptionEn')}
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            value={formData.descriptionEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    descriptionEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.bankDescEnPlaceholder'
-                                            )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.descriptionAr')}
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            dir="rtl"
-                                            value={formData.descriptionAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    descriptionAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.bankDescArPlaceholder'
-                                            )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Category 2: RELIGION FORM (No description fields - strictly relevant fields only) */}
-                            {formData.type === 'religion' && (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.religionNameEn')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.nameEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.religionNameEnPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameEn
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameEn && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameEn}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.religionNameAr')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            dir="rtl"
-                                            value={formData.nameAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.religionNameArPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameAr
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameAr && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameAr}
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Category 3: JOB TITLE FORM */}
-                            {formData.type === 'job_title' && (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.jobTitleEn')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.nameEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobTitleEnPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameEn
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameEn && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameEn}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.jobTitleAr')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            dir="rtl"
-                                            value={formData.nameAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobTitleArPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameAr
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameAr && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameAr}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.descriptionEn')}
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            value={formData.descriptionEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    descriptionEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobTitleDescEnPlaceholder'
-                                            )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.descriptionAr')}
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            dir="rtl"
-                                            value={formData.descriptionAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    descriptionAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobTitleDescArPlaceholder'
-                                            )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Category 4: JOB GRADE FORM */}
-                            {formData.type === 'job_grade' && (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.jobGradeEn')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.nameEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobGradeEnPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameEn
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameEn && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameEn}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.jobGradeAr')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            dir="rtl"
-                                            value={formData.nameAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    nameAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobGradeArPlaceholder'
-                                            )}
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.nameAr
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        {formErrors.nameAr && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.nameAr}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.gradeLevel')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={20}
-                                            value={formData.gradeLevel}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    gradeLevel: Number(e.target.value),
-                                                }))
-                                            }
-                                            className={`w-full px-3 py-2 rounded-lg bg-white border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                                formErrors.gradeLevel
-                                                    ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                    : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                            }`}
-                                        />
-                                        <p className="text-[11px] text-[#857E74] mt-1">
-                                            {t('ums.customAddons.form.gradeLevelHint')}
-                                        </p>
-                                        {formErrors.gradeLevel && (
-                                            <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                                {formErrors.gradeLevel}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.descriptionEn')}
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            value={formData.descriptionEn}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    descriptionEn: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobGradeDescEnPlaceholder'
-                                            )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                            {t('ums.customAddons.form.descriptionAr')}
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            dir="rtl"
-                                            value={formData.descriptionAr}
-                                            onChange={(e) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    descriptionAr: e.target.value,
-                                                }))
-                                            }
-                                            placeholder={t(
-                                                'ums.customAddons.form.jobGradeDescArPlaceholder'
-                                            )}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {/* Status Radio Controls */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1.5">
-                                    {t('ums.customAddons.form.status', { defaultValue: 'Status' })}
-                                </label>
-                                <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 text-xs font-medium text-[#45413C] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="addonStatus"
-                                            value="Active"
-                                            checked={formData.status === 'Active'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    status: 'Active',
-                                                }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                        />
-                                        <span>{t('common.active', { defaultValue: 'Active' })}</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 text-xs font-medium text-[#45413C] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="addonStatus"
-                                            value="Inactive"
-                                            checked={formData.status === 'Inactive'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    status: 'Inactive',
-                                                }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                        />
-                                        <span>
-                                            {t('common.inactive', { defaultValue: 'Inactive' })}
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Drawer Footer Actions */}
-                            <div className="flex items-center justify-end gap-2 pt-5 border-t border-[#E5E0D8]">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsCreateOpen(false);
-                                        setEditingAddon(null);
-                                    }}
-                                    className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                >
-                                    {t('common.cancel', { defaultValue: 'Cancel' })}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-                                >
-                                    {isCreateOpen
-                                        ? t('common.create', { defaultValue: 'Create' })
-                                        : t('common.saveChanges', { defaultValue: 'Save Changes' })}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <CustomAddonForm
+                    isEditing={Boolean(editingAddon)}
+                    formData={formData}
+                    formErrors={formErrors}
+                    onChange={setFormData}
+                    onSubmit={isCreateOpen ? handleSaveCreate : handleSaveEdit}
+                    onCancel={() => {
+                        setIsCreateOpen(false);
+                        setEditingAddon(null);
+                    }}
+                    isSubmitting={saveAddonsMutation.isPending}
+                />
             )}
 
             {/* ============================================================================ */}
@@ -2288,7 +1649,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                                     {getCategoryIcon(viewingAddon.type, 18)}
                                 </div>
                                 <div>
@@ -2297,7 +1658,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                             {t(`ums.customAddons.viewTitle.${viewingAddon.type}`)}
                                         </h2>
                                         <span
-                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                             dir="ltr"
                                         >
                                             {viewingAddon.code}
@@ -2338,7 +1699,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     <span
                                         className={`inline-block font-semibold mt-0.5 ${
                                             viewingAddon.status === 'Active'
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -2381,7 +1742,10 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     </span>
                                 </div>
 
-                                <div className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]" dir="rtl">
+                                <div
+                                    className="p-3.5 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]"
+                                    dir="rtl"
+                                >
                                     <span className="text-[#857E74] block mb-1">
                                         {viewingAddon.type === 'job_title'
                                             ? t('ums.customAddons.columns.titleAr')
@@ -2399,7 +1763,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     <span className="font-semibold text-[#45413C]">
                                         {t('ums.customAddons.columns.gradeLevel')}
                                     </span>
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-semibold bg-white text-[#2D3F2C] border border-[#E5E0D8]">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono font-semibold bg-white text-[#037F8C] border border-[#E5E0D8]">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#C28E3A]" />
                                         {t('ums.customAddons.badges.rankLevel', {
                                             level: viewingAddon.gradeLevel ?? 1,
@@ -2445,7 +1809,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     <div className="flex items-center justify-between mb-2">
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.customAddons.details.linkedEmployeesTitle')}{' '}
-                                            <span className="text-[#265938]">
+                                            <span className="text-[#037F8C]">
                                                 ({viewedLinkedEmployees.length})
                                             </span>
                                         </h3>
@@ -2463,7 +1827,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                     className="flex items-center justify-between p-3 bg-white text-xs"
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px]">
+                                                        <div className="w-7 h-7 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px]">
                                                             {emp.nameEn.slice(0, 2).toUpperCase()}
                                                         </div>
                                                         <div>
@@ -2471,18 +1835,24 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                                 {isRtl ? emp.nameAr : emp.nameEn}
                                                             </span>
                                                             <span className="text-[11px] text-[#6E6862]">
-                                                                {emp.code} · {isRtl ? emp.departmentNameAr || emp.departmentName : emp.departmentName}
+                                                                {emp.code} ·{' '}
+                                                                {isRtl
+                                                                    ? emp.departmentNameAr ||
+                                                                      emp.departmentName
+                                                                    : emp.departmentName}
                                                             </span>
                                                         </div>
                                                     </div>
                                                     <span
                                                         className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                                             emp.status === 'Active'
-                                                                ? 'bg-[#EAF3EC] text-[#265938]'
+                                                                ? 'bg-[#EAF3EC] text-[#037F8C]'
                                                                 : 'bg-[#FAF8F5] text-[#857E74]'
                                                         }`}
                                                     >
-                                                        {t(`ums.employees.statuses.${emp.status}`, { defaultValue: emp.status })}
+                                                        {t(`ums.employees.statuses.${emp.status}`, {
+                                                            defaultValue: emp.status,
+                                                        })}
                                                     </span>
                                                 </div>
                                             ))}
@@ -2501,7 +1871,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                     setViewingAddon(null);
                                     handleOpenEdit(target);
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                             >
                                 <Pencil size={13} />
                                 <span>{t('common.edit', { defaultValue: 'Edit' })}</span>
@@ -2510,7 +1880,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingAddon(null)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>
@@ -2578,7 +1948,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                                 handleToggleStatus(deletingAddon);
                                                 setDeletingAddon(null);
                                             }}
-                                            className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                            className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                         >
                                             {t('ums.customAddons.deleteModal.deactivateAlternative')}
                                         </button>

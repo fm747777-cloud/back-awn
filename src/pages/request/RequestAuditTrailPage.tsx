@@ -76,7 +76,7 @@ function formatAuditTimestamp(isoString: string): { datePart: string; timePart: 
 function getActionBadgeStyle(actionCode: AuditActionCode): string {
     switch (actionCode) {
         case 'CREATED':
-            return 'bg-[#EAF3EC] text-[#2D3F2C] border-[#2D3F2C]/20';
+            return 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20';
         case 'UPDATED':
             return 'bg-[#EEF2FA] text-[#1E3A8A] border-[#1E3A8A]/20';
         case 'ASSIGNED':
@@ -95,7 +95,7 @@ function getActionBadgeStyle(actionCode: AuditActionCode): string {
 function getResourceBadgeStyle(resource: AuditResourceType): string {
     switch (resource) {
         case 'Request':
-            return 'bg-[#FAF8F5] text-[#2D3F2C] border-[#2D3F2C]/20';
+            return 'bg-[#FAF8F5] text-[#037F8C] border-[#037F8C]/20';
         case 'Service':
             return 'bg-[#FDF7F2] text-[#8C6046] border-[#8C6046]/25';
         case 'Operational Task':
@@ -320,7 +320,7 @@ export const RequestAuditTrailPage = () => {
             {/* Page Header */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] border border-[#2D3F2C]/15 text-[#2D3F2C] flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-[#EAF3EC] border border-[#037F8C]/15 text-[#037F8C] flex items-center justify-center shrink-0">
                         <History size={20} />
                     </div>
                     <div>
@@ -350,7 +350,7 @@ export const RequestAuditTrailPage = () => {
 
             {/* Feedback Banner */}
             {feedbackBanner && (
-                <div className="bg-[#EAF3EC] border border-[#2D3F2C]/25 text-[#2D3F2C] px-4 py-3 rounded-xl flex items-center justify-between text-xs font-semibold shadow-2xs">
+                <div className="bg-[#EAF3EC] border border-[#037F8C]/25 text-[#037F8C] px-4 py-3 rounded-xl flex items-center justify-between text-xs font-semibold shadow-2xs">
                     <div className="flex items-center gap-2">
                         <CheckCircle2 size={16} />
                         <span>{feedbackBanner}</span>
@@ -358,7 +358,7 @@ export const RequestAuditTrailPage = () => {
                     <button
                         type="button"
                         onClick={() => setFeedbackBanner(null)}
-                        className="p-1 hover:bg-[#2D3F2C]/10 rounded-md cursor-pointer"
+                        className="p-1 hover:bg-[#037F8C]/10 rounded-md cursor-pointer"
                     >
                         <X size={14} />
                     </button>
@@ -375,8 +375,8 @@ export const RequestAuditTrailPage = () => {
                     }}
                     className={`text-start p-4 rounded-xl border transition-all cursor-pointer ${
                         resourceFilter === 'ALL'
-                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-sm'
-                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#2D3F2C]/40'
+                            ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-sm'
+                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#037F8C]/40'
                     }`}
                 >
                     <div className="flex items-center justify-between">
@@ -410,8 +410,8 @@ export const RequestAuditTrailPage = () => {
                     }}
                     className={`text-start p-4 rounded-xl border transition-all cursor-pointer ${
                         resourceFilter === 'Request'
-                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-sm'
-                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#2D3F2C]/40'
+                            ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-sm'
+                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#037F8C]/40'
                     }`}
                 >
                     <div className="flex items-center justify-between">
@@ -425,7 +425,7 @@ export const RequestAuditTrailPage = () => {
                         <FileText
                             size={16}
                             className={
-                                resourceFilter === 'Request' ? 'text-[#BFAB93]' : 'text-[#2D3F2C]'
+                                resourceFilter === 'Request' ? 'text-[#BFAB93]' : 'text-[#037F8C]'
                             }
                         />
                     </div>
@@ -447,8 +447,8 @@ export const RequestAuditTrailPage = () => {
                     }}
                     className={`text-start p-4 rounded-xl border transition-all cursor-pointer ${
                         resourceFilter === 'Service'
-                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-sm'
-                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#2D3F2C]/40'
+                            ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-sm'
+                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#037F8C]/40'
                     }`}
                 >
                     <div className="flex items-center justify-between">
@@ -486,8 +486,8 @@ export const RequestAuditTrailPage = () => {
                     }}
                     className={`text-start p-4 rounded-xl border transition-all cursor-pointer ${
                         resourceFilter === 'Operational Task'
-                            ? 'bg-[#2D3F2C] text-white border-[#2D3F2C] shadow-sm'
-                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#2D3F2C]/40'
+                            ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-sm'
+                            : 'bg-white text-[#0D0D0D] border-[#E5E0D8] hover:border-[#037F8C]/40'
                     }`}
                 >
                     <div className="flex items-center justify-between">
@@ -543,7 +543,7 @@ export const RequestAuditTrailPage = () => {
                                     setCurrentPage(1);
                                 }}
                                 placeholder={t('request.auditTrail.filters.searchPlaceholder')}
-                                className="w-full ps-9 pe-8 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:border-[#2D3F2C] focus:bg-white transition-colors"
+                                className="w-full ps-9 pe-8 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:border-[#037F8C] focus:bg-white transition-colors"
                             />
                             {searchQuery && (
                                 <button
@@ -571,7 +571,7 @@ export const RequestAuditTrailPage = () => {
                                 setActionFilter(e.target.value as 'ALL' | AuditActionCode);
                                 setCurrentPage(1);
                             }}
-                            className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="ALL">{t('request.auditTrail.filters.allActions')}</option>
                             {AUDIT_ACTIONS.map((act) => (
@@ -593,7 +593,7 @@ export const RequestAuditTrailPage = () => {
                                 setResourceFilter(e.target.value as 'ALL' | AuditResourceType);
                                 setCurrentPage(1);
                             }}
-                            className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                         >
                             <option value="ALL">
                                 {t('request.auditTrail.filters.allResources')}
@@ -620,7 +620,7 @@ export const RequestAuditTrailPage = () => {
                                     setStartDate(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             />
                         </div>
                     </div>
@@ -639,7 +639,7 @@ export const RequestAuditTrailPage = () => {
                                     setEndDate(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                                className="w-full px-3 py-2 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
                             />
                         </div>
                     </div>
@@ -648,7 +648,7 @@ export const RequestAuditTrailPage = () => {
                 {/* Reset Filters Row */}
                 <div className="flex items-center justify-between pt-2 border-t border-[#F0ECE4]">
                     <div className="flex items-center gap-2 text-[11px] text-[#6E6862]">
-                        <ShieldCheck size={14} className="text-[#2D3F2C]" />
+                        <ShieldCheck size={14} className="text-[#037F8C]" />
                         <span>
                             {t('request.auditTrail.table.showing', {
                                 from:
@@ -660,7 +660,7 @@ export const RequestAuditTrailPage = () => {
                             })}
                         </span>
                         {activeFilterCount > 0 && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF3EC] text-[#2D3F2C]">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF3EC] text-[#037F8C]">
                                 {t('request.auditTrail.filters.activeFiltersCount', {
                                     count: activeFilterCount,
                                 })}
@@ -731,7 +731,7 @@ export const RequestAuditTrailPage = () => {
                                                 <button
                                                     type="button"
                                                     onClick={handleResetFilters}
-                                                    className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition cursor-pointer"
+                                                    className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition cursor-pointer"
                                                 >
                                                     <RotateCcw size={12} />
                                                     {t('request.auditTrail.filters.resetFilters')}
@@ -814,7 +814,7 @@ export const RequestAuditTrailPage = () => {
                                                 <td className="py-3.5 px-4 whitespace-nowrap align-top">
                                                     <span
                                                         dir="ltr"
-                                                        className="inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-bold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                                        className="inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-bold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                                     >
                                                         {recordId}
                                                     </span>
@@ -838,7 +838,7 @@ export const RequestAuditTrailPage = () => {
                                                 {/* Actor / User */}
                                                 <td className="py-3.5 px-4 whitespace-nowrap align-top">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="w-7 h-7 rounded-full bg-[#EAF3EC] border border-[#2D3F2C]/15 text-[#2D3F2C] flex items-center justify-center text-[11px] font-bold shrink-0">
+                                                        <div className="w-7 h-7 rounded-full bg-[#EAF3EC] border border-[#037F8C]/15 text-[#037F8C] flex items-center justify-center text-[11px] font-bold shrink-0">
                                                             {actorName.charAt(0)}
                                                         </div>
                                                         <div>
@@ -870,7 +870,7 @@ export const RequestAuditTrailPage = () => {
                                                             </span>
                                                         )}
                                                         {entry.newStatus && (
-                                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#2D3F2C] bg-[#EAF3EC]/70 px-2 py-0.5 rounded">
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#037F8C] bg-[#EAF3EC]/70 px-2 py-0.5 rounded">
                                                                 {entry.previousStatus
                                                                     ? `${entry.previousStatus} → ${entry.newStatus}`
                                                                     : entry.newStatus}
@@ -887,7 +887,7 @@ export const RequestAuditTrailPage = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelectedEntry(entry)}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#2D3F2C] hover:text-white hover:border-[#2D3F2C] text-[11px] font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#037F8C] hover:text-white hover:border-[#037F8C] text-[11px] font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
                                                         title={t(
                                                             'request.auditTrail.table.viewDetails'
                                                         )}
@@ -922,7 +922,7 @@ export const RequestAuditTrailPage = () => {
                                     setPageSize(Number(e.target.value));
                                     setCurrentPage(1);
                                 }}
-                                className="px-2.5 py-1 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
+                                className="px-2.5 py-1 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#0D0D0D] focus:outline-none focus:border-[#037F8C] cursor-pointer"
                             >
                                 {PAGE_SIZE_OPTIONS.map((size) => (
                                     <option key={size} value={size}>
@@ -982,7 +982,7 @@ export const RequestAuditTrailPage = () => {
                         {/* Drawer Header */}
                         <div className="px-6 py-4 bg-[#FAF8F5] border-b border-[#E5E0D8] flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0">
                                     <History size={17} />
                                 </div>
                                 <div>
@@ -992,7 +992,7 @@ export const RequestAuditTrailPage = () => {
                                         </h3>
                                         <span
                                             dir="ltr"
-                                            className="px-2 py-0.5 rounded font-mono text-xs font-bold bg-[#EAF3EC] text-[#2D3F2C]"
+                                            className="px-2 py-0.5 rounded font-mono text-xs font-bold bg-[#EAF3EC] text-[#037F8C]"
                                         >
                                             {selectedDetails.recordId}
                                         </span>
@@ -1055,7 +1055,7 @@ export const RequestAuditTrailPage = () => {
                                     </span>
                                     <span
                                         dir="ltr"
-                                        className="inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-bold bg-white text-[#2D3F2C] border border-[#E5E0D8]"
+                                        className="inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-bold bg-white text-[#037F8C] border border-[#E5E0D8]"
                                     >
                                         {selectedDetails.recordId}
                                     </span>
@@ -1080,7 +1080,7 @@ export const RequestAuditTrailPage = () => {
 
                                 <div className="p-3.5 rounded-xl border border-[#E5E0D8] bg-white">
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#6E6862] flex items-center gap-1.5">
-                                        <UserCheck size={12} className="text-[#2D3F2C]" />
+                                        <UserCheck size={12} className="text-[#037F8C]" />
                                         {t('request.auditTrail.drawer.actor')}
                                     </span>
                                     <p className="font-bold text-[#0D0D0D] mt-1">
@@ -1115,7 +1115,7 @@ export const RequestAuditTrailPage = () => {
 
                                 <div className="p-3.5 rounded-xl border border-[#E5E0D8] bg-white">
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-[#6E6862] flex items-center gap-1.5">
-                                        <Layers size={12} className="text-[#2D3F2C]" />
+                                        <Layers size={12} className="text-[#037F8C]" />
                                         {t('request.auditTrail.drawer.packageName')}
                                     </span>
                                     <p className="font-bold text-[#0D0D0D] mt-1">
@@ -1177,7 +1177,7 @@ export const RequestAuditTrailPage = () => {
                                                         {selectedDetails.entry.previousStatus || '—'}
                                                     </span>
                                                     <ArrowRight size={12} className="text-[#8C6046]" />
-                                                    <span className="text-[#2D3F2C] font-bold">
+                                                    <span className="text-[#037F8C] font-bold">
                                                         {selectedDetails.entry.newStatus || '—'}
                                                     </span>
                                                 </div>
@@ -1199,7 +1199,7 @@ export const RequestAuditTrailPage = () => {
                                                             '—'}
                                                     </span>
                                                     <ArrowRight size={12} className="text-[#8C6046]" />
-                                                    <span className="text-[#2D3F2C] font-bold">
+                                                    <span className="text-[#037F8C] font-bold">
                                                         {selectedDetails.entry.newAssignee || '—'}
                                                     </span>
                                                 </div>
@@ -1243,7 +1243,7 @@ export const RequestAuditTrailPage = () => {
                                         </span>
                                         <span
                                             dir="ltr"
-                                            className="font-mono font-semibold text-[#2D3F2C]"
+                                            className="font-mono font-semibold text-[#037F8C]"
                                         >
                                             {REQUEST_AUDIT_STORAGE_KEY}
                                         </span>
@@ -1264,7 +1264,7 @@ export const RequestAuditTrailPage = () => {
                                                     `/request/requests?requestId=${selectedDetails.entry.requestId}`
                                                 )
                                             }
-                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#EAF3EC] hover:bg-[#2D3F2C] text-[#2D3F2C] hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#EAF3EC] hover:bg-[#037F8C] text-[#037F8C] hover:text-white text-xs font-semibold transition-colors cursor-pointer"
                                         >
                                             <ExternalLink size={13} />
                                             <span>

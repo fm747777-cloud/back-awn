@@ -179,10 +179,74 @@ export const ContractFormDrawer: React.FC<ContractFormDrawerProps> = ({
         }
     };
 
+    const eligibleQuotations = quotations.filter((q) => {
+        const isApprovedOrLinked =
+            q.quotationStatus === 'approved' ||
+            (mode === 'edit' && q.id === initialData?.quotationId);
+        if (!isApprovedOrLinked) return false;
+
+        if (formState.companyId && q.companyId !== formState.companyId) {
+            return false;
+        }
+
+        return true;
+    });
+
+    const handleCompanyChange = (newCompanyId: string) => {
+        setFormState((prev) => {
+            const isQuotationIncompatible =
+                Boolean(prev.quotationId) &&
+                quotations.some(
+                    (q) => q.id === prev.quotationId && q.companyId !== newCompanyId
+                );
+
+            const isContactIncompatible =
+                Boolean(prev.contactId) &&
+                contacts.some(
+                    (c) => c.id === prev.contactId && c.companyId !== newCompanyId
+                );
+
+            return {
+                ...prev,
+                companyId: newCompanyId,
+                quotationId: isQuotationIncompatible ? '' : prev.quotationId,
+                contactId: isContactIncompatible ? '' : prev.contactId,
+            };
+        });
+
+        if (fieldErrors.companyId) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.companyId;
+                return next;
+            });
+        }
+        if (fieldErrors.quotationId) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.quotationId;
+                return next;
+            });
+        }
+    };
+
     const handleQuotationSelect = (quotationId: string) => {
+        if (!quotationId) {
+            handleChange('quotationId', '');
+            return;
+        }
         const q = quotations.find((item) => item.id === quotationId);
         if (!q) {
             handleChange('quotationId', '');
+            return;
+        }
+        if (q.quotationStatus !== 'approved' && q.id !== initialData?.quotationId) {
+            setFieldErrors((prev) => ({
+                ...prev,
+                quotationId: t('crm.commercial.quotations.validation.mustBeApproved', {
+                    defaultValue: 'Only approved quotations can be converted into contracts.',
+                }),
+            }));
             return;
         }
         setFormState((prev) => ({
@@ -229,6 +293,35 @@ export const ContractFormDrawer: React.FC<ContractFormDrawerProps> = ({
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setFieldErrors({});
+
+        if (formState.quotationId && formState.quotationId.trim() !== '') {
+            const selectedQ = quotations.find((q) => q.id === formState.quotationId);
+            if (!selectedQ) {
+                setFieldErrors((prev) => ({
+                    ...prev,
+                    quotationId: 'Selected quotation does not exist.',
+                }));
+                return;
+            }
+            if (
+                selectedQ.quotationStatus !== 'approved' &&
+                selectedQ.id !== initialData?.quotationId
+            ) {
+                setFieldErrors((prev) => ({
+                    ...prev,
+                    quotationId: 'Only approved quotations can be linked to a contract.',
+                }));
+                return;
+            }
+            if (selectedQ.companyId !== formState.companyId) {
+                setFieldErrors((prev) => ({
+                    ...prev,
+                    quotationId: 'The selected quotation does not belong to the selected company.',
+                }));
+                return;
+            }
+        }
+
         const parsed = crmContractInputSchema.safeParse({
             ...formState,
             contractNumber: formState.contractNumber?.trim() || undefined,
@@ -366,7 +459,7 @@ export const ContractFormDrawer: React.FC<ContractFormDrawerProps> = ({
                                             'crm.commercial.common.noLinkedQuotation'
                                         )}
                                     </option>
-                                    {quotations.map((q) => (
+                                    {eligibleQuotations.map((q) => (
                                         <option key={q.id} value={q.id}>
                                             {q.code} —{' '}
                                             {isRtl
@@ -376,6 +469,11 @@ export const ContractFormDrawer: React.FC<ContractFormDrawerProps> = ({
                                         </option>
                                     ))}
                                 </select>
+                                {fieldErrors.quotationId && (
+                                    <p className="text-[11px] text-[#A63A3A] mt-1">
+                                        {fieldErrors.quotationId}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="sm:col-span-2">
@@ -434,7 +532,7 @@ export const ContractFormDrawer: React.FC<ContractFormDrawerProps> = ({
                                 <select
                                     value={formState.companyId}
                                     onChange={(e) =>
-                                        handleChange('companyId', e.target.value)
+                                        handleCompanyChange(e.target.value)
                                     }
                                     className="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-white text-xs text-[#0D0D0D]"
                                 >

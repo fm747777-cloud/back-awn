@@ -430,7 +430,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -445,7 +445,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                 {t('customer.pages.servicePackages.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-PKG
@@ -460,14 +460,10 @@ export const CustomerServicePackagesPage: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.servicePackages.addPackage')}</span>
-                        </button>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                            <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                            <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                        </span>
                     </div>
                 </div>
 
@@ -479,7 +475,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.servicePackages.kpis.totalPackages')}
                             </span>
-                            <PackageCheck className="w-4 h-4 text-[#2D3F2C]" />
+                            <PackageCheck className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -490,9 +486,9 @@ export const CustomerServicePackagesPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.servicePackages.kpis.activePackages')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#265938] mt-2">{kpis.activeCount}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.activeCount}</p>
                     </div>
 
                     {/* 3. Inactive Packages */}
@@ -509,12 +505,12 @@ export const CustomerServicePackagesPage: React.FC = () => {
                     {/* 4. Average Price */}
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.servicePackages.kpis.avgPrice')}
                             </span>
                             <DollarSign className="w-4 h-4 text-[#8C6D3B]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#2D3F2C] mt-2">{formatCurrency(kpis.avgPrice)}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{formatCurrency(kpis.avgPrice)}</p>
                     </div>
                 </div>
             </div>
@@ -529,7 +525,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.servicePackages.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -548,7 +544,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | CustomerPackageStatus)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.servicePackages.statusAll')}</option>
                         <option value="active">{t('customer.pages.servicePackages.statusActive')}</option>
@@ -559,7 +555,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                     <select
                         value={cycleFilter}
                         onChange={(e) => setCycleFilter(e.target.value as 'all' | BillingCycle)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.servicePackages.cycleAll')}</option>
                         <option value="monthly">{t('customer.pages.servicePackages.cycleMonthly')}</option>
@@ -607,7 +603,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="text-xs text-[#2D3F2C] hover:underline font-semibold cursor-pointer mt-1"
+                                                className="text-xs text-[#037F8C] hover:underline font-semibold cursor-pointer mt-1"
                                             >
                                                 {t('customer.pages.servicePackages.feedback.resetFilters')}
                                             </button>
@@ -618,7 +614,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                 filteredPackages.map((pkg) => (
                                     <tr key={pkg.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
                                         {/* Code */}
-                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#2D3F2C]">
+                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#037F8C]">
                                             <span className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8]" dir="ltr">
                                                 {pkg.code}
                                             </span>
@@ -640,7 +636,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                 {pkg.linkedServices.slice(0, 2).map((srv) => (
                                                     <span
                                                         key={srv.id}
-                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                                         title={isRtl ? srv.nameAr : srv.nameEn}
                                                     >
                                                         <span className="font-mono text-[10px] text-[#857E74]">{srv.code}</span>
@@ -648,7 +644,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                     </span>
                                                 ))}
                                                 {pkg.linkedServices.length > 2 && (
-                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]">
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]">
                                                         +{pkg.linkedServices.length - 2}
                                                     </span>
                                                 )}
@@ -671,7 +667,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                         {/* Status */}
                                         <td className="py-3.5 px-4">
                                             {pkg.status === 'active' ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     <span>{t('customer.pages.servicePackages.statusActive')}</span>
                                                 </span>
@@ -695,34 +691,6 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-
-                                                {/* Edit */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(pkg)}
-                                                    className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E5E0D8] transition-colors cursor-pointer"
-                                                    title={t('customer.pages.servicePackages.table.edit')}
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-
-                                                {/* Toggle Status */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(pkg.id)}
-                                                    className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                                        pkg.status === 'active'
-                                                            ? 'text-[#265938] hover:text-[#1E5631] hover:bg-[#EAF3EC] border-transparent hover:border-[#C5DFCC]'
-                                                            : 'text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border-transparent hover:border-[#E5E0D8]'
-                                                    }`}
-                                                    title={
-                                                        pkg.status === 'active'
-                                                            ? t('customer.pages.servicePackages.table.deactivate')
-                                                            : t('customer.pages.servicePackages.table.activate')
-                                                    }
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -740,7 +708,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                         {/* Modal Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <PackageCheck className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -748,7 +716,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                         <h2 className="text-base font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingPackage.nameAr : viewingPackage.nameEn}
                                         </h2>
-                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]" dir="ltr">
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]" dir="ltr">
                                             {viewingPackage.code}
                                         </span>
                                     </div>
@@ -774,7 +742,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                     <span className="text-[11px] font-medium text-[#857E74]">
                                         {t('customer.pages.servicePackages.table.price')}
                                     </span>
-                                    <p className="text-base font-bold text-[#2D3F2C] mt-1">
+                                    <p className="text-base font-bold text-[#037F8C] mt-1">
                                         {formatCurrency(viewingPackage.price)}
                                     </p>
                                 </div>
@@ -792,7 +760,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                     </span>
                                     <div className="mt-1">
                                         {viewingPackage.status === 'active' ? (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                 <CheckCircle2 className="w-3 h-3" />
                                                 <span>{t('customer.pages.servicePackages.statusActive')}</span>
                                             </span>
@@ -830,7 +798,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                             <div>
                                 <h4 className="text-xs font-bold text-[#0D0D0D] flex items-center justify-between mb-3">
                                     <span>{t('customer.pages.servicePackages.details.servicesIncluded')}</span>
-                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EFECE6] text-[#2D3F2C]">
+                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EFECE6] text-[#037F8C]">
                                         {viewingPackage.linkedServices.length}
                                     </span>
                                 </h4>
@@ -846,7 +814,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                 className="p-3 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between gap-3"
                                             >
                                                 <div className="flex items-center gap-2.5">
-                                                    <Layers className="w-4 h-4 text-[#2D3F2C] shrink-0" />
+                                                    <Layers className="w-4 h-4 text-[#037F8C] shrink-0" />
                                                     <div>
                                                         <p className="text-xs font-semibold text-[#0D0D0D]">
                                                             {isRtl ? srv.nameAr : srv.nameEn}
@@ -856,7 +824,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-[#E5E0D8] text-[#2D3F2C]" dir="ltr">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white border border-[#E5E0D8] text-[#037F8C]" dir="ltr">
                                                     {srv.code}
                                                 </span>
                                             </div>
@@ -867,41 +835,14 @@ export const CustomerServicePackagesPage: React.FC = () => {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-between">
+                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-end">
                             <button
                                 type="button"
-                                onClick={() => handleToggleStatus(viewingPackage.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                    viewingPackage.status === 'active'
-                                        ? 'bg-white hover:bg-[#F5F2ED] text-[#857E74] border-[#DDD6CC]'
-                                        : 'bg-[#EAF3EC] hover:bg-[#D5EAD8] text-[#265938] border-[#C5DFCC]'
-                                }`}
+                                onClick={() => setViewingPackage(null)}
+                                className="px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                             >
-                                <Power className="w-3.5 h-3.5" />
-                                <span>
-                                    {viewingPackage.status === 'active'
-                                        ? t('customer.pages.servicePackages.table.deactivate')
-                                        : t('customer.pages.servicePackages.table.activate')}
-                                </span>
+                                {t('customer.pages.servicePackages.details.close')}
                             </button>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleStartEdit(viewingPackage)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    <Edit3 className="w-3.5 h-3.5 text-[#857E74]" />
-                                    <span>{t('customer.pages.servicePackages.details.edit')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingPackage(null)}
-                                    className="px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.servicePackages.details.close')}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -914,7 +855,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                         {/* Modal Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <PackageCheck className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -953,7 +894,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                             value={formData.code}
                                             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                                             placeholder="PKG-CST-01"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -967,7 +908,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, status: e.target.value as CustomerPackageStatus })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="active">{t('customer.pages.servicePackages.statusActive')}</option>
                                             <option value="inactive">{t('customer.pages.servicePackages.statusInactive')}</option>
@@ -989,7 +930,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="باقة الخدمات الشاملة"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1006,7 +947,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="Comprehensive Enterprise Suite"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1031,7 +972,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                     setFormData({ ...formData, price: Number(e.target.value) });
                                                     if (formErrors.price) setFormErrors({ ...formErrors, price: undefined });
                                                 }}
-                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             />
                                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-[#857E74]">
                                                 {isRtl ? 'ر.س' : 'SAR'}
@@ -1051,7 +992,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, billingCycle: e.target.value as BillingCycle })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="monthly">{t('customer.pages.servicePackages.cycleMonthly')}</option>
                                             <option value="quarterly">{t('customer.pages.servicePackages.cycleQuarterly')}</option>
@@ -1072,7 +1013,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                             value={formData.descriptionAr}
                                             onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
                                             placeholder="وصف تفصيلي للباقة ونطاق الخدمات المشمولة..."
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1086,7 +1027,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                             value={formData.descriptionEn}
                                             onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
                                             placeholder="Detailed scope of services and operational deliverables..."
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1112,7 +1053,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                     key={srv.id}
                                                     className={`flex items-center justify-between p-2.5 rounded-lg border text-xs cursor-pointer transition-colors ${
                                                         isSelected
-                                                            ? 'bg-white border-[#2D3F2C] text-[#0D0D0D] shadow-2xs'
+                                                            ? 'bg-white border-[#037F8C] text-[#0D0D0D] shadow-2xs'
                                                             : 'bg-white/60 hover:bg-white border-[#E5E0D8] text-[#595550]'
                                                     }`}
                                                 >
@@ -1132,13 +1073,13 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                                                     setFormErrors({ ...formErrors, services: undefined });
                                                                 }
                                                             }}
-                                                            className="w-4 h-4 rounded text-[#2D3F2C] focus:ring-[#2D3F2C] border-[#D6CFC4] cursor-pointer"
+                                                            className="w-4 h-4 rounded text-[#037F8C] focus:ring-[#037F8C] border-[#D6CFC4] cursor-pointer"
                                                         />
                                                         <span className="font-medium">
                                                             {isRtl ? srv.nameAr : srv.nameEn}
                                                         </span>
                                                     </div>
-                                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]" dir="ltr">
+                                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]" dir="ltr">
                                                         {srv.code}
                                                     </span>
                                                 </label>
@@ -1162,7 +1103,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                    className="px-5 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.servicePackages.modal.save')}
                                 </button>

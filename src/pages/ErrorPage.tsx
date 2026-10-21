@@ -34,7 +34,7 @@ export const ErrorPage = () => {
                 </p>
                 <Link
                     to="/"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2D3F2C] hover:bg-[#1F2C1E] text-[#FAF8F5] text-sm font-medium rounded-lg transition shadow-xs"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#037F8C] hover:bg-[#1F2C1E] text-[#FAF8F5] text-sm font-medium rounded-lg transition shadow-xs"
                 >
                     <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
                     <span>{t('errorPage.returnToDashboard')}</span>

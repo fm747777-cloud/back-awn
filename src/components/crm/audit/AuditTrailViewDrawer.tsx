@@ -110,7 +110,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                     <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
-                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-bold text-[#2D3F2C]"
+                                className="px-2.5 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono font-bold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {entry.code}
@@ -124,7 +124,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                                     `crm.workflow.auditTrails.actions.${entry.action}`
                                 )}
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 text-[#2D3F2C] text-xs font-semibold">
+                            <span className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 text-[#037F8C] text-xs font-semibold">
                                 {t(
                                     `crm.workflow.auditTrails.resourceTypes.${entry.resourceType}`,
                                     { defaultValue: entry.resourceType }
@@ -159,7 +159,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                     {/* Event Summary Banner */}
                     <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4 space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                                 <FileText size={14} />
                                 {t(
                                     'crm.workflow.auditTrails.viewDrawer.summarySection'
@@ -183,7 +183,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                     {/* Target Resource Card */}
                     <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-3">
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                                 <Database size={14} />
                                 {t(
                                     'crm.workflow.auditTrails.viewDrawer.resourceSection'
@@ -193,7 +193,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => onNavigateToResource(entry)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#2D3F2C] hover:text-white hover:border-[#2D3F2C] text-xs font-semibold text-[#2D3F2C] transition-colors cursor-pointer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#037F8C] hover:text-white hover:border-[#037F8C] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
                                 >
                                     <ExternalLink size={12} />
                                     {t(
@@ -225,7 +225,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                                     )}
                                 </span>
                                 <span
-                                    className="font-mono font-bold text-[#2D3F2C] mt-0.5 block"
+                                    className="font-mono font-bold text-[#037F8C] mt-0.5 block"
                                     dir="ltr"
                                 >
                                     {entry.resourceCode || entry.resourceId}
@@ -266,7 +266,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
 
                     {/* Actor & Governance Card */}
                     <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-3">
-                        <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                        <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                             <UserCheck size={14} />
                             {t(
                                 'crm.workflow.auditTrails.viewDrawer.actorSection'
@@ -312,7 +312,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
 
                     {/* Bilingual Audit Log Descriptions */}
                     <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-3">
-                        <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                        <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                             <ShieldCheck size={14} />
                             {t(
                                 'crm.workflow.auditTrails.viewDrawer.bilingualLogSection'
@@ -349,7 +349,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
                     {/* State Snapshots (Previous / New State) */}
                     {hasStateDiff && (
                         <div className="rounded-xl border border-[#E5E0D8] p-4 space-y-3">
-                            <h3 className="text-xs font-bold text-[#2D3F2C] flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-[#037F8C] flex items-center gap-1.5">
                                 <Code2 size={14} />
                                 {t(
                                     'crm.workflow.auditTrails.viewDrawer.statePayloadSection'

@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     Briefcase,
     CheckCircle2,
     XCircle,
     Users,
-    Search,
     X,
     RotateCcw,
     Download,
@@ -14,58 +15,73 @@ import {
     Pencil,
     Trash2,
     Power,
-    ChevronLeft,
-    ChevronRight,
     Building2,
     ShieldAlert,
     Copy,
     Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DataTable } from '../../components/DataTable';
+import { umsApi } from '../../api/api';
 import {
-    loadDesignations,
-    saveDesignations,
+    DesignationForm,
+    type DesignationFormValues,
+} from '../../components/ums/DesignationForm';
+import {
     loadDepartments,
     loadEmployees,
     generateNextDesignationCode,
-    checkDesignationDeletionEligibility,
     recordUmsAuditEvent,
     escapeSafeCsvCell,
     syncMasterEntityEmployeeCounts,
-    UMS_PAGE_SIZE_OPTIONS,
     type DesignationRecord,
     type DepartmentRecord,
     type EmployeeRecord,
 } from './umsMockData';
 
-interface DesignationFormData {
-    code: string;
-    titleEn: string;
-    titleAr: string;
-    departmentId: string;
-    descriptionEn: string;
-    descriptionAr: string;
-    status: 'Active' | 'Inactive';
-}
-
-const DEFAULT_FORM: DesignationFormData = {
-    code: '',
-    titleEn: '',
-    titleAr: '',
-    departmentId: '',
-    descriptionEn: '',
-    descriptionAr: '',
-    status: 'Active',
+const DEFAULT_FORM_VALUES: DesignationFormValues = {
+    designationName: '',
+    description: '',
 };
 
 export const UmsDesignationsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
+    const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
-    // Data State
-    const [designations, setDesignations] = useState<DesignationRecord[]>(() => loadDesignations());
-    const [departments] = useState<DepartmentRecord[]>(() => loadDepartments());
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
+    // Server / Repository State via TanStack Query & umsApi
+    const { data: designations = [], isLoading } = useQuery<DesignationRecord[]>({
+        queryKey: ['ums', 'designations'],
+        queryFn: async () => umsApi.listDesignations(),
+    });
+
+    const { data: departments = [] } = useQuery<DepartmentRecord[]>({
+        queryKey: ['ums', 'departments'],
+        queryFn: async () => {
+            const res = await umsApi.listDepartments();
+            return res.data ?? loadDepartments();
+        },
+    });
+
+    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
+        queryKey: ['ums', 'employees'],
+        queryFn: async () => {
+            const res = await umsApi.listEmployees();
+            return res.data ?? loadEmployees();
+        },
+    });
+
+    const saveDesignationsMutation = useMutation({
+        mutationFn: async (updated: DesignationRecord[]) => {
+            umsApi.saveDesignations(updated);
+            syncMasterEntityEmployeeCounts(employees);
+            return umsApi.listDesignations();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ums', 'designations'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
 
     // Resolve live Department display name in active language
     const resolveDepartmentDisplayName = (item: DesignationRecord): string | undefined => {
@@ -82,6 +98,7 @@ export const UmsDesignationsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'ALL' | 'Active' | 'Inactive'>('ALL');
     const [departmentFilter, setDepartmentFilter] = useState<string>('ALL');
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState<number>(10);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -92,8 +109,10 @@ export const UmsDesignationsPage: React.FC = () => {
     const [editingDesignation, setEditingDesignation] = useState<DesignationRecord | null>(null);
     const [viewingDesignation, setViewingDesignation] = useState<DesignationRecord | null>(null);
     const [deletingDesignation, setDeletingDesignation] = useState<DesignationRecord | null>(null);
-    const [formData, setFormData] = useState<DesignationFormData>(DEFAULT_FORM);
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [formValues, setFormValues] = useState<DesignationFormValues>(DEFAULT_FORM_VALUES);
+    const [formErrors, setFormErrors] = useState<
+        Partial<Record<keyof DesignationFormValues, string>>
+    >({});
 
     // Live count of employees assigned to each designation
     const employeeCountByDesignation = useMemo(() => {
@@ -106,18 +125,10 @@ export const UmsDesignationsPage: React.FC = () => {
         return counts;
     }, [employees]);
 
-    // Active departments for form selection & filter
+    // Active departments for filter
     const activeDepartments = useMemo(() => {
         return departments.filter((d) => d.status === 'Active');
     }, [departments]);
-
-    // Sync designations state with localStorage
-    const persistDesignations = (updated: DesignationRecord[]) => {
-        saveDesignations(updated);
-        syncMasterEntityEmployeeCounts(employees);
-        setEmployees(loadEmployees());
-        setDesignations(loadDesignations());
-    };
 
     // Summary KPIs
     const kpis = useMemo(() => {
@@ -159,11 +170,12 @@ export const UmsDesignationsPage: React.FC = () => {
         });
     }, [designations, searchQuery, statusFilter, departmentFilter, departments]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredDesignations.length / pageSize));
     const paginatedDesignations = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
         return filteredDesignations.slice(start, start + pageSize);
     }, [filteredDesignations, currentPage, pageSize]);
+
+    const hasActiveFilters = statusFilter !== 'ALL' || departmentFilter !== 'ALL';
 
     // Selection
     const isAllSelected =
@@ -205,66 +217,61 @@ export const UmsDesignationsPage: React.FC = () => {
 
     // Open Create Modal
     const handleOpenCreate = () => {
-        const nextCode = generateNextDesignationCode(designations);
-        setFormData({
-            ...DEFAULT_FORM,
-            code: nextCode,
-        });
+        setEditingDesignation(null);
+        setFormValues(DEFAULT_FORM_VALUES);
         setFormErrors({});
         setIsCreateOpen(true);
     };
 
     // Open Edit Modal
     const handleOpenEdit = (designation: DesignationRecord) => {
+        setIsCreateOpen(false);
         setEditingDesignation(designation);
-        setFormData({
-            code: designation.code,
-            titleEn: designation.titleEn,
-            titleAr: designation.titleAr,
-            departmentId: designation.departmentId || '',
-            descriptionEn: designation.descriptionEn,
-            descriptionAr: designation.descriptionAr,
-            status: designation.status,
+        setFormValues({
+            designationName: isRtl
+                ? designation.titleAr || designation.titleEn
+                : designation.titleEn || designation.titleAr,
+            description: isRtl
+                ? designation.descriptionAr || designation.descriptionEn
+                : designation.descriptionEn || designation.descriptionAr,
         });
+        setFormErrors({});
+    };
+
+    // Close Create/Edit Modal
+    const handleCloseForm = () => {
+        setIsCreateOpen(false);
+        setEditingDesignation(null);
         setFormErrors({});
     };
 
     // Validation
     const validateForm = (isEditing = false, currentId?: string): boolean => {
-        const errors: Record<string, string> = {};
+        const errors: Partial<Record<keyof DesignationFormValues, string>> = {};
+        const trimmedName = formValues.designationName.trim();
+        const trimmedDesc = formValues.description.trim();
 
-        if (!formData.titleEn.trim()) {
-            errors.titleEn = t('ums.designations.validation.titleEnRequired', {
-                defaultValue: 'English job title is required.',
+        if (!trimmedName) {
+            errors.designationName = t('ums.designations.validation.designationNameRequired', {
+                defaultValue: 'Designation Name is required.',
             });
+        } else {
+            const duplicate = designations.find(
+                (d) =>
+                    (!isEditing || d.id !== currentId) &&
+                    (d.titleEn.trim().toLowerCase() === trimmedName.toLowerCase() ||
+                        d.titleAr.trim().toLowerCase() === trimmedName.toLowerCase())
+            );
+            if (duplicate) {
+                errors.designationName = t('ums.designations.validation.duplicateTitle', {
+                    defaultValue: 'A designation with this name already exists.',
+                });
+            }
         }
 
-        if (!formData.titleAr.trim()) {
-            errors.titleAr = t('ums.designations.validation.titleArRequired', {
-                defaultValue: 'Arabic job title is required.',
-            });
-        }
-
-        // Duplicate Title check (case-insensitive)
-        const duplicateEn = designations.find(
-            (d) =>
-                (!isEditing || d.id !== currentId) &&
-                d.titleEn.trim().toLowerCase() === formData.titleEn.trim().toLowerCase()
-        );
-        if (duplicateEn) {
-            errors.titleEn = t('ums.designations.validation.duplicateTitle', {
-                defaultValue: 'A designation with this title already exists.',
-            });
-        }
-
-        const duplicateAr = designations.find(
-            (d) =>
-                (!isEditing || d.id !== currentId) &&
-                d.titleAr.trim().toLowerCase() === formData.titleAr.trim().toLowerCase()
-        );
-        if (duplicateAr) {
-            errors.titleAr = t('ums.designations.validation.duplicateTitle', {
-                defaultValue: 'A designation with this title already exists.',
+        if (!trimmedDesc) {
+            errors.description = t('ums.designations.validation.descriptionRequired', {
+                defaultValue: 'Description is required.',
             });
         }
 
@@ -272,29 +279,64 @@ export const UmsDesignationsPage: React.FC = () => {
         return Object.keys(errors).length === 0;
     };
 
-    // Save Create
-    const handleSaveCreate = (e: React.FormEvent) => {
+    // Save Create / Edit
+    const handleSubmitForm = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm(false)) return;
+        const isEditing = Boolean(editingDesignation);
+        if (!validateForm(isEditing, editingDesignation?.id)) return;
 
-        const linkedDept = departments.find((d) => d.id === formData.departmentId);
+        const trimmedName = formValues.designationName.trim();
+        const trimmedDesc = formValues.description.trim();
+
+        if (editingDesignation) {
+            const updatedDesignation: DesignationRecord = {
+                ...editingDesignation,
+                titleEn: isRtl ? editingDesignation.titleEn || trimmedName : trimmedName,
+                titleAr: isRtl ? trimmedName : editingDesignation.titleAr || trimmedName,
+                descriptionEn: isRtl ? editingDesignation.descriptionEn || trimmedDesc : trimmedDesc,
+                descriptionAr: isRtl ? trimmedDesc : editingDesignation.descriptionAr || trimmedDesc,
+            };
+
+            const updated = designations.map((d) =>
+                d.id === editingDesignation.id ? updatedDesignation : d
+            );
+            saveDesignationsMutation.mutate(updated);
+
+            recordUmsAuditEvent({
+                action: 'UPDATED',
+                resource: 'Designation',
+                resourceId: updatedDesignation.id,
+                resourceName: updatedDesignation.titleEn,
+                detailsEn: `Updated designation ${updatedDesignation.code} (${updatedDesignation.titleEn}).`,
+                detailsAr: `تحديث بيانات المسمى الوظيفي ${updatedDesignation.code} (${updatedDesignation.titleAr}).`,
+                previousState: JSON.stringify(editingDesignation),
+                newState: JSON.stringify(updatedDesignation),
+            });
+
+            toast.success(
+                t('ums.designations.feedback.updated', {
+                    defaultValue: `Designation ${trimmedName} updated successfully.`,
+                    title: trimmedName,
+                })
+            );
+            setEditingDesignation(null);
+            return;
+        }
 
         const newDesignation: DesignationRecord = {
             id: `des-${Date.now()}`,
-            code: formData.code.trim() || generateNextDesignationCode(designations),
-            titleEn: formData.titleEn.trim(),
-            titleAr: formData.titleAr.trim(),
-            departmentId: formData.departmentId || undefined,
-            departmentName: linkedDept ? linkedDept.nameEn : undefined,
-            descriptionEn: formData.descriptionEn.trim(),
-            descriptionAr: formData.descriptionAr.trim(),
-            status: formData.status,
+            code: generateNextDesignationCode(designations),
+            titleEn: trimmedName,
+            titleAr: trimmedName,
+            descriptionEn: trimmedDesc,
+            descriptionAr: trimmedDesc,
+            status: 'Active',
             employeeCount: 0,
             createdAt: new Date().toISOString().slice(0, 10),
         };
 
         const updated = [newDesignation, ...designations];
-        persistDesignations(updated);
+        saveDesignationsMutation.mutate(updated);
 
         recordUmsAuditEvent({
             action: 'CREATED',
@@ -315,50 +357,6 @@ export const UmsDesignationsPage: React.FC = () => {
         setIsCreateOpen(false);
     };
 
-    // Save Edit
-    const handleSaveEdit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingDesignation) return;
-        if (!validateForm(true, editingDesignation.id)) return;
-
-        const linkedDept = departments.find((d) => d.id === formData.departmentId);
-
-        const updatedDesignation: DesignationRecord = {
-            ...editingDesignation,
-            titleEn: formData.titleEn.trim(),
-            titleAr: formData.titleAr.trim(),
-            departmentId: formData.departmentId || undefined,
-            departmentName: linkedDept ? linkedDept.nameEn : undefined,
-            descriptionEn: formData.descriptionEn.trim(),
-            descriptionAr: formData.descriptionAr.trim(),
-            status: formData.status,
-        };
-
-        const updated = designations.map((d) =>
-            d.id === editingDesignation.id ? updatedDesignation : d
-        );
-        persistDesignations(updated);
-
-        recordUmsAuditEvent({
-            action: 'UPDATED',
-            resource: 'Designation',
-            resourceId: updatedDesignation.id,
-            resourceName: updatedDesignation.titleEn,
-            detailsEn: `Updated designation ${updatedDesignation.code} (${updatedDesignation.titleEn}).`,
-            detailsAr: `تحديث بيانات المسمى الوظيفي ${updatedDesignation.code} (${updatedDesignation.titleAr}).`,
-            previousState: JSON.stringify(editingDesignation),
-            newState: JSON.stringify(updatedDesignation),
-        });
-
-        toast.success(
-            t('ums.designations.feedback.updated', {
-                defaultValue: `Designation ${updatedDesignation.titleEn} updated successfully.`,
-                title: updatedDesignation.titleEn,
-            })
-        );
-        setEditingDesignation(null);
-    };
-
     // Quick Status Toggle
     const handleToggleStatus = (designation: DesignationRecord) => {
         const nextStatus: 'Active' | 'Inactive' =
@@ -366,7 +364,7 @@ export const UmsDesignationsPage: React.FC = () => {
         const updated = designations.map((d) =>
             d.id === designation.id ? { ...d, status: nextStatus } : d
         );
-        persistDesignations(updated);
+        saveDesignationsMutation.mutate(updated);
 
         const actionType = nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED';
         recordUmsAuditEvent({
@@ -375,7 +373,9 @@ export const UmsDesignationsPage: React.FC = () => {
             resourceId: designation.id,
             resourceName: designation.titleEn,
             detailsEn: `Changed status of ${designation.code} to ${nextStatus}.`,
-            detailsAr: `تغيير حالة المسمى الوظيفي ${designation.code} إلى ${nextStatus === 'Active' ? 'نشط' : 'معطل'}.`,
+            detailsAr: `تغيير حالة المسمى الوظيفي ${designation.code} إلى ${
+                nextStatus === 'Active' ? 'نشط' : 'معطل'
+            }.`,
         });
 
         toast.success(
@@ -395,14 +395,14 @@ export const UmsDesignationsPage: React.FC = () => {
     const handleConfirmDelete = () => {
         if (!deletingDesignation) return;
 
-        const check = checkDesignationDeletionEligibility(deletingDesignation.id, employees);
+        const check = umsApi.checkDesignationDeletionEligibility(deletingDesignation.id, employees);
         if (!check.canDelete) {
             toast.error(isRtl ? check.reasonAr : check.reasonEn);
             return;
         }
 
         const updated = designations.filter((d) => d.id !== deletingDesignation.id);
-        persistDesignations(updated);
+        saveDesignationsMutation.mutate(updated);
         setSelectedIds((prev) => prev.filter((id) => id !== deletingDesignation.id));
 
         recordUmsAuditEvent({
@@ -453,12 +453,16 @@ export const UmsDesignationsPage: React.FC = () => {
             escapeSafeCsvCell(d.descriptionEn || ''),
         ]);
 
-        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const csvContent =
+            '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `AWN_Designations_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.setAttribute(
+            'download',
+            `AWN_Designations_${new Date().toISOString().slice(0, 10)}.csv`
+        );
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -489,8 +493,292 @@ export const UmsDesignationsPage: React.FC = () => {
     // Deletion eligibility for modal
     const deletionEligibility = useMemo(() => {
         if (!deletingDesignation) return null;
-        return checkDesignationDeletionEligibility(deletingDesignation.id, employees);
+        return umsApi.checkDesignationDeletionEligibility(deletingDesignation.id, employees);
     }, [deletingDesignation, employees]);
+
+    // Shared DataTable column definitions
+    const columns: ColumnDef<any, any>[] = useMemo(
+        () => [
+            {
+                id: 'select',
+                header: () => (
+                    <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={handleSelectAll}
+                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
+                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                    />
+                ),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const isSelected = selectedIds.includes(item.id);
+                    return (
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(item.id)}
+                            aria-label={`Select ${item.titleEn}`}
+                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
+                        />
+                    );
+                },
+            },
+            {
+                accessorKey: 'code',
+                header: t('ums.designations.colCode', { defaultValue: 'Code' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex items-center gap-1.5 font-mono text-xs">
+                            <span className="font-semibold text-[#0D0D0D]">{item.code}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleCopyCode(item.code)}
+                                className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
+                                title={t('common.copy', { defaultValue: 'Copy' })}
+                            >
+                                {copiedCode === item.code ? (
+                                    <Check size={12} className="text-[#037F8C]" />
+                                ) : (
+                                    <Copy size={12} />
+                                )}
+                            </button>
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'titleEn',
+                header: t('ums.designations.colTitle', { defaultValue: 'Job Title' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex flex-col">
+                            <span className="font-bold text-[#0D0D0D]">
+                                {isRtl ? item.titleAr : item.titleEn}
+                            </span>
+                            <span className="text-[11px] text-[#6E6862]">
+                                {isRtl ? item.titleEn : item.titleAr}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'department',
+                header: t('ums.designations.colDepartment', { defaultValue: 'Department' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const deptName = resolveDepartmentDisplayName(item);
+                    return deptName ? (
+                        <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
+                            <Building2 size={13} className="text-[#857E74]" />
+                            <span>{deptName}</span>
+                        </div>
+                    ) : (
+                        <span className="text-xs text-[#857E74] italic">
+                            {t('ums.designations.noDepartment', {
+                                defaultValue: 'General / Unassigned',
+                            })}
+                        </span>
+                    );
+                },
+            },
+            {
+                id: 'staffCount',
+                header: t('ums.designations.colStaff', { defaultValue: 'Staff Count' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    const staffCount = employeeCountByDesignation[item.id] || 0;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => setViewingDesignation(item)}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
+                            title={t('ums.designations.staffPreview', {
+                                defaultValue: 'View assigned employees',
+                            })}
+                        >
+                            <Users size={13} className="text-[#857E74]" />
+                            <span>
+                                {staffCount > 0
+                                    ? `${staffCount} ${t('ums.designations.staffPreview', {
+                                          defaultValue: 'Employees',
+                                      })}`
+                                    : t('ums.designations.noStaffAssigned', {
+                                          defaultValue: 'No Staff',
+                                      })}
+                            </span>
+                        </button>
+                    );
+                },
+            },
+            {
+                accessorKey: 'status',
+                header: t('common.status', { defaultValue: 'Status' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => handleToggleStatus(item)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
+                                item.status === 'Active'
+                                    ? 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20 hover:bg-[#EAF3EC]/80'
+                                    : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
+                            }`}
+                            title={t('common.toggleStatus', {
+                                defaultValue: 'Click to toggle status',
+                            })}
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                    item.status === 'Active' ? 'bg-[#037F8C]' : 'bg-[#857E74]'
+                                }`}
+                            />
+                            <span>
+                                {item.status === 'Active'
+                                    ? t('common.active', { defaultValue: 'Active' })
+                                    : t('common.inactive', { defaultValue: 'Inactive' })}
+                            </span>
+                        </button>
+                    );
+                },
+            },
+            {
+                id: 'actions',
+                header: t('common.actions', { defaultValue: 'Actions' }),
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="flex items-center justify-end gap-1">
+                            {/* View */}
+                            <button
+                                type="button"
+                                onClick={() => setViewingDesignation(item)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={t('common.view', { defaultValue: 'View Details' })}
+                            >
+                                <Eye size={14} />
+                            </button>
+
+                            {/* Edit */}
+                            <button
+                                type="button"
+                                onClick={() => handleOpenEdit(item)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title={t('common.edit', { defaultValue: 'Edit' })}
+                            >
+                                <Pencil size={14} />
+                            </button>
+
+                            {/* Quick Status Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => handleToggleStatus(item)}
+                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                    item.status === 'Active'
+                                        ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
+                                        : 'text-[#857E74] hover:bg-[#FAF8F5]'
+                                }`}
+                                title={t('common.toggleStatus', { defaultValue: 'Toggle Status' })}
+                            >
+                                <Power size={14} />
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                                type="button"
+                                onClick={() => handleDeleteClick(item)}
+                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
+                                title={t('common.delete', { defaultValue: 'Delete' })}
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [
+            isAllSelected,
+            selectedIds,
+            copiedCode,
+            isRtl,
+            t,
+            employeeCountByDesignation,
+            departments,
+            designations,
+        ]
+    );
+
+    const filtersPanel = (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 bg-white border border-[#E5E0D8] rounded-xl shadow-2xs">
+            <div className="flex flex-wrap items-center gap-2.5">
+                {/* Department Filter */}
+                <div className="min-w-[160px]">
+                    <select
+                        value={departmentFilter}
+                        onChange={(e) => {
+                            setDepartmentFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        aria-label={t('ums.designations.filterDepartment', {
+                            defaultValue: 'Filter Department',
+                        })}
+                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] cursor-pointer"
+                    >
+                        <option value="ALL">
+                            {t('common.allDepartments', { defaultValue: 'All Departments' })}
+                        </option>
+                        {activeDepartments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>
+                                {isRtl ? dept.nameAr : dept.nameEn}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Status Filter Segmented Control */}
+                <div className="flex items-center gap-1 p-1 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg">
+                    {(['ALL', 'Active', 'Inactive'] as const).map((status) => (
+                        <button
+                            key={status}
+                            type="button"
+                            onClick={() => {
+                                setStatusFilter(status);
+                                setCurrentPage(1);
+                            }}
+                            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                                statusFilter === status
+                                    ? 'bg-white text-[#0D0D0D] shadow-2xs border border-[#E5E0D8]'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                            }`}
+                        >
+                            {status === 'ALL'
+                                ? t('common.all', { defaultValue: 'All' })
+                                : status === 'Active'
+                                ? t('common.active', { defaultValue: 'Active' })
+                                : t('common.inactive', { defaultValue: 'Inactive' })}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {(searchQuery || hasActiveFilters) && (
+                <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                    title={t('common.resetFilters', { defaultValue: 'Reset Filters' })}
+                >
+                    <RotateCcw size={13} />
+                    <span>{t('common.reset', { defaultValue: 'Reset' })}</span>
+                </button>
+            )}
+        </div>
+    );
 
     return (
         <div className="space-y-6 text-start">
@@ -502,7 +790,7 @@ export const UmsDesignationsPage: React.FC = () => {
                             {t('ums.designations.title', { defaultValue: 'Designations Master' })}
                         </h1>
                         <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                             dir="ltr"
                         >
                             DES-MST
@@ -529,10 +817,14 @@ export const UmsDesignationsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                         <Plus size={14} />
-                        <span>{t('ums.designations.addDesignation', { defaultValue: 'Add Designation' })}</span>
+                        <span>
+                            {t('ums.designations.addDesignation', {
+                                defaultValue: 'Add Designation',
+                            })}
+                        </span>
                     </button>
                 </div>
             </div>
@@ -543,9 +835,11 @@ export const UmsDesignationsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.total', { defaultValue: 'Total Designations' })}
+                            {t('ums.designations.kpi.total', {
+                                defaultValue: 'Total Designations',
+                            })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Briefcase size={16} />
                         </div>
                     </div>
@@ -565,12 +859,12 @@ export const UmsDesignationsPage: React.FC = () => {
                         <span className="text-xs font-medium text-[#6E6862]">
                             {t('ums.designations.kpi.active', { defaultValue: 'Active Positions' })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 flex items-center justify-center text-[#265938]">
+                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
                             <CheckCircle2 size={16} />
                         </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#265938]">
+                        <span className="text-2xl font-bold tracking-tight text-[#037F8C]">
                             {kpis.active}
                         </span>
                         <span className="text-[11px] font-normal text-[#6E6862]">
@@ -583,7 +877,9 @@ export const UmsDesignationsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.inactive', { defaultValue: 'Inactive Positions' })}
+                            {t('ums.designations.kpi.inactive', {
+                                defaultValue: 'Inactive Positions',
+                            })}
                         </span>
                         <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#857E74]">
                             <XCircle size={16} />
@@ -603,9 +899,11 @@ export const UmsDesignationsPage: React.FC = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.workforce', { defaultValue: 'Assigned Workforce' })}
+                            {t('ums.designations.kpi.workforce', {
+                                defaultValue: 'Assigned Workforce',
+                            })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                             <Users size={16} />
                         </div>
                     </div>
@@ -614,631 +912,84 @@ export const UmsDesignationsPage: React.FC = () => {
                             {kpis.totalAssignedStaff}
                         </span>
                         <span className="text-[11px] font-normal text-[#6E6862]">
-                            {t('ums.designations.kpi.employeesTotal', { defaultValue: 'Employees' })}
+                            {t('ums.designations.kpi.employeesTotal', {
+                                defaultValue: 'Employees',
+                            })}
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* Filter & Search Bar */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs space-y-3">
-                <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                        <Search
-                            size={15}
-                            className="absolute top-1/2 -translate-y-1/2 text-[#857E74] pointer-events-none start-3"
-                        />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            placeholder={t('ums.designations.searchPlaceholder', {
-                                defaultValue: 'Search designations by code, title, department, or description...',
-                            })}
-                            className="w-full ps-9 pe-8 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] transition-colors"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setCurrentPage(1);
-                                }}
-                                className="absolute top-1/2 -translate-y-1/2 end-2.5 text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
-                            >
-                                <X size={13} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2.5">
-                        {/* Department Filter */}
-                        <div className="min-w-[160px]">
-                            <select
-                                value={departmentFilter}
-                                onChange={(e) => {
-                                    setDepartmentFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                aria-label={t('ums.designations.filterDepartment', { defaultValue: 'Filter Department' })}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
-                            >
-                                <option value="ALL">
-                                    {t('common.allDepartments', { defaultValue: 'All Departments' })}
-                                </option>
-                                {activeDepartments.map((dept) => (
-                                    <option key={dept.id} value={dept.id}>
-                                        {isRtl ? dept.nameAr : dept.nameEn}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Status Filter Segmented Control */}
-                        <div className="flex items-center gap-1 p-1 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg">
-                            {(['ALL', 'Active', 'Inactive'] as const).map((status) => (
-                                <button
-                                    key={status}
-                                    type="button"
-                                    onClick={() => {
-                                        setStatusFilter(status);
-                                        setCurrentPage(1);
-                                    }}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-                                        statusFilter === status
-                                            ? 'bg-white text-[#0D0D0D] shadow-2xs border border-[#E5E0D8]'
-                                            : 'text-[#6E6862] hover:text-[#0D0D0D]'
-                                    }`}
-                                >
-                                    {status === 'ALL'
-                                        ? t('common.all', { defaultValue: 'All' })
-                                        : status === 'Active'
-                                        ? t('common.active', { defaultValue: 'Active' })
-                                        : t('common.inactive', { defaultValue: 'Inactive' })}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Reset Filters Button */}
-                        {(searchQuery || statusFilter !== 'ALL' || departmentFilter !== 'ALL') && (
-                            <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                title={t('common.resetFilters', { defaultValue: 'Reset Filters' })}
-                            >
-                                <RotateCcw size={13} />
-                                <span>{t('common.reset', { defaultValue: 'Reset' })}</span>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* Bulk selection actions bar */}
-                {selectedIds.length > 0 && (
-                    <div className="flex items-center justify-between px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
-                        <span className="font-semibold text-[#2D3F2C]">
-                            {t('common.selectedCount', {
-                                defaultValue: `${selectedIds.length} item(s) selected`,
-                                count: selectedIds.length,
-                            })}
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setSelectedIds([])}
-                                className="text-xs text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
-                            >
-                                {t('common.clearSelection', { defaultValue: 'Clear' })}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Data Table */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-start text-xs">
-                        <thead>
-                            <tr className="border-b border-[#E5E0D8] bg-[#FAF8F5] text-[#6E6862] font-semibold">
-                                <th className="w-10 px-4 py-3 text-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        onChange={handleSelectAll}
-                                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
-                                        className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                    />
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.designations.colCode', { defaultValue: 'Code' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.designations.colTitle', { defaultValue: 'Job Title' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.designations.colDepartment', { defaultValue: 'Department' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('ums.designations.colStaff', { defaultValue: 'Staff Count' })}
-                                </th>
-                                <th className="px-4 py-3 text-start">
-                                    {t('common.status', { defaultValue: 'Status' })}
-                                </th>
-                                <th className="px-4 py-3 text-end">
-                                    {t('common.actions', { defaultValue: 'Actions' })}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#EFECE6] text-[#45413C]">
-                            {paginatedDesignations.length === 0 ? (
-                                <tr>
-                                    <td colSpan={7} className="px-4 py-12 text-center text-[#857E74]">
-                                        <Briefcase size={32} className="mx-auto mb-2 text-[#857E74]/40" />
-                                        <p className="font-semibold text-[#0D0D0D]">
-                                            {t('common.noRecords', { defaultValue: 'No designations found' })}
-                                        </p>
-                                        <p className="text-[11px] text-[#6E6862] mt-0.5">
-                                            {searchQuery || statusFilter !== 'ALL' || departmentFilter !== 'ALL'
-                                                ? t('common.tryAdjustingFilters', { defaultValue: 'Try clearing your search query or filters.' })
-                                                : t('ums.designations.noDesignationsYet', { defaultValue: 'Get started by creating your first corporate designation.' })}
-                                        </p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedDesignations.map((item) => {
-                                    const staffCount = employeeCountByDesignation[item.id] || 0;
-                                    const isSelected = selectedIds.includes(item.id);
-
-                                    return (
-                                        <tr
-                                            key={item.id}
-                                            className={`hover:bg-[#FAF8F5]/60 transition-colors ${
-                                                isSelected ? 'bg-[#FAF8F5]' : ''
-                                            }`}
-                                        >
-                                            {/* Checkbox */}
-                                            <td className="w-10 px-4 py-3 text-center">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleToggleSelect(item.id)}
-                                                    aria-label={`Select ${item.titleEn}`}
-                                                    className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                                />
-                                            </td>
-
-                                            {/* Code */}
-                                            <td className="px-4 py-3 font-mono text-xs">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-semibold text-[#0D0D0D]">
-                                                        {item.code}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleCopyCode(item.code)}
-                                                        className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
-                                                        title={t('common.copy', { defaultValue: 'Copy' })}
-                                                    >
-                                                        {copiedCode === item.code ? (
-                                                            <Check size={12} className="text-[#265938]" />
-                                                        ) : (
-                                                            <Copy size={12} />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </td>
-
-                                            {/* Title (Bilingual) */}
-                                            <td className="px-4 py-3">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-[#0D0D0D]">
-                                                        {isRtl ? item.titleAr : item.titleEn}
-                                                    </span>
-                                                    <span className="text-[11px] text-[#6E6862]">
-                                                        {isRtl ? item.titleEn : item.titleAr}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            {/* Department */}
-                                            <td className="px-4 py-3">
-                                                {resolveDepartmentDisplayName(item) ? (
-                                                    <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
-                                                        <Building2 size={13} className="text-[#857E74]" />
-                                                        <span>{resolveDepartmentDisplayName(item)}</span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-[#857E74] italic">
-                                                        {t('ums.designations.noDepartment', {
-                                                            defaultValue: 'General / Unassigned',
-                                                        })}
-                                                    </span>
-                                                )}
-                                            </td>
-
-                                            {/* Staff Count */}
-                                            <td className="px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setViewingDesignation(item)}
-                                                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#2D3F2C] hover:underline cursor-pointer"
-                                                    title={t('ums.designations.staffPreview', {
-                                                        defaultValue: 'View assigned employees',
-                                                    })}
-                                                >
-                                                    <Users size={13} className="text-[#857E74]" />
-                                                    <span>
-                                                        {staffCount > 0
-                                                            ? `${staffCount} ${t('ums.designations.staffPreview', { defaultValue: 'Employees' })}`
-                                                            : t('ums.designations.noStaffAssigned', { defaultValue: 'No Staff' })}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            {/* Status */}
-                                            <td className="px-4 py-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(item)}
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
-                                                        item.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938] border-[#265938]/20 hover:bg-[#EAF3EC]/80'
-                                                            : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
-                                                    }`}
-                                                    title={t('common.toggleStatus', { defaultValue: 'Click to toggle status' })}
-                                                >
-                                                    <span
-                                                        className={`w-1.5 h-1.5 rounded-full ${
-                                                            item.status === 'Active' ? 'bg-[#265938]' : 'bg-[#857E74]'
-                                                        }`}
-                                                    />
-                                                    <span>
-                                                        {item.status === 'Active'
-                                                            ? t('common.active', { defaultValue: 'Active' })
-                                                            : t('common.inactive', { defaultValue: 'Inactive' })}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td className="px-4 py-3 text-end">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    {/* View */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setViewingDesignation(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t('common.view', { defaultValue: 'View Details' })}
-                                                    >
-                                                        <Eye size={14} />
-                                                    </button>
-
-                                                    {/* Edit */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEdit(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                        title={t('common.edit', { defaultValue: 'Edit' })}
-                                                    >
-                                                        <Pencil size={14} />
-                                                    </button>
-
-                                                    {/* Quick Status Toggle */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(item)}
-                                                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                                                            item.status === 'Active'
-                                                                ? 'text-[#265938] hover:bg-[#EAF3EC]'
-                                                                : 'text-[#857E74] hover:bg-[#FAF8F5]'
-                                                        }`}
-                                                        title={t('common.toggleStatus', { defaultValue: 'Toggle Status' })}
-                                                    >
-                                                        <Power size={14} />
-                                                    </button>
-
-                                                    {/* Delete */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteClick(item)}
-                                                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
-                                                        title={t('common.delete', { defaultValue: 'Delete' })}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination footer */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-[#E5E0D8] bg-[#FAF8F5]/50 text-xs text-[#6E6862]">
+            {/* Bulk selection actions bar */}
+            {selectedIds.length > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
+                    <span className="font-semibold text-[#037F8C]">
+                        {t('common.selectedCount', {
+                            defaultValue: `${selectedIds.length} item(s) selected`,
+                            count: selectedIds.length,
+                        })}
+                    </span>
                     <div className="flex items-center gap-2">
-                        <span>{t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}</span>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            aria-label={t('common.rowsPerPage', { defaultValue: 'Rows per page:' })}
-                            className="px-2 py-1 rounded bg-white border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
-                        >
-                            {UMS_PAGE_SIZE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
-                                    {opt}
-                                </option>
-                            ))}
-                        </select>
-                        <span className="ms-2">
-                            {t('common.showingPagination', {
-                                defaultValue: `Showing ${
-                                    filteredDesignations.length === 0 ? 0 : (currentPage - 1) * pageSize + 1
-                                } - ${Math.min(
-                                    currentPage * pageSize,
-                                    filteredDesignations.length
-                                )} of ${filteredDesignations.length}`,
-                                start: filteredDesignations.length === 0 ? 0 : (currentPage - 1) * pageSize + 1,
-                                end: Math.min(currentPage * pageSize, filteredDesignations.length),
-                                total: filteredDesignations.length,
-                            })}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
                         <button
                             type="button"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.prev', { defaultValue: 'Previous Page' })}
+                            onClick={() => setSelectedIds([])}
+                            className="text-xs text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
                         >
-                            <ChevronLeft size={14} className={isRtl ? 'rotate-180' : ''} />
+                            {t('common.clearSelection', { defaultValue: 'Clear' })}
                         </button>
-
-                        <span className="px-2 font-semibold text-[#0D0D0D]">
-                            {currentPage} / {totalPages}
-                        </span>
-
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-1.5 rounded-md border border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                            title={t('common.next', { defaultValue: 'Next Page' })}
-                        >
-                            <ChevronRight size={14} className={isRtl ? 'rotate-180' : ''} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Create / Edit Drawer or Modal */}
-            {(isCreateOpen || editingDesignation) && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs">
-                    <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
-                            <div>
-                                <h2 className="text-base font-bold text-[#0D0D0D]">
-                                    {isCreateOpen
-                                        ? t('ums.designations.addDesignation', { defaultValue: 'Add Designation' })
-                                        : t('ums.designations.editDesignation', { defaultValue: 'Edit Designation' })}
-                                </h2>
-                                <p className="text-xs text-[#6E6862] mt-0.5">
-                                    {formData.code}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCreateOpen(false);
-                                    setEditingDesignation(null);
-                                }}
-                                className="p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] cursor-pointer"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-
-                        <form onSubmit={isCreateOpen ? handleSaveCreate : handleSaveEdit} className="p-6 space-y-4">
-                            {/* Code (Read-Only) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.designations.colCode', { defaultValue: 'Code' })}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.code}
-                                    disabled
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#6E6862] cursor-not-allowed"
-                                />
-                            </div>
-
-                            {/* Title EN & AR */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.designations.form.titleEn', { defaultValue: 'Job Title (EN)' })}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.titleEn}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({ ...prev, titleEn: e.target.value }))
-                                        }
-                                        placeholder="e.g. Chief Executive Officer"
-                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                            formErrors.titleEn
-                                                ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                        }`}
-                                    />
-                                    {formErrors.titleEn && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                            {formErrors.titleEn}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.designations.form.titleAr', { defaultValue: 'Job Title (AR)' })}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="rtl"
-                                        value={formData.titleAr}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({ ...prev, titleAr: e.target.value }))
-                                        }
-                                        placeholder="مثال: الرئيس التنفيذي"
-                                        className={`w-full px-3 py-2 rounded-lg bg-white border text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] ${
-                                            formErrors.titleAr
-                                                ? 'border-[#DC2626] focus:border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#2D3F2C]'
-                                        }`}
-                                    />
-                                    {formErrors.titleAr && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1 font-medium">
-                                            {formErrors.titleAr}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Department Association */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.designations.form.department', {
-                                        defaultValue: 'Associated Department',
-                                    })}
-                                </label>
-                                <select
-                                    value={formData.departmentId}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, departmentId: e.target.value }))
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C] cursor-pointer"
-                                >
-                                    <option value="">
-                                        {t('ums.designations.noDepartment', {
-                                            defaultValue: '-- General / Unassigned Department --',
-                                        })}
-                                    </option>
-                                    {activeDepartments.map((dept) => (
-                                        <option key={dept.id} value={dept.id}>
-                                            {dept.code} — {isRtl ? dept.nameAr : dept.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Description EN */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.designations.form.descEn', { defaultValue: 'Description (EN)' })}
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    value={formData.descriptionEn}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, descriptionEn: e.target.value }))
-                                    }
-                                    placeholder="Organizational role overview and core competencies..."
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                />
-                            </div>
-
-                            {/* Description AR */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1">
-                                    {t('ums.designations.form.descAr', { defaultValue: 'Description (AR)' })}
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    dir="rtl"
-                                    value={formData.descriptionAr}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, descriptionAr: e.target.value }))
-                                    }
-                                    placeholder="الوصف الوظيفي والمسؤوليات الرئيسية..."
-                                    className="w-full px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] placeholder-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] focus:border-[#2D3F2C]"
-                                />
-                            </div>
-
-                            {/* Status */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#45413C] mb-1.5">
-                                    {t('common.status', { defaultValue: 'Status' })}
-                                </label>
-                                <div className="flex items-center gap-4">
-                                    <label className="flex items-center gap-2 text-xs font-medium text-[#45413C] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="designationStatus"
-                                            value="Active"
-                                            checked={formData.status === 'Active'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({ ...prev, status: 'Active' }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                        />
-                                        <span>{t('common.active', { defaultValue: 'Active' })}</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 text-xs font-medium text-[#45413C] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="designationStatus"
-                                            value="Inactive"
-                                            checked={formData.status === 'Inactive'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({ ...prev, status: 'Inactive' }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                                        />
-                                        <span>{t('common.inactive', { defaultValue: 'Inactive' })}</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center justify-end gap-2 pt-4 border-t border-[#E5E0D8]">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsCreateOpen(false);
-                                        setEditingDesignation(null);
-                                    }}
-                                    className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                >
-                                    {t('common.cancel', { defaultValue: 'Cancel' })}
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-                                >
-                                    {isCreateOpen
-                                        ? t('common.create', { defaultValue: 'Create' })
-                                        : t('common.saveChanges', { defaultValue: 'Save Changes' })}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}
+
+            {/* Shared DataTable */}
+            <DataTable
+                columns={columns}
+                data={paginatedDesignations}
+                count={filteredDesignations.length}
+                loading={isLoading}
+                pageIndex={currentPage - 1}
+                pageSize={pageSize}
+                onPageChange={(newPageIdx) => setCurrentPage(newPageIdx + 1)}
+                onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setCurrentPage(1);
+                }}
+                searchValue={searchQuery}
+                onSearchChange={(val) => {
+                    setSearchQuery(val);
+                    setCurrentPage(1);
+                }}
+                searchPlaceholder={t('ums.designations.searchPlaceholder', {
+                    defaultValue:
+                        'Search designations by code, title, department, or description...',
+                })}
+                title={t('ums.designations.title', { defaultValue: 'Designations Master' })}
+                description={t('ums.designations.subtitle', {
+                    defaultValue:
+                        'Corporate job titles, grade structures, and departmental allocations.',
+                })}
+                onAddNew={handleOpenCreate}
+                addNewLabel={t('ums.designations.addDesignation', {
+                    defaultValue: 'Add Designation',
+                })}
+                onExport={handleExportCsv}
+                onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+                isFiltersOpen={isFiltersOpen}
+                hasActiveFilters={hasActiveFilters}
+                filtersContent={filtersPanel}
+            />
+
+            {/* Extracted Standalone Designation Form Modal */}
+            <DesignationForm
+                isOpen={isCreateOpen || Boolean(editingDesignation)}
+                isEditing={Boolean(editingDesignation)}
+                values={formValues}
+                errors={formErrors}
+                isSubmitting={saveDesignationsMutation.isPending}
+                onChange={setFormValues}
+                onCancel={handleCloseForm}
+                onSubmit={handleSubmitForm}
+            />
 
             {/* View Details Drawer or Modal */}
             {viewingDesignation && (
@@ -1246,12 +997,14 @@ export const UmsDesignationsPage: React.FC = () => {
                     <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
+                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
                                     <Briefcase size={18} />
                                 </div>
                                 <div>
                                     <h2 className="text-base font-bold text-[#0D0D0D]">
-                                        {isRtl ? viewingDesignation.titleAr : viewingDesignation.titleEn}
+                                        {isRtl
+                                            ? viewingDesignation.titleAr
+                                            : viewingDesignation.titleEn}
                                     </h2>
                                     <span className="font-mono text-xs text-[#6E6862]">
                                         {viewingDesignation.code}
@@ -1272,11 +1025,15 @@ export const UmsDesignationsPage: React.FC = () => {
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 text-xs">
                                 <div>
                                     <span className="text-[#857E74] block">
-                                        {t('ums.designations.colDepartment', { defaultValue: 'Department' })}
+                                        {t('ums.designations.colDepartment', {
+                                            defaultValue: 'Department',
+                                        })}
                                     </span>
                                     <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
                                         {resolveDepartmentDisplayName(viewingDesignation) ||
-                                            t('ums.designations.noDepartment', { defaultValue: 'General' })}
+                                            t('ums.designations.noDepartment', {
+                                                defaultValue: 'General',
+                                            })}
                                     </span>
                                 </div>
 
@@ -1287,7 +1044,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                     <span
                                         className={`inline-block font-semibold mt-0.5 ${
                                             viewingDesignation.status === 'Active'
-                                                ? 'text-[#265938]'
+                                                ? 'text-[#037F8C]'
                                                 : 'text-[#857E74]'
                                         }`}
                                     >
@@ -1309,16 +1066,21 @@ export const UmsDesignationsPage: React.FC = () => {
                             <div className="space-y-3">
                                 <div>
                                     <h3 className="text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.designations.form.descEn', { defaultValue: 'Description (EN)' })}
+                                        {t('ums.designations.form.descEn', {
+                                            defaultValue: 'Description (EN)',
+                                        })}
                                     </h3>
                                     <p className="text-xs text-[#6E6862] bg-[#FAF8F5] p-3 rounded-lg border border-[#E5E0D8]">
-                                        {viewingDesignation.descriptionEn || 'No English description provided.'}
+                                        {viewingDesignation.descriptionEn ||
+                                            'No English description provided.'}
                                     </p>
                                 </div>
 
                                 <div>
                                     <h3 className="text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.designations.form.descAr', { defaultValue: 'Description (AR)' })}
+                                        {t('ums.designations.form.descAr', {
+                                            defaultValue: 'Description (AR)',
+                                        })}
                                     </h3>
                                     <p
                                         dir="rtl"
@@ -1333,15 +1095,20 @@ export const UmsDesignationsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-xs font-bold text-[#0D0D0D]">
-                                        {t('ums.designations.staffPreview', { defaultValue: 'Assigned Employees' })}{' '}
-                                        <span className="text-[#265938]">({viewedEmployees.length})</span>
+                                        {t('ums.designations.staffPreview', {
+                                            defaultValue: 'Assigned Employees',
+                                        })}{' '}
+                                        <span className="text-[#037F8C]">
+                                            ({viewedEmployees.length})
+                                        </span>
                                     </h3>
                                 </div>
 
                                 {viewedEmployees.length === 0 ? (
                                     <div className="p-4 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-center text-xs text-[#857E74]">
                                         {t('ums.designations.noStaffAssigned', {
-                                            defaultValue: 'No employees currently assigned to this designation.',
+                                            defaultValue:
+                                                'No employees currently assigned to this designation.',
                                         })}
                                     </div>
                                 ) : (
@@ -1352,7 +1119,7 @@ export const UmsDesignationsPage: React.FC = () => {
                                                 className="flex items-center justify-between p-3 bg-white text-xs"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-white flex items-center justify-center font-bold text-[11px]">
+                                                    <div className="w-7 h-7 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px]">
                                                         {emp.nameEn.slice(0, 2).toUpperCase()}
                                                     </div>
                                                     <div>
@@ -1360,18 +1127,24 @@ export const UmsDesignationsPage: React.FC = () => {
                                                             {isRtl ? emp.nameAr : emp.nameEn}
                                                         </span>
                                                         <span className="text-[11px] text-[#6E6862]">
-                                                            {emp.code} · {isRtl ? emp.departmentNameAr || emp.departmentName : emp.departmentName}
+                                                            {emp.code} ·{' '}
+                                                            {isRtl
+                                                                ? emp.departmentNameAr ||
+                                                                  emp.departmentName
+                                                                : emp.departmentName}
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <span
                                                     className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                                                         emp.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#265938]'
+                                                            ? 'bg-[#EAF3EC] text-[#037F8C]'
                                                             : 'bg-[#FAF8F5] text-[#857E74]'
                                                     }`}
                                                 >
-                                                    {t(`ums.employees.statuses.${emp.status}`, { defaultValue: emp.status })}
+                                                    {t(`ums.employees.statuses.${emp.status}`, {
+                                                        defaultValue: emp.status,
+                                                    })}
                                                 </span>
                                             </div>
                                         ))}
@@ -1384,7 +1157,7 @@ export const UmsDesignationsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingDesignation(null)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                             >
                                 {t('common.close', { defaultValue: 'Close' })}
                             </button>
@@ -1409,7 +1182,9 @@ export const UmsDesignationsPage: React.FC = () => {
                                     })}
                                 </h2>
                                 <p className="text-xs text-[#6E6862] text-center mb-4">
-                                    {isRtl ? deletionEligibility.reasonAr : deletionEligibility.reasonEn}
+                                    {isRtl
+                                        ? deletionEligibility.reasonAr
+                                        : deletionEligibility.reasonEn}
                                 </p>
                                 <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#E5E0D8]">
                                     <button
@@ -1425,9 +1200,11 @@ export const UmsDesignationsPage: React.FC = () => {
                                             handleToggleStatus(deletingDesignation);
                                             setDeletingDesignation(null);
                                         }}
-                                        className="px-4 py-2 rounded-lg bg-[#2D3F2C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                        className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
                                     >
-                                        {t('common.deactivateInstead', { defaultValue: 'Deactivate Instead' })}
+                                        {t('common.deactivateInstead', {
+                                            defaultValue: 'Deactivate Instead',
+                                        })}
                                     </button>
                                 </div>
                             </div>
@@ -1438,7 +1215,9 @@ export const UmsDesignationsPage: React.FC = () => {
                                     <Trash2 size={20} />
                                 </div>
                                 <h2 className="text-base font-bold text-[#0D0D0D] text-center mb-1">
-                                    {t('ums.designations.deleteTitle', { defaultValue: 'Delete Designation' })}
+                                    {t('ums.designations.deleteTitle', {
+                                        defaultValue: 'Delete Designation',
+                                    })}
                                 </h2>
                                 <p className="text-xs text-[#6E6862] text-center mb-4">
                                     {t('ums.designations.deleteConfirmDesc', {
@@ -1447,7 +1226,9 @@ export const UmsDesignationsPage: React.FC = () => {
                                     })}
                                     <span className="block font-bold text-[#0D0D0D] mt-2">
                                         {deletingDesignation.code} —{' '}
-                                        {isRtl ? deletingDesignation.titleAr : deletingDesignation.titleEn}
+                                        {isRtl
+                                            ? deletingDesignation.titleAr
+                                            : deletingDesignation.titleEn}
                                     </span>
                                 </p>
                                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E0D8]">

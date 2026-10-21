@@ -28,6 +28,7 @@ import {
     crmContractSchema,
     crmInvoiceInputSchema,
     crmInvoiceSchema,
+    generateCrmInvoiceNumberAndCode,
     crmApprovalTaskInputSchema,
     crmApprovalTaskSchema,
     crmApprovalTaskDecisionInputSchema,
@@ -37,6 +38,7 @@ import {
     crmSalesPerformanceDashboardSchema,
     CRM_DEAL_STAGE_VALUES,
     calculateCrmQuotationTotals,
+    calculateCrmQuotationLineItem,
     calculateCrmInvoiceAmounts,
     roundCrmCurrency,
     CRM_DEAL_STAGE_DEFAULT_PROBABILITY,
@@ -80,6 +82,7 @@ import {
     type CrmBillingCycle,
     type CrmInvoiceInput,
     type CrmInvoiceRecord,
+    type CrmInvoiceType,
     type CrmInvoiceStatus,
     type CrmInvoicePaymentMethod,
     type CrmTaskPriority,
@@ -1573,6 +1576,7 @@ export interface CrmContractQueryParams extends CrmListQueryParams {
 }
 
 export interface CrmInvoiceQueryParams extends CrmListQueryParams {
+    invoiceType?: CrmInvoiceType | 'all';
     invoiceStatus?: CrmInvoiceStatus | 'all';
     companyId?: string;
     dealId?: string;
@@ -1803,6 +1807,7 @@ export type CrmApiErrorCode =
     | 'CRM_MASTER_IN_USE'
     | 'CRM_ENTITY_IN_USE'
     | 'CRM_DUPLICATE_NAME'
+    | 'CRM_DUPLICATE_CONVERSION'
     | 'CRM_SYSTEM_PROTECTED';
 
 export class CrmApiError extends Error {
@@ -1923,7 +1928,7 @@ const initialCrmLeadStatuses: CrmLeadStatusRecord[] = [
         nameAr: 'مؤهل',
         stageOrder: 3,
         probability: 60,
-        colorCode: '#265938',
+        colorCode: '#037F8C',
         isDefault: false,
         isClosingStage: false,
         closingOutcome: 'none',
@@ -1941,7 +1946,7 @@ const initialCrmLeadStatuses: CrmLeadStatusRecord[] = [
         nameAr: 'تم التحويل لصفقة',
         stageOrder: 4,
         probability: 100,
-        colorCode: '#2D3F2C',
+        colorCode: '#037F8C',
         isDefault: false,
         isClosingStage: true,
         closingOutcome: 'won',
@@ -3306,6 +3311,7 @@ const initialCrmQuotations: CrmQuotationRecord[] = [
 const initialCrmInvoices: CrmInvoiceRecord[] = [
     {
         id: 'crm-inv-1',
+        invoiceType: 'final_tax',
         code: 'INV-001',
         invoiceNumber: 'INV-2026-001',
         titleEn: 'Annual Corporate Retainer Invoice #1',
@@ -3329,6 +3335,32 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
         assignedEmployeeNameAr: 'كريم وجدي',
         issueDate: '2026-01-20',
         dueDate: '2026-02-20',
+        lineItems: [
+            {
+                id: 'inv-li-1',
+                itemType: 'package',
+                packageId: 'pkg-1',
+                servicePackageId: 'pkg-1',
+                descriptionEn: 'Enterprise Corporate Bundle',
+                descriptionAr: 'باقة الشركات المتكاملة',
+                quantity: 1,
+                unitPrice: 14500,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'fixed',
+                discountPercent: 0,
+                discountValue: 0,
+                discountAmount: 0,
+                taxableAmount: 14500,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 2175,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 2175,
+                lineTotal: 16675,
+            },
+        ],
         subtotal: 14500,
         discountTotal: 0,
         discountAmount: 0,
@@ -3354,6 +3386,7 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
     },
     {
         id: 'crm-inv-2',
+        invoiceType: 'final_tax',
         code: 'INV-002',
         invoiceNumber: 'INV-2026-002',
         titleEn: 'Afaq Regional HQ Mobilization & Q1 Compliance Invoice',
@@ -3377,6 +3410,55 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
         assignedEmployeeNameAr: 'ليان العتيبي',
         issueDate: '2026-02-04',
         dueDate: '2026-03-04',
+        lineItems: [
+            {
+                id: 'inv-li-201',
+                itemType: 'package',
+                packageId: 'pkg-1',
+                servicePackageId: 'pkg-1',
+                descriptionEn: 'Enterprise Corporate Bundle (MISA & Commercial Compliance)',
+                descriptionAr: 'باقة الشركات المتكاملة (الالتزام التجاري ووزارة الاستثمار)',
+                quantity: 1,
+                unitPrice: 14500,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'percentage',
+                discountPercent: 10,
+                discountValue: 10,
+                discountAmount: 1450,
+                taxableAmount: 13050,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 1957.5,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 1957.5,
+                lineTotal: 15007.5,
+            },
+            {
+                id: 'inv-li-202',
+                itemType: 'service',
+                serviceId: 'srv-1',
+                descriptionEn: 'Executive Mobility & Premium Residency Advisory',
+                descriptionAr: 'استشارات الإقامة المميزة والتنقل التنفيذي',
+                quantity: 1,
+                unitPrice: 14400,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'fixed',
+                discountPercent: 0,
+                discountValue: 400,
+                discountAmount: 400,
+                taxableAmount: 14000,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 2100,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 2100,
+                lineTotal: 16100,
+            },
+        ],
         subtotal: 28900,
         discountTotal: 1850,
         discountAmount: 1850,
@@ -3401,6 +3483,7 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
     },
     {
         id: 'crm-inv-3',
+        invoiceType: 'final_tax',
         code: 'INV-003',
         invoiceNumber: 'INV-2026-003',
         titleEn: 'Dar Al-Omran Branch Municipal Audit Advance Invoice',
@@ -3424,6 +3507,31 @@ const initialCrmInvoices: CrmInvoiceRecord[] = [
         assignedEmployeeNameAr: 'نورة السبيعي',
         issueDate: '2026-02-05',
         dueDate: '2026-03-05',
+        lineItems: [
+            {
+                id: 'inv-li-301',
+                itemType: 'service',
+                serviceId: 'srv-3',
+                descriptionEn: 'Municipal Commercial Licenses Branch Audit',
+                descriptionAr: 'تدقيق وتجديد التراخيص البلدية التجارية للفروع',
+                quantity: 5,
+                unitPrice: 1200,
+                period: 1,
+                periodUnit: 'years',
+                discountType: 'fixed',
+                discountPercent: 0,
+                discountValue: 500,
+                discountAmount: 500,
+                taxableAmount: 5500,
+                taxId: 'crm-tax-1',
+                taxRate: 15,
+                taxAmount: 825,
+                vatId: 'crm-tax-1',
+                vatRate: 15,
+                vatAmount: 825,
+                lineTotal: 6325,
+            },
+        ],
         subtotal: 6000,
         discountTotal: 500,
         discountAmount: 500,
@@ -3875,7 +3983,7 @@ function readNormalizedLeadStatuses(): CrmLeadStatusRecord[] {
             const seed = seedById.get(item.id);
             return {
                 ...item,
-                colorCode: item.colorCode || seed?.colorCode || '#2D3F2C',
+                colorCode: item.colorCode || seed?.colorCode || '#037F8C',
                 isDefault:
                     typeof item.isDefault === 'boolean'
                         ? item.isDefault
@@ -4354,10 +4462,134 @@ export function checkCrmMasterDeletionEligibility(
 }
 
 // ----------------------------------------------------------------------------
+// Reusable Lead Contact -> Primary Company Contact Synchronizer
+// ----------------------------------------------------------------------------
+export function syncLeadContactToCompany(
+    lead: {
+        id: string;
+        title: string;
+        contactName?: string;
+        contactEmail?: string;
+        contactPhone?: string;
+        contactJobTitle?: string;
+    },
+    company: {
+        id: string;
+        nameEn: string;
+        nameAr: string;
+    },
+    creatorName?: string,
+    existingContactsList?: CrmContactRecord[]
+): CrmContactRecord[] {
+    if (
+        !lead.contactName?.trim() ||
+        !lead.contactEmail?.trim() ||
+        !lead.contactPhone?.trim() ||
+        !company.id
+    ) {
+        return (
+            existingContactsList ||
+            readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.CONTACTS,
+                initialCrmContacts
+            )
+        );
+    }
+
+    const currentContacts =
+        existingContactsList ||
+        readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+    let nextContactsList = [...currentContacts];
+    const leadEmailLower = lead.contactEmail.trim().toLowerCase();
+
+    const existingForThisCompany = nextContactsList.find(
+        (c) =>
+            c.companyId === company.id &&
+            c.email.trim().toLowerCase() === leadEmailLower
+    );
+
+    if (existingForThisCompany) {
+        nextContactsList = nextContactsList.map((item) =>
+            item.id === existingForThisCompany.id
+                ? {
+                      ...item,
+                      isPrimary: true,
+                      leadId: lead.id,
+                      leadTitle: lead.title,
+                      phone: lead.contactPhone || item.phone,
+                      jobTitle: lead.contactJobTitle || item.jobTitle,
+                  }
+                : item.companyId === company.id
+                  ? { ...item, isPrimary: false }
+                  : item
+        );
+    } else {
+        const duplicateGlobal = nextContactsList.find(
+            (c) => c.email.trim().toLowerCase() === leadEmailLower
+        );
+        if (duplicateGlobal && !duplicateGlobal.companyId) {
+            nextContactsList = nextContactsList.map((item) =>
+                item.id === duplicateGlobal.id
+                    ? {
+                          ...item,
+                          companyId: company.id,
+                          companyNameEn: company.nameEn,
+                          companyNameAr: company.nameAr,
+                          leadId: lead.id,
+                          leadTitle: lead.title,
+                          isPrimary: true,
+                      }
+                    : item.companyId === company.id
+                      ? { ...item, isPrimary: false }
+                      : item
+            );
+        } else if (!duplicateGlobal) {
+            nextContactsList = nextContactsList.map((item) =>
+                item.companyId === company.id
+                    ? { ...item, isPrimary: false }
+                    : item
+            );
+            const newContactRecord: CrmContactRecord = validateWithSchema(
+                crmContactSchema,
+                {
+                    id: generateDeterministicCrmId(nextContactsList, 'crm-cnt'),
+                    code: generateNextCrmCode(nextContactsList, 'CNT'),
+                    fullNameEn: lead.contactName.trim(),
+                    fullNameAr: lead.contactName.trim(),
+                    contactType: 'decision_maker',
+                    jobTitle: lead.contactJobTitle?.trim() || 'Primary Contact',
+                    department: 'Management',
+                    phone: lead.contactPhone.trim(),
+                    email: lead.contactEmail.trim(),
+                    companyId: company.id,
+                    companyNameEn: company.nameEn,
+                    companyNameAr: company.nameAr,
+                    leadId: lead.id,
+                    leadTitle: lead.title,
+                    isPrimary: true,
+                    status: 'active',
+                    createdAt: new Date().toISOString().split('T')[0],
+                    createdBy: creatorName || 'Karim Wagdi',
+                },
+                'Contact'
+            );
+            nextContactsList.unshift(newContactRecord);
+        }
+    }
+
+    setLocal(CRM_STORAGE_KEYS.CONTACTS, nextContactsList);
+    return nextContactsList;
+}
+
+// ----------------------------------------------------------------------------
 // Central Export: crmApi
 // ----------------------------------------------------------------------------
 
 export const crmApi = {
+    syncLeadContactToCompany,
     isRemoteBackendActive: isCrmRemoteBackendActive,
 
     resetAllCrmStorage: (): void => {
@@ -4616,7 +4848,7 @@ export const crmApi = {
             crmLeadStatusSchema,
             {
                 ...validated,
-                colorCode: validated.colorCode || '#2D3F2C',
+                colorCode: validated.colorCode || '#037F8C',
                 closingOutcome: validated.isClosingStage
                     ? validated.closingOutcome && validated.closingOutcome !== 'none'
                         ? validated.closingOutcome
@@ -4695,7 +4927,7 @@ export const crmApi = {
         const updatedRecord: CrmLeadStatusRecord = {
             ...previous,
             ...merged,
-            colorCode: merged.colorCode || previous.colorCode || '#2D3F2C',
+            colorCode: merged.colorCode || previous.colorCode || '#037F8C',
             closingOutcome: merged.isClosingStage
                 ? merged.closingOutcome && merged.closingOutcome !== 'none'
                     ? merged.closingOutcome
@@ -6103,6 +6335,30 @@ export const crmApi = {
         const updated = [newRecord, ...list];
         setLocal(CRM_STORAGE_KEYS.LEADS, updated);
 
+        if (newRecord.companyId) {
+            const allCompanies = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.COMPANIES,
+                initialCrmCompanies
+            );
+            const compIdx = allCompanies.findIndex(
+                (c) => c.id === newRecord.companyId
+            );
+            if (compIdx !== -1) {
+                if (allCompanies[compIdx].leadId !== newRecord.id) {
+                    allCompanies[compIdx] = {
+                        ...allCompanies[compIdx],
+                        leadId: newRecord.id,
+                    };
+                    setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+                }
+                syncLeadContactToCompany(
+                    newRecord,
+                    allCompanies[compIdx],
+                    employee?.nameEn
+                );
+            }
+        }
+
         recordCrmAuditEvent({
             action: 'CREATED',
             resourceType: 'Lead',
@@ -6230,6 +6486,30 @@ export const crmApi = {
         const updatedList = [...list];
         updatedList[idx] = updatedRecord;
         setLocal(CRM_STORAGE_KEYS.LEADS, updatedList);
+
+        if (updatedRecord.companyId) {
+            const allCompanies = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.COMPANIES,
+                initialCrmCompanies
+            );
+            const compIdx = allCompanies.findIndex(
+                (c) => c.id === updatedRecord.companyId
+            );
+            if (compIdx !== -1) {
+                if (allCompanies[compIdx].leadId !== updatedRecord.id) {
+                    allCompanies[compIdx] = {
+                        ...allCompanies[compIdx],
+                        leadId: updatedRecord.id,
+                    };
+                    setLocal(CRM_STORAGE_KEYS.COMPANIES, allCompanies);
+                }
+                syncLeadContactToCompany(
+                    updatedRecord,
+                    allCompanies[compIdx],
+                    employee?.nameEn
+                );
+            }
+        }
 
         const isStageChange = previous.leadStatusId !== updatedRecord.leadStatusId;
         const isStatusChange = previous.status !== updatedRecord.status;
@@ -6601,13 +6881,20 @@ export const crmApi = {
         const companyId = generateDeterministicCrmId(companies, 'crm-comp');
         const companyCode = generateNextCrmCode(companies, 'CMP');
 
-        // Snapshot OWNERS for atomic rollback safety
+        // Snapshot OWNERS and CONTACTS for atomic rollback safety
         const existingOwners = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.OWNERS,
             initialCrmOwners
         );
         const ownersSnapshot = existingOwners.map((o) => ({ ...o }));
         const nextOwnersList = [...existingOwners];
+
+        const existingContacts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+        const contactsSnapshot = existingContacts.map((c) => ({ ...c }));
+        const nextContactsList = [...existingContacts];
 
         try {
             const enrichedOwners: CrmCompanyOwnerAssignment[] = (
@@ -6712,6 +6999,7 @@ export const crmApi = {
                         employee?.nameEn || validated.assignedEmployeeNameEn || '',
                     assignedEmployeeNameAr:
                         employee?.nameAr || validated.assignedEmployeeNameAr || '',
+                    leadId: validated.leadId || undefined,
                     owners: enrichedOwners,
                     createdAt: new Date().toISOString().split('T')[0],
                     createdBy: 'Karim Wagdi',
@@ -6721,6 +7009,32 @@ export const crmApi = {
 
             setLocal(CRM_STORAGE_KEYS.OWNERS, nextOwnersList);
             setLocal(CRM_STORAGE_KEYS.COMPANIES, [newCompany, ...companies]);
+
+            if (validated.leadId && validated.leadId.trim() !== '') {
+                const leads = readOrInitializeCrmCollection(
+                    CRM_STORAGE_KEYS.LEADS,
+                    initialCrmLeads
+                );
+                const leadIdx = leads.findIndex((l) => l.id === validated.leadId);
+                if (leadIdx !== -1) {
+                    const matchedLead = leads[leadIdx];
+                    leads[leadIdx] = {
+                        ...matchedLead,
+                        companyId: newCompany.id,
+                        companyNameEn: newCompany.nameEn,
+                        companyNameAr: newCompany.nameAr,
+                    };
+                    setLocal(CRM_STORAGE_KEYS.LEADS, leads);
+
+                    // Register Lead Contact as Primary Contact for the new company (idempotent deduplication)
+                    syncLeadContactToCompany(
+                        matchedLead,
+                        newCompany,
+                        employee?.nameEn || 'Karim Wagdi',
+                        nextContactsList
+                    );
+                }
+            }
 
             if (newCompany.onboardingStatus === 'under_review') {
                 const approvalTasks = readOrInitializeCrmCollection(
@@ -6787,8 +7101,9 @@ export const crmApi = {
 
             return newCompany;
         } catch (err) {
-            // Rollback OWNERS if anything failed during company creation
+            // Rollback OWNERS and CONTACTS if anything failed during company creation
             setLocal(CRM_STORAGE_KEYS.OWNERS, ownersSnapshot);
+            setLocal(CRM_STORAGE_KEYS.CONTACTS, contactsSnapshot);
             throw err;
         }
     },
@@ -7356,6 +7671,46 @@ export const crmApi = {
                 validated.email.trim().toLowerCase()
         );
         if (duplicateEmail) {
+            if (linkedCompany && duplicateEmail.companyId === linkedCompany.id) {
+                const updated = list.map((item) =>
+                    item.id === duplicateEmail.id
+                        ? validateWithSchema(
+                              crmContactSchema,
+                              {
+                                  ...item,
+                                  ...validated,
+                                  id: item.id,
+                                  code: item.code,
+                                  companyId: linkedCompany.id,
+                                  companyNameEn: linkedCompany.nameEn,
+                                  companyNameAr: linkedCompany.nameAr,
+                                  leadId: linkedLead?.id || item.leadId,
+                                  leadTitle: linkedLead?.title || item.leadTitle,
+                                  isPrimary: validated.isPrimary ?? item.isPrimary,
+                                  updatedAt: new Date().toISOString().split('T')[0],
+                              },
+                              'Contact'
+                          )
+                        : (validated.isPrimary ?? true) && item.companyId === linkedCompany.id
+                          ? { ...item, isPrimary: false }
+                          : item
+                );
+                setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+                const enriched = updated.find((c) => c.id === duplicateEmail.id)!;
+                recordCrmAuditEvent({
+                    action: 'UPDATED',
+                    resourceType: 'Contact',
+                    resourceId: enriched.id,
+                    resourceCode: enriched.code,
+                    resourceNameEn: enriched.fullNameEn,
+                    resourceNameAr: enriched.fullNameAr || enriched.fullNameEn,
+                    detailsEn: `Updated Contact "${enriched.fullNameEn}" (${enriched.code}).`,
+                    detailsAr: `تم تحديث جهة الاتصال "${enriched.fullNameAr || enriched.fullNameEn}" (${enriched.code}).`,
+                    newState: enriched,
+                });
+                return enriched;
+            }
+
             throw new CrmApiError({
                 message: `Contact with email "${validated.email}" already exists (${duplicateEmail.code}).`,
                 statusCode: 409,
@@ -7400,6 +7755,157 @@ export const crmApi = {
             resourceNameAr: newRecord.fullNameAr || newRecord.fullNameEn,
             detailsEn: `Created Contact "${newRecord.fullNameEn}" (${newRecord.code}).`,
             detailsAr: `تم إنشاء جهة الاتصال "${newRecord.fullNameAr || newRecord.fullNameEn}" (${newRecord.code}).`,
+            newState: newRecord,
+        });
+
+        return newRecord;
+    },
+
+    registerLeadContact: async (params: {
+        leadId?: string;
+        companyId: string;
+        contactName?: string;
+        contactPhone?: string;
+        contactEmail?: string;
+        contactJobTitle?: string;
+        isPrimary?: boolean;
+    }): Promise<CrmContactRecord | null> => {
+        const companies = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.COMPANIES,
+            initialCrmCompanies
+        );
+        const company = companies.find((c) => c.id === params.companyId);
+        if (!company) {
+            throw new CrmApiError({
+                message: `Company '${params.companyId}' does not exist.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        let contactName = params.contactName;
+        let contactPhone = params.contactPhone;
+        let contactEmail = params.contactEmail;
+        let contactJobTitle = params.contactJobTitle;
+        let leadTitle: string | undefined;
+
+        if (params.leadId) {
+            const leads = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.LEADS,
+                initialCrmLeads
+            );
+            const lead = leads.find((l) => l.id === params.leadId);
+            if (lead) {
+                contactName = contactName || lead.contactName;
+                contactPhone = contactPhone || lead.contactPhone;
+                contactEmail = contactEmail || lead.contactEmail;
+                contactJobTitle = contactJobTitle || lead.contactJobTitle;
+                leadTitle = lead.title;
+            }
+        }
+
+        if (!contactName || !contactEmail || !contactPhone) {
+            return null;
+        }
+
+        const emailLower = contactEmail.trim().toLowerCase();
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+
+        // Check if already registered for this company
+        const existingIdx = list.findIndex(
+            (c) => c.companyId === company.id && c.email.trim().toLowerCase() === emailLower
+        );
+        if (existingIdx !== -1) {
+            const updated = list.map((item, idx) =>
+                idx === existingIdx
+                    ? {
+                          ...item,
+                          isPrimary: params.isPrimary !== undefined ? params.isPrimary : item.isPrimary,
+                          phone: contactPhone || item.phone,
+                          jobTitle: contactJobTitle || item.jobTitle,
+                          leadId: params.leadId || item.leadId,
+                          leadTitle: leadTitle || item.leadTitle,
+                      }
+                    : (params.isPrimary ?? true) && item.companyId === company.id
+                      ? { ...item, isPrimary: false }
+                      : item
+            );
+            setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+            return updated[existingIdx];
+        }
+
+        // Check if contact with same email exists in system unlinked
+        const existingByEmail = list.find(
+            (c) => c.email.trim().toLowerCase() === emailLower
+        );
+        if (existingByEmail) {
+            if (!existingByEmail.companyId) {
+                const updated = list.map((item) =>
+                    item.id === existingByEmail.id
+                        ? {
+                              ...item,
+                              companyId: company.id,
+                              companyNameEn: company.nameEn,
+                              companyNameAr: company.nameAr,
+                              isPrimary: params.isPrimary !== undefined ? params.isPrimary : true,
+                              leadId: params.leadId || item.leadId,
+                              leadTitle: leadTitle || item.leadTitle,
+                          }
+                        : (params.isPrimary ?? true) && item.companyId === company.id
+                          ? { ...item, isPrimary: false }
+                          : item
+                );
+                setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+                return updated.find((c) => c.id === existingByEmail.id)!;
+            }
+            return existingByEmail;
+        }
+
+        // Demote other contacts on this company if new contact is primary
+        const normalized = (params.isPrimary ?? true)
+            ? list.map((item) =>
+                  item.companyId === company.id ? { ...item, isPrimary: false } : item
+              )
+            : list;
+
+        const newRecord: CrmContactRecord = validateWithSchema(
+            crmContactSchema,
+            {
+                id: generateDeterministicCrmId(list, 'crm-cnt'),
+                code: generateNextCrmCode(list, 'CNT'),
+                fullNameEn: contactName,
+                fullNameAr: contactName,
+                contactType: 'decision_maker',
+                jobTitle: contactJobTitle || 'Primary Contact',
+                department: 'Management',
+                phone: contactPhone,
+                email: contactEmail,
+                companyId: company.id,
+                companyNameEn: company.nameEn,
+                companyNameAr: company.nameAr,
+                leadId: params.leadId,
+                leadTitle,
+                isPrimary: params.isPrimary ?? true,
+                status: 'active',
+                createdAt: new Date().toISOString().split('T')[0],
+                createdBy: 'Karim Wagdi',
+            },
+            'Contact'
+        );
+
+        setLocal(CRM_STORAGE_KEYS.CONTACTS, [newRecord, ...normalized]);
+        recordCrmAuditEvent({
+            action: 'CREATED',
+            resourceType: 'Contact',
+            resourceId: newRecord.id,
+            resourceCode: newRecord.code,
+            resourceNameEn: newRecord.fullNameEn,
+            resourceNameAr: newRecord.fullNameAr || newRecord.fullNameEn,
+            detailsEn: `Registered primary Contact "${newRecord.fullNameEn}" (${newRecord.code}) for Company "${company.nameEn}" from Lead.`,
+            detailsAr: `تم تسجيل جهة الاتصال الرئيسية "${newRecord.fullNameAr || newRecord.fullNameEn}" (${newRecord.code}) لشركة "${company.nameAr}" من العميل المحتمل.`,
             newState: newRecord,
         });
 
@@ -8113,6 +8619,15 @@ export const crmApi = {
         getAll: (params?: CrmContactQueryParams) => crmApi.getContacts(params),
         getById: (id: string) => crmApi.getContactById(id),
         create: (data: CrmContactInput) => crmApi.createContact(data),
+        registerLeadContact: (params: {
+            leadId?: string;
+            companyId: string;
+            contactName?: string;
+            contactPhone?: string;
+            contactEmail?: string;
+            contactJobTitle?: string;
+            isPrimary?: boolean;
+        }) => crmApi.registerLeadContact(params),
         update: (id: string, data: Partial<CrmContactInput>) =>
             crmApi.updateContact(id, data),
         delete: (id: string) => crmApi.deleteContact(id),
@@ -9256,10 +9771,37 @@ export const crmApi = {
         );
         const todayIso = new Date().toISOString().split('T')[0];
 
+        const duplicateQuotation = list.find(
+            (item) =>
+                item.companyId === company.id &&
+                item.titleEn.trim().toLowerCase() === validated.titleEn.trim().toLowerCase() &&
+                item.grandTotal === validated.grandTotal &&
+                (item.dealId || '') === (deal?.id || '')
+        );
+        if (duplicateQuotation) {
+            throw new CrmApiError({
+                message: `A quotation with title "${validated.titleEn}" already exists for this client (${duplicateQuotation.code}).`,
+                statusCode: 409,
+                code: 'CRM_DUPLICATE_NAME',
+            });
+        }
+
+        const leads = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.LEADS,
+            initialCrmLeads
+        );
+        const resolvedLeadId = validated.leadId || deal?.leadId;
+        const linkedLead = resolvedLeadId
+            ? leads.find((l) => l.id === resolvedLeadId)
+            : undefined;
+
         const newRecord: CrmQuotationRecord = validateWithSchema(
             crmQuotationSchema,
             {
                 ...validated,
+                leadId: linkedLead?.id || validated.leadId || deal?.leadId || undefined,
+                leadCode: linkedLead?.code || validated.leadCode || deal?.leadCode || undefined,
+                leadTitle: linkedLead?.title || validated.leadTitle || deal?.leadTitle || undefined,
                 dealId: deal?.id || undefined,
                 dealCode: deal?.code || undefined,
                 dealTitle: deal?.titleEn || undefined,
@@ -9640,14 +10182,25 @@ export const crmApi = {
         overrides: Partial<CrmContractInput> = {}
     ): Promise<CrmContractRecord> => {
         const quotation = await crmApi.getQuotationById(quotationId);
-        if (
-            quotation.quotationStatus === 'rejected' ||
-            quotation.quotationStatus === 'expired'
-        ) {
+        if (quotation.quotationStatus !== 'approved') {
             throw new CrmApiError({
-                message: `Quotation '${quotation.code}' cannot be converted to a Contract when '${quotation.quotationStatus}'.`,
+                message: `Quotation '${quotation.code}' must be in 'approved' status to be converted to a Contract. Current status: '${quotation.quotationStatus}'.`,
                 statusCode: 400,
                 code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+        const contracts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTRACTS,
+            initialCrmContracts
+        );
+        const existingContract = contracts.find(
+            (c) => c.quotationId === quotationId
+        );
+        if (existingContract) {
+            throw new CrmApiError({
+                message: `A contract (${existingContract.contractNumber}) has already been generated for quotation '${quotation.code}'.`,
+                statusCode: 409,
+                code: 'CRM_DUPLICATE_CONVERSION',
             });
         }
         const todayIso = new Date().toISOString().split('T')[0];
@@ -9731,6 +10284,7 @@ export const crmApi = {
             paidAmount: overrides.paidAmount ?? 0,
             remainingAmount: overrides.remainingAmount ?? quotation.grandTotal,
             balanceDue: overrides.balanceDue ?? quotation.grandTotal,
+            lineItems: overrides.lineItems ?? quotation.lineItems,
             invoiceStatus: overrides.invoiceStatus || 'issued',
             notes:
                 overrides.notes ||
@@ -10018,13 +10572,43 @@ export const crmApi = {
             });
         }
 
-        const quotations = readOrInitializeCrmCollection(
-            CRM_STORAGE_KEYS.QUOTATIONS,
-            initialCrmQuotations
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTRACTS,
+            initialCrmContracts
         );
-        const linkedQuotation = validated.quotationId
-            ? quotations.find((q) => q.id === validated.quotationId)
-            : undefined;
+
+        let linkedQuotation: CrmQuotationRecord | undefined;
+        if (validated.quotationId && validated.quotationId.trim() !== '') {
+            const quotations = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.QUOTATIONS,
+                initialCrmQuotations
+            );
+            linkedQuotation = quotations.find((q) => q.id === validated.quotationId);
+            if (!linkedQuotation) {
+                throw new CrmApiError({
+                    message: `Quotation '${validated.quotationId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedQuotation.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Quotation '${linkedQuotation.code}' belongs to company '${linkedQuotation.companyNameEn || linkedQuotation.companyId}', which does not match contract company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            const existingContract = list.find(
+                (c) => c.quotationId === validated.quotationId
+            );
+            if (existingContract) {
+                throw new CrmApiError({
+                    message: `A contract (${existingContract.contractNumber}) has already been generated for quotation '${linkedQuotation.code}'.`,
+                    statusCode: 409,
+                    code: 'CRM_DUPLICATE_CONVERSION',
+                });
+            }
+        }
 
         const contacts = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.CONTACTS,
@@ -10045,10 +10629,6 @@ export const crmApi = {
                     'emp-1')
         );
 
-        const list = readOrInitializeCrmCollection(
-            CRM_STORAGE_KEYS.CONTRACTS,
-            initialCrmContracts
-        );
         const todayIso = new Date().toISOString().split('T')[0];
         const nextCode = generateNextCrmCode(list, 'CON');
         const seqSuffix = nextCode.replace(/\D+/g, '').padStart(3, '0');
@@ -10206,13 +10786,38 @@ export const crmApi = {
             });
         }
 
-        const quotations = readOrInitializeCrmCollection(
-            CRM_STORAGE_KEYS.QUOTATIONS,
-            initialCrmQuotations
-        );
-        const linkedQuotation = merged.quotationId
-            ? quotations.find((q) => q.id === merged.quotationId)
-            : undefined;
+        let linkedQuotation: CrmQuotationRecord | undefined;
+        if (merged.quotationId && merged.quotationId.trim() !== '') {
+            const quotations = readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.QUOTATIONS,
+                initialCrmQuotations
+            );
+            linkedQuotation = quotations.find((q) => q.id === merged.quotationId);
+            if (!linkedQuotation) {
+                throw new CrmApiError({
+                    message: `Quotation '${merged.quotationId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedQuotation.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Quotation '${linkedQuotation.code}' belongs to company '${linkedQuotation.companyNameEn || linkedQuotation.companyId}', which does not match contract company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            const duplicateContract = list.find(
+                (c) => c.id !== id && c.quotationId === merged.quotationId
+            );
+            if (duplicateContract) {
+                throw new CrmApiError({
+                    message: `Another contract (${duplicateContract.contractNumber}) is already linked to quotation '${linkedQuotation.code}'.`,
+                    statusCode: 409,
+                    code: 'CRM_DUPLICATE_CONVERSION',
+                });
+            }
+        }
 
         const contacts = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.CONTACTS,
@@ -10306,6 +10911,13 @@ export const crmApi = {
         overrides: Partial<CrmInvoiceInput> = {}
     ): Promise<CrmInvoiceRecord> => {
         const contract = await crmApi.getContractById(contractId);
+        if (contract.contractStatus !== 'active') {
+            throw new CrmApiError({
+                message: `Contract '${contract.contractNumber}' must be 'active' to generate an invoice. Current status: '${contract.contractStatus}'.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
         const todayIso = new Date().toISOString().split('T')[0];
         const due = new Date();
         due.setDate(due.getDate() + 30);
@@ -10325,6 +10937,38 @@ export const crmApi = {
             Math.max(0, totalAmount - paidAmount)
         );
 
+        let inheritedLineItems = overrides.lineItems;
+        if (!inheritedLineItems) {
+            if (contract.quotationId) {
+                try {
+                    const quot = await crmApi.getQuotationById(contract.quotationId);
+                    if (quot?.lineItems && quot.lineItems.length > 0) {
+                        inheritedLineItems = quot.lineItems;
+                    }
+                } catch {
+                    // Ignore if quotation lookup fails
+                }
+            }
+            if (!inheritedLineItems || inheritedLineItems.length === 0) {
+                inheritedLineItems = [
+                    calculateCrmQuotationLineItem({
+                        id: `inv-li-contract-${contract.id}`,
+                        itemType: 'custom',
+                        descriptionEn: contract.titleEn,
+                        descriptionAr: contract.titleAr || undefined,
+                        quantity: 1,
+                        unitPrice: subtotal,
+                        discountAmount: discountTotal,
+                        discountPercent:
+                            subtotal > 0
+                                ? (discountTotal / subtotal) * 100
+                                : 0,
+                        taxRate: contract.taxRate ?? 15,
+                    }),
+                ];
+            }
+        }
+
         return crmApi.createInvoice({
             titleEn:
                 overrides.titleEn ||
@@ -10335,22 +10979,24 @@ export const crmApi = {
                     ? `فاتورة — ${contract.titleAr}`
                     : `فاتورة — ${contract.titleEn}`),
             companyId: contract.companyId,
-            dealId: contract.dealId,
-            quotationId: contract.quotationId,
+            dealId: overrides.dealId || contract.dealId,
+            quotationId: overrides.quotationId || contract.quotationId,
             contractId: contract.id,
             contractNumber: contract.contractNumber,
-            contactId: contract.contactId,
-            assignedEmployeeId: contract.assignedEmployeeId,
+            contactId: overrides.contactId || contract.contactId,
+            assignedEmployeeId:
+                overrides.assignedEmployeeId || contract.assignedEmployeeId,
             issueDate: overrides.issueDate || todayIso,
             dueDate: overrides.dueDate || dueIso,
+            lineItems: inheritedLineItems,
             subtotal,
             discountTotal,
             discountAmount: discountTotal,
             taxId: overrides.taxId ?? 'crm-tax-1',
-            taxRate: overrides.taxRate ?? 15,
+            taxRate: overrides.taxRate ?? contract.taxRate ?? 15,
             taxAmount,
             vatId: overrides.vatId ?? 'crm-tax-1',
-            vatRate: overrides.vatRate ?? 15,
+            vatRate: overrides.vatRate ?? contract.taxRate ?? 15,
             vatAmount: taxAmount,
             totalAmount,
             paidAmount,
@@ -10433,6 +11079,19 @@ export const crmApi = {
                 return false;
             }
             if (
+                params.invoiceType &&
+                params.invoiceType !== 'all'
+            ) {
+                const itemType =
+                    item.invoiceType ||
+                    (item.code?.startsWith('PI-') || item.invoiceNumber?.startsWith('PI-')
+                        ? 'proforma'
+                        : 'final_tax');
+                if (itemType !== params.invoiceType) {
+                    return false;
+                }
+            }
+            if (
                 params.invoiceStatus &&
                 params.invoiceStatus !== 'all' &&
                 item.invoiceStatus !== params.invoiceStatus
@@ -10478,6 +11137,9 @@ export const crmApi = {
             return (
                 item.code.toLowerCase().includes(search) ||
                 (item.invoiceNumber || '').toLowerCase().includes(search) ||
+                (item.sourceProformaInvoiceNumber || '').toLowerCase().includes(search) ||
+                (item.convertedToInvoiceNumber || '').toLowerCase().includes(search) ||
+                (item.invoiceType || '').toLowerCase().includes(search) ||
                 item.titleEn.toLowerCase().includes(search) ||
                 (item.titleAr || '').toLowerCase().includes(search) ||
                 (item.companyNameEn || '').toLowerCase().includes(search) ||
@@ -10612,6 +11274,7 @@ export const crmApi = {
                 : data.vatRate ?? defaultVat?.rate ?? 15,
             taxAmount: data.taxAmount,
             paidAmount: data.paidAmount ?? 0,
+            lineItems: data.lineItems,
         });
 
         let resolvedStatus: CrmInvoiceStatus = data.invoiceStatus || 'draft';
@@ -10633,6 +11296,7 @@ export const crmApi = {
             crmInvoiceInputSchema,
             {
                 ...data,
+                lineItems: calculated.lineItems || data.lineItems || undefined,
                 subtotal: calculated.subtotal,
                 discountTotal: calculated.discountTotal,
                 discountAmount: calculated.discountAmount,
@@ -10682,7 +11346,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.DEALS,
             initialCrmDeals
         );
-        const linkedDeal = validated.dealId
+        let linkedDeal = validated.dealId
             ? deals.find((d) => d.id === validated.dealId)
             : undefined;
 
@@ -10690,7 +11354,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.QUOTATIONS,
             initialCrmQuotations
         );
-        const linkedQuotation = validated.quotationId
+        let linkedQuotation = validated.quotationId
             ? quotations.find((q) => q.id === validated.quotationId)
             : undefined;
 
@@ -10698,17 +11362,51 @@ export const crmApi = {
             CRM_STORAGE_KEYS.CONTRACTS,
             initialCrmContracts
         );
-        const linkedContract = validated.contractId
-            ? contracts.find((c) => c.id === validated.contractId)
-            : undefined;
+        let linkedContract: CrmContractRecord | undefined;
+        if (validated.contractId && validated.contractId.trim() !== '') {
+            linkedContract = contracts.find((c) => c.id === validated.contractId);
+            if (!linkedContract) {
+                throw new CrmApiError({
+                    message: `Contract '${validated.contractId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' belongs to company '${linkedContract.companyNameEn || linkedContract.companyId}', which does not match invoice company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.contractStatus !== 'active') {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' must be 'active' to be linked to an invoice. Current status: '${linkedContract.contractStatus}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+        }
 
         const contacts = readOrInitializeCrmCollection(
             CRM_STORAGE_KEYS.CONTACTS,
             initialCrmContacts
         );
-        const linkedContact = validated.contactId
+        let linkedContact = validated.contactId
             ? contacts.find((c) => c.id === validated.contactId)
             : undefined;
+
+        if (linkedContract) {
+            if (!linkedDeal && linkedContract.dealId) {
+                linkedDeal = deals.find((d) => d.id === linkedContract.dealId);
+            }
+            if (!linkedQuotation && linkedContract.quotationId) {
+                linkedQuotation = quotations.find((q) => q.id === linkedContract.quotationId);
+            }
+            if (!linkedContact && linkedContract.contactId) {
+                linkedContact = contacts.find((c) => c.id === linkedContract.contactId);
+            }
+        }
 
         const employee = CRM_SALES_EMPLOYEES.find(
             (e) =>
@@ -10724,15 +11422,17 @@ export const crmApi = {
             initialCrmInvoices
         );
         const todayIso = new Date().toISOString().split('T')[0];
-        const nextCode = generateNextCrmCode(list, 'INV');
-        const seqSuffix = nextCode.replace(/\D+/g, '').padStart(3, '0');
+        const targetType: CrmInvoiceType = validated.invoiceType || 'final_tax';
+        const generated = generateCrmInvoiceNumberAndCode(targetType, list);
+        const nextCode = generated.code;
         const resolvedInvoiceNumber =
-            validated.invoiceNumber?.trim() || `INV-2026-${seqSuffix}`;
+            validated.invoiceNumber?.trim() || generated.invoiceNumber;
 
         const newRecord: CrmInvoiceRecord = validateWithSchema(
             crmInvoiceSchema,
             {
                 ...validated,
+                invoiceType: targetType,
                 invoiceNumber: resolvedInvoiceNumber,
                 companyId: company.id,
                 companyNameEn: company.nameEn,
@@ -10769,6 +11469,9 @@ export const crmApi = {
 
         setLocal(CRM_STORAGE_KEYS.INVOICES, [newRecord, ...list]);
 
+        const typeLabelEn = targetType === 'proforma' ? 'Proforma Invoice' : 'Invoice';
+        const typeLabelAr = targetType === 'proforma' ? 'الفاتورة الشكلية' : 'الفاتورة';
+
         recordCrmAuditEvent({
             action: 'CREATED',
             resourceType: 'Invoice',
@@ -10776,8 +11479,8 @@ export const crmApi = {
             resourceCode: newRecord.code,
             resourceNameEn: newRecord.titleEn,
             resourceNameAr: newRecord.titleAr || newRecord.titleEn,
-            detailsEn: `Created Invoice "${newRecord.titleEn}" (${newRecord.invoiceNumber}) for ${newRecord.companyNameEn} — Total SAR ${newRecord.totalAmount.toLocaleString()} (Balance Due: SAR ${newRecord.balanceDue.toLocaleString()}).`,
-            detailsAr: `تم إنشاء الفاتورة "${newRecord.titleAr || newRecord.titleEn}" (${newRecord.invoiceNumber}) لشركة ${newRecord.companyNameAr || newRecord.companyNameEn} — الإجمالي ${newRecord.totalAmount.toLocaleString()} ر.س.`,
+            detailsEn: `Created ${typeLabelEn} "${newRecord.titleEn}" (${newRecord.invoiceNumber}) for ${newRecord.companyNameEn} — Total SAR ${newRecord.totalAmount.toLocaleString()} (Balance Due: SAR ${newRecord.balanceDue.toLocaleString()}).`,
+            detailsAr: `تم إنشاء ${typeLabelAr} "${newRecord.titleAr || newRecord.titleEn}" (${newRecord.invoiceNumber}) لشركة ${newRecord.companyNameAr || newRecord.companyNameEn} — الإجمالي ${newRecord.totalAmount.toLocaleString()} ر.س.`,
             newState: newRecord,
         });
 
@@ -10820,6 +11523,8 @@ export const crmApi = {
             ? taxes.find((t) => t.id === effectiveVatId)
             : undefined;
 
+        const effectiveLineItems =
+            data.lineItems !== undefined ? data.lineItems : previous.lineItems;
         const calculated = calculateCrmInvoiceAmounts({
             subtotal: data.subtotal ?? previous.subtotal,
             discountTotal:
@@ -10835,6 +11540,7 @@ export const crmApi = {
                 : (data.vatRate ?? previous.vatRate ?? 15),
             taxAmount: data.taxAmount ?? previous.taxAmount,
             paidAmount: data.paidAmount ?? previous.paidAmount,
+            lineItems: effectiveLineItems,
         });
 
         let resolvedStatus: CrmInvoiceStatus =
@@ -10856,6 +11562,7 @@ export const crmApi = {
             {
                 ...previous,
                 ...data,
+                lineItems: calculated.lineItems || effectiveLineItems || undefined,
                 subtotal: calculated.subtotal,
                 discountTotal: calculated.discountTotal,
                 discountAmount: calculated.discountAmount,
@@ -10899,7 +11606,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.DEALS,
             initialCrmDeals
         );
-        const linkedDeal = merged.dealId
+        let linkedDeal = merged.dealId
             ? deals.find((d) => d.id === merged.dealId)
             : undefined;
 
@@ -10907,7 +11614,7 @@ export const crmApi = {
             CRM_STORAGE_KEYS.QUOTATIONS,
             initialCrmQuotations
         );
-        const linkedQuotation = merged.quotationId
+        let linkedQuotation = merged.quotationId
             ? quotations.find((q) => q.id === merged.quotationId)
             : undefined;
 
@@ -10915,31 +11622,97 @@ export const crmApi = {
             CRM_STORAGE_KEYS.CONTRACTS,
             initialCrmContracts
         );
-        const linkedContract = merged.contractId
-            ? contracts.find((c) => c.id === merged.contractId)
+        let linkedContract: CrmContractRecord | undefined;
+        if (merged.contractId && merged.contractId.trim() !== '') {
+            linkedContract = contracts.find((c) => c.id === merged.contractId);
+            if (!linkedContract) {
+                throw new CrmApiError({
+                    message: `Contract '${merged.contractId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.companyId !== company.id) {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' belongs to company '${linkedContract.companyNameEn || linkedContract.companyId}', which does not match invoice company '${company.nameEn}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+            if (linkedContract.contractStatus !== 'active') {
+                throw new CrmApiError({
+                    message: `Contract '${linkedContract.contractNumber}' must be 'active' to be linked to an invoice. Current status: '${linkedContract.contractStatus}'.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+        }
+
+        const contacts = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+        let linkedContact = merged.contactId
+            ? contacts.find((c) => c.id === merged.contactId)
             : undefined;
+
+        if (linkedContract) {
+            if (!linkedDeal && linkedContract.dealId) {
+                linkedDeal = deals.find((d) => d.id === linkedContract.dealId);
+            }
+            if (!linkedQuotation && linkedContract.quotationId) {
+                linkedQuotation = quotations.find((q) => q.id === linkedContract.quotationId);
+            }
+            if (!linkedContact && linkedContract.contactId) {
+                linkedContact = contacts.find((c) => c.id === linkedContract.contactId);
+            }
+        }
 
         const todayIso = new Date().toISOString().split('T')[0];
         const updatedRecord: CrmInvoiceRecord = {
             ...previous,
             ...merged,
+            invoiceType: data.invoiceType || previous.invoiceType || 'final_tax',
+            sourceProformaInvoiceId:
+                data.sourceProformaInvoiceId !== undefined
+                    ? data.sourceProformaInvoiceId
+                    : previous.sourceProformaInvoiceId,
+            sourceProformaInvoiceNumber:
+                data.sourceProformaInvoiceNumber !== undefined
+                    ? data.sourceProformaInvoiceNumber
+                    : previous.sourceProformaInvoiceNumber,
+            convertedToInvoiceId:
+                data.convertedToInvoiceId !== undefined
+                    ? data.convertedToInvoiceId
+                    : previous.convertedToInvoiceId,
+            convertedToInvoiceNumber:
+                data.convertedToInvoiceNumber !== undefined
+                    ? data.convertedToInvoiceNumber
+                    : previous.convertedToInvoiceNumber,
+            convertedAt:
+                data.convertedAt !== undefined
+                    ? data.convertedAt
+                    : previous.convertedAt,
             invoiceNumber:
                 merged.invoiceNumber?.trim() || previous.invoiceNumber,
             companyId: company.id,
             companyNameEn: company.nameEn,
             companyNameAr: company.nameAr,
-            dealId: linkedDeal?.id || undefined,
-            dealCode: linkedDeal?.code || undefined,
-            dealTitle: linkedDeal?.titleEn || undefined,
-            dealTitleEn: linkedDeal?.titleEn || undefined,
-            quotationId: linkedQuotation?.id || undefined,
-            quotationCode: linkedQuotation?.code || undefined,
-            contractId: linkedContract?.id || undefined,
-            contractCode: linkedContract?.code || undefined,
+            dealId: linkedDeal?.id || merged.dealId || previous.dealId || undefined,
+            dealCode: linkedDeal?.code || merged.dealCode || previous.dealCode || undefined,
+            dealTitle: linkedDeal?.titleEn || merged.dealTitle || previous.dealTitle || undefined,
+            dealTitleEn: linkedDeal?.titleEn || merged.dealTitleEn || previous.dealTitleEn || undefined,
+            quotationId: linkedQuotation?.id || merged.quotationId || previous.quotationId || undefined,
+            quotationCode: linkedQuotation?.code || merged.quotationCode || previous.quotationCode || undefined,
+            contractId: linkedContract?.id || merged.contractId || previous.contractId || undefined,
+            contractCode: linkedContract?.code || merged.contractCode || previous.contractCode || undefined,
             contractNumber:
                 linkedContract?.contractNumber ||
                 merged.contractNumber ||
                 previous.contractNumber,
+            contactId: linkedContact?.id || merged.contactId || previous.contactId || undefined,
+            contactName:
+                linkedContact?.fullNameEn || merged.contactName || previous.contactName || undefined,
             updatedAt: todayIso,
         };
 
@@ -11102,6 +11875,122 @@ export const crmApi = {
             previousState: target,
         });
         return { success: true, deletedId: id };
+    },
+
+    convertProformaToFinalInvoice: async (
+        proformaId: string,
+        overrides: Partial<CrmInvoiceInput> = {}
+    ): Promise<{ proforma: CrmInvoiceRecord; finalInvoice: CrmInvoiceRecord }> => {
+        const proforma = await crmApi.getInvoiceById(proformaId);
+        const proformaType =
+            proforma.invoiceType ||
+            (proforma.code?.startsWith('PI-') || proforma.invoiceNumber?.startsWith('PI-')
+                ? 'proforma'
+                : 'final_tax');
+
+        if (proformaType !== 'proforma') {
+            throw new CrmApiError({
+                message: `Invoice '${proforma.invoiceNumber}' is not a Proforma Invoice and cannot be converted.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        if (proforma.convertedToInvoiceId) {
+            throw new CrmApiError({
+                message: `Proforma Invoice '${proforma.invoiceNumber}' has already been converted to Final Tax Invoice '${proforma.convertedToInvoiceNumber || proforma.convertedToInvoiceId}'.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.INVOICES,
+            initialCrmInvoices
+        );
+        const existingFinal = list.find(
+            (inv) => inv.sourceProformaInvoiceId === proforma.id
+        );
+        if (existingFinal) {
+            throw new CrmApiError({
+                message: `A Final Tax Invoice (${existingFinal.invoiceNumber}) already exists for Proforma Invoice '${proforma.invoiceNumber}'.`,
+                statusCode: 400,
+                code: 'CRM_VALIDATION_FAILED',
+            });
+        }
+
+        const todayIso = new Date().toISOString().split('T')[0];
+        const due = new Date();
+        due.setDate(due.getDate() + 30);
+        const dueIso = due.toISOString().split('T')[0];
+
+        const targetIssueDate = overrides.issueDate || todayIso;
+        let targetDueDate = overrides.dueDate || proforma.dueDate || dueIso;
+        if (Date.parse(targetDueDate) < Date.parse(targetIssueDate)) {
+            const fallbackDue = new Date(targetIssueDate);
+            fallbackDue.setDate(fallbackDue.getDate() + 30);
+            targetDueDate = fallbackDue.toISOString().split('T')[0];
+        }
+
+        const createdFinal = await crmApi.createInvoice({
+            titleEn: overrides.titleEn || proforma.titleEn,
+            titleAr: overrides.titleAr || proforma.titleAr,
+            companyId: proforma.companyId,
+            dealId: proforma.dealId,
+            quotationId: proforma.quotationId,
+            contractId: proforma.contractId,
+            contractNumber: proforma.contractNumber,
+            contactId: proforma.contactId,
+            contactName: proforma.contactName,
+            assignedEmployeeId: proforma.assignedEmployeeId,
+            issueDate: targetIssueDate,
+            dueDate: targetDueDate,
+            lineItems: overrides.lineItems || proforma.lineItems,
+            subtotal: overrides.subtotal ?? proforma.subtotal,
+            discountTotal: overrides.discountTotal ?? proforma.discountTotal,
+            discountAmount: overrides.discountAmount ?? proforma.discountAmount,
+            taxId: overrides.taxId ?? proforma.taxId,
+            taxRate: overrides.taxRate ?? proforma.taxRate,
+            taxAmount: overrides.taxAmount ?? proforma.taxAmount,
+            vatId: overrides.vatId ?? proforma.vatId,
+            vatRate: overrides.vatRate ?? proforma.vatRate,
+            vatAmount: overrides.vatAmount ?? proforma.vatAmount,
+            totalAmount: overrides.totalAmount ?? proforma.totalAmount,
+            paidAmount: 0,
+            remainingAmount: overrides.totalAmount ?? proforma.totalAmount,
+            balanceDue: overrides.totalAmount ?? proforma.totalAmount,
+            currency: proforma.currency || 'SAR',
+            invoiceStatus: overrides.invoiceStatus || 'issued',
+            invoiceType: 'final_tax',
+            sourceProformaInvoiceId: proforma.id,
+            sourceProformaInvoiceNumber: proforma.invoiceNumber,
+            notes:
+                overrides.notes ||
+                proforma.notes ||
+                `Converted from Proforma Invoice ${proforma.invoiceNumber}.`,
+            status: 'active',
+        });
+
+        const updatedProforma = await crmApi.updateInvoice(proforma.id, {
+            convertedToInvoiceId: createdFinal.id,
+            convertedToInvoiceNumber: createdFinal.invoiceNumber,
+            convertedAt: todayIso,
+        });
+
+        recordCrmAuditEvent({
+            action: 'STATUS_CHANGED',
+            resourceType: 'Invoice',
+            resourceId: proforma.id,
+            resourceCode: proforma.code,
+            resourceNameEn: proforma.titleEn,
+            resourceNameAr: proforma.titleAr || proforma.titleEn,
+            detailsEn: `Converted Proforma Invoice "${proforma.invoiceNumber}" to Final Tax Invoice "${createdFinal.invoiceNumber}".`,
+            detailsAr: `تم تحويل الفاتورة الشكلية "${proforma.invoiceNumber}" إلى فاتورة ضريبية نهائية "${createdFinal.invoiceNumber}".`,
+            previousState: proforma,
+            newState: updatedProforma,
+        });
+
+        return { proforma: updatedProforma, finalInvoice: createdFinal };
     },
 
     // ------------------------------------------------------------------------
@@ -11275,6 +12164,10 @@ export const crmApi = {
             contractId: string,
             overrides?: Partial<CrmInvoiceInput>
         ) => crmApi.generateInvoiceFromContract(contractId, overrides),
+        convertProformaToFinal: (
+            id: string,
+            overrides?: Partial<CrmInvoiceInput>
+        ) => crmApi.convertProformaToFinalInvoice(id, overrides),
         update: (id: string, data: Partial<CrmInvoiceInput>) =>
             crmApi.updateInvoice(id, data),
         recordPayment: (
@@ -13681,3 +14574,5 @@ export function checkCrmCustomerDeletionEligibility(
         referencedBy: [],
     };
 }
+
+export { umsApi } from './umsApi';

@@ -17,7 +17,15 @@ import {
     DollarSign,
     CheckCheck,
     Percent,
+    Lock,
 } from 'lucide-react';
+import {
+    UnifiedCustomerQuotationItem,
+    QuotationOriginSource,
+    loadMappedCrmQuotationsSync,
+    loadMappedCrmQuotations,
+} from './crmCustomerQuotationAdapter';
+import { CUSTOMER_COMPANIES_SIMPLE_OPTIONS } from './customerMockData';
 
 export type CustomerQuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
@@ -153,21 +161,14 @@ const INITIAL_QUOTATIONS: CustomerQuotationItem[] = [
     },
 ];
 
-const AVAILABLE_COMPANIES = [
-    { id: 'cmp-1', en: 'Al-Wataniya Logistics Co.', ar: 'الشركة الوطنية للخدمات اللوجستية' },
-    { id: 'cmp-2', en: 'Riyadh Tech Solutions', ar: 'شركة حلول الرياض التقنية' },
-    { id: 'cmp-3', en: 'Gulf Energy Trading Corp', ar: 'مؤسسة طاقة الخليج التجارية' },
-    { id: 'cmp-4', en: 'Najm Financial Advisory Group', ar: 'مجموعة نجم للاستشارات المالية' },
-    { id: 'cmp-5', en: 'Arabian Horizon Contracting', ar: 'شركة الأفق العربي للمقاولات' },
-    { id: 'cmp-6', en: 'Modern Infrastructure LLC', ar: 'شركة البنية التحتية الحديثة' },
-];
+const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
 
 export const CustomerQuotationsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language?.startsWith('ar');
 
-    // Persistence in awn_customer_quotations_v1
-    const [quotations, setQuotations] = useState<CustomerQuotationItem[]>(() => {
+    // Persistence in awn_customer_quotations_v1 (Strictly isolated from CRM collections)
+    const [customerQuotations, setCustomerQuotations] = useState<CustomerQuotationItem[]>(() => {
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
                 const stored = localStorage.getItem(STORAGE_KEY);
@@ -184,27 +185,58 @@ export const CustomerQuotationsPage: React.FC = () => {
         return INITIAL_QUOTATIONS;
     });
 
+    // Mapped CRM Quotations (Read-Only Demo Integration, never persisted to awn_customer_quotations_v1)
+    const [crmQuotations, setCrmQuotations] = useState<UnifiedCustomerQuotationItem[]>(() => {
+        return loadMappedCrmQuotationsSync();
+    });
+
+    useEffect(() => {
+        let isMounted = true;
+        loadMappedCrmQuotations().then((mapped) => {
+            if (isMounted) {
+                setCrmQuotations(mapped);
+            }
+        });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Strict persistence: ONLY customerQuotations are saved to awn_customer_quotations_v1
     useEffect(() => {
         try {
             if (typeof window !== 'undefined' && window.localStorage) {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(quotations));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(customerQuotations));
             }
         } catch {
             // ignore
         }
-    }, [quotations]);
+    }, [customerQuotations]);
+
+    // Unified Quotations: Wraps customer & read-only CRM quotations with source tagging & zero collision
+    const unifiedQuotations: UnifiedCustomerQuotationItem[] = useMemo(() => {
+        const customerAdapted: UnifiedCustomerQuotationItem[] = customerQuotations.map((q) => ({
+            ...q,
+            source: 'customer' as const,
+            compositeId: `customer:${q.id}`,
+            isReadOnly: false,
+        }));
+        return [...customerAdapted, ...crmQuotations];
+    }, [customerQuotations, crmQuotations]);
 
     // Filters
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | CustomerQuotationStatus>('all');
+    const [companyFilter, setCompanyFilter] = useState<'all' | string>('all');
+    const [sourceFilter, setSourceFilter] = useState<'all' | QuotationOriginSource>('all');
 
     // Drawer / Modal states
-    const [viewingQuotation, setViewingQuotation] = useState<CustomerQuotationItem | null>(null);
+    const [viewingQuotation, setViewingQuotation] = useState<UnifiedCustomerQuotationItem | null>(null);
     const [editingQuotation, setEditingQuotation] = useState<CustomerQuotationItem | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-    // Form State
+    // Form State (shared for add & edit)
     const [formData, setFormData] = useState({
         titleEn: '',
         titleAr: '',
@@ -235,7 +267,7 @@ export const CustomerQuotationsPage: React.FC = () => {
 
     // Filtered Quotations
     const filteredQuotations = useMemo(() => {
-        return quotations.filter((q) => {
+        return unifiedQuotations.filter((q) => {
             const matchesSearch =
                 !search.trim() ||
                 q.quotationNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -245,19 +277,21 @@ export const CustomerQuotationsPage: React.FC = () => {
                 q.companyNameAr.includes(search);
 
             const matchesStatus = statusFilter === 'all' || q.status === statusFilter;
+            const matchesCompany = companyFilter === 'all' || q.companyId === companyFilter;
+            const matchesSource = sourceFilter === 'all' || q.source === sourceFilter;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesCompany && matchesSource;
         });
-    }, [quotations, search, statusFilter]);
+    }, [unifiedQuotations, search, statusFilter, companyFilter, sourceFilter]);
 
     // KPIs
     const kpis = useMemo(() => {
-        const total = quotations.length;
-        const totalValue = quotations.reduce((sum, q) => sum + q.total, 0);
-        const accepted = quotations.filter((q) => q.status === 'accepted');
+        const total = unifiedQuotations.length;
+        const totalValue = unifiedQuotations.reduce((sum, q) => sum + q.total, 0);
+        const accepted = unifiedQuotations.filter((q) => q.status === 'accepted');
         const acceptedValue = accepted.reduce((sum, q) => sum + q.total, 0);
 
-        const decided = quotations.filter((q) => q.status === 'accepted' || q.status === 'rejected');
+        const decided = unifiedQuotations.filter((q) => q.status === 'accepted' || q.status === 'rejected');
         const acceptanceRate = decided.length > 0 ? Math.round((accepted.length / decided.length) * 100) : 0;
 
         return {
@@ -266,7 +300,7 @@ export const CustomerQuotationsPage: React.FC = () => {
             acceptedValue,
             acceptanceRate,
         };
-    }, [quotations]);
+    }, [unifiedQuotations]);
 
     // Format currency
     const formatCurrency = (val: number) => {
@@ -275,7 +309,13 @@ export const CustomerQuotationsPage: React.FC = () => {
 
     // Quick status toggle
     const handleQuickStatusChange = (id: string, newStatus: CustomerQuotationStatus) => {
-        setQuotations((prev) =>
+        // Guard: CRM quotations are strictly read-only
+        const targetQuotation = unifiedQuotations.find((q) => q.id === id || q.compositeId === id);
+        if (targetQuotation?.isReadOnly) {
+            return;
+        }
+
+        setCustomerQuotations((prev) =>
             prev.map((q) => (q.id === id ? { ...q, status: newStatus } : q))
         );
         if (viewingQuotation?.id === id) {
@@ -285,7 +325,10 @@ export const CustomerQuotationsPage: React.FC = () => {
     };
 
     // Open Edit Modal
-    const handleStartEdit = (item: CustomerQuotationItem) => {
+    const handleStartEdit = (item: CustomerQuotationItem | UnifiedCustomerQuotationItem) => {
+        if ('isReadOnly' in item && item.isReadOnly) {
+            return;
+        }
         setEditingQuotation(item);
         setFormData({
             titleEn: item.titleEn,
@@ -329,7 +372,7 @@ export const CustomerQuotationsPage: React.FC = () => {
         const tot = net + tax;
 
         if (editingQuotation) {
-            setQuotations((prev) =>
+            setCustomerQuotations((prev) =>
                 prev.map((q) =>
                     q.id === editingQuotation.id
                         ? {
@@ -354,7 +397,7 @@ export const CustomerQuotationsPage: React.FC = () => {
             setEditingQuotation(null);
             showToast(t('customer.pages.quotations.feedback.quotationUpdated'));
         } else {
-            const nextCodeNum = quotations.length + 101;
+            const nextCodeNum = customerQuotations.length + 101;
             const newCode = `QT-2026-${nextCodeNum}`;
 
             const newQuotation: CustomerQuotationItem = {
@@ -376,7 +419,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                 createdAt: new Date().toISOString().split('T')[0],
             };
 
-            setQuotations([newQuotation, ...quotations]);
+            setCustomerQuotations([newQuotation, ...customerQuotations]);
             setIsAddModalOpen(false);
             showToast(t('customer.pages.quotations.feedback.quotationAdded'));
         }
@@ -385,13 +428,15 @@ export const CustomerQuotationsPage: React.FC = () => {
     const resetFilters = () => {
         setSearch('');
         setStatusFilter('all');
+        setCompanyFilter('all');
+        setSourceFilter('all');
     };
 
     const getStatusBadge = (status: CustomerQuotationStatus) => {
         switch (status) {
             case 'accepted':
                 return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{t('customer.pages.quotations.statusAccepted')}</span>
                     </span>
@@ -431,7 +476,7 @@ export const CustomerQuotationsPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast Notification */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -446,7 +491,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                 {t('customer.pages.quotations.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-QOT
@@ -457,14 +502,10 @@ export const CustomerQuotationsPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleStartAdd}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer self-start sm:self-center shrink-0"
-                    >
-                        <Plus className="w-4 h-4 text-[#BFAB93]" />
-                        <span>{t('customer.pages.quotations.addQuotation')}</span>
-                    </button>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* 4 KPI Cards */}
@@ -474,7 +515,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.quotations.kpis.totalQuotations')}
                             </span>
-                            <FileText className="w-4 h-4 text-[#2D3F2C]" />
+                            <FileText className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -493,24 +534,24 @@ export const CustomerQuotationsPage: React.FC = () => {
 
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#265938]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.quotations.kpis.acceptedValue')}
                             </span>
-                            <CheckCheck className="w-4 h-4 text-[#265938]" />
+                            <CheckCheck className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#265938] mt-2">
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">
                             {formatCurrency(kpis.acceptedValue)}
                         </p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.quotations.kpis.acceptanceRate')}
                             </span>
-                            <Percent className="w-4 h-4 text-[#2D3F2C]" />
+                            <Percent className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#2D3F2C] mt-2">{kpis.acceptanceRate}%</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.acceptanceRate}%</p>
                     </div>
                 </div>
             </div>
@@ -525,7 +566,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.quotations.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -544,7 +585,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as any)}
                         aria-label={t('customer.pages.quotations.statusAll')}
-                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.quotations.statusAll')}</option>
                         <option value="draft">{t('customer.pages.quotations.statusDraft')}</option>
@@ -554,7 +595,32 @@ export const CustomerQuotationsPage: React.FC = () => {
                         <option value="expired">{t('customer.pages.quotations.statusExpired')}</option>
                     </select>
 
-                    {(search || statusFilter !== 'all') && (
+                    <select
+                        value={companyFilter}
+                        onChange={(e) => setCompanyFilter(e.target.value)}
+                        aria-label={t('customer.pages.quotations.filterCompany')}
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="all">{t('customer.pages.quotations.companyAll')}</option>
+                        {AVAILABLE_COMPANIES.map((c) => (
+                            <option key={c.id} value={c.id}>
+                                {isRtl ? c.ar : c.en}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={sourceFilter}
+                        onChange={(e) => setSourceFilter(e.target.value as any)}
+                        aria-label={t('customer.pages.quotations.filterSource')}
+                        className="bg-white border border-[#E5E0D8] rounded-lg px-3 py-2 text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
+                    >
+                        <option value="all">{t('customer.pages.quotations.sourceAll')}</option>
+                        <option value="customer">{t('customer.pages.quotations.sourceCustomer')}</option>
+                        <option value="crm">{t('customer.pages.quotations.sourceCrm')}</option>
+                    </select>
+
+                    {(search || statusFilter !== 'all' || companyFilter !== 'all' || sourceFilter !== 'all') && (
                         <button
                             type="button"
                             onClick={resetFilters}
@@ -594,7 +660,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
+                                                className="mt-2 text-xs font-semibold text-[#037F8C] hover:underline"
                                             >
                                                 {t('customer.pages.quotations.feedback.resetFilters')}
                                             </button>
@@ -603,20 +669,32 @@ export const CustomerQuotationsPage: React.FC = () => {
                                 </tr>
                             ) : (
                                 filteredQuotations.map((q) => (
-                                    <tr key={q.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
+                                    <tr key={q.compositeId || q.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
                                         {/* Quotation # & Title */}
                                         <td className="px-5 py-3.5 font-medium text-[#0D0D0D]">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
-                                                    <FileText className="w-4 h-4 text-[#2D3F2C]" />
+                                                <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C] shrink-0">
+                                                    <FileText className="w-4 h-4 text-[#037F8C]" />
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-sm text-[#0D0D0D]">
                                                         {isRtl ? q.titleAr : q.titleEn}
                                                     </p>
-                                                    <span className="font-mono text-[11px] text-[#857E74]" dir="ltr">
-                                                        {q.quotationNumber}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <span className="font-mono text-[11px] text-[#857E74]" dir="ltr">
+                                                            {q.quotationNumber}
+                                                        </span>
+                                                        {q.source === 'crm' ? (
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EAEFF8] text-[#2A4365] border border-[#CBD8EC]">
+                                                                <FileText className="w-2.5 h-2.5" />
+                                                                {t('customer.pages.quotations.badgeCrm')}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FAF8F5] text-[#857E74] border border-[#E5E0D8]">
+                                                                {t('customer.pages.quotations.badgeCustomer')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -664,14 +742,14 @@ export const CustomerQuotationsPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(q)}
-                                                    title={t('customer.pages.quotations.table.edit')}
-                                                    className="p-1.5 rounded-lg text-[#2D3F2C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
+                                                {q.isReadOnly ? (
+                                                    <span
+                                                        title={t('customer.pages.quotations.crmReadOnlyTooltip')}
+                                                        className="p-1.5 rounded-lg text-[#857E74] opacity-50 cursor-not-allowed inline-flex items-center"
+                                                    >
+                                                        <Lock className="w-4 h-4" />
+                                                    </span>
+                                                ) : null}
                                             </div>
                                         </td>
                                     </tr>
@@ -689,7 +767,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                         {/* Header */}
                         <div className="flex items-start justify-between gap-4 border-b border-[#F0ECE6] pb-4">
                             <div className="flex items-start gap-3.5">
-                                <div className="w-11 h-11 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center shrink-0 shadow-xs">
+                                <div className="w-11 h-11 rounded-xl bg-[#037F8C] text-white flex items-center justify-center shrink-0 shadow-xs">
                                     <FileText className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -697,7 +775,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         <h2 className="text-lg font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingQuotation.titleAr : viewingQuotation.titleEn}
                                         </h2>
-                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#2D3F2C] rounded-md font-semibold" dir="ltr">
+                                        <span className="font-mono text-xs px-2 py-0.5 bg-[#EFECE6] text-[#037F8C] rounded-md font-semibold" dir="ltr">
                                             {viewingQuotation.quotationNumber}
                                         </span>
                                     </div>
@@ -715,6 +793,19 @@ export const CustomerQuotationsPage: React.FC = () => {
                             </button>
                         </div>
 
+                        {/* Read-Only CRM Notice Banner */}
+                        {viewingQuotation.isReadOnly && (
+                            <div className="p-3.5 rounded-xl bg-[#EAEFF8]/60 border border-[#CBD8EC] flex items-start gap-2.5 text-xs text-[#2A4365]">
+                                <Lock className="w-4 h-4 text-[#2A4365] shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-bold">{t('customer.pages.quotations.crmNoticeTitle')}</p>
+                                    <p className="text-[11px] text-[#4A5D6E] mt-0.5 leading-relaxed">
+                                        {t('customer.pages.quotations.crmNoticeDesc')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Customer & Status Strip */}
                         <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                             <div>
@@ -727,6 +818,45 @@ export const CustomerQuotationsPage: React.FC = () => {
                                 {getStatusBadge(viewingQuotation.status)}
                             </div>
                         </div>
+
+                        {/* Line Items Breakdown (if available from CRM quotation) */}
+                        {viewingQuotation.lineItems && viewingQuotation.lineItems.length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#857E74]">
+                                    {t('customer.pages.quotations.details.lineItems')}
+                                </h3>
+                                <div className="border border-[#E5E0D8] rounded-xl overflow-hidden">
+                                    <table className="w-full text-start text-[11px]">
+                                        <thead className="bg-[#FAF8F5] text-[#857E74] border-b border-[#E5E0D8]">
+                                            <tr>
+                                                <th className="px-3 py-2 text-start font-semibold">{t('customer.pages.quotations.details.itemDescription')}</th>
+                                                <th className="px-3 py-2 text-center font-semibold">{t('customer.pages.quotations.details.quantity')}</th>
+                                                <th className="px-3 py-2 text-end font-semibold">{t('customer.pages.quotations.details.unitPrice')}</th>
+                                                <th className="px-3 py-2 text-end font-semibold">{t('customer.pages.quotations.details.total')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#F0ECE6]">
+                                            {viewingQuotation.lineItems.map((item, idx) => (
+                                                <tr key={item.id || idx}>
+                                                    <td className="px-3 py-2 text-[#0D0D0D] font-medium">
+                                                        {isRtl ? item.descriptionAr || item.descriptionEn : item.descriptionEn}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-center text-[#6E6862] font-mono">
+                                                        {item.quantity}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-end text-[#6E6862] font-mono">
+                                                        {formatCurrency(item.unitPrice)}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-end text-[#0D0D0D] font-semibold font-mono">
+                                                        {formatCurrency(item.lineTotal || (item.quantity * item.unitPrice))}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Financial Breakdown Table */}
                         <div className="space-y-2">
@@ -748,7 +878,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                 </div>
                                 <div className="pt-2 border-t border-[#E5E0D8] flex items-center justify-between font-bold text-sm text-[#0D0D0D]">
                                     <span>{t('customer.pages.quotations.table.total')}</span>
-                                    <span className="text-[#2D3F2C]">{formatCurrency(viewingQuotation.total)}</span>
+                                    <span className="text-[#037F8C]">{formatCurrency(viewingQuotation.total)}</span>
                                 </div>
                             </div>
                         </div>
@@ -769,6 +899,16 @@ export const CustomerQuotationsPage: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Terms & Conditions */}
+                        {viewingQuotation.termsAndConditions && (
+                            <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-xs space-y-1">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-[#857E74]">
+                                    {t('customer.pages.quotations.details.terms')}
+                                </span>
+                                <p className="text-[#6E6862] leading-relaxed">{viewingQuotation.termsAndConditions}</p>
+                            </div>
+                        )}
+
                         {/* Notes */}
                         {viewingQuotation.notes && (
                             <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-xs space-y-1">
@@ -779,37 +919,10 @@ export const CustomerQuotationsPage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Quick Decision Actions */}
-                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#F0ECE6]">
-                            {viewingQuotation.status !== 'accepted' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickStatusChange(viewingQuotation.id, 'accepted')}
-                                    className="px-3 py-1.5 rounded-lg bg-[#EAF3EC] hover:bg-[#D5EAD9] text-[#265938] text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.quotations.details.accept')}
-                                </button>
-                            )}
-                            {viewingQuotation.status !== 'rejected' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleQuickStatusChange(viewingQuotation.id, 'rejected')}
-                                    className="px-3 py-1.5 rounded-lg bg-[#FDF2F2] hover:bg-[#FEE2E2] text-[#991B1B] text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.quotations.details.reject')}
-                                </button>
-                            )}
-                        </div>
+                        {/* Quick Decision Actions (Disabled in view-only Customer Portal) */}
 
                         {/* Footer */}
-                        <div className="pt-2 flex items-center justify-end gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => handleStartEdit(viewingQuotation)}
-                                className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
-                            >
-                                {t('customer.pages.quotations.modal.editTitle')}
-                            </button>
+                        <div className="pt-2 flex items-center justify-end">
                             <button
                                 type="button"
                                 onClick={() => setViewingQuotation(null)}
@@ -865,7 +978,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         value={formData.titleAr}
                                         onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
                                         placeholder="مثال: حزمة ترقية الأنظمة"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -878,7 +991,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         value={formData.titleEn}
                                         onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
                                         placeholder="e.g. Systems Upgrade Package"
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -891,7 +1004,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                     <select
                                         value={formData.companyId}
                                         onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         {AVAILABLE_COMPANIES.map((c) => (
                                             <option key={c.id} value={c.id}>
@@ -912,7 +1025,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                                 status: e.target.value as CustomerQuotationStatus,
                                             })
                                         }
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                     >
                                         <option value="draft">{t('customer.pages.quotations.statusDraft')}</option>
                                         <option value="sent">{t('customer.pages.quotations.statusSent')}</option>
@@ -933,7 +1046,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         required
                                         value={formData.issueDate}
                                         onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -945,7 +1058,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         required
                                         value={formData.expiryDate}
                                         onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -962,7 +1075,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         step={500}
                                         value={formData.subtotal}
                                         onChange={(e) => setFormData({ ...formData, subtotal: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                                 <div>
@@ -975,7 +1088,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                         step={500}
                                         value={formData.discount}
                                         onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -985,7 +1098,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                 <span className="text-[#6E6862]">
                                     {t('customer.pages.quotations.table.tax')}: <span className="text-[#0D0D0D]">{formatCurrency(calculatedTax)}</span>
                                 </span>
-                                <span className="text-[#2D3F2C]">
+                                <span className="text-[#037F8C]">
                                     {t('customer.pages.quotations.table.total')}: {formatCurrency(calculatedTotal)}
                                 </span>
                             </div>
@@ -999,7 +1112,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Scope of work, inclusions, billing milestones..."
-                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                    className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                 />
                             </div>
 
@@ -1017,7 +1130,7 @@ export const CustomerQuotationsPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
+                                    className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233222] text-xs font-semibold text-white shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.quotations.modal.save')}
                                 </button>

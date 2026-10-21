@@ -45,14 +45,10 @@ export interface CustomerOwnerItem {
 
 const STORAGE_KEY = 'awn_customer_owners_v1';
 
-const DEMO_COMPANIES = [
-    { id: 'cmp-1', code: 'CMP-1001', nameEn: 'Al-Wataniya Logistics Co.', nameAr: 'الشركة الوطنية للخدمات اللوجستية' },
-    { id: 'cmp-2', code: 'CMP-1002', nameEn: 'Riyadh Industrial Holdings', nameAr: 'القابضة الصناعية بالرياض' },
-    { id: 'cmp-3', code: 'CMP-1003', nameEn: 'Tamweel Capital Partners', nameAr: 'تمويل كابيتال المالية' },
-    { id: 'cmp-4', code: 'CMP-1004', nameEn: 'Najm Healthcare Network', nameAr: 'شبكة نجم للرعاية الصحية' },
-    { id: 'cmp-5', code: 'CMP-1005', nameEn: 'Horizon Digital Technologies', nameAr: 'تقنيات الأفق الرقمية' },
-    { id: 'cmp-6', code: 'CMP-1006', nameEn: 'Red Sea Hospitality & Resorts', nameAr: 'الضيافة والمنتجعات بالبحر الأحمر' },
-];
+import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
+
+const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
+
 
 const INITIAL_OWNERS: CustomerOwnerItem[] = [
     {
@@ -461,7 +457,7 @@ export const CustomerOwnersPage: React.FC = () => {
         <div className="space-y-6 text-start">
             {/* Toast */}
             {toastMessage && (
-                <div className="fixed top-5 end-5 z-50 bg-[#2D3F2C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
+                <div className="fixed top-5 end-5 z-50 bg-[#037F8C] text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 animate-fade-in border border-[#BFAB93]/30">
                     <CheckCircle2 className="w-4 h-4 text-[#BFAB93]" />
                     <span>{toastMessage}</span>
                 </div>
@@ -476,7 +472,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                 {t('customer.pages.owners.title')}
                             </h1>
                             <span
-                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]"
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
                                 dir="ltr"
                             >
                                 CST-OWN
@@ -490,16 +486,10 @@ export const CustomerOwnersPage: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={handleStartAdd}
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                        >
-                            <Plus className="w-4 h-4 text-[#BFAB93]" />
-                            <span>{t('customer.pages.owners.addOwner')}</span>
-                        </button>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] text-xs font-semibold text-[#595550] border border-[#E5E0D8]">
+                        <Eye className="w-3.5 h-3.5 text-[#857E74]" />
+                        <span>{isRtl ? 'عرض فقط' : 'View Only'}</span>
+                    </span>
                 </div>
 
                 {/* 4 KPI Cards */}
@@ -510,7 +500,7 @@ export const CustomerOwnersPage: React.FC = () => {
                             <span className="text-xs font-semibold text-[#857E74]">
                                 {t('customer.pages.owners.kpis.totalOwners')}
                             </span>
-                            <UserCheck className="w-4 h-4 text-[#2D3F2C]" />
+                            <UserCheck className="w-4 h-4 text-[#037F8C]" />
                         </div>
                         <p className="text-2xl font-bold text-[#0D0D0D] mt-2">{kpis.total}</p>
                     </div>
@@ -540,12 +530,12 @@ export const CustomerOwnersPage: React.FC = () => {
                     {/* 4. Active Owners */}
                     <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8]">
                         <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-[#2D3F2C]">
+                            <span className="text-xs font-semibold text-[#037F8C]">
                                 {t('customer.pages.owners.kpis.activeOwners')}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-[#265938]" />
+                            <CheckCircle2 className="w-4 h-4 text-[#037F8C]" />
                         </div>
-                        <p className="text-2xl font-bold text-[#265938] mt-2">{kpis.activeCount}</p>
+                        <p className="text-2xl font-bold text-[#037F8C] mt-2">{kpis.activeCount}</p>
                     </div>
                 </div>
             </div>
@@ -560,7 +550,7 @@ export const CustomerOwnersPage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('customer.pages.owners.searchPlaceholder')}
-                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                        className="w-full ps-10 pe-9 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                     />
                     {search && (
                         <button
@@ -579,7 +569,7 @@ export const CustomerOwnersPage: React.FC = () => {
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | OwnerStatus)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.owners.statusAll')}</option>
                         <option value="active">{t('customer.pages.owners.statusActive')}</option>
@@ -590,7 +580,7 @@ export const CustomerOwnersPage: React.FC = () => {
                     <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value as 'all' | OwnerType)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.owners.typeAll')}</option>
                         <option value="individual">{t('customer.pages.owners.types.individual')}</option>
@@ -603,7 +593,7 @@ export const CustomerOwnersPage: React.FC = () => {
                     <select
                         value={companyFilter}
                         onChange={(e) => setCompanyFilter(e.target.value)}
-                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                        className="px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                     >
                         <option value="all">{t('customer.pages.owners.companyAll')}</option>
                         {DEMO_COMPANIES.map((cmp) => (
@@ -653,7 +643,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={resetFilters}
-                                                className="text-xs text-[#2D3F2C] hover:underline font-semibold cursor-pointer mt-1"
+                                                className="text-xs text-[#037F8C] hover:underline font-semibold cursor-pointer mt-1"
                                             >
                                                 {t('customer.pages.owners.feedback.resetFilters')}
                                             </button>
@@ -664,7 +654,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                 filteredOwners.map((item) => (
                                     <tr key={item.id} className="hover:bg-[#FAF8F5]/80 transition-colors">
                                         {/* Code */}
-                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#2D3F2C]">
+                                        <td className="py-3.5 px-4 font-mono font-semibold text-[#037F8C]">
                                             <span className="px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#E5E0D8]" dir="ltr">
                                                 {item.code}
                                             </span>
@@ -692,7 +682,7 @@ export const CustomerOwnersPage: React.FC = () => {
 
                                         {/* Type */}
                                         <td className="py-3.5 px-4">
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                                                 {getTypeLabel(item.ownerType)}
                                             </span>
                                         </td>
@@ -705,7 +695,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 </span>
                                                 <div className="w-16 h-1.5 bg-[#EFECE6] rounded-full overflow-hidden">
                                                     <div
-                                                        className="h-full bg-[#2D3F2C] rounded-full"
+                                                        className="h-full bg-[#037F8C] rounded-full"
                                                         style={{ width: `${Math.min(item.ownershipPercentage, 100)}%` }}
                                                     />
                                                 </div>
@@ -720,7 +710,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                         {/* Status */}
                                         <td className="py-3.5 px-4">
                                             {item.status === 'active' ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     <span>{t('customer.pages.owners.statusActive')}</span>
                                                 </span>
@@ -744,34 +734,6 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
-
-                                                {/* Edit */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStartEdit(item)}
-                                                    className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E5E0D8] transition-colors cursor-pointer"
-                                                    title={t('customer.pages.owners.table.edit')}
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-
-                                                {/* Toggle Status */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(item.id)}
-                                                    className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                                                        item.status === 'active'
-                                                            ? 'text-[#265938] hover:text-[#1E5631] hover:bg-[#EAF3EC] border-transparent hover:border-[#C5DFCC]'
-                                                            : 'text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] border-transparent hover:border-[#E5E0D8]'
-                                                    }`}
-                                                    title={
-                                                        item.status === 'active'
-                                                            ? t('customer.pages.owners.table.deactivate')
-                                                            : t('customer.pages.owners.table.activate')
-                                                    }
-                                                >
-                                                    <Power className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -789,7 +751,7 @@ export const CustomerOwnersPage: React.FC = () => {
                         {/* Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <PieChart className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -797,7 +759,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                         <h2 className="text-base font-bold text-[#0D0D0D]">
                                             {isRtl ? viewingOwner.ownerNameAr : viewingOwner.ownerNameEn}
                                         </h2>
-                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#2D3F2C] border border-[#D6CFC4]" dir="ltr">
+                                        <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]" dir="ltr">
                                             {viewingOwner.code}
                                         </span>
                                     </div>
@@ -823,13 +785,13 @@ export const CustomerOwnersPage: React.FC = () => {
                                     <span className="text-xs font-semibold text-[#857E74]">
                                         {t('customer.pages.owners.table.stake')}
                                     </span>
-                                    <span className="text-lg font-bold font-mono text-[#2D3F2C]">
+                                    <span className="text-lg font-bold font-mono text-[#037F8C]">
                                         {viewingOwner.ownershipPercentage}%
                                     </span>
                                 </div>
                                 <div className="w-full h-2 bg-[#EFECE6] rounded-full mt-2 overflow-hidden">
                                     <div
-                                        className="h-full bg-[#2D3F2C] rounded-full"
+                                        className="h-full bg-[#037F8C] rounded-full"
                                         style={{ width: `${Math.min(viewingOwner.ownershipPercentage, 100)}%` }}
                                     />
                                 </div>
@@ -862,13 +824,13 @@ export const CustomerOwnersPage: React.FC = () => {
                                 </span>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-[#E5E0D8]">
-                                        <Phone className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Phone className="w-4 h-4 text-[#037F8C]" />
                                         <span className="text-xs font-mono font-medium" dir="ltr">
                                             {viewingOwner.phone}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-[#E5E0D8]">
-                                        <Mail className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Mail className="w-4 h-4 text-[#037F8C]" />
                                         <span className="text-xs font-mono font-medium truncate" dir="ltr">
                                             {viewingOwner.email}
                                         </span>
@@ -879,18 +841,18 @@ export const CustomerOwnersPage: React.FC = () => {
                             {/* Governance & Voting Power */}
                             <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-[#2D3F2C]" />
+                                    <Shield className="w-4 h-4 text-[#037F8C]" />
                                     <span className="text-xs font-semibold text-[#0D0D0D]">
                                         {t('customer.pages.owners.details.votingRights')}:
                                     </span>
-                                    <span className="text-xs font-bold text-[#265938]">
+                                    <span className="text-xs font-bold text-[#037F8C]">
                                         {viewingOwner.votingPower ? t('customer.pages.owners.details.authorized') : t('customer.pages.owners.details.silent')}
                                     </span>
                                 </div>
 
                                 <span className="px-2.5 py-1 rounded-full text-xs font-semibold">
                                     {viewingOwner.status === 'active' ? (
-                                        <span className="text-[#265938]">{t('customer.pages.owners.statusActive')}</span>
+                                        <span className="text-[#037F8C]">{t('customer.pages.owners.statusActive')}</span>
                                     ) : (
                                         <span className="text-[#857E74]">{t('customer.pages.owners.statusInactive')}</span>
                                     )}
@@ -909,54 +871,27 @@ export const CustomerOwnersPage: React.FC = () => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-between">
+                        <div className="p-4 border-t border-[#F0ECE6] bg-[#FAF8F5] flex items-center justify-end">
                             <button
                                 type="button"
-                                onClick={() => handleToggleStatus(viewingOwner.id)}
-                                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                    viewingOwner.status === 'active'
-                                        ? 'bg-white text-[#857E74] border-[#DDD6CC] hover:bg-[#FAF8F5]'
-                                        : 'bg-[#EAF3EC] text-[#265938] border-[#C5DFCC] hover:bg-[#D5EAD8]'
-                                }`}
+                                onClick={() => setViewingOwner(null)}
+                                className="px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                             >
-                                <Power className="w-3.5 h-3.5" />
-                                <span>
-                                    {viewingOwner.status === 'active'
-                                        ? t('customer.pages.owners.table.deactivate')
-                                        : t('customer.pages.owners.table.activate')}
-                                </span>
+                                {t('customer.pages.owners.details.close')}
                             </button>
-
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleStartEdit(viewingOwner)}
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    <Edit3 className="w-3.5 h-3.5 text-[#857E74]" />
-                                    <span>{t('customer.pages.owners.details.edit')}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewingOwner(null)}
-                                    className="px-4 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                    {t('customer.pages.owners.details.close')}
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Add / Edit Modal */}
+            {/* Add / Edit Modal (Disabled in view-only Customer Portal) */}
             {isFormModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
                     <div className="bg-white border border-[#E5E0D8] rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Header */}
                         <div className="p-6 border-b border-[#F0ECE6] flex items-center justify-between bg-[#FAF8F5]">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-white flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-white flex items-center justify-center">
                                     <UserCheck className="w-5 h-5 text-[#BFAB93]" />
                                 </div>
                                 <div>
@@ -995,7 +930,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                             value={formData.code}
                                             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                                             placeholder="OWN-201"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1007,7 +942,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                         <select
                                             value={formData.companyId}
                                             onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             {DEMO_COMPANIES.map((cmp) => (
                                                 <option key={cmp.id} value={cmp.id}>
@@ -1032,7 +967,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="اسم الشريك بالعربية"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="rtl"
                                         />
                                     </div>
@@ -1049,7 +984,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 if (formErrors.name) setFormErrors({ ...formErrors, name: undefined });
                                             }}
                                             placeholder="Owner name in English"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1069,7 +1004,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, ownerType: e.target.value as OwnerType })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="individual">{t('customer.pages.owners.types.individual')}</option>
                                             <option value="corporate">{t('customer.pages.owners.types.corporate')}</option>
@@ -1093,7 +1028,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                     setFormData({ ...formData, ownershipPercentage: Number(e.target.value) });
                                                     if (formErrors.percentage) setFormErrors({ ...formErrors, percentage: undefined });
                                                 }}
-                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                                className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             />
                                             <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#857E74]">
                                                 %
@@ -1119,7 +1054,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 if (formErrors.nationalId) setFormErrors({ ...formErrors, nationalId: undefined });
                                             }}
                                             placeholder="1018928401 / 7001928401"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                         {formErrors.nationalId && (
@@ -1142,7 +1077,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 })
                                             }
                                             placeholder="Saudi Arabia / سعودي"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                         />
                                     </div>
                                 </div>
@@ -1158,7 +1093,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             placeholder="+966 50 123 4567"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1172,7 +1107,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             placeholder="owner@company.sa"
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs font-mono text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                             dir="ltr"
                                         />
                                     </div>
@@ -1189,7 +1124,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                             onChange={(e) =>
                                                 setFormData({ ...formData, status: e.target.value as OwnerStatus })
                                             }
-                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C] cursor-pointer"
+                                            className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
                                         >
                                             <option value="active">{t('customer.pages.owners.statusActive')}</option>
                                             <option value="inactive">{t('customer.pages.owners.statusInactive')}</option>
@@ -1202,7 +1137,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                                 type="checkbox"
                                                 checked={formData.votingPower}
                                                 onChange={(e) => setFormData({ ...formData, votingPower: e.target.checked })}
-                                                className="w-4 h-4 rounded text-[#2D3F2C] focus:ring-[#2D3F2C] border-[#D6CFC4] cursor-pointer"
+                                                className="w-4 h-4 rounded text-[#037F8C] focus:ring-[#037F8C] border-[#D6CFC4] cursor-pointer"
                                             />
                                             <span>{t('customer.pages.owners.modal.votingPowerLabel')}</span>
                                         </label>
@@ -1219,7 +1154,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                         value={formData.notes}
                                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                         placeholder="تفاصيل عقد التأسيس ومحضر الجمعية..."
-                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
+                                        className="w-full px-3 py-2 bg-white border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C]"
                                     />
                                 </div>
                             </div>
@@ -1235,7 +1170,7 @@ export const CustomerOwnersPage: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-[#2D3F2C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                                    className="px-5 py-2 bg-[#037F8C] hover:bg-[#233222] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                                 >
                                     {t('customer.pages.owners.modal.save')}
                                 </button>

@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { type ColumnDef } from '@tanstack/react-table';
 import {
     ShieldCheck,
     CheckCircle2,
     XCircle,
     Users,
-    Search,
     X,
     RotateCcw,
     Download,
@@ -14,169 +15,160 @@ import {
     Pencil,
     Trash2,
     Power,
-    ChevronLeft,
-    ChevronRight,
     Shield,
     ShieldAlert,
     Copy,
     Check,
-    FileText,
-    Globe,
-    GitFork,
-    ClipboardCheck,
-    Box,
-    LifeBuoy,
     CheckSquare,
     Square,
     Lock,
     KeyRound,
     Layers,
-    type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DataTable } from '../../components/DataTable';
+import { umsApi } from '../../api/api';
+import {
+    SecurityGroupForm,
+    MODULE_KEYS,
+    MODULE_INFO,
+    DEFAULT_PERMISSIONS,
+    clonePermissions,
+    countActivePermissions,
+    type SecurityGroupFormValues,
+    type SecurityGroupFormErrors,
+    type InvitedMemberItem,
+} from '../../components/ums/SecurityGroupForm';
 import {
     loadSecurityGroups,
     saveSecurityGroups,
-    loadRoles,
     loadEmployees,
+    saveEmployees,
     loadDepartments,
     generateNextSecurityGroupCode,
-    checkSecurityGroupDeletionEligibility,
     recordUmsAuditEvent,
     escapeSafeCsvCell,
     syncMasterEntityEmployeeCounts,
     UMS_PAGE_SIZE_OPTIONS,
     type SecurityGroupRecord,
-    type SecurityGroupPermissions,
-    type ModulePermission,
     type RoleRecord,
     type EmployeeRecord,
     type DepartmentRecord,
 } from './umsMockData';
 
-// Module definitions and metadata
-const MODULE_KEYS: (keyof SecurityGroupPermissions)[] = [
-    'ums',
-    'edms',
-    'service',
-    'workflow',
-    'request',
-    'asset',
-    'ticketing',
-];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-interface ModuleMetadata {
-    nameEn: string;
-    nameAr: string;
-    descEn: string;
-    descAr: string;
-    icon: LucideIcon;
-}
-
-const MODULE_INFO: Record<keyof SecurityGroupPermissions, ModuleMetadata> = {
-    ums: {
-        nameEn: 'User Management (UMS)',
-        nameAr: 'إدارة المستخدمين والصلاحيات',
-        descEn: 'Employees, designations, departments, roles & groups',
-        descAr: 'الموظفون، المسميات، الأقسام، والأدوار ومجموعات الأمان',
-        icon: Users,
-    },
-    edms: {
-        nameEn: 'Document Management (EDMS)',
-        nameAr: 'إدارة الوثائق والملفات',
-        descEn: 'Company records, contracts, licenses, certificates',
-        descAr: 'السجلات النظامية، العقود، الرخص، والشهادات',
-        icon: FileText,
-    },
-    service: {
-        nameEn: 'Government & Enterprise Services',
-        nameAr: 'الخدمات والبوابات الحكومية',
-        descEn: 'Muqeem, Qiwa, Balady, ZATCA, commercial registrations',
-        descAr: 'مقيم، قوى، بلدي، زاتكا، وتجديد السجلات التجارية',
-        icon: Globe,
-    },
-    workflow: {
-        nameEn: 'Workflow Automation',
-        nameAr: 'مسارات العمل المؤتمتة',
-        descEn: 'Business approvals, sequential transitions, SLA engine',
-        descAr: 'الموافقات الإدارية، الانتقالات التلقائية، ومتابعة الالتزام',
-        icon: GitFork,
-    },
-    request: {
-        nameEn: 'Requests & Approvals',
-        nameAr: 'الطلبات والاعتمادات',
-        descEn: 'Leave requests, salary certificates, business expenses',
-        descAr: 'الإجازات، شهادات التعريف بالراتب، وعهد ومصروفات الأعمال',
-        icon: ClipboardCheck,
-    },
-    asset: {
-        nameEn: 'Asset Management',
-        nameAr: 'إدارة الأصول والعهد',
-        descEn: 'Custody tracking, equipment, IT devices, vehicles',
-        descAr: 'تتبع العهد، الأجهزة التقنية، المعدات، وأسطول المركبات',
-        icon: Box,
-    },
-    ticketing: {
-        nameEn: 'Support Ticketing',
-        nameAr: 'الدعم والمساعدات الفنية',
-        descEn: 'Internal requests, helpdesk issues, SLA escalations',
-        descAr: 'التذاكر الداخلية، قضايا الدعم الفني، ومستويات الخدمة',
-        icon: LifeBuoy,
-    },
+const DEFAULT_FORM_VALUES: SecurityGroupFormValues = {
+    groupName: '',
+    description: '',
+    emailInput: '',
+    invitedMembers: [],
+    permissions: clonePermissions(DEFAULT_PERMISSIONS),
 };
-
-const DEFAULT_PERMISSIONS: SecurityGroupPermissions = {
-    ums: { read: false, write: false, delete: false, export: false },
-    edms: { read: false, write: false, delete: false, export: false },
-    service: { read: false, write: false, delete: false, export: false },
-    workflow: { read: false, write: false, delete: false, export: false },
-    request: { read: false, write: false, delete: false, export: false },
-    asset: { read: false, write: false, delete: false, export: false },
-    ticketing: { read: false, write: false, delete: false, export: false },
-};
-
-interface SecurityGroupFormData {
-    code: string;
-    nameEn: string;
-    nameAr: string;
-    descriptionEn: string;
-    descriptionAr: string;
-    status: 'Active' | 'Inactive';
-    permissions: SecurityGroupPermissions;
-}
-
-const DEFAULT_FORM: SecurityGroupFormData = {
-    code: '',
-    nameEn: '',
-    nameAr: '',
-    descriptionEn: '',
-    descriptionAr: '',
-    status: 'Active',
-    permissions: DEFAULT_PERMISSIONS,
-};
-
-// Count active permissions out of 28
-function countActivePermissions(permissions: SecurityGroupPermissions): number {
-    let count = 0;
-    MODULE_KEYS.forEach((mKey) => {
-        const p = permissions[mKey];
-        if (p.read) count++;
-        if (p.write) count++;
-        if (p.delete) count++;
-        if (p.export) count++;
-    });
-    return count;
-}
 
 export const UmsSecurityGroupsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
+    const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
-    // State
-    const [groups, setGroups] = useState<SecurityGroupRecord[]>(() => loadSecurityGroups());
-    const [roles, setRoles] = useState<RoleRecord[]>(() => loadRoles());
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
-    const [departments] = useState<DepartmentRecord[]>(() => loadDepartments());
+    // Server / Repository State via TanStack Query & umsApi
+    const { data: groups = [] } = useQuery<SecurityGroupRecord[]>({
+        queryKey: ['ums', 'security-groups'],
+        queryFn: async () => umsApi.listSecurityGroups(),
+    });
+
+    const { data: roles = [] } = useQuery<RoleRecord[]>({
+        queryKey: ['ums', 'roles'],
+        queryFn: async () => umsApi.listRoles(),
+    });
+
+    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
+        queryKey: ['ums', 'employees'],
+        queryFn: async () => {
+            const res = await umsApi.listEmployees();
+            return res.data ?? loadEmployees();
+        },
+    });
+
+    const { data: departments = [] } = useQuery<DepartmentRecord[]>({
+        queryKey: ['ums', 'departments'],
+        queryFn: async () => {
+            const res = await umsApi.listDepartments();
+            return res.data ?? loadDepartments();
+        },
+    });
+
+    // Mutations via umsApi
+    const upsertSecurityGroupMutation = useMutation({
+        mutationFn: async ( payload: {
+            group: SecurityGroupRecord;
+            invitedMembers: InvitedMemberItem[];
+        }) => {
+            const res = await umsApi.upsertSecurityGroup(payload.group);
+            if (!res.ok) {
+                throw new Error(
+                    (isRtl ? res.messageAr : res.messageEn) ||
+                        res.messageEn ||
+                        'Failed to save security group'
+                );
+            }
+
+            // Process invited employees and link them to this security group
+            if (payload.invitedMembers.length > 0) {
+                const currentEmployees = loadEmployees();
+                const invitedEmailSet = new Set(
+                    payload.invitedMembers.map((m) => m.email.toLowerCase())
+                );
+                const nowDate = new Date().toISOString().slice(0, 10);
+                let anyUpdated = false;
+
+                const updatedEmployees = currentEmployees.map((emp) => {
+                    const matchEmail =
+                        invitedEmailSet.has(emp.email.toLowerCase()) ||
+                        (emp.workEmail && invitedEmailSet.has(emp.workEmail.toLowerCase()));
+                    if (!matchEmail) return emp;
+                    anyUpdated = true;
+                    return {
+                        ...emp,
+                        securityGroupId: payload.group.id,
+                        securityGroupName: payload.group.nameEn,
+                        securityGroupNameAr: payload.group.nameAr,
+                        invitationStatus:
+                            emp.invitationStatus === 'Accepted'
+                                ? ('Accepted' as const)
+                                : ('Pending' as const),
+                        invitedAt: nowDate,
+                        updatedAt: nowDate,
+                    };
+                });
+
+                if (anyUpdated) {
+                    saveEmployees(updatedEmployees);
+                    syncMasterEntityEmployeeCounts(updatedEmployees);
+                }
+            }
+
+            return res.data ?? payload.group;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ums', 'security-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'roles'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
+
+    const saveSecurityGroupsBulkMutation = useMutation({
+        mutationFn: async (nextGroups: SecurityGroupRecord[]) => {
+            saveSecurityGroups(nextGroups);
+            syncMasterEntityEmployeeCounts(loadEmployees());
+            return umsApi.listSecurityGroups();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ums', 'security-groups'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'roles'] });
+            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
 
     // Search and Filters
     const [searchQuery, setSearchQuery] = useState('');
@@ -194,18 +186,9 @@ export const UmsSecurityGroupsPage: React.FC = () => {
     const [deletingGroup, setDeletingGroup] = useState<SecurityGroupRecord | null>(null);
 
     // Form state
-    const [formData, setFormData] = useState<SecurityGroupFormData>(DEFAULT_FORM);
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [formValues, setFormValues] = useState<SecurityGroupFormValues>(DEFAULT_FORM_VALUES);
+    const [formErrors, setFormErrors] = useState<SecurityGroupFormErrors>({});
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-    // Synchronize to localStorage
-    const persistGroups = (newGroups: SecurityGroupRecord[]) => {
-        saveSecurityGroups(newGroups);
-        syncMasterEntityEmployeeCounts(employees);
-        setEmployees(loadEmployees());
-        setRoles(loadRoles());
-        setGroups(loadSecurityGroups());
-    };
 
     // Calculate dynamic counts
     const groupRoleMap = useMemo(() => {
@@ -224,7 +207,9 @@ export const UmsSecurityGroupsPage: React.FC = () => {
         groups.forEach((g) => {
             const groupRoles = groupRoleMap.get(g.id) || [];
             const roleIdSet = new Set(groupRoles.map((r) => r.id));
-            const emps = employees.filter((e) => roleIdSet.has(e.roleId));
+            const emps = employees.filter(
+                (e) => e.securityGroupId === g.id || roleIdSet.has(e.roleId)
+            );
             map.set(g.id, emps);
         });
         return map;
@@ -246,12 +231,10 @@ export const UmsSecurityGroupsPage: React.FC = () => {
     // Filtering
     const filteredGroups = useMemo(() => {
         return groups.filter((g) => {
-            // Status filter
             if (statusFilter !== 'All' && g.status !== statusFilter) {
                 return false;
             }
 
-            // Search query
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase().trim();
                 const matchCode = g.code.toLowerCase().includes(q);
@@ -269,7 +252,6 @@ export const UmsSecurityGroupsPage: React.FC = () => {
     }, [groups, statusFilter, searchQuery]);
 
     // Pagination
-    const totalPages = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
     const paginatedGroups = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
         return filteredGroups.slice(start, start + pageSize);
@@ -280,7 +262,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
         paginatedGroups.length > 0 &&
         paginatedGroups.every((g) => selectedIds.includes(g.id));
 
-    const handleSelectAllVisible = () => {
+    const handleSelectAllVisible = useCallback(() => {
         if (allVisibleSelected) {
             const visibleIds = new Set(paginatedGroups.map((g) => g.id));
             setSelectedIds((prev) => prev.filter((id) => !visibleIds.has(id)));
@@ -288,220 +270,310 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             const combined = new Set([...selectedIds, ...paginatedGroups.map((g) => g.id)]);
             setSelectedIds(Array.from(combined));
         }
-    };
+    }, [allVisibleSelected, paginatedGroups, selectedIds]);
 
-    const handleToggleSelect = (id: string) => {
+    const handleToggleSelect = useCallback((id: string) => {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
         );
-    };
+    }, []);
 
     // Copy group code
-    const handleCopyCode = (code: string) => {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(code);
-            setCopiedCode(code);
-            toast.success(
-                t('ums.securityGroups.feedback.codeCopied', {
-                    defaultValue: `Code ${code} copied to clipboard`,
-                })
-            );
-            setTimeout(() => setCopiedCode(null), 1500);
-        }
-    };
+    const handleCopyCode = useCallback(
+        (code: string) => {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code);
+                setCopiedCode(code);
+                toast.success(
+                    t('ums.securityGroups.feedback.codeCopied', {
+                        defaultValue: `Code ${code} copied to clipboard`,
+                    })
+                );
+                setTimeout(() => setCopiedCode(null), 1500);
+            }
+        },
+        [t]
+    );
 
-    // Open Create Drawer
+    // Open Create Modal
     const handleOpenCreate = () => {
-        setFormData({
-            ...DEFAULT_FORM,
-            code: generateNextSecurityGroupCode(groups),
-            permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)),
+        setEditingGroup(null);
+        setFormValues({
+            groupName: '',
+            description: '',
+            emailInput: '',
+            invitedMembers: [],
+            permissions: clonePermissions(DEFAULT_PERMISSIONS),
         });
         setFormErrors({});
         setIsCreateOpen(true);
     };
 
-    // Open Edit Drawer
-    const handleOpenEdit = (group: SecurityGroupRecord) => {
-        setEditingGroup(group);
-        setFormData({
-            code: group.code,
-            nameEn: group.nameEn,
-            nameAr: group.nameAr,
-            descriptionEn: group.descriptionEn || '',
-            descriptionAr: group.descriptionAr || '',
-            status: group.status,
-            permissions: JSON.parse(JSON.stringify(group.permissions || DEFAULT_PERMISSIONS)),
-        });
+    // Open Edit Modal
+    const handleOpenEdit = useCallback(
+        (group: SecurityGroupRecord) => {
+            setIsCreateOpen(false);
+            setEditingGroup(group);
+            const assignedEmps = groupEmployeeMap.get(group.id) || [];
+            setFormValues({
+                groupName: isRtl ? group.nameAr || group.nameEn : group.nameEn || group.nameAr,
+                description: isRtl
+                    ? group.descriptionAr || group.descriptionEn
+                    : group.descriptionEn || group.descriptionAr,
+                emailInput: '',
+                invitedMembers: assignedEmps.map((emp) => ({
+                    email: emp.email,
+                    employeeId: emp.id,
+                    employeeName: isRtl ? emp.nameAr || emp.nameEn : emp.nameEn,
+                    permissions: clonePermissions(group.permissions || DEFAULT_PERMISSIONS),
+                })),
+                permissions: clonePermissions(group.permissions || DEFAULT_PERMISSIONS),
+            });
+            setFormErrors({});
+        },
+        [groupEmployeeMap, isRtl]
+    );
+
+    const handleCloseForm = () => {
+        setIsCreateOpen(false);
+        setEditingGroup(null);
         setFormErrors({});
     };
 
     // Validate Form
     const validateForm = (isEditing: boolean, currentId?: string): boolean => {
-        const errors: Record<string, string> = {};
+        const errors: SecurityGroupFormErrors = {};
+        const trimmedName = formValues.groupName.trim();
+        const trimmedDesc = formValues.description.trim();
 
-        if (!formData.nameEn.trim()) {
-            errors.nameEn = t('ums.securityGroups.validation.nameEnRequired', {
-                defaultValue: 'English security group name is required.',
+        if (!trimmedName) {
+            errors.groupName = t('ums.securityGroups.validation.groupNameRequired', {
+                defaultValue: 'Group Name is required.',
+            });
+        } else if (trimmedName.length < 2) {
+            errors.groupName = t('ums.securityGroups.validation.groupNameMin', {
+                defaultValue: 'Group Name must be at least 2 characters.',
+            });
+        } else {
+            const duplicate = groups.find(
+                (g) =>
+                    (!isEditing || g.id !== currentId) &&
+                    (g.nameEn.trim().toLowerCase() === trimmedName.toLowerCase() ||
+                        g.nameAr.trim().toLowerCase() === trimmedName.toLowerCase())
+            );
+            if (duplicate) {
+                errors.groupName = t('ums.securityGroups.validation.duplicateName', {
+                    defaultValue: 'A security group with this name already exists.',
+                });
+            }
+        }
+
+        if (!trimmedDesc) {
+            errors.description = t('ums.securityGroups.validation.descriptionRequired', {
+                defaultValue: 'Description is required.',
             });
         }
 
-        if (!formData.nameAr.trim()) {
-            errors.nameAr = t('ums.securityGroups.validation.nameArRequired', {
-                defaultValue: 'Arabic security group name is required.',
-            });
-        }
-
-        // Duplicate Name check (case-insensitive)
-        const duplicateEn = groups.find(
-            (g) =>
-                (!isEditing || g.id !== currentId) &&
-                g.nameEn.trim().toLowerCase() === formData.nameEn.trim().toLowerCase()
-        );
-        if (duplicateEn) {
-            errors.nameEn = t('ums.securityGroups.validation.duplicateName', {
-                defaultValue: 'A security group with this name already exists.',
-            });
-        }
-
-        const duplicateAr = groups.find(
-            (g) =>
-                (!isEditing || g.id !== currentId) &&
-                g.nameAr.trim().toLowerCase() === formData.nameAr.trim().toLowerCase()
-        );
-        if (duplicateAr) {
-            errors.nameAr = t('ums.securityGroups.validation.duplicateName', {
-                defaultValue: 'A security group with this name already exists.',
-            });
+        if (formValues.emailInput.trim()) {
+            const parts = formValues.emailInput
+                .trim()
+                .split(/[\s,;]+/)
+                .map((e) => e.trim())
+                .filter(Boolean);
+            const invalidEmail = parts.find((email) => !EMAIL_REGEX.test(email));
+            if (invalidEmail) {
+                errors.emailInput = t('ums.securityGroups.validation.invalidEmail', {
+                    defaultValue: `Invalid email address: ${invalidEmail}`,
+                });
+            }
         }
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
-    // Save Create
-    const handleSaveCreate = (e: React.FormEvent) => {
+    // Submit Create / Edit
+    const handleSubmitForm = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm(false)) return;
+        const isEditing = Boolean(editingGroup);
+        if (!validateForm(isEditing, editingGroup?.id)) return;
 
-        const newGroup: SecurityGroupRecord = {
-            id: `sec-${Date.now()}`,
-            code: formData.code.trim() || generateNextSecurityGroupCode(groups),
-            nameEn: formData.nameEn.trim(),
-            nameAr: formData.nameAr.trim(),
-            descriptionEn: formData.descriptionEn.trim(),
-            descriptionAr: formData.descriptionAr.trim(),
-            permissions: formData.permissions,
-            userCount: 0,
-            status: formData.status,
-            createdAt: new Date().toISOString().slice(0, 10),
-        };
+        const trimmedName = formValues.groupName.trim();
+        const trimmedDesc = formValues.description.trim();
 
-        const updated = [newGroup, ...groups];
-        persistGroups(updated);
+        // Collect any pending valid email(s) still in the input box
+        const mergedInvites: InvitedMemberItem[] = [...formValues.invitedMembers];
+        if (formValues.emailInput.trim()) {
+            const existingSet = new Set(mergedInvites.map((m) => m.email.toLowerCase()));
+            const rawEmails = formValues.emailInput
+                .trim()
+                .split(/[\s,;]+/)
+                .map((s) => s.trim().toLowerCase())
+                .filter(Boolean);
 
-        recordUmsAuditEvent({
-            action: 'CREATED',
-            resource: 'Security Group',
-            resourceId: newGroup.id,
-            resourceName: newGroup.nameEn,
-            detailsEn: `Created security group ${newGroup.code} (${newGroup.nameEn}) with ${countActivePermissions(newGroup.permissions)}/28 privileges configured.`,
-            detailsAr: `إنشاء مجموعة أمان جديدة ${newGroup.code} (${newGroup.nameAr}) وتعيين ${countActivePermissions(newGroup.permissions)}/28 صلاحية.`,
-            newState: `Code: ${newGroup.code} | Name: ${newGroup.nameEn} | Status: ${newGroup.status}`,
-        });
-
-        toast.success(
-            t('ums.securityGroups.feedback.created', {
-                defaultValue: `Security group ${newGroup.nameEn} created successfully.`,
-            })
-        );
-        setIsCreateOpen(false);
-    };
-
-    // Save Edit
-    const handleSaveEdit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingGroup) return;
-        if (!validateForm(true, editingGroup.id)) return;
-
-        const updatedGroup: SecurityGroupRecord = {
-            ...editingGroup,
-            nameEn: formData.nameEn.trim(),
-            nameAr: formData.nameAr.trim(),
-            descriptionEn: formData.descriptionEn.trim(),
-            descriptionAr: formData.descriptionAr.trim(),
-            status: formData.status,
-            permissions: formData.permissions,
-        };
-
-        const updated = groups.map((g) => (g.id === editingGroup.id ? updatedGroup : g));
-        persistGroups(updated);
-
-        // Also update any cache or state
-        if (viewingGroup && viewingGroup.id === updatedGroup.id) {
-            setViewingGroup(updatedGroup);
+            rawEmails.forEach((email) => {
+                if (!existingSet.has(email) && EMAIL_REGEX.test(email)) {
+                    existingSet.add(email);
+                    const matchedEmp = employees.find(
+                        (emp) =>
+                            emp.email.toLowerCase() === email ||
+                            (emp.workEmail && emp.workEmail.toLowerCase() === email)
+                    );
+                    mergedInvites.push({
+                        email,
+                        employeeId: matchedEmp?.id,
+                        employeeName: matchedEmp
+                            ? isRtl
+                                ? matchedEmp.nameAr || matchedEmp.nameEn
+                                : matchedEmp.nameEn
+                            : undefined,
+                        permissions: clonePermissions(formValues.permissions),
+                    });
+                }
+            });
         }
 
-        recordUmsAuditEvent({
-            action: 'UPDATED',
-            resource: 'Security Group',
-            resourceId: updatedGroup.id,
-            resourceName: updatedGroup.nameEn,
-            detailsEn: `Updated security group ${updatedGroup.code} (${updatedGroup.nameEn}).`,
-            detailsAr: `تحديث بيانات مجموعة الأمان ${updatedGroup.code} (${updatedGroup.nameAr}).`,
-            previousState: `Code: ${editingGroup.code} | Name: ${editingGroup.nameEn} | Status: ${editingGroup.status}`,
-            newState: `Code: ${updatedGroup.code} | Name: ${updatedGroup.nameEn} | Status: ${updatedGroup.status}`,
-        });
+        try {
+            if (editingGroup) {
+                const updatedGroup: SecurityGroupRecord = {
+                    ...editingGroup,
+                    nameEn: isRtl ? editingGroup.nameEn || trimmedName : trimmedName,
+                    nameAr: isRtl ? trimmedName : editingGroup.nameAr || trimmedName,
+                    descriptionEn: isRtl ? editingGroup.descriptionEn || trimmedDesc : trimmedDesc,
+                    descriptionAr: isRtl ? trimmedDesc : editingGroup.descriptionAr || trimmedDesc,
+                    permissions: formValues.permissions,
+                    userCount: Math.max(editingGroup.userCount, mergedInvites.length),
+                };
 
-        toast.success(
-            t('ums.securityGroups.feedback.updated', {
-                defaultValue: `Security group ${updatedGroup.nameEn} updated successfully.`,
-            })
-        );
-        setEditingGroup(null);
+                await upsertSecurityGroupMutation.mutateAsync({
+                    group: updatedGroup,
+                    invitedMembers: mergedInvites,
+                });
+
+                if (viewingGroup && viewingGroup.id === updatedGroup.id) {
+                    setViewingGroup(updatedGroup);
+                }
+
+                recordUmsAuditEvent({
+                    action: 'UPDATED',
+                    resource: 'Security Group',
+                    resourceId: updatedGroup.id,
+                    resourceName: updatedGroup.nameEn,
+                    detailsEn: `Updated security group ${updatedGroup.code} (${updatedGroup.nameEn}) with ${mergedInvites.length} member invitation(s).`,
+                    detailsAr: `تحديث بيانات مجموعة الأمان ${updatedGroup.code} (${updatedGroup.nameAr}).`,
+                    previousState: `Code: ${editingGroup.code} | Name: ${editingGroup.nameEn} | Status: ${editingGroup.status}`,
+                    newState: `Code: ${updatedGroup.code} | Name: ${updatedGroup.nameEn} | Status: ${updatedGroup.status}`,
+                });
+
+                toast.success(
+                    t('ums.securityGroups.feedback.updated', {
+                        defaultValue: `Security group ${trimmedName} updated successfully.`,
+                    })
+                );
+                setEditingGroup(null);
+                return;
+            }
+
+            const newGroup: SecurityGroupRecord = {
+                id: `sec-${Date.now()}`,
+                code: generateNextSecurityGroupCode(groups),
+                nameEn: trimmedName,
+                nameAr: trimmedName,
+                descriptionEn: trimmedDesc,
+                descriptionAr: trimmedDesc,
+                permissions: formValues.permissions,
+                userCount: mergedInvites.length,
+                status: 'Active',
+                createdAt: new Date().toISOString().slice(0, 10),
+            };
+
+            await upsertSecurityGroupMutation.mutateAsync({
+                group: newGroup,
+                invitedMembers: mergedInvites,
+            });
+
+            recordUmsAuditEvent({
+                action: 'CREATED',
+                resource: 'Security Group',
+                resourceId: newGroup.id,
+                resourceName: newGroup.nameEn,
+                detailsEn: `Created security group ${newGroup.code} (${newGroup.nameEn}) with ${countActivePermissions(newGroup.permissions)}/28 privileges configured and ${mergedInvites.length} employee invitation(s).`,
+                detailsAr: `إنشاء مجموعة أمان جديدة ${newGroup.code} (${newGroup.nameAr}) وتعيين ${countActivePermissions(newGroup.permissions)}/28 صلاحية.`,
+                newState: `Code: ${newGroup.code} | Name: ${newGroup.nameEn} | Status: ${newGroup.status}`,
+            });
+
+            toast.success(
+                t('ums.securityGroups.feedback.created', {
+                    defaultValue:
+                        mergedInvites.length > 0
+                            ? `Security group ${newGroup.nameEn} created and ${mergedInvites.length} invitation(s) sent.`
+                            : `Security group ${newGroup.nameEn} created successfully.`,
+                })
+            );
+            setIsCreateOpen(false);
+        } catch (err: any) {
+            toast.error(err?.message || 'Failed to save security group');
+        }
     };
 
     // Quick Status Toggle
-    const handleToggleStatus = (group: SecurityGroupRecord) => {
-        const nextStatus: 'Active' | 'Inactive' =
-            group.status === 'Active' ? 'Inactive' : 'Active';
-        const updated = groups.map((g) =>
-            g.id === group.id ? { ...g, status: nextStatus } : g
-        );
-        persistGroups(updated);
+    const handleToggleStatus = useCallback(
+        async (group: SecurityGroupRecord) => {
+            const nextStatus: 'Active' | 'Inactive' =
+                group.status === 'Active' ? 'Inactive' : 'Active';
+            const updatedGroup: SecurityGroupRecord = {
+                ...group,
+                status: nextStatus,
+            };
 
-        if (viewingGroup && viewingGroup.id === group.id) {
-            setViewingGroup({ ...viewingGroup, status: nextStatus });
-        }
+            try {
+                await upsertSecurityGroupMutation.mutateAsync({
+                    group: updatedGroup,
+                    invitedMembers: [],
+                });
 
-        recordUmsAuditEvent({
-            action: nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-            resource: 'Security Group',
-            resourceId: group.id,
-            resourceName: group.nameEn,
-            detailsEn: `Security group ${group.code} status changed to ${nextStatus}.`,
-            detailsAr: `تم تغيير حالة مجموعة الأمان ${group.code} إلى ${nextStatus === 'Active' ? 'نشط' : 'معطل'}.`,
-        });
+                if (viewingGroup && viewingGroup.id === group.id) {
+                    setViewingGroup(updatedGroup);
+                }
 
-        toast.success(
-            t('ums.securityGroups.feedback.statusChanged', {
-                defaultValue: `Security group ${group.nameEn} is now ${nextStatus}.`,
-            })
-        );
-    };
+                recordUmsAuditEvent({
+                    action: nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
+                    resource: 'Security Group',
+                    resourceId: group.id,
+                    resourceName: group.nameEn,
+                    detailsEn: `Security group ${group.code} status changed to ${nextStatus}.`,
+                    detailsAr: `تم تغيير حالة مجموعة الأمان ${group.code} إلى ${nextStatus === 'Active' ? 'نشط' : 'معطل'}.`,
+                });
 
-    // Delete check & execution
+                toast.success(
+                    t('ums.securityGroups.feedback.statusChanged', {
+                        defaultValue: `Security group ${group.nameEn} is now ${nextStatus}.`,
+                    })
+                );
+            } catch (err: any) {
+                toast.error(err?.message || 'Failed to update status');
+            }
+        },
+        [upsertSecurityGroupMutation, viewingGroup, t]
+    );
+
+    // Delete check & execution via umsApi
     const deleteEligibility = useMemo(() => {
         if (!deletingGroup) return null;
-        return checkSecurityGroupDeletionEligibility(deletingGroup.id, roles, employees);
+        return umsApi.checkSecurityGroupDeletionEligibility(
+            deletingGroup.id,
+            roles,
+            employees
+        );
     }, [deletingGroup, roles, employees]);
 
     const handleConfirmDelete = () => {
         if (!deletingGroup || !deleteEligibility?.canDelete) return;
 
         const target = deletingGroup;
-        const updated = groups.filter((g) => g.id !== target.id);
-        persistGroups(updated);
+        const currentList = loadSecurityGroups();
+        const updated = currentList.filter((g) => g.id !== target.id);
+        saveSecurityGroupsBulkMutation.mutate(updated);
         setSelectedIds((prev) => prev.filter((id) => id !== target.id));
 
         recordUmsAuditEvent({
@@ -535,7 +607,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
         const updated = groups.map((g) =>
             selectedIds.includes(g.id) ? { ...g, status: 'Active' as const } : g
         );
-        persistGroups(updated);
+        saveSecurityGroupsBulkMutation.mutate(updated);
         toast.success(`${selectedIds.length} security group(s) activated successfully.`);
         setSelectedIds([]);
     };
@@ -545,7 +617,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
         const updated = groups.map((g) =>
             selectedIds.includes(g.id) ? { ...g, status: 'Inactive' as const } : g
         );
-        persistGroups(updated);
+        saveSecurityGroupsBulkMutation.mutate(updated);
         toast.success(`${selectedIds.length} security group(s) deactivated successfully.`);
         setSelectedIds([]);
     };
@@ -589,7 +661,6 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             ].join(',');
         });
 
-        // Add UTF-8 BOM for Arabic text support in Microsoft Excel
         const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -620,68 +691,259 @@ export const UmsSecurityGroupsPage: React.FC = () => {
         );
     };
 
-    // Permission matrix helper handlers in Form
-    const handlePermissionChange = (
-        moduleKey: keyof SecurityGroupPermissions,
-        action: keyof ModulePermission,
-        value: boolean
-    ) => {
-        setFormData((prev) => ({
-            ...prev,
-            permissions: {
-                ...prev.permissions,
-                [moduleKey]: {
-                    ...prev.permissions[moduleKey],
-                    [action]: value,
+    // DataTable Columns
+    const columns: ColumnDef<any, SecurityGroupRecord>[] = useMemo(
+        () => [
+            {
+                id: 'select',
+                header: () => (
+                    <div className="flex items-center justify-center">
+                        <button
+                            type="button"
+                            onClick={handleSelectAllVisible}
+                            className="text-[#037F8C] hover:opacity-80 cursor-pointer"
+                            title="Select all on page"
+                        >
+                            {allVisibleSelected ? (
+                                <CheckSquare className="w-4 h-4 text-[#037F8C]" />
+                            ) : (
+                                <Square className="w-4 h-4 text-[#6E6862]" />
+                            )}
+                        </button>
+                    </div>
+                ),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    const isSelected = selectedIds.includes(group.id);
+                    return (
+                        <div className="flex items-center justify-center">
+                            <button
+                                type="button"
+                                onClick={() => handleToggleSelect(group.id)}
+                                className="text-[#037F8C] cursor-pointer"
+                            >
+                                {isSelected ? (
+                                    <CheckSquare className="w-4 h-4 text-[#037F8C]" />
+                                ) : (
+                                    <Square className="w-4 h-4 text-[#6E6862]/60" />
+                                )}
+                            </button>
+                        </div>
+                    );
                 },
             },
-        }));
-    };
-
-    const handleGrantAll = () => {
-        const granted: SecurityGroupPermissions = { ...DEFAULT_PERMISSIONS };
-        MODULE_KEYS.forEach((mKey) => {
-            granted[mKey] = { read: true, write: true, delete: true, export: true };
-        });
-        setFormData((prev) => ({ ...prev, permissions: granted }));
-        toast.info(t('ums.securityGroups.form.grantAll', { defaultValue: 'Full access granted to all modules.' }));
-    };
-
-    const handleRevokeAll = () => {
-        const revoked: SecurityGroupPermissions = { ...DEFAULT_PERMISSIONS };
-        MODULE_KEYS.forEach((mKey) => {
-            revoked[mKey] = { read: false, write: false, delete: false, export: false };
-        });
-        setFormData((prev) => ({ ...prev, permissions: revoked }));
-        toast.info(t('ums.securityGroups.form.clearAll', { defaultValue: 'All permissions revoked.' }));
-    };
-
-    const handleReadOnlyAll = () => {
-        const readOnly: SecurityGroupPermissions = { ...DEFAULT_PERMISSIONS };
-        MODULE_KEYS.forEach((mKey) => {
-            readOnly[mKey] = { read: true, write: false, delete: false, export: false };
-        });
-        setFormData((prev) => ({ ...prev, permissions: readOnly }));
-        toast.info(t('ums.securityGroups.form.readOnlyAll', { defaultValue: 'Read-only access set across all modules.' }));
-    };
-
-    const handleToggleModuleRow = (moduleKey: keyof SecurityGroupPermissions) => {
-        const curr = formData.permissions[moduleKey];
-        const allOn = curr.read && curr.write && curr.delete && curr.export;
-        const targetVal = !allOn;
-        setFormData((prev) => ({
-            ...prev,
-            permissions: {
-                ...prev.permissions,
-                [moduleKey]: {
-                    read: targetVal,
-                    write: targetVal,
-                    delete: targetVal,
-                    export: targetVal,
+            {
+                accessorKey: 'code',
+                header: () =>
+                    t('ums.securityGroups.table.groupCode', { defaultValue: 'Group Code' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    return (
+                        <div className="flex items-center gap-1.5">
+                            <span
+                                className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
+                                dir="ltr"
+                            >
+                                {group.code}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => handleCopyCode(group.code)}
+                                className="p-1 text-[#6E6862] hover:text-[#0D0D0D] rounded hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                title="Copy code"
+                            >
+                                {copiedCode === group.code ? (
+                                    <Check className="w-3 h-3 text-[#2E7D32]" />
+                                ) : (
+                                    <Copy className="w-3 h-3" />
+                                )}
+                            </button>
+                        </div>
+                    );
                 },
             },
-        }));
-    };
+            {
+                id: 'groupName',
+                header: () =>
+                    t('ums.securityGroups.table.groupName', { defaultValue: 'Group Name' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    return (
+                        <div>
+                            <div className="font-semibold text-[#0D0D0D]">
+                                {isRtl ? group.nameAr : group.nameEn}
+                            </div>
+                            <div className="text-[11px] text-[#6E6862]">
+                                {isRtl ? group.nameEn : group.nameAr}
+                            </div>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'description',
+                header: () => t('ums.common.description', { defaultValue: 'Description' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    return (
+                        <div className="max-w-xs truncate text-[#6E6862]">
+                            {isRtl
+                                ? group.descriptionAr || group.descriptionEn || '—'
+                                : group.descriptionEn || group.descriptionAr || '—'}
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'permissionsSummary',
+                header: () =>
+                    t('ums.securityGroups.table.permissionsSummary', {
+                        defaultValue: 'Permissions',
+                    }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    const activePermissions = countActivePermissions(group.permissions);
+                    return (
+                        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8]">
+                            <KeyRound className="w-3 h-3 text-[#037F8C]" />
+                            <span className="font-mono font-semibold text-[#037F8C]">
+                                {activePermissions}
+                            </span>
+                            <span className="text-[10px] text-[#6E6862]">/ 28 active</span>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'rolesCount',
+                header: () =>
+                    t('ums.securityGroups.table.rolesCount', { defaultValue: 'Roles' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    const assignedRoles = groupRoleMap.get(group.id) || [];
+                    return (
+                        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
+                            {assignedRoles.length}
+                        </span>
+                    );
+                },
+            },
+            {
+                id: 'usersCount',
+                header: () =>
+                    t('ums.securityGroups.table.usersCount', { defaultValue: 'Users' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    const assignedEmployees = groupEmployeeMap.get(group.id) || [];
+                    return (
+                        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
+                            {assignedEmployees.length}
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'status',
+                header: () =>
+                    t('ums.securityGroups.table.status', { defaultValue: 'Status' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => handleToggleStatus(group)}
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
+                                group.status === 'Active'
+                                    ? 'bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#C8E6C9]'
+                                    : 'bg-[#FFEBEE] text-[#D32F2F] hover:bg-[#FFCDD2]'
+                            }`}
+                            title="Click to toggle status"
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                    group.status === 'Active' ? 'bg-[#2E7D32]' : 'bg-[#D32F2F]'
+                                }`}
+                            />
+                            <span>
+                                {group.status === 'Active'
+                                    ? t('ums.common.active', { defaultValue: 'Active' })
+                                    : t('ums.common.inactive', { defaultValue: 'Inactive' })}
+                            </span>
+                        </button>
+                    );
+                },
+            },
+            {
+                accessorKey: 'createdAt',
+                header: () =>
+                    t('ums.securityGroups.table.createdAt', {
+                        defaultValue: 'Created Date',
+                    }),
+                cell: ({ row }) => (
+                    <span className="text-[#6E6862] font-mono text-[11px]">
+                        {row.original.createdAt}
+                    </span>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => t('ums.common.actions', { defaultValue: 'Actions' }),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    return (
+                        <div className="inline-flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setViewingGroup(group)}
+                                className="p-1.5 text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] rounded-md transition-colors cursor-pointer"
+                                title="View Details"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleOpenEdit(group)}
+                                className="p-1.5 text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] rounded-md transition-colors cursor-pointer"
+                                title="Edit Security Group"
+                            >
+                                <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleToggleStatus(group)}
+                                className="p-1.5 text-[#6E6862] hover:text-[#037F8C] hover:bg-[#FAF8F5] rounded-md transition-colors cursor-pointer"
+                                title={group.status === 'Active' ? 'Deactivate' : 'Activate'}
+                            >
+                                <Power className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDeletingGroup(group)}
+                                className="p-1.5 text-[#6E6862] hover:text-[#D32F2F] hover:bg-[#FFEBEE] rounded-md transition-colors cursor-pointer"
+                                title="Delete Security Group"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [
+            t,
+            isRtl,
+            allVisibleSelected,
+            selectedIds,
+            copiedCode,
+            groupRoleMap,
+            groupEmployeeMap,
+            handleSelectAllVisible,
+            handleToggleSelect,
+            handleCopyCode,
+            handleToggleStatus,
+            handleOpenEdit,
+        ]
+    );
 
     return (
         <div className="space-y-6 text-start">
@@ -689,16 +951,18 @@ export const UmsSecurityGroupsPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
                 <div>
                     <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-sm">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shadow-sm">
                             <ShieldCheck className="w-5 h-5 text-[#84C799]" />
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                                    {t('ums.securityGroups.title', { defaultValue: 'Security Groups' })}
+                                    {t('ums.securityGroups.title', {
+                                        defaultValue: 'Security Groups',
+                                    })}
                                 </h1>
                                 <span
-                                    className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
+                                    className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
                                     dir="ltr"
                                 >
                                     UMS-SEC
@@ -718,48 +982,61 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => handleExportCsv()}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#FAF8F5] hover:border-[#2D3F2C]/30 transition-all shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white text-[#037F8C] border border-[#E5E0D8] hover:bg-[#FAF8F5] hover:border-[#037F8C]/30 transition-all shadow-sm cursor-pointer"
                     >
-                        <Download className="w-3.5 h-3.5 text-[#2D3F2C]" />
+                        <Download className="w-3.5 h-3.5 text-[#037F8C]" />
                         <span>{t('ums.common.export', { defaultValue: 'Export CSV' })}</span>
                     </button>
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98]"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98] cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>{t('ums.securityGroups.addSecurityGroup', { defaultValue: 'Add Security Group' })}</span>
+                        <span>
+                            {t('ums.securityGroups.addSecurityGroup', {
+                                defaultValue: 'Create New Security Group',
+                            })}
+                        </span>
                     </button>
                 </div>
             </div>
 
             {/* KPI Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total */}
                 <div className="p-4 rounded-xl bg-white border border-[#E5E0D8] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.securityGroups.kpi.total', { defaultValue: 'Total Security Groups' })}
+                            {t('ums.securityGroups.kpi.total', {
+                                defaultValue: 'Total Security Groups',
+                            })}
                         </p>
-                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono">{totalGroups}</p>
-                        <p className="text-[11px] text-[#6E6862] mt-0.5">Configured policy containers</p>
+                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono">
+                            {totalGroups}
+                        </p>
+                        <p className="text-[11px] text-[#6E6862] mt-0.5">
+                            Configured policy containers
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
-                        <Shield className="w-5 h-5 text-[#2D3F2C]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
+                        <Shield className="w-5 h-5 text-[#037F8C]" />
                     </div>
                 </div>
 
-                {/* Active */}
                 <div className="p-4 rounded-xl bg-white border border-[#E5E0D8] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
                             {t('ums.securityGroups.kpi.active', { defaultValue: 'Active Groups' })}
                         </p>
-                        <p className="text-2xl font-bold text-[#1B4D3E] mt-1 font-mono">{activeGroups}</p>
+                        <p className="text-2xl font-bold text-[#1B4D3E] mt-1 font-mono">
+                            {activeGroups}
+                        </p>
                         <p className="text-[11px] text-[#1B4D3E] mt-0.5 flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3 inline" />
-                            {totalGroups > 0 ? Math.round((activeGroups / totalGroups) * 100) : 0}% operational
+                            {totalGroups > 0
+                                ? Math.round((activeGroups / totalGroups) * 100)
+                                : 0}
+                            % operational
                         </p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-[#E8F5E9] border border-[#C8E6C9] flex items-center justify-center text-[#2E7D32]">
@@ -767,848 +1044,190 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Inactive */}
                 <div className="p-4 rounded-xl bg-white border border-[#E5E0D8] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.securityGroups.kpi.inactive', { defaultValue: 'Inactive Groups' })}
+                            {t('ums.securityGroups.kpi.inactive', {
+                                defaultValue: 'Inactive Groups',
+                            })}
                         </p>
-                        <p className="text-2xl font-bold text-[#D32F2F] mt-1 font-mono">{inactiveGroups}</p>
-                        <p className="text-[11px] text-[#6E6862] mt-0.5">Suspended access policies</p>
+                        <p className="text-2xl font-bold text-[#D32F2F] mt-1 font-mono">
+                            {inactiveGroups}
+                        </p>
+                        <p className="text-[11px] text-[#6E6862] mt-0.5">
+                            Suspended access policies
+                        </p>
                     </div>
                     <div className="w-10 h-10 rounded-xl bg-[#FFEBEE] border border-[#FFCDD2] flex items-center justify-center text-[#D32F2F]">
                         <XCircle className="w-5 h-5" />
                     </div>
                 </div>
 
-                {/* Total Assigned Users */}
                 <div className="p-4 rounded-xl bg-white border border-[#E5E0D8] shadow-sm flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.securityGroups.kpi.assignedUsers', { defaultValue: 'Total Assigned Users' })}
+                            {t('ums.securityGroups.kpi.assignedUsers', {
+                                defaultValue: 'Total Assigned Users',
+                            })}
                         </p>
-                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono">{totalAssignedUsers}</p>
-                        <p className="text-[11px] text-[#6E6862] mt-0.5">Mapped enterprise staff</p>
+                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono">
+                            {totalAssignedUsers}
+                        </p>
+                        <p className="text-[11px] text-[#6E6862] mt-0.5">
+                            Mapped enterprise staff
+                        </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C]">
-                        <Users className="w-5 h-5 text-[#2D3F2C]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
+                        <Users className="w-5 h-5 text-[#037F8C]" />
                     </div>
                 </div>
             </div>
 
-            {/* Filter and Search Bar */}
+            {/* Filter Toolbar & Batch Actions */}
             <div className="p-4 rounded-xl bg-white border border-[#E5E0D8] shadow-sm space-y-3">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                    {/* Search */}
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="w-4 h-4 text-[#6E6862] absolute start-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-[#6E6862]">
+                            {t('ums.common.status', { defaultValue: 'Status' })}:
+                        </span>
+                        <div className="inline-flex rounded-lg border border-[#E5E0D8] p-0.5 bg-[#FAF8F5]">
+                            {(['All', 'Active', 'Inactive'] as const).map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => {
+                                        setStatusFilter(s);
+                                        setCurrentPage(1);
+                                    }}
+                                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                                        statusFilter === s
+                                            ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                            : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                                    }`}
+                                >
+                                    {s === 'All'
+                                        ? t('ums.common.all', { defaultValue: 'All' })
+                                        : s === 'Active'
+                                        ? t('ums.common.active', { defaultValue: 'Active' })
+                                        : t('ums.common.inactive', { defaultValue: 'Inactive' })}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {(searchQuery || statusFilter !== 'All') && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearchQuery('');
+                                setStatusFilter('All');
                                 setCurrentPage(1);
                             }}
-                            placeholder={t('ums.securityGroups.searchPlaceholder', {
-                                defaultValue: 'Search security groups by code, name, or description...',
-                            })}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] placeholder-[#6E6862] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C] transition-all"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setCurrentPage(1);
-                                }}
-                                className="absolute end-2.5 top-1/2 -translate-y-1/2 text-[#6E6862] hover:text-[#0D0D0D]"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Filter controls */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        {/* Status Filter */}
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-medium text-[#6E6862]">
-                                {t('ums.common.status', { defaultValue: 'Status' })}:
-                            </span>
-                            <div className="inline-flex rounded-lg border border-[#E5E0D8] p-0.5 bg-[#FAF8F5]">
-                                {(['All', 'Active', 'Inactive'] as const).map((s) => (
-                                    <button
-                                        key={s}
-                                        type="button"
-                                        onClick={() => {
-                                            setStatusFilter(s);
-                                            setCurrentPage(1);
-                                        }}
-                                        className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
-                                            statusFilter === s
-                                                ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-xs'
-                                                : 'text-[#6E6862] hover:text-[#0D0D0D]'
-                                        }`}
-                                    >
-                                        {s === 'All'
-                                            ? t('ums.common.all', { defaultValue: 'All' })
-                                            : s === 'Active'
-                                            ? t('ums.common.active', { defaultValue: 'Active' })
-                                            : t('ums.common.inactive', { defaultValue: 'Inactive' })}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Reset Filters */}
-                        {(searchQuery || statusFilter !== 'All') && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setStatusFilter('All');
-                                    setCurrentPage(1);
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#6E6862] hover:text-[#0D0D0D] rounded-lg border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-all"
-                                title="Reset filters"
-                            >
-                                <RotateCcw className="w-3 h-3" />
-                                <span>{t('ums.common.reset', { defaultValue: 'Reset' })}</span>
-                            </button>
-                        )}
-                    </div>
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#6E6862] hover:text-[#0D0D0D] rounded-lg border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-all cursor-pointer"
+                            title="Reset filters"
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>{t('ums.common.reset', { defaultValue: 'Reset' })}</span>
+                        </button>
+                    )}
                 </div>
 
-                {/* Batch Actions Toolbar */}
                 {selectedIds.length > 0 && (
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F5] border border-[#2D3F2C]/20 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#FAF8F5] border border-[#037F8C]/20 text-xs">
                         <div className="flex items-center gap-2">
-                            <span className="font-semibold text-[#2D3F2C] font-mono">
-                                {selectedIds.length} {t('ums.common.selected', { defaultValue: 'selected' })}
+                            <span className="font-semibold text-[#037F8C] font-mono">
+                                {selectedIds.length}{' '}
+                                {t('ums.common.selected', { defaultValue: 'selected' })}
                             </span>
                             <span className="text-[#6E6862]">|</span>
                             <button
                                 type="button"
                                 onClick={() => setSelectedIds([])}
-                                className="text-xs text-[#6E6862] hover:text-[#0D0D0D] underline"
+                                className="text-xs text-[#6E6862] hover:text-[#0D0D0D] underline cursor-pointer"
                             >
-                                {t('ums.common.clearSelection', { defaultValue: 'Clear selection' })}
+                                {t('ums.common.clearSelection', {
+                                    defaultValue: 'Clear selection',
+                                })}
                             </button>
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={handleBatchActivate}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9] hover:bg-[#C8E6C9] transition-all"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9] hover:bg-[#C8E6C9] transition-all cursor-pointer"
                             >
                                 <CheckCircle2 className="w-3 h-3" />
-                                <span>{t('ums.common.activate', { defaultValue: 'Activate' })}</span>
+                                <span>
+                                    {t('ums.common.activate', { defaultValue: 'Activate' })}
+                                </span>
                             </button>
                             <button
                                 type="button"
                                 onClick={handleBatchDeactivate}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-[#FFEBEE] text-[#D32F2F] border border-[#FFCDD2] hover:bg-[#FFCDD2] transition-all"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-[#FFEBEE] text-[#D32F2F] border border-[#FFCDD2] hover:bg-[#FFCDD2] transition-all cursor-pointer"
                             >
                                 <XCircle className="w-3 h-3" />
-                                <span>{t('ums.common.deactivate', { defaultValue: 'Deactivate' })}</span>
+                                <span>
+                                    {t('ums.common.deactivate', { defaultValue: 'Deactivate' })}
+                                </span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => {
-                                    const selectedGroups = groups.filter((g) => selectedIds.includes(g.id));
+                                    const selectedGroups = groups.filter((g) =>
+                                        selectedIds.includes(g.id)
+                                    );
                                     handleExportCsv(selectedGroups);
                                 }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-white text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-all"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-white text-[#037F8C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-all cursor-pointer"
                             >
                                 <Download className="w-3 h-3" />
-                                <span>{t('ums.common.exportSelected', { defaultValue: 'Export Selected' })}</span>
+                                <span>
+                                    {t('ums.common.exportSelected', {
+                                        defaultValue: 'Export Selected',
+                                    })}
+                                </span>
                             </button>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Table */}
-            <div className="rounded-xl bg-white border border-[#E5E0D8] shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-start border-collapse">
-                        <thead>
-                            <tr className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[#6E6862] font-semibold">
-                                <th className="p-3 w-10 text-center">
-                                    <button
-                                        type="button"
-                                        onClick={handleSelectAllVisible}
-                                        className="text-[#2D3F2C] hover:opacity-80"
-                                        title="Select all on page"
-                                    >
-                                        {allVisibleSelected ? (
-                                            <CheckSquare className="w-4 h-4 text-[#2D3F2C]" />
-                                        ) : (
-                                            <Square className="w-4 h-4 text-[#6E6862]" />
-                                        )}
-                                    </button>
-                                </th>
-                                <th className="p-3 text-start">{t('ums.securityGroups.table.groupCode', { defaultValue: 'Group Code' })}</th>
-                                <th className="p-3 text-start">{t('ums.securityGroups.table.groupName', { defaultValue: 'Group Name' })}</th>
-                                <th className="p-3 text-start hidden md:table-cell">{t('ums.common.description', { defaultValue: 'Description' })}</th>
-                                <th className="p-3 text-start">{t('ums.securityGroups.table.permissionsSummary', { defaultValue: 'Permissions' })}</th>
-                                <th className="p-3 text-center">{t('ums.securityGroups.table.rolesCount', { defaultValue: 'Roles' })}</th>
-                                <th className="p-3 text-center">{t('ums.securityGroups.table.usersCount', { defaultValue: 'Users' })}</th>
-                                <th className="p-3 text-center">{t('ums.securityGroups.table.status', { defaultValue: 'Status' })}</th>
-                                <th className="p-3 text-start hidden lg:table-cell">{t('ums.securityGroups.table.createdAt', { defaultValue: 'Created Date' })}</th>
-                                <th className="p-3 text-end">{t('ums.common.actions', { defaultValue: 'Actions' })}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#E5E0D8]">
-                            {paginatedGroups.length === 0 ? (
-                                <tr>
-                                    <td colSpan={10} className="p-8 text-center text-[#6E6862]">
-                                        <div className="flex flex-col items-center justify-center gap-2">
-                                            <ShieldAlert className="w-8 h-8 text-[#6E6862]/60" />
-                                            <p className="text-sm font-medium text-[#0D0D0D]">No security groups found</p>
-                                            <p className="text-xs text-[#6E6862]">
-                                                {searchQuery || statusFilter !== 'All'
-                                                    ? 'Try clearing your search query or adjusting active filters.'
-                                                    : 'Get started by creating your first enterprise security group.'}
-                                            </p>
-                                            {(searchQuery || statusFilter !== 'All') && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSearchQuery('');
-                                                        setStatusFilter('All');
-                                                    }}
-                                                    className="mt-2 text-xs font-semibold text-[#2D3F2C] hover:underline"
-                                                >
-                                                    Clear active filters
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedGroups.map((group) => {
-                                    const isSelected = selectedIds.includes(group.id);
-                                    const assignedRoles = groupRoleMap.get(group.id) || [];
-                                    const assignedEmployees = groupEmployeeMap.get(group.id) || [];
-                                    const activePermissions = countActivePermissions(group.permissions);
+            {/* Shared DataTable */}
+            <DataTable
+                columns={columns}
+                data={paginatedGroups}
+                count={filteredGroups.length}
+                pageIndex={currentPage - 1}
+                pageSize={pageSize}
+                onPageChange={(pageIdx) => setCurrentPage(pageIdx + 1)}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                }}
+                searchValue={searchQuery}
+                onSearchChange={(val) => {
+                    setSearchQuery(val);
+                    setCurrentPage(1);
+                }}
+                searchPlaceholder={t('ums.securityGroups.searchPlaceholder', {
+                    defaultValue: 'Search security groups by code, name, or description...',
+                })}
+                title={t('ums.securityGroups.title', { defaultValue: 'Security Groups' })}
+            />
 
-                                    return (
-                                        <tr
-                                            key={group.id}
-                                            className={`hover:bg-[#FAF8F5]/60 transition-colors ${
-                                                isSelected ? 'bg-[#FAF8F5]' : ''
-                                            }`}
-                                        >
-                                            {/* Selection Checkbox */}
-                                            <td className="p-3 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleSelect(group.id)}
-                                                    className="text-[#2D3F2C]"
-                                                >
-                                                    {isSelected ? (
-                                                        <CheckSquare className="w-4 h-4 text-[#2D3F2C]" />
-                                                    ) : (
-                                                        <Square className="w-4 h-4 text-[#6E6862]/60" />
-                                                    )}
-                                                </button>
-                                            </td>
-
-                                            {/* Group Code */}
-                                            <td className="p-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span
-                                                        className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
-                                                        dir="ltr"
-                                                    >
-                                                        {group.code}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleCopyCode(group.code)}
-                                                        className="p-1 text-[#6E6862] hover:text-[#0D0D0D] rounded hover:bg-[#FAF8F5] transition-colors"
-                                                        title="Copy code"
-                                                    >
-                                                        {copiedCode === group.code ? (
-                                                            <Check className="w-3 h-3 text-[#2E7D32]" />
-                                                        ) : (
-                                                            <Copy className="w-3 h-3" />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </td>
-
-                                            {/* Names */}
-                                            <td className="p-3">
-                                                <div className="font-semibold text-[#0D0D0D]">
-                                                    {isRtl ? group.nameAr : group.nameEn}
-                                                </div>
-                                                <div className="text-[11px] text-[#6E6862]">
-                                                    {isRtl ? group.nameEn : group.nameAr}
-                                                </div>
-                                            </td>
-
-                                            {/* Description */}
-                                            <td className="p-3 max-w-xs truncate hidden md:table-cell text-[#6E6862]">
-                                                {isRtl
-                                                    ? group.descriptionAr || group.descriptionEn || '—'
-                                                    : group.descriptionEn || group.descriptionAr || '—'}
-                                            </td>
-
-                                            {/* Permissions Summary */}
-                                            <td className="p-3">
-                                                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8]">
-                                                    <KeyRound className="w-3 h-3 text-[#2D3F2C]" />
-                                                    <span className="font-mono font-semibold text-[#2D3F2C]">
-                                                        {activePermissions}
-                                                    </span>
-                                                    <span className="text-[10px] text-[#6E6862]">/ 28 active</span>
-                                                </div>
-                                            </td>
-
-                                            {/* Assigned Roles Count */}
-                                            <td className="p-3 text-center">
-                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
-                                                    {assignedRoles.length}
-                                                </span>
-                                            </td>
-
-                                            {/* Assigned Users Count */}
-                                            <td className="p-3 text-center">
-                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
-                                                    {assignedEmployees.length}
-                                                </span>
-                                            </td>
-
-                                            {/* Status Badge */}
-                                            <td className="p-3 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleStatus(group)}
-                                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-all ${
-                                                        group.status === 'Active'
-                                                            ? 'bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#C8E6C9]'
-                                                            : 'bg-[#FFEBEE] text-[#D32F2F] hover:bg-[#FFCDD2]'
-                                                    }`}
-                                                    title="Click to toggle status"
-                                                >
-                                                    <span
-                                                        className={`w-1.5 h-1.5 rounded-full ${
-                                                            group.status === 'Active' ? 'bg-[#2E7D32]' : 'bg-[#D32F2F]'
-                                                        }`}
-                                                    />
-                                                    <span>
-                                                        {group.status === 'Active'
-                                                            ? t('ums.common.active', { defaultValue: 'Active' })
-                                                            : t('ums.common.inactive', { defaultValue: 'Inactive' })}
-                                                    </span>
-                                                </button>
-                                            </td>
-
-                                            {/* Created Date */}
-                                            <td className="p-3 hidden lg:table-cell text-[#6E6862] font-mono text-[11px]">
-                                                {group.createdAt}
-                                            </td>
-
-                                            {/* Actions */}
-                                            <td className="p-3 text-end">
-                                                <div className="inline-flex items-center gap-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setViewingGroup(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] rounded-md transition-colors"
-                                                        title="View Details"
-                                                    >
-                                                        <Eye className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEdit(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] rounded-md transition-colors"
-                                                        title="Edit Security Group"
-                                                    >
-                                                        <Pencil className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleToggleStatus(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] rounded-md transition-colors"
-                                                        title={group.status === 'Active' ? 'Deactivate' : 'Activate'}
-                                                    >
-                                                        <Power className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setDeletingGroup(group)}
-                                                        className="p-1.5 text-[#6E6862] hover:text-[#D32F2F] hover:bg-[#FFEBEE] rounded-md transition-colors"
-                                                        title="Delete Security Group"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Footer */}
-                <div className="p-3 bg-[#FAF8F5] border-t border-[#E5E0D8] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#6E6862]">
-                    <div className="flex items-center gap-2">
-                        <span>
-                            {t('ums.common.showing', { defaultValue: 'Showing' })}{' '}
-                            <strong className="text-[#0D0D0D]">
-                                {filteredGroups.length === 0
-                                    ? 0
-                                    : (currentPage - 1) * pageSize + 1}
-                            </strong>{' '}
-                            -{' '}
-                            <strong className="text-[#0D0D0D]">
-                                {Math.min(currentPage * pageSize, filteredGroups.length)}
-                            </strong>{' '}
-                            {t('ums.common.of', { defaultValue: 'of' })}{' '}
-                            <strong className="text-[#0D0D0D]">{filteredGroups.length}</strong>{' '}
-                            {t('ums.securityGroups.title', { defaultValue: 'Security Groups' })}
-                        </span>
-
-                        <span className="text-[#E5E0D8]">|</span>
-
-                        <div className="flex items-center gap-1.5">
-                            <span>{t('ums.common.pageSize', { defaultValue: 'Rows per page' })}:</span>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                                className="px-2 py-0.5 rounded border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#2D3F2C]"
-                            >
-                                {UMS_PAGE_SIZE_OPTIONS.map((size) => (
-                                    <option key={size} value={size}>
-                                        {size}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="p-1 rounded border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] disabled:opacity-40 disabled:cursor-not-allowed"
-                            title="Previous Page"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <span className="px-2 font-mono font-medium text-[#0D0D0D]">
-                            {currentPage} / {totalPages}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="p-1 rounded border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] disabled:opacity-40 disabled:cursor-not-allowed"
-                            title="Next Page"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* CREATE / EDIT DRAWER */}
-            {(isCreateOpen || editingGroup !== null) && (
-                <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end">
-                    <div
-                        className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200"
-                        dir={isRtl ? 'rtl' : 'ltr'}
-                    >
-                        {/* Drawer Header */}
-                        <div className="p-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center">
-                                    <ShieldCheck className="w-5 h-5 text-[#84C799]" />
-                                </div>
-                                <div>
-                                    <h2 className="text-base font-bold text-[#0D0D0D]">
-                                        {editingGroup
-                                            ? t('ums.securityGroups.editSecurityGroup', {
-                                                  defaultValue: 'Edit Security Group',
-                                              })
-                                            : t('ums.securityGroups.addSecurityGroup', {
-                                                  defaultValue: 'Add Security Group',
-                                              })}
-                                    </h2>
-                                    <p className="text-xs text-[#6E6862]">
-                                        {editingGroup
-                                            ? `Updating access configuration for ${editingGroup.code}`
-                                            : 'Define a new security container and module authorization policies'}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCreateOpen(false);
-                                    setEditingGroup(null);
-                                }}
-                                className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Drawer Form Body */}
-                        <form
-                            id="security-group-form"
-                            onSubmit={editingGroup ? handleSaveEdit : handleSaveCreate}
-                            className="p-5 space-y-5 flex-1"
-                        >
-                            {/* Group Code */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.securityGroups.form.code', { defaultValue: 'Group Code' })}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.code}
-                                    readOnly
-                                    className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#6E6862] font-mono font-medium focus:outline-none cursor-not-allowed"
-                                />
-                                <span className="text-[10px] text-[#6E6862] mt-0.5 block">
-                                    Auto-generated sequential security group identifier.
-                                </span>
-                            </div>
-
-                            {/* Bilingual Names */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.securityGroups.form.nameEn', {
-                                            defaultValue: 'Security Group Name (EN)',
-                                        })}{' '}
-                                        <span className="text-[#D32F2F]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.nameEn}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({ ...prev, nameEn: e.target.value }))
-                                        }
-                                        placeholder="e.g. Operations & Service Officers"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg border bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C] ${
-                                            formErrors.nameEn
-                                                ? 'border-[#D32F2F] bg-[#FFEBEE]/20'
-                                                : 'border-[#E5E0D8]'
-                                        }`}
-                                    />
-                                    {formErrors.nameEn && (
-                                        <span className="text-[11px] text-[#D32F2F] mt-1 block">
-                                            {formErrors.nameEn}
-                                        </span>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.securityGroups.form.nameAr', {
-                                            defaultValue: 'Security Group Name (AR)',
-                                        })}{' '}
-                                        <span className="text-[#D32F2F]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.nameAr}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({ ...prev, nameAr: e.target.value }))
-                                        }
-                                        placeholder="مثال: أخصائيو العمليات والخدمات المؤسسية"
-                                        className={`w-full px-3 py-2 text-xs rounded-lg border bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C] ${
-                                            formErrors.nameAr
-                                                ? 'border-[#D32F2F] bg-[#FFEBEE]/20'
-                                                : 'border-[#E5E0D8]'
-                                        }`}
-                                    />
-                                    {formErrors.nameAr && (
-                                        <span className="text-[11px] text-[#D32F2F] mt-1 block">
-                                            {formErrors.nameAr}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Status */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.common.status', { defaultValue: 'Status' })}
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <label className="inline-flex items-center gap-1.5 text-xs text-[#0D0D0D] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="status"
-                                            value="Active"
-                                            checked={formData.status === 'Active'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({ ...prev, status: 'Active' }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                        />
-                                        <span>{t('ums.common.active', { defaultValue: 'Active' })}</span>
-                                    </label>
-                                    <label className="inline-flex items-center gap-1.5 text-xs text-[#0D0D0D] cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="status"
-                                            value="Inactive"
-                                            checked={formData.status === 'Inactive'}
-                                            onChange={() =>
-                                                setFormData((prev) => ({ ...prev, status: 'Inactive' }))
-                                            }
-                                            className="text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                        />
-                                        <span>{t('ums.common.inactive', { defaultValue: 'Inactive' })}</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Descriptions */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.securityGroups.form.descEn', {
-                                            defaultValue: 'Description (EN)',
-                                        })}
-                                    </label>
-                                    <textarea
-                                        rows={2}
-                                        value={formData.descriptionEn}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                descriptionEn: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="Describe the operational mandate and scope of this security group..."
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.securityGroups.form.descAr', {
-                                            defaultValue: 'Description (AR)',
-                                        })}
-                                    </label>
-                                    <textarea
-                                        rows={2}
-                                        value={formData.descriptionAr}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                descriptionAr: e.target.value,
-                                            }))
-                                        }
-                                        placeholder="وصف النطاق التشغيلي والصلاحيات الممنوحة لهذه المجموعة..."
-                                        className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#2D3F2C]/30 focus:border-[#2D3F2C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* PERMISSIONS MATRIX EDITOR */}
-                            <div className="pt-2 border-t border-[#E5E0D8]">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                                    <div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Lock className="w-4 h-4 text-[#2D3F2C]" />
-                                            <h3 className="text-xs font-bold text-[#0D0D0D]">
-                                                {t('ums.securityGroups.permissionsMatrix', {
-                                                    defaultValue: 'Module Permissions Matrix',
-                                                })}
-                                            </h3>
-                                        </div>
-                                        <p className="text-[11px] text-[#6E6862] mt-0.5">
-                                            Granular CRUD authorization across all 7 AWN subsystems ({countActivePermissions(formData.permissions)}/28 privileges granted)
-                                        </p>
-                                    </div>
-
-                                    {/* Matrix Quick Actions */}
-                                    <div className="flex items-center gap-1 self-start sm:self-auto">
-                                        <button
-                                            type="button"
-                                            onClick={handleGrantAll}
-                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#E8F5E9] hover:text-[#2E7D32] transition-colors"
-                                        >
-                                            {t('ums.securityGroups.form.grantAll', { defaultValue: 'Grant Full' })}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleReadOnlyAll}
-                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8] hover:bg-[#FAF8F5] transition-colors"
-                                        >
-                                            {t('ums.securityGroups.form.readOnlyAll', { defaultValue: 'Read-Only' })}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleRevokeAll}
-                                            className="px-2 py-1 text-[11px] font-medium rounded bg-[#FAF8F5] text-[#D32F2F] border border-[#E5E0D8] hover:bg-[#FFEBEE] transition-colors"
-                                        >
-                                            {t('ums.securityGroups.form.clearAll', { defaultValue: 'Revoke All' })}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Matrix Table */}
-                                <div className="border border-[#E5E0D8] rounded-lg overflow-hidden bg-white text-xs">
-                                    <table className="w-full border-collapse">
-                                        <thead>
-                                            <tr className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[#6E6862] font-semibold">
-                                                <th className="p-2.5 text-start">Module</th>
-                                                <th className="p-2.5 text-center w-16">
-                                                    {t('ums.securityGroups.actions.read', { defaultValue: 'Read' })}
-                                                </th>
-                                                <th className="p-2.5 text-center w-16">
-                                                    {t('ums.securityGroups.actions.write', { defaultValue: 'Write' })}
-                                                </th>
-                                                <th className="p-2.5 text-center w-16">
-                                                    {t('ums.securityGroups.actions.delete', { defaultValue: 'Delete' })}
-                                                </th>
-                                                <th className="p-2.5 text-center w-16">
-                                                    {t('ums.securityGroups.actions.export', { defaultValue: 'Export' })}
-                                                </th>
-                                                <th className="p-2.5 text-center w-16">Toggle</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-[#E5E0D8]">
-                                            {MODULE_KEYS.map((mKey) => {
-                                                const meta = MODULE_INFO[mKey];
-                                                const Icon = meta.icon;
-                                                const p = formData.permissions[mKey];
-                                                const rowAllChecked = p.read && p.write && p.delete && p.export;
-
-                                                return (
-                                                    <tr key={mKey} className="hover:bg-[#FAF8F5]/60 transition-colors">
-                                                        {/* Module Name & Icon */}
-                                                        <td className="p-2.5">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-6 h-6 rounded bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#2D3F2C] shrink-0">
-                                                                    <Icon className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <div>
-                                                                    <div className="font-semibold text-[#0D0D0D]">
-                                                                        {isRtl ? meta.nameAr : meta.nameEn}
-                                                                    </div>
-                                                                    <div className="text-[10px] text-[#6E6862]">
-                                                                        {isRtl ? meta.descAr : meta.descEn}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-
-                                                        {/* Read */}
-                                                        <td className="p-2.5 text-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={p.read}
-                                                                onChange={(e) =>
-                                                                    handlePermissionChange(mKey, 'read', e.target.checked)
-                                                                }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                                            />
-                                                        </td>
-
-                                                        {/* Write */}
-                                                        <td className="p-2.5 text-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={p.write}
-                                                                onChange={(e) =>
-                                                                    handlePermissionChange(mKey, 'write', e.target.checked)
-                                                                }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                                            />
-                                                        </td>
-
-                                                        {/* Delete */}
-                                                        <td className="p-2.5 text-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={p.delete}
-                                                                onChange={(e) =>
-                                                                    handlePermissionChange(mKey, 'delete', e.target.checked)
-                                                                }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                                            />
-                                                        </td>
-
-                                                        {/* Export */}
-                                                        <td className="p-2.5 text-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={p.export}
-                                                                onChange={(e) =>
-                                                                    handlePermissionChange(mKey, 'export', e.target.checked)
-                                                                }
-                                                                className="rounded border-[#E5E0D8] text-[#2D3F2C] focus:ring-[#2D3F2C]"
-                                                            />
-                                                        </td>
-
-                                                        {/* Row Toggle */}
-                                                        <td className="p-2.5 text-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleToggleModuleRow(mKey)}
-                                                                className="p-1 rounded text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5]"
-                                                                title={rowAllChecked ? 'Revoke module' : 'Grant module'}
-                                                            >
-                                                                {rowAllChecked ? (
-                                                                    <CheckSquare className="w-3.5 h-3.5 text-[#2E7D32]" />
-                                                                ) : (
-                                                                    <Square className="w-3.5 h-3.5" />
-                                                                )}
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </form>
-
-                        {/* Drawer Footer */}
-                        <div className="p-4 border-t border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-end gap-2.5">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsCreateOpen(false);
-                                    setEditingGroup(null);
-                                }}
-                                className="px-3.5 py-2 text-xs font-medium rounded-lg border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors"
-                            >
-                                {t('ums.common.cancel', { defaultValue: 'Cancel' })}
-                            </button>
-                            <button
-                                type="submit"
-                                form="security-group-form"
-                                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm active:scale-[0.98]"
-                            >
-                                {editingGroup
-                                    ? t('ums.common.saveChanges', { defaultValue: 'Save Changes' })
-                                    : t('ums.securityGroups.addSecurityGroup', {
-                                          defaultValue: 'Create Security Group',
-                                      })}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Standalone Create / Edit Security Group Form Component */}
+            <SecurityGroupForm
+                isOpen={isCreateOpen || editingGroup !== null}
+                isEditing={Boolean(editingGroup)}
+                values={formValues}
+                errors={formErrors}
+                employees={employees}
+                isSubmitting={upsertSecurityGroupMutation.isPending}
+                onChange={setFormValues}
+                onCancel={handleCloseForm}
+                onSubmit={handleSubmitForm}
+            />
 
             {/* VIEW DETAILS DRAWER */}
             {viewingGroup && (
@@ -1620,7 +1239,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                         {/* Header */}
                         <div className="p-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center">
                                     <ShieldCheck className="w-5 h-5 text-[#84C799]" />
                                 </div>
                                 <div>
@@ -1629,7 +1248,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             {isRtl ? viewingGroup.nameAr : viewingGroup.nameEn}
                                         </h2>
                                         <span
-                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#2D3F2C] border border-[#E5E0D8]"
+                                            className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded bg-white text-[#037F8C] border border-[#E5E0D8]"
                                             dir="ltr"
                                         >
                                             {viewingGroup.code}
@@ -1643,7 +1262,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setViewingGroup(null)}
-                                className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors"
+                                className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -1658,7 +1277,9 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                 </h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                                     <div>
-                                        <span className="text-[#6E6862] block text-[11px]">Status</span>
+                                        <span className="text-[#6E6862] block text-[11px]">
+                                            Status
+                                        </span>
                                         <span
                                             className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${
                                                 viewingGroup.status === 'Active'
@@ -1678,21 +1299,28 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     </div>
 
                                     <div>
-                                        <span className="text-[#6E6862] block text-[11px]">Privileges</span>
+                                        <span className="text-[#6E6862] block text-[11px]">
+                                            Privileges
+                                        </span>
                                         <span className="font-mono font-bold text-[#0D0D0D] mt-0.5 block">
-                                            {countActivePermissions(viewingGroup.permissions)} / 28 active
+                                            {countActivePermissions(viewingGroup.permissions)} / 28
+                                            active
                                         </span>
                                     </div>
 
                                     <div>
-                                        <span className="text-[#6E6862] block text-[11px]">Linked Roles</span>
+                                        <span className="text-[#6E6862] block text-[11px]">
+                                            Linked Roles
+                                        </span>
                                         <span className="font-mono font-bold text-[#0D0D0D] mt-0.5 block">
                                             {(groupRoleMap.get(viewingGroup.id) || []).length} roles
                                         </span>
                                     </div>
 
                                     <div>
-                                        <span className="text-[#6E6862] block text-[11px]">Created Date</span>
+                                        <span className="text-[#6E6862] block text-[11px]">
+                                            Created Date
+                                        </span>
                                         <span className="font-mono text-[#0D0D0D] mt-0.5 block">
                                             {viewingGroup.createdAt}
                                         </span>
@@ -1703,8 +1331,10 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     <div className="pt-2 border-t border-[#E5E0D8]/60 text-xs text-[#6E6862]">
                                         <p className="italic">
                                             {isRtl
-                                                ? viewingGroup.descriptionAr || viewingGroup.descriptionEn
-                                                : viewingGroup.descriptionEn || viewingGroup.descriptionAr}
+                                                ? viewingGroup.descriptionAr ||
+                                                  viewingGroup.descriptionEn
+                                                : viewingGroup.descriptionEn ||
+                                                  viewingGroup.descriptionAr}
                                         </p>
                                     </div>
                                 )}
@@ -1714,15 +1344,19 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-1.5">
-                                        <Lock className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Lock className="w-4 h-4 text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
-                                            {t('ums.securityGroups.details.permissionsMatrixTitle', {
-                                                defaultValue: 'Configured Module Permissions',
-                                            })}
+                                            {t(
+                                                'ums.securityGroups.details.permissionsMatrixTitle',
+                                                {
+                                                    defaultValue: 'Configured Module Permissions',
+                                                }
+                                            )}
                                         </h3>
                                     </div>
                                     <span className="text-[11px] font-mono text-[#6E6862]">
-                                        {countActivePermissions(viewingGroup.permissions)} / 28 active
+                                        {countActivePermissions(viewingGroup.permissions)} / 28
+                                        active
                                     </span>
                                 </div>
 
@@ -1744,12 +1378,17 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                 const p = viewingGroup.permissions[mKey];
 
                                                 return (
-                                                    <tr key={mKey} className="hover:bg-[#FAF8F5]/60 transition-colors">
+                                                    <tr
+                                                        key={mKey}
+                                                        className="hover:bg-[#FAF8F5]/60 transition-colors"
+                                                    >
                                                         <td className="p-2.5">
                                                             <div className="flex items-center gap-2">
-                                                                <Icon className="w-3.5 h-3.5 text-[#2D3F2C]" />
+                                                                <Icon className="w-3.5 h-3.5 text-[#037F8C]" />
                                                                 <span className="font-semibold text-[#0D0D0D]">
-                                                                    {isRtl ? meta.nameAr : meta.nameEn}
+                                                                    {isRtl
+                                                                        ? meta.nameAr
+                                                                        : meta.nameEn}
                                                                 </span>
                                                             </div>
                                                         </td>
@@ -1757,28 +1396,36 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                             {p.read ? (
                                                                 <Check className="w-4 h-4 text-[#2E7D32] mx-auto" />
                                                             ) : (
-                                                                <span className="text-[#6E6862]/40">—</span>
+                                                                <span className="text-[#6E6862]/40">
+                                                                    —
+                                                                </span>
                                                             )}
                                                         </td>
                                                         <td className="p-2.5 text-center">
                                                             {p.write ? (
                                                                 <Check className="w-4 h-4 text-[#2E7D32] mx-auto" />
                                                             ) : (
-                                                                <span className="text-[#6E6862]/40">—</span>
+                                                                <span className="text-[#6E6862]/40">
+                                                                    —
+                                                                </span>
                                                             )}
                                                         </td>
                                                         <td className="p-2.5 text-center">
                                                             {p.delete ? (
                                                                 <Check className="w-4 h-4 text-[#2E7D32] mx-auto" />
                                                             ) : (
-                                                                <span className="text-[#6E6862]/40">—</span>
+                                                                <span className="text-[#6E6862]/40">
+                                                                    —
+                                                                </span>
                                                             )}
                                                         </td>
                                                         <td className="p-2.5 text-center">
                                                             {p.export ? (
                                                                 <Check className="w-4 h-4 text-[#2E7D32] mx-auto" />
                                                             ) : (
-                                                                <span className="text-[#6E6862]/40">—</span>
+                                                                <span className="text-[#6E6862]/40">
+                                                                    —
+                                                                </span>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -1793,14 +1440,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-1.5">
-                                        <Layers className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Layers className="w-4 h-4 text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.securityGroups.details.assignedRolesList', {
                                                 defaultValue: 'Assigned Roles',
                                             })}
                                         </h3>
                                     </div>
-                                    <span className="text-[11px] font-mono font-semibold text-[#2D3F2C]">
+                                    <span className="text-[11px] font-mono font-semibold text-[#037F8C]">
                                         {(groupRoleMap.get(viewingGroup.id) || []).length} Roles
                                     </span>
                                 </div>
@@ -1811,7 +1458,8 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                         return (
                                             <div className="p-4 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-center text-xs text-[#6E6862]">
                                                 {t('ums.securityGroups.details.noRoles', {
-                                                    defaultValue: 'No roles currently linked to this security group.',
+                                                    defaultValue:
+                                                        'No roles currently linked to this security group.',
                                                 })}
                                             </div>
                                         );
@@ -1825,18 +1473,20 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                 >
                                                     <div>
                                                         <div className="flex items-center gap-1.5">
-                                                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]">
+                                                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                                                                 {role.code}
                                                             </span>
                                                             <span className="font-semibold text-[#0D0D0D]">
-                                                                {isRtl ? role.nameAr : role.nameEn}
+                                                                {isRtl
+                                                                    ? role.nameAr
+                                                                    : role.nameEn}
                                                             </span>
                                                         </div>
                                                         <span className="text-[10px] text-[#6E6862] mt-0.5 block">
                                                             Level {role.level} • {role.status}
                                                         </span>
                                                     </div>
-                                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C]">
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#FAF8F5] text-[#037F8C]">
                                                         {role.employeeCount} staff
                                                     </span>
                                                 </div>
@@ -1850,25 +1500,28 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-1.5">
-                                        <Users className="w-4 h-4 text-[#2D3F2C]" />
+                                        <Users className="w-4 h-4 text-[#037F8C]" />
                                         <h3 className="text-xs font-bold text-[#0D0D0D]">
                                             {t('ums.securityGroups.details.assignedEmployeesList', {
                                                 defaultValue: 'Assigned Users & Employees',
                                             })}
                                         </h3>
                                     </div>
-                                    <span className="text-[11px] font-mono font-semibold text-[#2D3F2C]">
-                                        {(groupEmployeeMap.get(viewingGroup.id) || []).length} Users
+                                    <span className="text-[11px] font-mono font-semibold text-[#037F8C]">
+                                        {(groupEmployeeMap.get(viewingGroup.id) || []).length}{' '}
+                                        Users
                                     </span>
                                 </div>
 
                                 {(() => {
-                                    const linkedEmps = groupEmployeeMap.get(viewingGroup.id) || [];
+                                    const linkedEmps =
+                                        groupEmployeeMap.get(viewingGroup.id) || [];
                                     if (linkedEmps.length === 0) {
                                         return (
                                             <div className="p-4 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-center text-xs text-[#6E6862]">
                                                 {t('ums.securityGroups.details.noEmployees', {
-                                                    defaultValue: 'No active employees assigned under this security group.',
+                                                    defaultValue:
+                                                        'No active employees assigned under this security group.',
                                                 })}
                                             </div>
                                         );
@@ -1876,8 +1529,12 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                     return (
                                         <div className="space-y-2">
                                             {linkedEmps.map((emp) => {
-                                                const linkedRole = roles.find((r) => r.id === emp.roleId);
-                                                const linkedDept = departments.find((d) => d.id === emp.departmentId);
+                                                const linkedRole = roles.find(
+                                                    (r) => r.id === emp.roleId
+                                                );
+                                                const linkedDept = departments.find(
+                                                    (d) => d.id === emp.departmentId
+                                                );
                                                 const roleTitle = linkedRole
                                                     ? isRtl
                                                         ? linkedRole.nameAr
@@ -1895,12 +1552,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                         className="p-3 rounded-lg border border-[#E5E0D8] bg-white flex items-center justify-between text-xs"
                                                     >
                                                         <div className="flex items-center gap-2.5">
-                                                            <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center font-bold text-[10px]">
+                                                            <div className="w-7 h-7 rounded-full bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center font-bold text-[10px]">
                                                                 {emp.nameEn.charAt(0)}
                                                             </div>
                                                             <div>
                                                                 <div className="font-semibold text-[#0D0D0D]">
-                                                                    {isRtl ? emp.nameAr : emp.nameEn}
+                                                                    {isRtl
+                                                                        ? emp.nameAr
+                                                                        : emp.nameEn}
                                                                 </div>
                                                                 <div className="text-[10px] text-[#6E6862] font-mono">
                                                                     {emp.code} • {emp.email}
@@ -1908,7 +1567,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                                             </div>
                                                         </div>
                                                         <div className="text-end">
-                                                            <span className="text-[11px] font-medium text-[#2D3F2C] block">
+                                                            <span className="text-[11px] font-medium text-[#037F8C] block">
                                                                 {roleTitle}
                                                             </span>
                                                             <span className="text-[10px] text-[#6E6862]">
@@ -1929,7 +1588,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => handleCopyCode(viewingGroup.code)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#6E6862] hover:text-[#0D0D0D] rounded border border-[#E5E0D8] bg-white"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#6E6862] hover:text-[#0D0D0D] rounded border border-[#E5E0D8] bg-white cursor-pointer"
                             >
                                 <Copy className="w-3.5 h-3.5" />
                                 <span>Copy Code</span>
@@ -1942,14 +1601,14 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                         setViewingGroup(null);
                                         handleOpenEdit(g);
                                     }}
-                                    className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all"
+                                    className="px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all cursor-pointer"
                                 >
                                     {t('ums.common.edit', { defaultValue: 'Edit Group' })}
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setViewingGroup(null)}
-                                    className="px-3.5 py-2 text-xs font-medium rounded-lg border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] transition-colors"
+                                    className="px-3.5 py-2 text-xs font-medium rounded-lg border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                                 >
                                     {t('ums.common.close', { defaultValue: 'Close' })}
                                 </button>
@@ -1996,7 +1655,9 @@ export const UmsSecurityGroupsPage: React.FC = () => {
 
                             {deleteEligibility.canDelete ? (
                                 <p className="text-xs text-[#6E6862] leading-relaxed">
-                                    Are you sure you want to permanently delete this security group? This action will permanently remove all module permissions for this container and cannot be undone.
+                                    Are you sure you want to permanently delete this security
+                                    group? This action will permanently remove all module
+                                    permissions for this container and cannot be undone.
                                 </p>
                             ) : (
                                 <div className="space-y-3">
@@ -2006,7 +1667,9 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                             : deleteEligibility.reasonEn}
                                     </div>
                                     <p className="text-xs text-[#6E6862]">
-                                        To maintain platform security integrity, you can deactivate the security group instead, which immediately revokes access without breaking role relationships.
+                                        To maintain platform security integrity, you can deactivate
+                                        the security group instead, which immediately revokes access
+                                        without breaking role relationships.
                                     </p>
                                 </div>
                             )}
@@ -2016,7 +1679,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setDeletingGroup(null)}
-                                className="px-3.5 py-2 text-xs font-medium rounded-lg border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors"
+                                className="px-3.5 py-2 text-xs font-medium rounded-lg border border-[#E5E0D8] bg-white text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                             >
                                 {t('ums.common.cancel', { defaultValue: 'Cancel' })}
                             </button>
@@ -2025,7 +1688,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={handleConfirmDelete}
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#D32F2F] text-white hover:bg-[#B71C1C] transition-all shadow-sm"
+                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#D32F2F] text-white hover:bg-[#B71C1C] transition-all shadow-sm cursor-pointer"
                                 >
                                     {t('ums.common.delete', { defaultValue: 'Delete Group' })}
                                 </button>
@@ -2033,7 +1696,7 @@ export const UmsSecurityGroupsPage: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={handleDeactivateFromDeleteModal}
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2D3F2C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm"
+                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#037F8C] text-[#FAF8F5] hover:bg-[#1B4D3E] transition-all shadow-sm cursor-pointer"
                                 >
                                     Deactivate Group Instead
                                 </button>

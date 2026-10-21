@@ -226,7 +226,7 @@ export const WonDealsPage: React.FC = () => {
                             {t('crm.commercial.wonDeals.kpis.totalWonValue')}
                         </span>
                         <div
-                            className="text-2xl font-bold text-[#2D3F2C] font-mono"
+                            className="text-2xl font-bold text-[#037F8C] font-mono"
                             dir="ltr"
                         >
                             {totalWonValue.toLocaleString()} SAR
@@ -235,7 +235,7 @@ export const WonDealsPage: React.FC = () => {
                             {t('crm.commercial.wonDeals.kpis.totalWonValueSub')}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <TrendingUp size={19} />
                     </div>
                 </div>
@@ -312,7 +312,7 @@ export const WonDealsPage: React.FC = () => {
                             placeholder={t(
                                 'crm.commercial.wonDeals.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -530,7 +530,7 @@ export const WonDealsPage: React.FC = () => {
                                             </td>
                                             <td className="py-3.5 px-4">
                                                 <span
-                                                    className="font-mono font-bold text-[#2D3F2C]"
+                                                    className="font-mono font-bold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {deal.expectedValue.toLocaleString()}{' '}
@@ -597,7 +597,7 @@ export const WonDealsPage: React.FC = () => {
                                                             summary
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#2D3F2C] cursor-pointer"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#037F8C] cursor-pointer"
                                                 >
                                                     <Eye size={13} />
                                                     {t(

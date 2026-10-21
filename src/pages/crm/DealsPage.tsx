@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     useQuery,
     useMutation,
@@ -45,6 +45,8 @@ import { CrmCommercialDeleteModal } from '../../components/crm/shared/CrmCommerc
 export const DealsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const initialLeadParam = searchParams.get('leadId');
     const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
@@ -250,13 +252,46 @@ export const DealsPage: React.FC = () => {
     const totalRecords = dealsResponse?.total || 0;
     const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
 
-    const companies = companiesRes?.data || [];
+    const companies = useMemo(() => companiesRes?.data || [], [companiesRes?.data]);
     const leads = leadsRes?.data || [];
     const contacts = contactsRes?.data || [];
     const sectors = sectorsRes?.data || [];
     const quotations = quotationsRes?.data || [];
     const contracts = contractsRes?.data || [];
     const invoices = invoicesRes?.data || [];
+
+    useEffect(() => {
+        if (initialLeadParam && leadsRes?.data && companies.length > 0) {
+            const matchedLead = leadsRes.data.find(
+                (l) => l.id === initialLeadParam
+            );
+            if (matchedLead) {
+                const matchedCompany = matchedLead.companyId
+                    ? companies.find((c) => c.id === matchedLead.companyId)
+                    : companies.find(
+                          (c) =>
+                              matchedLead.temporaryCompanyName &&
+                              (c.nameEn.toLowerCase() ===
+                                  matchedLead.temporaryCompanyName.toLowerCase() ||
+                                  c.nameAr === matchedLead.temporaryCompanyName)
+                      );
+                setEditingRecord({
+                    titleEn: `${matchedLead.title} — Deal`,
+                    titleAr: matchedLead.title,
+                    leadId: matchedLead.id,
+                    companyId:
+                        matchedCompany?.id || matchedLead.companyId || '',
+                    sectorId:
+                        matchedLead.sectorId || matchedCompany?.sectorId || '',
+                    expectedValue: matchedLead.estimatedValue || 50000,
+                    assignedEmployeeId: matchedLead.assignedEmployeeId || '',
+                    status: 'active',
+                } as unknown as CrmDealRecord);
+                setFormMode('create');
+                setIsFormOpen(true);
+            }
+        }
+    }, [initialLeadParam, leadsRes?.data, companies]);
 
     const deleteEligibility = deletingRecord
         ? checkCrmCommercialDeletionEligibility('deal', deletingRecord.id)
@@ -337,7 +372,7 @@ export const DealsPage: React.FC = () => {
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 text-xs font-mono font-bold text-[#2D3F2C]"
+                            className="px-2.5 py-0.5 rounded-md bg-[#037F8C]/10 border border-[#037F8C]/20 text-xs font-mono font-bold text-[#037F8C]"
                             dir="ltr"
                         >
                             {t('crm.commercial.deals.badge')}
@@ -372,7 +407,7 @@ export const DealsPage: React.FC = () => {
                             setServerError(null);
                             setIsFormOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <Plus size={15} />
                         {t('crm.commercial.deals.newButton')}
@@ -397,7 +432,7 @@ export const DealsPage: React.FC = () => {
                             })}
                         </span>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 text-[#2D3F2C] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 text-[#037F8C] flex items-center justify-center">
                         <Briefcase size={19} />
                     </div>
                 </div>
@@ -408,7 +443,7 @@ export const DealsPage: React.FC = () => {
                             {t('crm.commercial.deals.kpis.pipelineValue')}
                         </span>
                         <div
-                            className="text-2xl font-bold text-[#2D3F2C] font-mono"
+                            className="text-2xl font-bold text-[#037F8C] font-mono"
                             dir="ltr"
                         >
                             {(metrics?.openPipelineValue ?? 0).toLocaleString()}{' '}
@@ -487,7 +522,7 @@ export const DealsPage: React.FC = () => {
                             placeholder={t(
                                 'crm.commercial.deals.searchPlaceholder'
                             )}
-                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#2D3F2C]"
+                            className="w-full ps-9 pe-8 py-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
                         />
                         {search && (
                             <button
@@ -726,7 +761,7 @@ export const DealsPage: React.FC = () => {
                                         >
                                             <td className="py-3.5 px-4">
                                                 <span
-                                                    className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#2D3F2C]"
+                                                    className="px-2 py-1 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] font-mono font-bold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {deal.code}
@@ -797,7 +832,7 @@ export const DealsPage: React.FC = () => {
                                             </td>
                                             <td className="py-3.5 px-4">
                                                 <div
-                                                    className="font-mono font-bold text-[#2D3F2C]"
+                                                    className="font-mono font-bold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {deal.expectedValue.toLocaleString()}{' '}
@@ -832,7 +867,7 @@ export const DealsPage: React.FC = () => {
                                                         title={t(
                                                             'crm.commercial.deals.viewDrawer.createQuotationCta'
                                                         )}
-                                                        className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#2D3F2C] cursor-pointer"
+                                                        className="p-1.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#037F8C] cursor-pointer"
                                                     >
                                                         <FileText size={14} />
                                                     </button>
@@ -957,7 +992,7 @@ export const DealsPage: React.FC = () => {
                                                 `crm.commercial.deals.stages.${stage}`
                                             )}
                                         </span>
-                                        <span className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-bold text-[#2D3F2C]">
+                                        <span className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-bold text-[#037F8C]">
                                             {stageDeals.length}
                                         </span>
                                     </div>
@@ -976,11 +1011,11 @@ export const DealsPage: React.FC = () => {
                                             onClick={() =>
                                                 setViewingRecord(deal)
                                             }
-                                            className="p-3 rounded-xl bg-white border border-[#E5E0D8] hover:border-[#2D3F2C] shadow-xs space-y-2 cursor-pointer transition-colors"
+                                            className="p-3 rounded-xl bg-white border border-[#E5E0D8] hover:border-[#037F8C] shadow-xs space-y-2 cursor-pointer transition-colors"
                                         >
                                             <div className="flex items-center justify-between gap-1">
                                                 <span
-                                                    className="text-[10px] font-mono font-bold text-[#2D3F2C]"
+                                                    className="text-[10px] font-mono font-bold text-[#037F8C]"
                                                     dir="ltr"
                                                 >
                                                     {deal.code}
@@ -1005,7 +1040,7 @@ export const DealsPage: React.FC = () => {
                                                     : deal.companyNameEn}
                                             </div>
                                             <div
-                                                className="text-xs font-mono font-bold text-[#2D3F2C]"
+                                                className="text-xs font-mono font-bold text-[#037F8C]"
                                                 dir="ltr"
                                             >
                                                 {deal.expectedValue.toLocaleString()}{' '}

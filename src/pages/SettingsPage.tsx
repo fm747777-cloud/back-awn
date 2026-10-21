@@ -14,7 +14,7 @@ export const SettingsPage: React.FC = () => {
             {/* Header Banner */}
             <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shadow-xs">
+                    <div className="w-12 h-12 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shadow-xs">
                         <Settings className="w-6 h-6" />
                     </div>
                     <div>
@@ -24,7 +24,7 @@ export const SettingsPage: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#EAF3EC] text-[#265938] border border-[#C5DFCC]">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#EAF3EC] text-[#037F8C] border border-[#C5DFCC]">
                     {t('settings.platformLabel')}
                 </span>
             </div>
@@ -33,7 +33,7 @@ export const SettingsPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-[#EFECE6]">
-                        <UserCheck className="w-4 h-4 text-[#2D3F2C]" />
+                        <UserCheck className="w-4 h-4 text-[#037F8C]" />
                         <h2 className="text-sm font-bold text-[#0D0D0D]">{t('settings.accountInfo')}</h2>
                     </div>
                     <div className="space-y-3 text-sm">
@@ -54,7 +54,7 @@ export const SettingsPage: React.FC = () => {
 
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 shadow-2xs space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-[#EFECE6]">
-                        <ShieldCheck className="w-4 h-4 text-[#2D3F2C]" />
+                        <ShieldCheck className="w-4 h-4 text-[#037F8C]" />
                         <h2 className="text-sm font-bold text-[#0D0D0D]">{t('settings.rolePermissions')}</h2>
                     </div>
                     <div className="space-y-3 text-sm">
@@ -70,7 +70,7 @@ export const SettingsPage: React.FC = () => {
                                 <Bell className="w-4 h-4 text-[#6A7358]" />
                                 <span className="text-xs font-medium text-[#45413C]">{t('settings.notificationAlerts')}</span>
                             </div>
-                            <span className="text-xs font-semibold text-[#265938]">{t('settings.enabled')}</span>
+                            <span className="text-xs font-semibold text-[#037F8C]">{t('settings.enabled')}</span>
                         </div>
                         <div className="flex items-center justify-between p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
                             <div className="flex items-center gap-2.5">
@@ -91,7 +91,7 @@ export const SettingsPage: React.FC = () => {
                                     onClick={() => setTheme('light')}
                                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                                         theme === 'light'
-                                            ? 'bg-[#2D3F2C] text-[#FAF8F5]'
+                                            ? 'bg-[#037F8C] text-[#FAF8F5]'
                                             : 'text-[#6E6862] hover:text-[#0D0D0D]'
                                     }`}
                                 >
@@ -105,7 +105,7 @@ export const SettingsPage: React.FC = () => {
                                     onClick={() => setTheme('dark')}
                                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                                         theme === 'dark'
-                                            ? 'bg-[#2D3F2C] text-[#FAF8F5]'
+                                            ? 'bg-[#037F8C] text-[#FAF8F5]'
                                             : 'text-[#6E6862] hover:text-[#0D0D0D]'
                                     }`}
                                 >

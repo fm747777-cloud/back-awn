@@ -153,12 +153,12 @@ export const ContactFormDrawer: React.FC<ContactFormDrawerProps> = ({
             <div className="relative z-10 w-full max-w-xl bg-white h-full shadow-2xl border-s border-[#E5E0D8] flex flex-col overflow-hidden text-start">
                 <div className="px-6 py-5 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-[#2D3F2C]/10 border border-[#2D3F2C]/20 flex items-center justify-center text-[#2D3F2C] shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C] shrink-0">
                             {mode === 'create' ? <UserPlus size={18} /> : <Edit3 size={18} />}
                         </div>
                         <div className="min-w-0">
                             <span
-                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#2D3F2C]"
+                                className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                 dir="ltr"
                             >
                                 {mode === 'edit' && initialData
@@ -446,7 +446,7 @@ export const ContactFormDrawer: React.FC<ContactFormDrawerProps> = ({
                                 onChange={(e) =>
                                     handleChange('isPrimary', e.target.checked)
                                 }
-                                className="w-4 h-4 accent-[#2D3F2C] cursor-pointer"
+                                className="w-4 h-4 accent-[#037F8C] cursor-pointer"
                             />
                         </div>
 
@@ -504,7 +504,7 @@ export const ContactFormDrawer: React.FC<ContactFormDrawerProps> = ({
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
                         >
                             <CheckCircle2 size={14} />
                             {isSubmitting

@@ -297,7 +297,7 @@ export const TicketsPage: React.FC = () => {
         placeholderData: (previousData) => previousData,
     });
 
-    const allTasks = tasksQuery.data?.items ?? [];
+    const allTasks = useMemo(() => tasksQuery.data?.items ?? [], [tasksQuery.data?.items]);
     const totalCount = tasksQuery.data?.total ?? 0;
     console.log(allTasks, totalCount);
 

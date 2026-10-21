@@ -40,7 +40,7 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({ isOpen, onCl
                         type="button"
                         onClick={onClose}
                         title={t('common.close')}
-                        className="w-8 h-8 rounded-lg bg-[#F8F6F2] hover:bg-[#EFECE6] flex items-center justify-center text-[#2D3F2C] transition cursor-pointer"
+                        className="w-8 h-8 rounded-lg bg-[#F8F6F2] hover:bg-[#EFECE6] flex items-center justify-center text-[#037F8C] transition cursor-pointer"
                     >
                         <ChevronLeft size={18} className="rtl:rotate-180" />
                     </button>
@@ -61,7 +61,7 @@ export const ActionItemsModal: React.FC<ActionItemsModalProps> = ({ isOpen, onCl
                             onClick={() => onSelectModule(item)}
                             className="flex items-center gap-3.5 p-3.5 rounded-xl bg-[#FAF8F5] hover:bg-white border border-[#E5E0D8] hover:border-[#BFAB93] transition-all text-start group cursor-pointer shadow-2xs hover:shadow-xs"
                         >
-                            <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] group-hover:border-[#BFAB93] flex items-center justify-center text-[#2D3F2C] group-hover:scale-105 transition-transform shadow-2xs shrink-0">
+                            <div className="w-9 h-9 rounded-lg bg-white border border-[#E5E0D8] group-hover:border-[#BFAB93] flex items-center justify-center text-[#037F8C] group-hover:scale-105 transition-transform shadow-2xs shrink-0">
                                 <LayoutGrid size={18} />
                             </div>
                             <div className="min-w-0">

@@ -1,35 +1,26 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
     History,
     GitBranch,
     FolderKanban,
     ListFilter,
     Mail,
-    Search,
-    X,
-    RotateCcw,
-    Download,
     Eye,
     ArrowUpRight,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    Calendar,
     User,
     ShieldCheck,
     FileText,
     RefreshCw,
-    LayoutDashboard,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import {
     WORKFLOW_AUDIT_STORAGE_KEY,
     INITIAL_WORKFLOW_AUDIT_EVENTS,
     WORKFLOW_AUDIT_ACTIONS,
-    WORKFLOW_AUDIT_RESOURCES,
-    WORKFLOW_PAGE_SIZE_OPTIONS,
     loadWorkflowAuditEvents,
     normalizeWorkflowAuditEvent,
     normalizeWorkflowAuditResource,
@@ -43,42 +34,41 @@ import {
     type WorkflowAuditAction,
     type WorkflowAuditResource,
 } from './workflowMockData';
+import { DataTable } from '../../components/DataTable';
+import {
+    WorkflowAuditTrailDrawer,
+    type LiveEntitySnapshot,
+} from '../../components/workflow/WorkflowAuditTrailDrawer';
 
 type ResourceFilterValue = 'ALL' | 'GOVERNANCE' | WorkflowAuditResource;
 
 const ACTION_BADGE_STYLES: Record<WorkflowAuditAction, string> = {
-    CREATED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
-    UPDATED: 'bg-[#FAF8F5] text-[#2D3F2C] border-[#2D3F2C]/25',
-    ENABLED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
+    CREATED: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
+    UPDATED: 'bg-[#FAF8F5] text-[#037F8C] border-[#037F8C]/25',
+    ENABLED: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
     DISABLED: 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]',
-    ACTIVATED: 'bg-[#EAF3EC] text-[#265938] border-[#265938]/25',
+    ACTIVATED: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
     DEACTIVATED: 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]',
     DELETED: 'bg-[#FDF2F2] text-[#A63A3A] border-[#A63A3A]/25',
 };
 
 const ACTION_DOT_STYLES: Record<WorkflowAuditAction, string> = {
-    CREATED: 'bg-[#265938]',
-    UPDATED: 'bg-[#2D3F2C]',
-    ENABLED: 'bg-[#265938]',
+    CREATED: 'bg-[#037F8C]',
+    UPDATED: 'bg-[#037F8C]',
+    ENABLED: 'bg-[#037F8C]',
     DISABLED: 'bg-[#857E74]',
-    ACTIVATED: 'bg-[#265938]',
+    ACTIVATED: 'bg-[#037F8C]',
     DEACTIVATED: 'bg-[#857E74]',
     DELETED: 'bg-[#A63A3A]',
 };
 
 const RESOURCE_BADGE_STYLES: Record<WorkflowAuditResource, string> = {
-    Workflow: 'bg-[#FAF8F5] text-[#2D3F2C] border-[#2D3F2C]/20',
+    Workflow: 'bg-[#FAF8F5] text-[#037F8C] border-[#037F8C]/20',
     'Workflow Master': 'bg-[#FDF7F2] text-[#8C6046] border-[#8C6046]/25',
-    'Status Level': 'bg-[#EAF3EC]/70 text-[#265938] border-[#265938]/20',
+    'Status Level': 'bg-[#EAF3EC]/70 text-[#037F8C] border-[#037F8C]/20',
     'Email Template': 'bg-[#F8F6F2] text-[#6A7358] border-[#6A7358]/25',
 };
 
-/**
- * Safely loads workflow audit events from localStorage:
- * - If key is missing -> initializes and returns default seed events via loadWorkflowAuditEvents()
- * - If key is explicitly "[]" -> returns [] so empty-state UI is rendered cleanly
- * - If key is malformed JSON or non-array -> falls back safely to default seed events without throwing
- */
 function loadWorkflowAuditEventsSafe(): WorkflowAuditEvent[] {
     if (typeof window === 'undefined') {
         return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
@@ -99,7 +89,7 @@ function loadWorkflowAuditEventsSafe(): WorkflowAuditEvent[] {
         const normalized = parsed
             .map((item, idx) => normalizeWorkflowAuditEvent(item, idx))
             .filter((item): item is WorkflowAuditEvent => item !== null);
-        return normalized;
+        return normalized.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     } catch {
         return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
     }
@@ -110,21 +100,11 @@ function isGovernanceResource(resource: WorkflowAuditResource): boolean {
     return norm === 'Workflow Master' || norm === 'Status Level';
 }
 
-function getResourceRoute(resource: WorkflowAuditResource, recordId?: string): string {
+function getResourceRoute(resource: WorkflowAuditResource, recordId: string): string {
     const norm = normalizeWorkflowAuditResource(resource);
     switch (norm) {
-        case 'Workflow': {
-            if (recordId && recordId !== '—') {
-                const matched = loadWorkflowRecords().find(
-                    (w) => String(w.id) === String(recordId)
-                );
-                if (matched) {
-                    return `/workflow/workflows?tab=${matched.workflowType}&workflowId=${matched.id}`;
-                }
-                return `/workflow/workflows?workflowId=${encodeURIComponent(recordId)}`;
-            }
-            return '/workflow/workflows';
-        }
+        case 'Workflow':
+            return `/workflow/workflows?workflowId=${encodeURIComponent(recordId)}`;
         case 'Workflow Master':
             return '/workflow/masters';
         case 'Status Level':
@@ -159,12 +139,14 @@ function doesResourceRecordExist(resource: WorkflowAuditResource, recordId: stri
 export const WorkflowAuditTrailPage: React.FC = () => {
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || Boolean(i18n.language?.startsWith('ar'));
 
-    const [events, setEvents] = useState<WorkflowAuditEvent[]>(() =>
-        loadWorkflowAuditEventsSafe()
-    );
-    const [refreshTick, setRefreshTick] = useState(0);
+    // TanStack Query for server state
+    const { data: events = [], isLoading, refetch } = useQuery<WorkflowAuditEvent[]>({
+        queryKey: ['workflow-audit-events'],
+        queryFn: async () => loadWorkflowAuditEventsSafe(),
+    });
 
     // Search, Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');
@@ -173,33 +155,17 @@ export const WorkflowAuditTrailPage: React.FC = () => {
     const [performedByFilter, setPerformedByFilter] = useState<string>('ALL');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
+    const [pageIndex, setPageIndex] = useState<number>(0);
     const [pageSize, setPageSize] = useState<number>(10);
+    const [isFiltersOpen, setIsFiltersOpen] = useState<boolean>(false);
 
     // Selected Audit Event for Details Drawer
     const [selectedEvent, setSelectedEvent] = useState<WorkflowAuditEvent | null>(null);
 
-    const refreshAuditEvents = useCallback(
-        (showToast = false) => {
-            const latest = loadWorkflowAuditEventsSafe();
-            setEvents(latest);
-            setRefreshTick((prev) => prev + 1);
-            if (showToast) {
-                toast.success(
-                    t('workflow.auditTrail.feedback.refreshed', {
-                        count: latest.length,
-                        defaultValue: `Refreshed ${latest.length} workflow audit events.`,
-                    })
-                );
-            }
-        },
-        [t]
-    );
-
+    // Sync when localStorage or focus changes
     useEffect(() => {
         const onWindowRefresh = () => {
-            setEvents(loadWorkflowAuditEventsSafe());
-            setRefreshTick((prev) => prev + 1);
+            queryClient.invalidateQueries({ queryKey: ['workflow-audit-events'] });
         };
         window.addEventListener('focus', onWindowRefresh);
         window.addEventListener('storage', onWindowRefresh);
@@ -207,7 +173,7 @@ export const WorkflowAuditTrailPage: React.FC = () => {
             window.removeEventListener('focus', onWindowRefresh);
             window.removeEventListener('storage', onWindowRefresh);
         };
-    }, []);
+    }, [queryClient]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -239,11 +205,11 @@ export const WorkflowAuditTrailPage: React.FC = () => {
         const norm = normalizeWorkflowAuditResource(resource);
         switch (norm) {
             case 'Workflow':
-                return <GitBranch size={12} className="shrink-0 text-[#2D3F2C]" />;
+                return <GitBranch size={12} className="shrink-0 text-[#037F8C]" />;
             case 'Workflow Master':
                 return <FolderKanban size={12} className="shrink-0 text-[#8C6046]" />;
             case 'Status Level':
-                return <ListFilter size={12} className="shrink-0 text-[#265938]" />;
+                return <ListFilter size={12} className="shrink-0 text-[#037F8C]" />;
             case 'Email Template':
                 return <Mail size={12} className="shrink-0 text-[#6A7358]" />;
             default:
@@ -345,13 +311,11 @@ export const WorkflowAuditTrailPage: React.FC = () => {
     ]);
 
     const totalRecords = filteredEvents.length;
-    const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
-    const safeCurrentPage = Math.min(currentPage, totalPages);
 
     const paginatedEvents = useMemo(() => {
-        const start = (safeCurrentPage - 1) * pageSize;
+        const start = pageIndex * pageSize;
         return filteredEvents.slice(start, start + pageSize);
-    }, [filteredEvents, safeCurrentPage, pageSize]);
+    }, [filteredEvents, pageIndex, pageSize]);
 
     const hasActiveFilters =
         searchQuery.trim().length > 0 ||
@@ -368,7 +332,7 @@ export const WorkflowAuditTrailPage: React.FC = () => {
         setPerformedByFilter('ALL');
         setStartDate('');
         setEndDate('');
-        setCurrentPage(1);
+        setPageIndex(0);
     };
 
     const handleExportCsv = () => {
@@ -432,9 +396,8 @@ export const WorkflowAuditTrailPage: React.FC = () => {
     );
 
     // Live Entity Snapshot Lookup for Details Drawer
-    const liveEntitySnapshot = useMemo(() => {
+    const liveEntitySnapshot: LiveEntitySnapshot | null = useMemo(() => {
         if (!selectedEvent) return null;
-        void refreshTick;
         const normRes = normalizeWorkflowAuditResource(selectedEvent.resource);
         const targetId = selectedEvent.recordId;
 
@@ -450,7 +413,6 @@ export const WorkflowAuditTrailPage: React.FC = () => {
                         : t('workflow.workflows.tabs.communication'),
             };
         }
-
         if (normRes === 'Workflow Master') {
             const found = loadWorkflowMasters().find(
                 (m) => m.code === targetId || String(m.id) === String(targetId)
@@ -459,10 +421,9 @@ export const WorkflowAuditTrailPage: React.FC = () => {
             return {
                 status: found.status,
                 ownerOrScope: found.moduleScope,
-                categoryOrDetail: isRtl ? found.nameAr : found.nameEn,
+                categoryOrDetail: found.category,
             };
         }
-
         if (normRes === 'Status Level') {
             const found = loadWorkflowStatusLevels().find(
                 (s) => s.code === targetId || String(s.id) === String(targetId)
@@ -470,1047 +431,373 @@ export const WorkflowAuditTrailPage: React.FC = () => {
             if (!found) return null;
             return {
                 status: found.status,
-                ownerOrScope: isRtl ? found.approverRoleAr : found.approverRoleEn,
-                categoryOrDetail: `${found.source} · Stage ${found.levelOrder}`,
+                ownerOrScope: found.source,
+                categoryOrDetail: found.stageCategory,
             };
         }
-
         if (normRes === 'Email Template') {
-            const found = loadWorkflowEmailTemplates().find((tpl) => tpl.id === targetId);
+            const found = loadWorkflowEmailTemplates().find((et) => et.id === targetId);
             if (!found) return null;
             return {
                 status: found.status,
-                ownerOrScope: isRtl ? found.creatorNameAr : found.creatorNameEn,
+                ownerOrScope: found.source,
                 categoryOrDetail: isRtl
                     ? found.communicationWorkflowNameAr
                     : found.communicationWorkflowNameEn,
             };
         }
-
         return null;
-    }, [selectedEvent, isRtl, refreshTick, t]);
+    }, [selectedEvent, isRtl, t]);
 
-    const showingFrom = totalRecords === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
-    const showingTo = Math.min(safeCurrentPage * pageSize, totalRecords);
+    // DataTable columns
+    const columns: ColumnDef<any, any>[] = useMemo(
+        () => [
+            {
+                accessorKey: 'id',
+                header: () => <span>{t('workflow.auditTrail.table.auditId')}</span>,
+                cell: ({ row }) => (
+                    <span
+                        className="font-mono text-xs font-semibold text-[#037F8C] bg-[#FAF8F5] px-2 py-0.5 rounded-md border border-[#E5E0D8]"
+                        dir="ltr"
+                    >
+                        {row.original.id}
+                    </span>
+                ),
+            },
+            {
+                id: 'action',
+                header: () => <span>{t('workflow.auditTrail.table.actionPerformed')}</span>,
+                cell: ({ row }) => {
+                    const ev = row.original as WorkflowAuditEvent;
+                    const normAction = normalizeWorkflowAuditAction(ev.action);
+                    return (
+                        <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                                ACTION_BADGE_STYLES[normAction]
+                            }`}
+                        >
+                            <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                    ACTION_DOT_STYLES[normAction]
+                                }`}
+                            />
+                            <span>{getActionLabel(ev.action)}</span>
+                        </span>
+                    );
+                },
+            },
+            {
+                id: 'resource',
+                header: () => <span>{t('workflow.auditTrail.table.resource')}</span>,
+                cell: ({ row }) => {
+                    const ev = row.original as WorkflowAuditEvent;
+                    const normResource = normalizeWorkflowAuditResource(ev.resource);
+                    return (
+                        <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                                RESOURCE_BADGE_STYLES[normResource] ||
+                                RESOURCE_BADGE_STYLES.Workflow
+                            }`}
+                        >
+                            {renderResourceIcon(ev.resource)}
+                            <span>{getResourceLabel(ev.resource)}</span>
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'recordId',
+                header: () => <span>{t('workflow.auditTrail.table.recordId')}</span>,
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs font-medium text-[#0D0D0D]" dir="ltr">
+                        {row.original.recordId}
+                    </span>
+                ),
+            },
+            {
+                id: 'resourceData',
+                header: () => <span>{t('workflow.auditTrail.table.resourceData')}</span>,
+                cell: ({ row }) => {
+                    const ev = row.original as WorkflowAuditEvent;
+                    return (
+                        <span className="text-xs font-semibold text-[#0D0D0D] line-clamp-1 max-w-xs">
+                            {isRtl ? ev.resourceDataAr || ev.resourceData : ev.resourceData}
+                        </span>
+                    );
+                },
+            },
+            {
+                id: 'performedBy',
+                header: () => <span>{t('workflow.auditTrail.table.performedBy')}</span>,
+                cell: ({ row }) => {
+                    const ev = row.original as WorkflowAuditEvent;
+                    return (
+                        <div className="flex items-center gap-1.5 text-xs">
+                            <User size={12} className="text-[#857E74] shrink-0" />
+                            <span className="font-medium text-[#0D0D0D]">
+                                {isRtl ? ev.performedByAr || ev.performedBy : ev.performedBy}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'dateTime',
+                header: () => <span>{t('workflow.auditTrail.table.dateTime')}</span>,
+                cell: ({ row }) => (
+                    <span className="text-xs font-mono text-[#6E6862] tabular-nums" dir="ltr">
+                        {row.original.dateTime}
+                    </span>
+                ),
+            },
+            {
+                id: 'actions',
+                header: () => (
+                    <div className="text-end">{t('workflow.workflows.table.actions')}</div>
+                ),
+                cell: ({ row }) => {
+                    const ev = row.original as WorkflowAuditEvent;
+                    return (
+                        <div className="inline-flex items-center justify-end gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedEvent(ev)}
+                                title={t('workflow.auditTrail.table.viewDetails')}
+                                className="p-1 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            >
+                                <Eye size={14} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleOpenResourcePage(ev)}
+                                title={t('workflow.auditTrail.table.openResource')}
+                                className="p-1 rounded-md text-[#857E74] hover:text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            >
+                                <ArrowUpRight size={14} />
+                            </button>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [isRtl, t, getActionLabel, getResourceLabel, handleOpenResourcePage]
+    );
 
     return (
-        <div className="space-y-6 text-start">
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
-                <div>
-                    <div className="flex items-center gap-2.5">
-                        <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                            {t('workflow.auditTrail.title')}
-                        </h1>
-                        <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
-                            dir="ltr"
-                        >
-                            WFL-AUD
-                        </span>
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white border border-[#E5E0D8] rounded-xl p-6 sm:p-7 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <h1 className="text-2xl font-bold text-[#0D0D0D] tracking-tight">
+                                {t('workflow.auditTrail.title')}
+                            </h1>
+                            <span
+                                className="px-2.5 py-0.5 text-xs font-mono font-semibold uppercase rounded-full bg-[#EFECE6] text-[#037F8C] border border-[#D6CFC4]"
+                                dir="ltr"
+                            >
+                                AUD-005
+                            </span>
+                        </div>
+                        <p className="text-xs text-[#6E6862] mt-1 max-w-2xl leading-relaxed">
+                            {t('workflow.auditTrail.subtitle')}
+                        </p>
                     </div>
-                    <p className="text-xs text-[#6E6862] mt-1 font-normal">
-                        {t('workflow.auditTrail.description')}
-                    </p>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => refetch()}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#EFECE6] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
+                        >
+                            <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
+                            <span>{t('common.refresh', 'Refresh')}</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    <button
-                        type="button"
-                        data-testid="workflow-audit-refresh"
-                        onClick={() => refreshAuditEvents(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <RefreshCw size={13} className="text-[#857E74]" />
-                        <span>{t('workflow.auditTrail.actions.refreshLogs')}</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/workflow/dashboard')}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <LayoutDashboard size={14} className="text-[#857E74]" />
-                        <span>{t('workflow.auditTrail.actions.goToDashboard')}</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/workflow/workflows')}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer shadow-2xs"
-                    >
-                        <GitBranch size={14} />
-                        <span>{t('workflow.auditTrail.actions.goToWorkflows')}</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* 4 Interactive KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setResourceFilter('ALL');
-                        setCurrentPage(1);
-                    }}
-                    className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'ALL'
-                            ? 'border-[#2D3F2C] ring-1 ring-[#2D3F2C]/15'
-                            : 'border-[#E5E0D8] hover:border-[#BFAB93]'
-                    }`}
-                >
-                    <div>
-                        <p className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.auditTrail.kpis.totalEvents')}
-                        </p>
-                        <p
-                            className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.total}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center shrink-0">
-                        <History className="w-5 h-5 text-[#BFAB93]" />
-                    </div>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        setResourceFilter((prev) => (prev === 'Workflow' ? 'ALL' : 'Workflow'));
-                        setCurrentPage(1);
-                    }}
-                    className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'Workflow'
-                            ? 'border-[#265938] ring-1 ring-[#265938]/20'
-                            : 'border-[#E5E0D8] hover:border-[#BFAB93]'
-                    }`}
-                >
-                    <div>
-                        <p className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.auditTrail.kpis.workflowEvents')}
-                        </p>
-                        <p
-                            className="text-2xl font-bold text-[#265938] mt-1 font-mono tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.workflows}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#EAF3EC] border border-[#265938]/20 text-[#265938] flex items-center justify-center shrink-0">
-                        <GitBranch className="w-5 h-5" />
-                    </div>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        setResourceFilter((prev) =>
-                            prev === 'GOVERNANCE' ? 'ALL' : 'GOVERNANCE'
-                        );
-                        setCurrentPage(1);
-                    }}
-                    className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'GOVERNANCE'
-                            ? 'border-[#8C6046] ring-1 ring-[#8C6046]/25'
-                            : 'border-[#E5E0D8] hover:border-[#BFAB93]'
-                    }`}
-                >
-                    <div>
-                        <p className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.auditTrail.kpis.governanceEvents')}
-                        </p>
-                        <p
-                            className="text-2xl font-bold text-[#8C6046] mt-1 font-mono tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.governance}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#FFFBEB] border border-[#8C6046]/25 text-[#8C6046] flex items-center justify-center shrink-0">
-                        <FolderKanban className="w-5 h-5" />
-                    </div>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => {
-                        setResourceFilter((prev) =>
-                            prev === 'Email Template' ? 'ALL' : 'Email Template'
-                        );
-                        setCurrentPage(1);
-                    }}
-                    className={`bg-white border rounded-xl p-4 shadow-2xs flex items-center justify-between text-start transition-colors cursor-pointer ${
-                        resourceFilter === 'Email Template'
-                            ? 'border-[#2D3F2C] ring-1 ring-[#2D3F2C]/20'
-                            : 'border-[#E5E0D8] hover:border-[#BFAB93]'
-                    }`}
-                >
-                    <div>
-                        <p className="text-xs font-medium text-[#6E6862]">
-                            {t('workflow.auditTrail.kpis.templateEvents')}
-                        </p>
-                        <p
-                            className="text-2xl font-bold text-[#0D0D0D] mt-1 font-mono tabular-nums"
-                            dir="ltr"
-                        >
-                            {kpis.emailTemplates}
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C] flex items-center justify-center shrink-0">
-                        <Mail className="w-5 h-5" />
-                    </div>
-                </button>
-            </div>
-
-            {/* Search, Quick Resource Tabs & Filters Card */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs space-y-3.5">
-                {/* Quick Resource Filter Pills */}
-                <div className="flex flex-wrap items-center gap-1.5 pb-3 border-b border-[#F0ECE4]">
+                {/* Resource category filter pills */}
+                <div className="mt-4 flex flex-wrap items-center gap-2 pt-4 border-t border-[#E5E0D8]/60">
                     <button
                         type="button"
                         onClick={() => {
                             setResourceFilter('ALL');
-                            setCurrentPage(1);
+                            setPageIndex(0);
                         }}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                             resourceFilter === 'ALL'
-                                ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
-                                : 'bg-[#FAF8F5] text-[#595550] border-[#E5E0D8] hover:border-[#BFAB93]'
+                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
                         }`}
                     >
-                        <span>{t('workflow.auditTrail.filters.allResources')}</span>
-                        <span
-                            className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
-                                resourceFilter === 'ALL'
-                                    ? 'bg-white/15 text-[#FAF8F5]'
-                                    : 'bg-white text-[#6E6862]'
-                            }`}
-                            dir="ltr"
-                        >
-                            {events.length}
-                        </span>
+                        <History size={13} />
+                        <span>{t('workflow.auditTrail.resources.all')}</span>
+                        <span className="font-mono text-[10px]">({kpis.total})</span>
                     </button>
 
-                    {WORKFLOW_AUDIT_RESOURCES.map((res) => {
-                        const isActive =
-                            resourceFilter !== 'ALL' &&
-                            resourceFilter !== 'GOVERNANCE' &&
-                            normalizeWorkflowAuditResource(resourceFilter) ===
-                                normalizeWorkflowAuditResource(res);
-                        const count = events.filter(
-                            (ev) =>
-                                normalizeWorkflowAuditResource(ev.resource) ===
-                                normalizeWorkflowAuditResource(res)
-                        ).length;
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setResourceFilter('Workflow');
+                            setPageIndex(0);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            resourceFilter === 'Workflow'
+                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
+                        }`}
+                    >
+                        <GitBranch size={13} />
+                        <span>{t('workflow.auditTrail.resources.Workflow')}</span>
+                        <span className="font-mono text-[10px]">({kpis.workflows})</span>
+                    </button>
 
-                        return (
-                            <button
-                                key={res}
-                                type="button"
-                                onClick={() => {
-                                    setResourceFilter(isActive ? 'ALL' : res);
-                                    setCurrentPage(1);
-                                }}
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
-                                    isActive
-                                        ? 'bg-[#2D3F2C] text-[#FAF8F5] border-[#2D3F2C]'
-                                        : 'bg-[#FAF8F5] text-[#595550] border-[#E5E0D8] hover:border-[#BFAB93]'
-                                }`}
-                            >
-                                <span>{getResourceLabel(res)}</span>
-                                <span
-                                    className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
-                                        isActive
-                                            ? 'bg-white/15 text-[#FAF8F5]'
-                                            : 'bg-white text-[#6E6862]'
-                                    }`}
-                                    dir="ltr"
-                                >
-                                    {count}
-                                </span>
-                            </button>
-                        );
-                    })}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setResourceFilter('GOVERNANCE');
+                            setPageIndex(0);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            resourceFilter === 'GOVERNANCE'
+                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
+                        }`}
+                    >
+                        <ShieldCheck size={13} />
+                        <span>{t('workflow.auditTrail.resources.governance')}</span>
+                        <span className="font-mono text-[10px]">({kpis.governance})</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setResourceFilter('Email Template');
+                            setPageIndex(0);
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            resourceFilter === 'Email Template'
+                                ? 'bg-[#037F8C] text-[#FAF8F5] shadow-xs'
+                                : 'bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] border border-[#E5E0D8]'
+                        }`}
+                    >
+                        <Mail size={13} />
+                        <span>{t('workflow.auditTrail.resources.Email Template')}</span>
+                        <span className="font-mono text-[10px]">({kpis.emailTemplates})</span>
+                    </button>
                 </div>
+            </div>
 
-                {/* Search & Dropdown Filters Row */}
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                        <Search
-                            size={15}
-                            className="absolute top-1/2 -translate-y-1/2 start-3 text-[#857E74] pointer-events-none"
-                        />
-                        <input
-                            type="text"
-                            data-testid="workflow-audit-search"
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            placeholder={t('workflow.auditTrail.filters.searchPlaceholder')}
-                            className="w-full ps-9 pe-8 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-none focus:border-[#2D3F2C] transition-colors"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSearchQuery('');
-                                    setCurrentPage(1);
-                                }}
-                                className="absolute top-1/2 -translate-y-1/2 end-2.5 text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
-                            >
-                                <X size={13} />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Filters Group */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        {/* Action Filter */}
+            {/* Filter Content */}
+            {isFiltersOpen && (
+                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                            {t('workflow.auditTrail.table.actionPerformed')}
+                        </label>
                         <select
-                            aria-label={t('workflow.auditTrail.filters.actionLabel')}
-                            data-testid="workflow-audit-action-filter"
                             value={actionFilter}
                             onChange={(e) => {
                                 setActionFilter(e.target.value as 'ALL' | WorkflowAuditAction);
-                                setCurrentPage(1);
+                                setPageIndex(0);
                             }}
-                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
+                            className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                         >
-                            <option value="ALL">
-                                {t('workflow.auditTrail.filters.allActions')}
-                            </option>
+                            <option value="ALL">{t('common.all')}</option>
                             {WORKFLOW_AUDIT_ACTIONS.map((act) => (
                                 <option key={act} value={act}>
                                     {getActionLabel(act)}
                                 </option>
                             ))}
                         </select>
+                    </div>
 
-                        {/* Resource Filter */}
+                    <div>
+                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                            {t('workflow.auditTrail.table.performedBy')}
+                        </label>
                         <select
-                            aria-label={t('workflow.auditTrail.filters.resourceLabel')}
-                            data-testid="workflow-audit-resource-filter"
-                            value={resourceFilter}
-                            onChange={(e) => {
-                                setResourceFilter(e.target.value as ResourceFilterValue);
-                                setCurrentPage(1);
-                            }}
-                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
-                        >
-                            <option value="ALL">
-                                {t('workflow.auditTrail.filters.allResources')}
-                            </option>
-                            <option value="GOVERNANCE">
-                                {t('workflow.auditTrail.kpis.governanceEvents')}
-                            </option>
-                            {WORKFLOW_AUDIT_RESOURCES.map((res) => (
-                                <option key={res} value={res}>
-                                    {getResourceLabel(res)}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Performed By Filter */}
-                        <select
-                            aria-label={t('workflow.auditTrail.filters.performedByLabel')}
                             value={performedByFilter}
                             onChange={(e) => {
                                 setPerformedByFilter(e.target.value);
-                                setCurrentPage(1);
+                                setPageIndex(0);
                             }}
-                            className="px-3 py-2 text-xs rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
+                            className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                         >
-                            <option value="ALL">
-                                {t('workflow.auditTrail.filters.allPerformers')}
-                            </option>
+                            <option value="ALL">{t('common.all')}</option>
                             {performerOptions.map((perf) => (
                                 <option key={perf.nameEn} value={perf.nameEn}>
                                     {isRtl ? perf.nameAr : perf.nameEn}
                                 </option>
                             ))}
                         </select>
+                    </div>
 
-                        {/* From Date */}
+                    <div>
+                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
+                            {t('workflow.auditTrail.table.startDate', 'Start Date')}
+                        </label>
                         <input
                             type="date"
-                            dir="ltr"
-                            aria-label={t('workflow.auditTrail.filters.fromDate')}
-                            title={t('workflow.auditTrail.filters.fromDate')}
                             value={startDate}
                             onChange={(e) => {
                                 setStartDate(e.target.value);
-                                setCurrentPage(1);
+                                setPageIndex(0);
                             }}
-                            className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
+                            className="w-full px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs text-[#0D0D0D] focus:outline-hidden focus:border-[#037F8C]"
                         />
-
-                        {/* To Date */}
-                        <input
-                            type="date"
-                            dir="ltr"
-                            aria-label={t('workflow.auditTrail.filters.toDate')}
-                            title={t('workflow.auditTrail.filters.toDate')}
-                            value={endDate}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
-                        />
-
-                        {hasActiveFilters && (
-                            <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#F0ECE4] border border-[#E5E0D8] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                <RotateCcw size={13} />
-                                <span>{t('workflow.auditTrail.filters.resetFilters')}</span>
-                            </button>
-                        )}
-
-                        <button
-                            type="button"
-                            onClick={handleExportCsv}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#F0ECE4] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer"
-                        >
-                            <Download size={13} className="text-[#857E74]" />
-                            <span>{t('workflow.auditTrail.actions.exportCsv')}</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Enterprise Workflow Audit Trail Table */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table
-                        className="w-full text-start border-collapse"
-                        data-testid="workflow-audit-table"
-                    >
-                        <thead>
-                            <tr className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[11px] font-semibold uppercase tracking-wider text-[#6E6862]">
-                                <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('workflow.auditTrail.table.actionPerformed')}
-                                </th>
-                                <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('workflow.auditTrail.table.resource')}
-                                </th>
-                                <th className="py-3 px-4 text-start min-w-[280px]">
-                                    {t('workflow.auditTrail.table.resourceData')}
-                                </th>
-                                <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('workflow.auditTrail.table.performedBy')}
-                                </th>
-                                <th className="py-3 px-4 text-start whitespace-nowrap">
-                                    {t('workflow.auditTrail.table.dateTime')}
-                                </th>
-                                <th className="py-3 px-4 text-end whitespace-nowrap">
-                                    {t('workflow.auditTrail.table.actions')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[#F0ECE4] text-xs">
-                            {paginatedEvents.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="py-12 px-4 text-center">
-                                        <div className="max-w-sm mx-auto space-y-2">
-                                            <div className="w-10 h-10 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center mx-auto text-[#8C6046]">
-                                                <History size={18} />
-                                            </div>
-                                            <p className="text-sm font-semibold text-[#0D0D0D]">
-                                                {t('workflow.auditTrail.empty.title')}
-                                            </p>
-                                            <p className="text-xs text-[#6E6862]">
-                                                {t('workflow.auditTrail.empty.description')}
-                                            </p>
-                                            {hasActiveFilters && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleResetFilters}
-                                                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2D3F2C] text-[#FAF8F5] text-xs font-medium hover:bg-[#233122] transition-colors cursor-pointer"
-                                                >
-                                                    <RotateCcw size={12} />
-                                                    <span>
-                                                        {t('workflow.auditTrail.filters.resetFilters')}
-                                                    </span>
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedEvents.map((ev) => {
-                                    const normResource = normalizeWorkflowAuditResource(ev.resource);
-                                    const normAction = normalizeWorkflowAuditAction(ev.action);
-                                    const primaryResourceData = isRtl
-                                        ? ev.resourceDataAr || ev.resourceData
-                                        : ev.resourceData;
-                                    const performerName = isRtl
-                                        ? ev.performedByAr || ev.performedBy
-                                        : ev.performedBy;
-                                    const remarksText = isRtl
-                                        ? ev.remarksAr || ev.remarks
-                                        : ev.remarks;
-                                    const resourceBadgeClass =
-                                        RESOURCE_BADGE_STYLES[normResource] ||
-                                        RESOURCE_BADGE_STYLES.Workflow;
-
-                                    return (
-                                        <tr
-                                            key={ev.id}
-                                            data-testid={`workflow-audit-row-${ev.id}`}
-                                            onClick={() => setSelectedEvent(ev)}
-                                            className="hover:bg-[#FAF8F5]/75 transition-colors cursor-pointer"
-                                        >
-                                            {/* Action Performed */}
-                                            <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${ACTION_BADGE_STYLES[normAction]}`}
-                                                    >
-                                                        <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${ACTION_DOT_STYLES[normAction]}`}
-                                                        />
-                                                        <span>{getActionLabel(normAction)}</span>
-                                                    </span>
-                                                    <span
-                                                        className="text-[10px] font-mono text-[#857E74]"
-                                                        dir="ltr"
-                                                    >
-                                                        {ev.id}
-                                                    </span>
-                                                </div>
-                                            </td>
-
-                                            {/* Resource */}
-                                            <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                                                <span
-                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border ${resourceBadgeClass}`}
-                                                >
-                                                    {renderResourceIcon(normResource)}
-                                                    <span>{getResourceLabel(normResource)}</span>
-                                                </span>
-                                            </td>
-
-                                            {/* Resource Data */}
-                                            <td className="py-3.5 px-4 align-top">
-                                                <div className="space-y-1 max-w-md">
-                                                    <div className="flex flex-wrap items-center gap-1.5">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedEvent(ev);
-                                                            }}
-                                                            className="font-semibold text-[#0D0D0D] hover:text-[#2D3F2C] text-start transition-colors cursor-pointer"
-                                                        >
-                                                            {primaryResourceData}
-                                                        </button>
-                                                        <span
-                                                            className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#FAF8F5] text-[#2D3F2C] border border-[#E5E0D8]"
-                                                            dir="ltr"
-                                                        >
-                                                            {ev.recordId}
-                                                        </span>
-                                                    </div>
-                                                    {remarksText && (
-                                                        <p className="text-[11px] text-[#6E6862] line-clamp-1">
-                                                            {remarksText}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </td>
-
-                                            {/* Performed By */}
-                                            <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-7 h-7 rounded-full bg-[#2D3F2C] text-[#FAF8F5] flex items-center justify-center text-[11px] font-semibold shrink-0">
-                                                        {performerName.charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-medium text-[#0D0D0D] block">
-                                                            {performerName}
-                                                        </span>
-                                                        {ev.actorEmail && (
-                                                            <span
-                                                                className="text-[10px] text-[#857E74] font-mono block"
-                                                                dir="ltr"
-                                                            >
-                                                                {ev.actorEmail}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Date & Time */}
-                                            <td className="py-3.5 px-4 whitespace-nowrap align-top">
-                                                <div className="inline-flex items-center gap-1.5 font-mono text-xs text-[#0D0D0D]">
-                                                    <Clock
-                                                        size={12}
-                                                        className="text-[#8C6046] shrink-0"
-                                                    />
-                                                    <span dir="ltr">{ev.dateTime}</span>
-                                                </div>
-                                            </td>
-
-                                            {/* Actions / View Details */}
-                                            <td
-                                                className="py-3.5 px-4 whitespace-nowrap text-end align-top"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <div className="inline-flex items-center justify-end gap-1">
-                                                    <button
-                                                        type="button"
-                                                        data-testid={`workflow-audit-view-${ev.id}`}
-                                                        onClick={() => setSelectedEvent(ev)}
-                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FAF8F5] hover:bg-[#2D3F2C] text-[#0D0D0D] hover:text-[#FAF8F5] border border-[#E5E0D8] hover:border-[#2D3F2C] text-[11px] font-medium transition-colors cursor-pointer"
-                                                        title={t(
-                                                            'workflow.auditTrail.table.viewDetails'
-                                                        )}
-                                                    >
-                                                        <Eye size={13} />
-                                                        <span>
-                                                            {t(
-                                                                'workflow.auditTrail.table.viewDetails'
-                                                            )}
-                                                        </span>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        data-testid={`workflow-audit-open-resource-${ev.id}`}
-                                                        onClick={() => handleOpenResourcePage(ev)}
-                                                        className="p-1.5 rounded-md text-[#6E6862] hover:text-[#2D3F2C] hover:bg-[#FAF8F5] border border-transparent hover:border-[#E5E0D8] transition-colors cursor-pointer"
-                                                        title={t(
-                                                            'workflow.auditTrail.actions.openResourcePage'
-                                                        )}
-                                                        aria-label={t(
-                                                            'workflow.auditTrail.actions.openResourcePage'
-                                                        )}
-                                                    >
-                                                        <ArrowUpRight size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination Bar */}
-                <div className="px-4 py-3 bg-[#FAF8F5] border-t border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#6E6862]">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-1.5">
-                            <span>{t('workflow.auditTrail.pagination.rowsPerPage')}</span>
-                            <select
-                                aria-label={t('workflow.auditTrail.pagination.rowsPerPage')}
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                                className="px-2 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C] cursor-pointer"
-                            >
-                                {WORKFLOW_PAGE_SIZE_OPTIONS.map((size) => (
-                                    <option key={size} value={size}>
-                                        {size}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <span>
-                            {t('workflow.auditTrail.pagination.showingCount', {
-                                from: showingFrom,
-                                to: showingTo,
-                                total: totalRecords,
-                            })}
-                        </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <div className="flex items-end">
                         <button
                             type="button"
-                            disabled={safeCurrentPage <= 1}
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] hover:bg-[#F0ECE4] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer"
+                            onClick={handleResetFilters}
+                            className="w-full px-3 py-2 bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] rounded-lg text-xs font-semibold text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
-                            {isRtl ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-                            <span>{t('workflow.auditTrail.pagination.previous')}</span>
+                            {t('common.resetFilters')}
                         </button>
-
-                        <div className="flex items-center gap-1 px-1" dir="ltr">
-                            {Array.from({ length: totalPages }, (_, idx) => idx + 1)
-                                .slice(
-                                    Math.max(0, safeCurrentPage - 3),
-                                    Math.min(totalPages, safeCurrentPage + 2)
-                                )
-                                .map((pageNum) => (
-                                    <button
-                                        key={pageNum}
-                                        type="button"
-                                        onClick={() => setCurrentPage(pageNum)}
-                                        className={`w-7 h-7 rounded-md text-xs font-mono font-semibold transition-colors cursor-pointer ${
-                                            pageNum === safeCurrentPage
-                                                ? 'bg-[#2D3F2C] text-[#FAF8F5]'
-                                                : 'bg-white border border-[#E5E0D8] text-[#0D0D0D] hover:bg-[#F0ECE4]'
-                                        }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                ))}
-                        </div>
-
-                        <button
-                            type="button"
-                            disabled={safeCurrentPage >= totalPages}
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] hover:bg-[#F0ECE4] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer"
-                        >
-                            <span>{t('workflow.auditTrail.pagination.next')}</span>
-                            {isRtl ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Right-Side Audit Event Details Drawer */}
-            {selectedEvent && (
-                <div
-                    className="fixed inset-0 z-50 flex justify-end"
-                    data-testid="workflow-audit-drawer"
-                >
-                    <div
-                        className="fixed inset-0 bg-black/35 backdrop-blur-[1px] transition-opacity"
-                        onClick={() => setSelectedEvent(null)}
-                    />
-                    <div className="relative z-10 w-full max-w-xl bg-white h-full shadow-2xl border-s border-[#E5E0D8] flex flex-col justify-between overflow-hidden">
-                        {/* Drawer Header */}
-                        <div className="px-6 py-4 bg-[#FAF8F5] border-b border-[#E5E0D8] flex items-start justify-between gap-4">
-                            <div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span
-                                        className="px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-white text-[#2D3F2C] border border-[#E5E0D8]"
-                                        dir="ltr"
-                                    >
-                                        {selectedEvent.id}
-                                    </span>
-                                    <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
-                                            ACTION_BADGE_STYLES[
-                                                normalizeWorkflowAuditAction(selectedEvent.action)
-                                            ]
-                                        }`}
-                                    >
-                                        <span
-                                            className={`w-1.5 h-1.5 rounded-full ${
-                                                ACTION_DOT_STYLES[
-                                                    normalizeWorkflowAuditAction(
-                                                        selectedEvent.action
-                                                    )
-                                                ]
-                                            }`}
-                                        />
-                                        <span>{getActionLabel(selectedEvent.action)}</span>
-                                    </span>
-                                    <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
-                                            RESOURCE_BADGE_STYLES[
-                                                normalizeWorkflowAuditResource(
-                                                    selectedEvent.resource
-                                                )
-                                            ] || RESOURCE_BADGE_STYLES.Workflow
-                                        }`}
-                                    >
-                                        {renderResourceIcon(selectedEvent.resource)}
-                                        <span>{getResourceLabel(selectedEvent.resource)}</span>
-                                    </span>
-                                </div>
-                                <h2 className="text-base font-bold text-[#0D0D0D] mt-2">
-                                    {t('workflow.auditTrail.drawer.title')}
-                                </h2>
-                                <p className="text-xs text-[#6E6862] mt-0.5">
-                                    {t('workflow.auditTrail.drawer.subtitle')}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedEvent(null)}
-                                className="p-1.5 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#E5E0D8]/50 transition-colors cursor-pointer"
-                                aria-label={t('workflow.auditTrail.drawer.close')}
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
-
-                        {/* Drawer Body */}
-                        <div className="p-6 overflow-y-auto flex-1 space-y-5 text-xs">
-                            {/* Section 1: Event Metadata & Classification */}
-                            <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-3">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                    {t('workflow.auditTrail.drawer.sectionMetadata')}
-                                </p>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        <p className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.auditId')}
-                                        </p>
-                                        <p
-                                            className="font-mono font-bold text-[#2D3F2C] mt-0.5"
-                                            dir="ltr"
-                                        >
-                                            {selectedEvent.id}
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        <p className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.targetRecordId')}
-                                        </p>
-                                        <p
-                                            className="font-mono font-bold text-[#0D0D0D] mt-0.5"
-                                            dir="ltr"
-                                        >
-                                            {selectedEvent.recordId}
-                                        </p>
-                                    </div>
-
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        <p className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.actionPerformed')}
-                                        </p>
-                                        <div className="mt-1">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
-                                                    ACTION_BADGE_STYLES[
-                                                        normalizeWorkflowAuditAction(
-                                                            selectedEvent.action
-                                                        )
-                                                    ]
-                                                }`}
-                                            >
-                                                <span
-                                                    className={`w-1.5 h-1.5 rounded-full ${
-                                                        ACTION_DOT_STYLES[
-                                                            normalizeWorkflowAuditAction(
-                                                                selectedEvent.action
-                                                            )
-                                                        ]
-                                                    }`}
-                                                />
-                                                <span>{getActionLabel(selectedEvent.action)}</span>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        <p className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.resourceType')}
-                                        </p>
-                                        <div className="mt-1">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
-                                                    RESOURCE_BADGE_STYLES[
-                                                        normalizeWorkflowAuditResource(
-                                                            selectedEvent.resource
-                                                        )
-                                                    ] || RESOURCE_BADGE_STYLES.Workflow
-                                                }`}
-                                            >
-                                                {renderResourceIcon(selectedEvent.resource)}
-                                                <span>
-                                                    {getResourceLabel(selectedEvent.resource)}
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        <p className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.performedBy')}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <User size={13} className="text-[#2D3F2C] shrink-0" />
-                                            <span className="font-semibold text-[#0D0D0D]">
-                                                {isRtl
-                                                    ? selectedEvent.performedByAr ||
-                                                      selectedEvent.performedBy
-                                                    : selectedEvent.performedBy}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                        <p className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.dateTime')}
-                                        </p>
-                                        <div className="flex items-center gap-1.5 mt-1 font-mono font-semibold text-[#0D0D0D]">
-                                            <Calendar size={12} className="text-[#8C6046]" />
-                                            <span dir="ltr">{selectedEvent.dateTime}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {(selectedEvent.previousStatus || selectedEvent.newStatus) && (
-                                    <div className="bg-white border border-[#E5E0D8] rounded-lg p-3 flex items-center justify-between gap-2">
-                                        <span className="text-[11px] text-[#6E6862]">
-                                            {t('workflow.auditTrail.drawer.statusTransition')}
-                                        </span>
-                                        <span className="font-mono font-semibold text-xs text-[#0D0D0D]" dir="ltr">
-                                            {selectedEvent.previousStatus || '—'} →{' '}
-                                            {selectedEvent.newStatus || '—'}
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div className="bg-white border border-[#E5E0D8] rounded-lg p-3">
-                                    <p className="text-[11px] text-[#6E6862]">
-                                        {t('workflow.auditTrail.drawer.isoTimestamp')}
-                                    </p>
-                                    <p
-                                        className="font-mono text-[11px] text-[#595550] mt-0.5 break-all"
-                                        dir="ltr"
-                                    >
-                                        {selectedEvent.timestamp}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Section 2: Target Resource & Entity Data */}
-                            <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-3">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                    {t('workflow.auditTrail.drawer.sectionResource')}
-                                </p>
-
-                                <div className="bg-white border border-[#E5E0D8] rounded-lg p-3.5 space-y-1">
-                                    <p className="text-[11px] text-[#6E6862]">
-                                        {t('workflow.auditTrail.drawer.resourceDataPrimary')}
-                                    </p>
-                                    <p className="text-sm font-bold text-[#0D0D0D] whitespace-pre-wrap break-words leading-relaxed">
-                                        {isRtl
-                                            ? selectedEvent.resourceDataAr ||
-                                              selectedEvent.resourceData
-                                            : selectedEvent.resourceData}
-                                    </p>
-                                </div>
-
-                                {selectedEvent.resourceDataAr &&
-                                    selectedEvent.resourceDataAr !== selectedEvent.resourceData && (
-                                        <div className="bg-white border border-[#E5E0D8] rounded-lg p-3.5 space-y-1">
-                                            <p className="text-[11px] text-[#6E6862]">
-                                                {t(
-                                                    'workflow.auditTrail.drawer.resourceDataBilingual'
-                                                )}
-                                            </p>
-                                            <p className="text-xs font-medium text-[#595550] whitespace-pre-wrap break-words">
-                                                {isRtl
-                                                    ? selectedEvent.resourceData
-                                                    : selectedEvent.resourceDataAr}
-                                            </p>
-                                        </div>
-                                    )}
-                            </div>
-
-                            {/* Section 3: Governance Remarks & Operation Summary */}
-                            <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-2">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                    {t('workflow.auditTrail.drawer.sectionRemarks')}
-                                </p>
-                                <div className="bg-white border border-[#E5E0D8] rounded-lg p-3.5">
-                                    <p className="text-xs text-[#0D0D0D] whitespace-pre-wrap break-words leading-relaxed">
-                                        {(isRtl
-                                            ? selectedEvent.remarksAr || selectedEvent.remarks
-                                            : selectedEvent.remarks) || '—'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Section 4: Live Entity Snapshot */}
-                            <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#8C6046]">
-                                        {t('workflow.auditTrail.drawer.sectionLiveEntity')}
-                                    </p>
-                                    <ShieldCheck size={14} className="text-[#265938]" />
-                                </div>
-
-                                {liveEntitySnapshot ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                        <div className="bg-white border border-[#E5E0D8] rounded-lg p-2.5">
-                                            <p className="text-[10px] text-[#6E6862]">
-                                                {t('workflow.auditTrail.drawer.liveStatus')}
-                                            </p>
-                                            <p className="font-semibold text-[#2D3F2C] mt-0.5">
-                                                {liveEntitySnapshot.status}
-                                            </p>
-                                        </div>
-                                        <div className="bg-white border border-[#E5E0D8] rounded-lg p-2.5">
-                                            <p className="text-[10px] text-[#6E6862]">
-                                                {t('workflow.auditTrail.drawer.liveScopeOrOwner')}
-                                            </p>
-                                            <p className="font-semibold text-[#0D0D0D] mt-0.5 truncate">
-                                                {liveEntitySnapshot.ownerOrScope}
-                                            </p>
-                                        </div>
-                                        <div className="bg-white border border-[#E5E0D8] rounded-lg p-2.5">
-                                            <p className="text-[10px] text-[#6E6862]">
-                                                {t('workflow.auditTrail.drawer.liveClassification')}
-                                            </p>
-                                            <p className="font-semibold text-[#0D0D0D] mt-0.5 truncate">
-                                                {liveEntitySnapshot.categoryOrDetail}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <p
-                                        className="text-xs text-[#6E6862] bg-white border border-[#E5E0D8] rounded-lg p-3"
-                                        data-testid="workflow-audit-historical-note"
-                                    >
-                                        {t('workflow.auditTrail.drawer.recordNotFoundNote')}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Drawer Footer */}
-                        <div className="px-6 py-4 bg-[#FAF8F5] border-t border-[#E5E0D8] flex flex-wrap items-center justify-between gap-2">
-                            <button
-                                type="button"
-                                data-testid="workflow-audit-drawer-open-module"
-                                onClick={() => {
-                                    const targetEv = selectedEvent;
-                                    setSelectedEvent(null);
-                                    handleOpenResourcePage(targetEv);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#2D3F2C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
-                            >
-                                <span>
-                                    {t('workflow.auditTrail.drawer.openModule', {
-                                        resource: getResourceLabel(selectedEvent.resource),
-                                    })}
-                                </span>
-                                <ArrowUpRight size={14} />
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setSelectedEvent(null)}
-                                className="px-4 py-2 rounded-lg bg-white hover:bg-[#F0ECE4] border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] transition-colors cursor-pointer"
-                            >
-                                {t('workflow.auditTrail.drawer.close')}
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
+
+            {/* DataTable */}
+            <DataTable
+                columns={columns}
+                data={paginatedEvents}
+                count={totalRecords}
+                loading={isLoading}
+                searchPlaceholder={t('workflow.auditTrail.searchPlaceholder')}
+                pageIndex={pageIndex}
+                pageSize={pageSize}
+                onPageChange={(newIdx) => setPageIndex(newIdx)}
+                onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPageIndex(0);
+                }}
+                searchValue={searchQuery}
+                onSearchChange={(val) => {
+                    setSearchQuery(val);
+                    setPageIndex(0);
+                }}
+                onExport={handleExportCsv}
+                title={t('workflow.auditTrail.title')}
+                description={t('workflow.auditTrail.subtitle')}
+                onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
+                isFiltersOpen={isFiltersOpen}
+                hasActiveFilters={hasActiveFilters}
+            />
+
+            {/* Event Details Drawer */}
+            <WorkflowAuditTrailDrawer
+                event={selectedEvent}
+                onClose={() => setSelectedEvent(null)}
+                onOpenResourcePage={handleOpenResourcePage}
+                liveEntitySnapshot={liveEntitySnapshot}
+                getActionLabel={getActionLabel}
+                getResourceLabel={getResourceLabel}
+                renderResourceIcon={renderResourceIcon}
+            />
         </div>
     );
 };

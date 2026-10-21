@@ -86,9 +86,9 @@ export const Navbar = () => {
                     <button
                         type="button"
                         onClick={() => setActionItemsModalOpen(true)}
-                        className="bg-[#F8F6F2] hover:bg-[#EFECE6] border border-[#E5E0D8] px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium text-[#2D3F2C] transition cursor-pointer active:scale-98 shadow-2xs min-w-0 max-w-full"
+                        className="bg-[#F8F6F2] hover:bg-[#EFECE6] border border-[#E5E0D8] px-2.5 sm:px-3.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium text-[#037F8C] transition cursor-pointer active:scale-98 shadow-2xs min-w-0 max-w-full"
                     >
-                        <span className="w-2 h-2 rounded-full bg-[#2D3F2C] dark:bg-[#84C799] shrink-0"></span>
+                        <span className="w-2 h-2 rounded-full bg-[#037F8C] dark:bg-[#84C799] shrink-0"></span>
                         <span className="tracking-tight truncate">
                             {selectedModuleLabel}
                         </span>
@@ -123,7 +123,7 @@ export const Navbar = () => {
                             </>
                         ) : (
                             <>
-                                <Moon size={14} className="text-[#2D3F2C] shrink-0" />
+                                <Moon size={14} className="text-[#037F8C] shrink-0" />
                                 <span className="hidden md:inline text-[11px]">
                                     {t('nav.darkMode', { defaultValue: 'Dark' })}
                                 </span>
@@ -147,7 +147,7 @@ export const Navbar = () => {
                             aria-pressed={!isAr}
                             className={`px-2 py-1 rounded-md text-[11px] font-semibold tracking-wide transition-all cursor-pointer leading-none ${
                                 !isAr
-                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5] shadow-2xs'
                                     : 'text-[#6E6862] hover:text-[#0D0D0D]'
                             }`}
                         >
@@ -160,7 +160,7 @@ export const Navbar = () => {
                             aria-pressed={isAr}
                             className={`px-2 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer leading-none ${
                                 isAr
-                                    ? 'bg-[#2D3F2C] text-[#FAF8F5] shadow-2xs'
+                                    ? 'bg-[#037F8C] text-[#FAF8F5] shadow-2xs'
                                     : 'text-[#6E6862] hover:text-[#0D0D0D]'
                             }`}
                         >
@@ -182,7 +182,7 @@ export const Navbar = () => {
                             <span className="text-xs text-[#6E6862] font-medium hidden sm:inline">
                                 {t('common.welcome')}
                             </span>
-                            <div className="w-8 h-8 rounded-lg bg-[#2D3F2C] border border-[#BFAB93]/30 text-[#FAF8F5] flex items-center justify-center font-bold text-xs shadow-xs">
+                            <div className="w-8 h-8 rounded-lg bg-[#037F8C] border border-[#BFAB93]/30 text-[#FAF8F5] flex items-center justify-center font-bold text-xs shadow-xs">
                                 {user?.fullName ? user.fullName.substring(0, 3).toUpperCase() : 'AWN'}
                             </div>
                             <ChevronDown size={14} className="text-[#6E6862]" />
