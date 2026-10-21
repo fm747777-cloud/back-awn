@@ -11,14 +11,18 @@ export interface DocumentCategoryOption {
 
 export interface DocumentTypeRecord {
     id: string;
+    codeName: string;
     name: string;
     description: string;
     documentCategoryId: string;
-    documentCategory?: { id?: string; name?: string } | null;
-    createdBy?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-    status?: string | null;
+    documentCategory: {
+        id: string;
+        name: string;
+    } | null;
+    createdBy: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+    status: string;
 }
 
 interface DocumentTypeDrawerProps {

@@ -1,353 +1,637 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Search, ChevronDown, Check, X, Loader2 } from "lucide-react";
-import { servicePackageSchema, type ServicePackageFormValues, type CreateServicePackageDto } from "../../schemas/serviceSchema";
-import { GroupType, ServiceTagStatus, type ServiceGroupOption } from "./serviceGroupTypes";
-import { focusAndScrollToFirstError } from "../../utils/formValidation";
-import { translateError } from "../../i18n";
+import { X } from "lucide-react";
+import { toast } from "sonner";
+
 import { serviceApi } from "../../api/api";
+import { CreateServicePackageDto } from "../../schemas/serviceSchema";
+
+interface ServiceGroupOption {
+    id: string;
+    name: string;
+    codeName: string;
+}
+
+export interface PackageInitialData {
+    id?: string;
+    codeName?: string;
+    name?: string;
+    package_name?: string;
+    group_type?: string;
+    package_type?: string;
+    billingCycle?: string;
+    price?: number;
+    unit_price?: string | number;
+    status?: "active" | "inactive" | string;
+    description?: string;
+    servicesIncluded?: number;
+
+    // IDs used to preselect groups when editing.
+    service_group_ids?: string[];
+
+    // Kept as a fallback for older callers.
+    group_ids?: string[];
+}
 
 interface AddServicePackageModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: CreateServicePackageDto) => void | Promise<void>;
+    onSubmit: (dto: any) => Promise<unknown>;
+    mode?: "create" | "edit" | "view";
+    initialData?: PackageInitialData | null;
+    isSaving?: boolean;
 }
 
-interface ServiceGroupResponse {
-    data?: ServiceGroupOption[];
-    items?: ServiceGroupOption[];
-    results?: ServiceGroupOption[];
+interface ApiGroup {
+    id?: string | number;
+    name?: string;
+    group_name?: string;
+    groupName?: string;
+    codeName?: string;
+    groupCode?: string;
+    group_code?: string;
+    code?: string;
 }
 
-export const AddServicePackageModal: React.FC<AddServicePackageModalProps> = ({ isOpen, onClose, onSubmit }) => {
-    const { t } = useTranslation();
-    const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
-    const [groupSearchQuery, setGroupSearchQuery] = useState("");
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
+interface GroupsResponse {
+    data?: ApiGroup[];
+}
 
-    const {
-        register,
-        handleSubmit,
-        setValue,
-        reset,
-        clearErrors,
-        watch,
-        formState: { errors, isSubmitting },
-    } = useForm<ServicePackageFormValues>({
-        resolver: zodResolver(servicePackageSchema),
-        mode: "onSubmit",
-        defaultValues: {
-            group_type: GroupType.BUSINESS,
-            service_group_ids: [],
-            package_name: "",
-            unit_price: "" as unknown as number,
-            status: ServiceTagStatus.ACTIVE,
-            description: "",
-        },
-    });
+const extractGroups = (response: unknown): ServiceGroupOption[] => {
+    const result = response as GroupsResponse | ApiGroup[] | undefined;
 
-    const selectedGroupIds = watch("service_group_ids") || [];
+    const items = Array.isArray(result)
+        ? result
+        : Array.isArray(result?.data)
+            ? result.data
+            : [];
 
-    const { data: serviceGroupsResponse, isLoading: isLoadingGroups, isError: isGroupsError, refetch: refetchGroups } = useQuery({
-        queryKey: ["service-groups"],
-        queryFn: async () => {
-            return await serviceApi.getServiceGroup();
-        },
-        enabled: isOpen,
-        staleTime: 5 * 60 * 1000,
-    });
+    return items
+        .filter((item) => item?.id !== undefined && item?.id !== null)
+        .map((item) => ({
+            id: String(item.id),
+            name:
+                item.name ||
+                item.group_name ||
+                item.groupName ||
+                "Unnamed Group",
+            codeName:
+                item.codeName ||
+                item.groupCode ||
+                item.group_code ||
+                item.code ||
+                `GRP-${String(item.id).slice(0, 6)}`,
+        }));
+};
 
-    const serviceGroups = useMemo<ServiceGroupOption[]>(() => {
-        const response = serviceGroupsResponse as ServiceGroupResponse | ServiceGroupOption[] | undefined;
-        if (Array.isArray(response)) return response;
-        if (Array.isArray(response?.data)) return response.data;
-        if (Array.isArray(response?.items)) return response.items;
-        if (Array.isArray(response?.results)) return response.results;
-        return [];
-    }, [serviceGroupsResponse]);
+export const AddServicePackageModal: React.FC<
+    AddServicePackageModalProps
+> = ({
+    isOpen,
+    onClose,
+    onSubmit,
+    mode = "create",
+    initialData,
+    isSaving = false,
+}) => {
+        const { t } = useTranslation();
 
-    const filteredGroups = useMemo(() => {
-        const query = groupSearchQuery.trim().toLowerCase();
-        if (!query) return serviceGroups;
-        return serviceGroups.filter((group) => group.name.toLowerCase().includes(query) || group.groupCode.toLowerCase().includes(query));
-    }, [serviceGroups, groupSearchQuery]);
+        const isView = mode === "view";
+        const isEdit = mode === "edit";
 
-    const selectedGroups = useMemo(() => {
-        return serviceGroups.filter((group) => selectedGroupIds.includes(group.id));
-    }, [serviceGroups, selectedGroupIds]);
+        const [packageName, setPackageName] = useState("");
+        const [packageType, setPackageType] = useState("");
+        const [unitPrice, setUnitPrice] = useState("");
+        const [status, setStatus] = useState<"active" | "inactive">("active");
+        const [description, setDescription] = useState("");
+        const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+        const [groupSearch, setGroupSearch] = useState("");
+        const [formError, setFormError] = useState("");
 
-    const createPackageMutation = useMutation({
-        mutationFn: async (payload: CreateServicePackageDto) => {
-            return await onSubmit(payload);
-        },
-        onSuccess: () => {
-            reset();
-            setGroupSearchQuery("");
-            setIsGroupDropdownOpen(false);
+        const groupsQuery = useQuery({
+            queryKey: ["service-groups"],
+            queryFn: async () => {
+                const response = await serviceApi.getServiceGroup();
+                return extractGroups(response);
+            },
+            enabled: isOpen,
+        });
+
+        const groups = groupsQuery.data ?? [];
+
+        useEffect(() => {
+            if (!isOpen) return;
+
+            setPackageName(
+                initialData?.package_name ?? initialData?.name ?? "",
+            );
+            setPackageType(
+                initialData?.package_type ??
+                initialData?.group_type ??
+                initialData?.billingCycle ??
+                "",
+            );
+            setUnitPrice(
+                String(initialData?.unit_price ?? initialData?.price ?? ""),
+            );
+
+            setStatus(
+                String(initialData?.status ?? "active").toLowerCase() === "inactive"
+                    ? "inactive"
+                    : "active",
+            );
+
+            setDescription(initialData?.description ?? "");
+
+            /*
+             * Parent mapping uses service_group_ids.
+             * group_ids is retained as a fallback only.
+             */
+            setSelectedGroupIds(
+                Array.from(
+                    new Set(
+                        (
+                            initialData?.service_group_ids ??
+                            initialData?.group_ids ??
+                            []
+                        ).map(String),
+                    ),
+                ),
+            );
+
+            setGroupSearch("");
+            setFormError("");
+        }, [isOpen, initialData]);
+
+        const filteredGroups = useMemo(() => {
+            const search = groupSearch.trim().toLowerCase();
+
+            if (!search) return groups;
+
+            return groups.filter(
+                (group) =>
+                    group.name.toLowerCase().includes(search) ||
+                    group.codeName.toLowerCase().includes(search),
+            );
+        }, [groups, groupSearch]);
+
+        /*
+         * Keep selected IDs even if the API's current group list does not
+         * include them, so editing an existing package does not silently
+         * remove its existing group relationships.
+         */
+        const missingSelectedGroups = useMemo(() => {
+            const availableIds = new Set(groups.map((group) => group.id));
+
+            return selectedGroupIds
+                .filter((id) => !availableIds.has(id))
+                .map((id) => ({
+                    id,
+                    name: `Group ${id.slice(0, 8)}`,
+                    codeName: id,
+                }));
+        }, [groups, selectedGroupIds]);
+
+        const allGroups = useMemo(
+            () => [...groups, ...missingSelectedGroups],
+            [groups, missingSelectedGroups],
+        );
+
+        const toggleGroup = (groupId: string) => {
+            if (isView) return;
+
+            setSelectedGroupIds((current) =>
+                current.includes(groupId)
+                    ? current.filter((id) => id !== groupId)
+                    : [...current, groupId],
+            );
+        };
+
+        const handleClose = () => {
+            if (isSaving) return;
             onClose();
-        },
-    });
+        };
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsGroupDropdownOpen(false);
+        const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+
+            if (isView || isSaving) return;
+
+            setFormError("");
+
+            if (!packageName.trim()) {
+                setFormError(t("Package name is required"));
+                return;
+            }
+
+            if (!packageType) {
+                setFormError(t("Package type is required"));
+                return;
+            }
+
+            if (
+                unitPrice.trim() === "" ||
+                !Number.isFinite(Number(unitPrice)) ||
+                Number(unitPrice) < 0
+            ) {
+                setFormError(t("Please enter a valid unit price"));
+                return;
+            }
+
+            const payload = {
+                package_name: packageName.trim(),
+                package_type: packageType,
+                unit_price: Number(unitPrice),
+                status,
+                description: description.trim(),
+
+                // API payload field expected by the package form.
+                group_ids: selectedGroupIds,
+            };
+
+            try {
+                await onSubmit(payload);
+            } catch (error) {
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : t("Failed to save package");
+
+                setFormError(message);
+                toast.error(message);
             }
         };
-        if (isGroupDropdownOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-            setTimeout(() => searchInputRef.current?.focus(), 50);
-        }
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isGroupDropdownOpen]);
 
-    useEffect(() => {
-        if (!isOpen) {
-            reset();
-            setIsGroupDropdownOpen(false);
-            setGroupSearchQuery("");
-        }
-    }, [isOpen, reset]);
+        if (!isOpen) return null;
 
-    const handleSelectGroup = (group: ServiceGroupOption) => {
-        const currentIds = selectedGroupIds || [];
-        const alreadySelected = currentIds.includes(group.id);
-        const updatedIds = alreadySelected ? currentIds.filter((id) => id !== group.id) : [...currentIds, group.id];
-        setValue("service_group_ids", updatedIds, { shouldValidate: true, shouldDirty: true });
-        clearErrors("service_group_ids");
-    };
+        return (
+            <div
+                className="fixed inset-0 z-[100] flex justify-end bg-black/40"
+                onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) {
+                        handleClose();
+                    }
+                }}
+            >
+                <section
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="package-modal-title"
+                    className="flex h-full w-full max-w-xl flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-300"
+                    onMouseDown={(event) => event.stopPropagation()}
+                >
+                    <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+                        <div>
+                            <h2
+                                id="package-modal-title"
+                                className="text-lg font-semibold text-gray-900"
+                            >
+                                {isView
+                                    ? t("View Package")
+                                    : isEdit
+                                        ? t("Edit Package")
+                                        : t("Add Package")}
+                            </h2>
 
-    const handleRemoveGroup = (groupId: string) => {
-        const updatedIds = selectedGroupIds.filter((id) => id !== groupId);
-        setValue("service_group_ids", updatedIds, { shouldValidate: true, shouldDirty: true });
-    };
-
-    const handleSelectAll = () => {
-        const currentIds = selectedGroupIds || [];
-        const filteredIds = filteredGroups.map((group) => group.id);
-        const updatedIds = Array.from(new Set([...currentIds, ...filteredIds]));
-        setValue("service_group_ids", updatedIds, { shouldValidate: true, shouldDirty: true });
-        clearErrors("service_group_ids");
-    };
-
-    const handleClearGroups = () => {
-        setValue("service_group_ids", [], { shouldValidate: true, shouldDirty: true });
-    };
-
-    const handleCloseModal = () => {
-        if (createPackageMutation.isPending) return;
-        reset();
-        setIsGroupDropdownOpen(false);
-        setGroupSearchQuery("");
-        onClose();
-    };
-
-    const handleFormSubmit = async (formValues: ServicePackageFormValues) => {
-        const dtoPayload: CreateServicePackageDto = {
-            service_group_ids: formValues.service_group_ids,
-            package_name: formValues.package_name.trim(),
-            description: formValues.description?.trim() || undefined,
-            unit_price: Number(formValues.unit_price),
-            group_type: formValues.group_type,
-            status: formValues.status,
-        };
-        await createPackageMutation.mutateAsync(dtoPayload);
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D0D0D]/40 backdrop-blur-xs p-4 overflow-y-auto">
-            <div className="bg-white rounded-xl shadow-2xl border border-[#E5E0D8] w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh] text-start">
-                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex justify-between items-start">
-                    <div>
-                        <h2 className="text-lg font-bold text-[#0D0D0D]">{t("packages.addTitle")}</h2>
-                        <p className="text-xs text-[#6E6862] mt-1">{t("packages.subtitle")}</p>
-                    </div>
-                    <button type="button" onClick={handleCloseModal} disabled={createPackageMutation.isPending} aria-label={t("common.close")} className="text-[#8C847A] hover:text-[#0D0D0D] p-1 rounded-md hover:bg-[#EFECE6] transition focus:outline-none disabled:opacity-50">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <div className="p-6 overflow-y-auto flex-1">
-                    <div className="flex items-center gap-2.5 mb-6 pb-3 border-b border-[#EFECE6]">
-                        <div className="w-2 h-2 rounded-full bg-[#2D3F2C]"></div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#2D3F2C]">{t("packages.detailsSection")}</h3>
-                    </div>
-
-                    {createPackageMutation.isError && (
-                        <div className="mb-5 rounded-lg border border-[#B83232]/20 bg-[#FCF2F2] px-4 py-3 text-xs text-[#B83232]">
-                            {createPackageMutation.error instanceof Error ? createPackageMutation.error.message : "Failed to create service package"}
+                            <p className="mt-1 text-sm text-gray-500">
+                                {isView
+                                    ? t("View package information and linked groups")
+                                    : t("Enter package information and select its groups")}
+                            </p>
                         </div>
-                    )}
 
-                    <form id="service-package-form" noValidate onSubmit={handleSubmit(handleFormSubmit, (errs) => focusAndScrollToFirstError(errs))} className="space-y-5">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
-                                    {t("packages.groupType")} <span className="text-[#B83232]">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select {...register("group_type")} className={`w-full appearance-none border rounded-lg px-3.5 py-2.5 pe-9 text-sm outline-none transition bg-white text-[#0D0D0D] ${errors.group_type ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15" : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"}`}>
-                                        <option value={GroupType.BUSINESS}>{t("services.entityTypes.business")}</option>
-                                        <option value={GroupType.EMPLOYEE}>{t("services.entityTypes.employee")}</option>
-                                        <option value={GroupType.ASSETS}>{t("services.entityTypes.asset")}</option>
-                                    </select>
-                                    <ChevronDown className="w-4 h-4 text-[#8C847A] absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <button
+                            type="button"
+                            onClick={handleClose}
+                            disabled={isSaving}
+                            aria-label={t("Close")}
+                            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex min-h-0 flex-1 flex-col"
+                    >
+                        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+                            {formError && (
+                                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {formError}
                                 </div>
-                                {errors.group_type && <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.group_type.message)}</p>}
+                            )}
+
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="package-name"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    {t("Package Name")} *
+                                </label>
+
+                                <input
+                                    id="package-name"
+                                    value={packageName}
+                                    onChange={(event) =>
+                                        setPackageName(event.target.value)
+                                    }
+                                    disabled={isView || isSaving}
+                                    required
+                                    placeholder={t("Enter package name")}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/10 disabled:bg-gray-50"
+                                />
                             </div>
 
-                            <div ref={dropdownRef} className="relative">
-                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
-                                    {t("packages.selectServiceGroup")} <span className="text-[#B83232]">*</span>
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="package-type"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    {t("Package Type")} *
                                 </label>
-                                <input type="hidden" {...register("service_group_ids")} />
 
-                                <button type="button" onClick={() => setIsGroupDropdownOpen((prev) => !prev)} className={`w-full min-h-[44px] flex items-center justify-between border rounded-lg px-3.5 py-2.5 text-sm text-start outline-none transition bg-white ${errors.service_group_ids ? "border-[#B83232] bg-[#FCF2F2]" : isGroupDropdownOpen ? "border-[#2D3F2C] ring-2 ring-[#2D3F2C]/15" : "border-[#D6CFC4] hover:border-[#8C847A]"}`}>
-                                    <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-                                        {selectedGroups.length > 0 ? selectedGroups.map((group) => (
-                                            <span key={group.id} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#EAF3EC] text-[#2D3F2C] text-xs font-medium max-w-full">
-                                                <span className="truncate max-w-[140px]">{group.name}</span>
-                                                <span role="button" tabIndex={0} onClick={(event) => { event.stopPropagation(); handleRemoveGroup(group.id); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); handleRemoveGroup(group.id); } }} className="cursor-pointer hover:text-[#B83232] shrink-0">
-                                                    <X className="w-3 h-3" />
-                                                </span>
-                                            </span>
-                                        )) : <span className="text-[#8C847A]">{t("packages.searchServiceGroup")}</span>}
+                                <select
+                                    id="package-type"
+                                    value={packageType}
+                                    onChange={(event) =>
+                                        setPackageType(event.target.value)
+                                    }
+                                    disabled={isView || isSaving}
+                                    required
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/10 disabled:bg-gray-50"
+                                >
+                                    <option value="">
+                                        {t("Select package type")}
+                                    </option>
+                                    <option value="business">
+                                        {t("Business")}
+                                    </option>
+                                    <option value="individual">
+                                        {t("Individual")}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="package-price"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    {t("Unit Price")} *
+                                </label>
+
+                                <input
+                                    id="package-price"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={unitPrice}
+                                    onChange={(event) =>
+                                        setUnitPrice(event.target.value)
+                                    }
+                                    disabled={isView || isSaving}
+                                    required
+                                    placeholder="0.00"
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/10 disabled:bg-gray-50"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="package-status"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    {t("Status")}
+                                </label>
+
+                                <select
+                                    id="package-status"
+                                    value={status}
+                                    onChange={(event) =>
+                                        setStatus(
+                                            event.target.value as "active" | "inactive",
+                                        )
+                                    }
+                                    disabled={isView || isSaving}
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/10 disabled:bg-gray-50"
+                                >
+                                    <option value="active">{t("Active")}</option>
+                                    <option value="inactive">{t("Inactive")}</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="package-description"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    {t("Description")}
+                                </label>
+
+                                <textarea
+                                    id="package-description"
+                                    rows={3}
+                                    value={description}
+                                    onChange={(event) =>
+                                        setDescription(event.target.value)
+                                    }
+                                    disabled={isView || isSaving}
+                                    placeholder={t("Enter description")}
+                                    className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/10 disabled:bg-gray-50"
+                                />
+                            </div>
+
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        {t("Service Groups")}
+                                    </label>
+
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        {t("Select the groups included in this package")}
+                                    </p>
+                                </div>
+
+                                {!isView && (
+                                    <input
+                                        type="search"
+                                        value={groupSearch}
+                                        onChange={(event) =>
+                                            setGroupSearch(event.target.value)
+                                        }
+                                        placeholder={t("Search groups...")}
+                                        className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/10"
+                                    />
+                                )}
+
+                                {groupsQuery.isLoading ? (
+                                    <p className="rounded-lg border border-gray-200 p-4 text-sm text-gray-500">
+                                        {t("Loading groups...")}
+                                    </p>
+                                ) : groupsQuery.isError ? (
+                                    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                        {t("Failed to load groups")}
+                                        <button
+                                            type="button"
+                                            onClick={() => groupsQuery.refetch()}
+                                            className="ml-2 font-semibold underline"
+                                        >
+                                            {t("Retry")}
+                                        </button>
                                     </div>
-                                    <ChevronDown className={`w-4 h-4 text-[#8C847A] shrink-0 ms-2 transition-transform ${isGroupDropdownOpen ? "rotate-180" : ""}`} />
-                                </button>
+                                ) : (
+                                    <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-gray-200 p-2">
+                                        {filteredGroups.length === 0 ? (
+                                            <p className="p-3 text-sm text-gray-500">
+                                                {t("No groups found")}
+                                            </p>
+                                        ) : (
+                                            filteredGroups.map((group) => {
+                                                const checked =
+                                                    selectedGroupIds.includes(group.id);
 
-                                {isGroupDropdownOpen && (
-                                    <div className="absolute z-30 mt-1.5 w-full bg-white border border-[#D6CFC4] rounded-lg shadow-xl overflow-hidden">
-                                        <div className="p-2 border-b border-[#EFECE6] bg-[#FAF8F5]">
-                                            <div className="relative">
-                                                <Search className="w-3.5 h-3.5 text-[#8C847A] absolute start-2.5 top-1/2 -translate-y-1/2" />
-                                                <input ref={searchInputRef} type="text" value={groupSearchQuery} onChange={(e) => setGroupSearchQuery(e.target.value)} placeholder={t("packages.searchServiceGroup")} className="w-full ps-8 pe-3 py-1.5 text-xs bg-white border border-[#D6CFC4] rounded-md outline-none focus:border-[#2D3F2C]" />
-                                            </div>
-                                        </div>
+                                                return (
+                                                    <label
+                                                        key={group.id}
+                                                        className={`flex items-start gap-3 rounded-lg p-3 transition ${isView
+                                                            ? "cursor-default"
+                                                            : "cursor-pointer hover:bg-gray-50"
+                                                            } ${checked
+                                                                ? "bg-[#2D3F2C]/5"
+                                                                : ""
+                                                            }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            disabled={isView || isSaving}
+                                                            onChange={() =>
+                                                                toggleGroup(group.id)
+                                                            }
+                                                            className="mt-1 h-4 w-4 rounded border-gray-300 accent-[#2D3F2C]"
+                                                        />
 
-                                        <div className="px-2 py-2 border-b border-[#EFECE6] flex items-center justify-between">
-                                            <button type="button" onClick={handleSelectAll} disabled={filteredGroups.length === 0 || isLoadingGroups} className="text-xs font-medium text-[#2D3F2C] hover:underline disabled:opacity-50">
-                                                Select All
-                                            </button>
-                                            <button type="button" onClick={handleClearGroups} disabled={selectedGroupIds.length === 0} className="text-xs font-medium text-[#B83232] hover:underline disabled:opacity-50">
-                                                Clear All
-                                            </button>
-                                        </div>
-
-                                        <div className="max-h-48 overflow-y-auto divide-y divide-[#EFECE6]">
-                                            {isLoadingGroups ? (
-                                                <div className="flex items-center justify-center gap-2 px-4 py-6 text-xs text-[#8C847A]">
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                    Loading Service Groups...
-                                                </div>
-                                            ) : isGroupsError ? (
-                                                <div className="px-4 py-6 text-center">
-                                                    <p className="text-xs text-[#B83232] mb-2">Failed to load Service Groups</p>
-                                                    <button type="button" onClick={() => refetchGroups()} className="text-xs font-medium text-[#2D3F2C] hover:underline">Try Again</button>
-                                                </div>
-                                            ) : filteredGroups.length > 0 ? (
-                                                filteredGroups.map((group) => {
-                                                    const isSelected = selectedGroupIds.includes(group.id);
-                                                    return (
-                                                        <button key={group.id} type="button" onClick={() => handleSelectGroup(group)} className={`w-full px-3.5 py-2.5 text-start text-xs flex items-center justify-between transition ${isSelected ? "bg-[#EAF3EC] text-[#2D3F2C] font-semibold" : "hover:bg-[#FAF8F5] text-[#0D0D0D]"}`}>
-                                                            <div className="flex items-center gap-2 truncate">
-                                                                <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[#EFECE6] text-[#45413C]" dir="ltr">{group.groupCode}</span>
-                                                                <span className="truncate">{group.name}</span>
-                                                            </div>
-                                                            {isSelected && <Check className="w-4 h-4 text-[#2D3F2C] shrink-0" />}
-                                                        </button>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="px-3.5 py-4 text-center text-xs text-[#8C847A]">{t("packages.noGroupsMatch", { query: groupSearchQuery })}</div>
-                                            )}
-                                        </div>
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="block text-sm font-medium text-gray-800">
+                                                                {group.name}
+                                                            </span>
+                                                            <span className="mt-0.5 block text-xs text-gray-500">
+                                                                {group.codeName}
+                                                            </span>
+                                                        </span>
+                                                    </label>
+                                                );
+                                            })
+                                        )}
                                     </div>
                                 )}
 
-                                {errors.service_group_ids && <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.service_group_ids.message)}</p>}
-                            </div>
-                        </div>
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                    <span>
+                                        {t("Selected groups")}:{" "}
+                                        <strong className="text-gray-800">
+                                            {selectedGroupIds.length}
+                                        </strong>
+                                    </span>
 
-                        {selectedGroups.length > 0 && (
-                            <div className="border border-[#E5E0D8] rounded-lg bg-[#FAF8F5] p-3">
-                                <p className="text-xs font-semibold text-[#45413C] mb-2">Selected Service Groups</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedGroups.map((group) => (
-                                        <div key={group.id} className="flex items-center gap-2 bg-white border border-[#D6CFC4] rounded-md px-2.5 py-1.5">
-                                            <span className="text-xs text-[#0D0D0D] truncate max-w-[180px]">{group.name}</span>
-                                            <button type="button" onClick={() => handleRemoveGroup(group.id)} className="text-[#8C847A] hover:text-[#B83232] transition" aria-label={`Remove ${group.name}`}>
-                                                <X className="w-3.5 h-3.5" />
+                                    {!isView && selectedGroupIds.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedGroupIds([])}
+                                            disabled={isSaving}
+                                            className="font-medium text-red-600 hover:underline disabled:opacity-50"
+                                        >
+                                            {t("Clear selection")}
+                                        </button>
+                                    )}
+                                </div>
+
+                                {missingSelectedGroups.length > 0 && (
+                                    <p className="text-xs text-amber-700">
+                                        {t("Some previously selected group IDs are not present in the current groups list. Their IDs will be preserved unless you remove them.")}
+                                    </p>
+                                )}
+
+                                {missingSelectedGroups.map((group) => (
+                                    <div
+                                        key={group.id}
+                                        className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
+                                    >
+                                        <span className="break-all text-gray-600">
+                                            {group.name}
+                                        </span>
+
+                                        {!isView && (
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleGroup(group.id)}
+                                                disabled={isSaving}
+                                                className="ml-3 shrink-0 text-xs font-medium text-red-600 hover:underline"
+                                            >
+                                                {t("Remove")}
                                             </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                        )}
+                                    </div>
+                                ))}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
-                                    {t("packages.packageName")} <span className="text-[#B83232]">*</span>
-                                </label>
-                                <input type="text" placeholder={t("packages.packageNamePlaceholder")} {...register("package_name")} className={`w-full border rounded-lg px-3.5 py-2.5 text-sm outline-none transition text-[#0D0D0D] placeholder-[#8C847A] ${errors.package_name ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15" : "border-[#D6CFC4] bg-white focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"}`} />
-                                {errors.package_name && <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.package_name.message)}</p>}
-                            </div>
+                                {isView && selectedGroupIds.length === 0 && (
+                                    <p className="text-sm text-gray-500">
+                                        {t("No groups assigned")}
+                                    </p>
+                                )}
 
-                            <div>
-                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
-                                    {t("packages.unitPrice")} <span className="text-[#B83232]">*</span>
-                                </label>
-                                <div className={`flex items-stretch border rounded-lg overflow-hidden transition bg-white ${errors.unit_price ? "border-[#B83232] bg-[#FCF2F2] focus-within:border-[#B83232] focus-within:ring-2 focus-within:ring-[#B83232]/15" : "border-[#D6CFC4] focus-within:border-[#2D3F2C] focus-within:ring-2 focus-within:ring-[#2D3F2C]/15"}`}>
-                                    <span className="px-3.5 py-2.5 bg-[#FAF8F5] border-e border-[#D6CFC4] text-xs font-semibold text-[#45413C] flex items-center select-none">{t("common.sar")}</span>
-                                    <input type="number" dir="ltr" min="0" step="0.01" placeholder="0.00" {...register("unit_price", { valueAsNumber: true })} className="w-full px-3.5 py-2.5 text-sm outline-none bg-transparent text-[#0D0D0D] placeholder-[#8C847A] text-start" />
-                                </div>
-                                {errors.unit_price && <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.unit_price.message)}</p>}
-                            </div>
-                        </div>
+                                {isView && selectedGroupIds.length > 0 && (
+                                    <div className="space-y-2">
+                                        {selectedGroupIds.map((id) => {
+                                            const group = allGroups.find(
+                                                (item) => item.id === id,
+                                            );
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">
-                                    {t("common.status")} <span className="text-[#B83232]">*</span>
-                                </label>
-                                <div className="relative">
-                                    <select {...register("status")} className={`w-full appearance-none border rounded-lg px-3.5 py-2.5 pe-9 text-sm outline-none transition bg-white text-[#0D0D0D] ${errors.status ? "border-[#B83232] bg-[#FCF2F2] focus:border-[#B83232] focus:ring-2 focus:ring-[#B83232]/15" : "border-[#D6CFC4] focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15"}`}>
-                                        <option value={ServiceTagStatus.ACTIVE}>{t("common.active")}</option>
-                                        <option value={ServiceTagStatus.INACTIVE}>{t("common.inactive")}</option>
-                                        <option value={ServiceTagStatus.INITIATED}>{t("common.initiated")}</option>
-                                        <option value={ServiceTagStatus.REJECTED}>{t("common.rejected")}</option>
-                                    </select>
-                                    <ChevronDown className="w-4 h-4 text-[#8C847A] absolute end-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                </div>
-                                {errors.status && <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.status.message)}</p>}
+                                            return (
+                                                <div
+                                                    key={id}
+                                                    className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                                                >
+                                                    {group?.name ?? id}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-medium text-[#0D0D0D] mb-1.5">{t("packages.description")}</label>
-                            <textarea rows={3} placeholder={t("packages.descriptionPlaceholder")} {...register("description")} className="w-full border border-[#D6CFC4] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#2D3F2C] focus:ring-2 focus:ring-[#2D3F2C]/15 transition resize-none bg-white text-[#0D0D0D] placeholder-[#8C847A]"></textarea>
-                            {errors.description && <p className="text-[#B83232] text-xs mt-1">{translateError(t, errors.description.message)}</p>}
+                        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+                            <button
+                                type="button"
+                                onClick={handleClose}
+                                disabled={isSaving}
+                                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                {isView ? t("Close") : t("Cancel")}
+                            </button>
+
+                            {!isView && (
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="rounded-lg bg-[#2D3F2C] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {isSaving
+                                        ? t("Saving...")
+                                        : isEdit
+                                            ? t("Save Changes")
+                                            : t("Create Package")}
+                                </button>
+                            )}
                         </div>
                     </form>
-                </div>
-
-                <div className="px-6 py-4 border-t border-[#E5E0D8] flex justify-end gap-3 bg-[#FAF8F5]">
-                    <button type="button" onClick={handleCloseModal} disabled={isSubmitting || createPackageMutation.isPending} className="px-5 py-2 bg-white border border-[#D6CFC4] text-[#45413C] text-xs font-medium rounded-lg hover:bg-[#F5F2EC] transition disabled:opacity-50">
-                        {t("common.cancel")}
-                    </button>
-                    <button type="submit" form="service-package-form" disabled={isSubmitting || createPackageMutation.isPending} className="px-5 py-2 bg-[#2D3F2C] text-[#FAF8F5] text-xs font-medium rounded-lg hover:bg-[#1F2C1E] transition shadow-xs disabled:opacity-50 flex items-center gap-2">
-                        {(isSubmitting || createPackageMutation.isPending) && <Loader2 className="w-4 h-4 animate-spin" />}
-                        {isSubmitting || createPackageMutation.isPending ? t("common.submitting") : t("common.submit")}
-                    </button>
-                </div>
+                </section>
             </div>
-        </div>
-    );
-};
+        );
+    };
+
+export default AddServicePackageModal;

@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { DataTable } from '../../components/DataTable';
 import AssetTypeForm, { type AssetType, type AssetTypeFormData } from './AssetTypeForm';
 import AssetTypeDetails, { type Option } from './AssetTypeDetails';
-import { assetApi, serviceApi } from '../../api/api';
+import { assetApi, documentApi } from '../../api/api';
+
 
 const extractItems = <T,>(response: any): T[] => {
     if (Array.isArray(response)) return response;
@@ -16,10 +17,8 @@ const extractItems = <T,>(response: any): T[] => {
     if (Array.isArray(response?.results)) return response.results;
     if (Array.isArray(response?.data?.items)) return response.data.items;
     if (Array.isArray(response?.data?.data)) return response.data.data;
-
     return [];
 };
-
 const extractCount = (response: any, fallback: number): number =>
     response?.count ??
     response?.total ??
@@ -28,138 +27,120 @@ const extractCount = (response: any, fallback: number): number =>
     response?.data?.total ??
     response?.data?.count ??
     fallback;
-
 const getErrorMessage = (error: unknown, fallback: string): string => {
     const err = error as {
         response?: { data?: { message?: string | string[] } };
         message?: string;
     };
-
     const message = err?.response?.data?.message ?? err?.message;
-
     return Array.isArray(message)
         ? message.join(', ')
         : message || fallback;
 };
-
-const getPackageName = (item: any): string => {
+const getDocumentTemplateName = (item: any): string => {
     if (typeof item === 'string') return item;
-
     return (
-        item?.package_name ??
-        item?.packageName ??
         item?.name ??
+        item?.nameAr ??
+        item?.nameEn ??
         item?.title ??
         item?.id ??
         ''
     );
 };
 
-const getLinkedPackages = (
-    item: AssetType,
-    allPackages: Option[],
-): Option[] => {
+const getLinkedDocumentTemplates = (item: AssetType, allTemplates: Option[]): Option[] => {
     const raw = item as any;
-
-    const related =
-        raw.servicePackage ??
-        raw.servicePackages ??
-        raw.service_packages ??
-        raw.servicePackagesList ??
-        raw.service_packages_list ??
-        raw.service_package ??
-        [];
-
-    const relations = Array.isArray(related)
-        ? related
-        : related
-            ? [related]
+    const linked: Option[] = [];
+    // The backend returns: assetDocumentTemplates: [{ documentTemplate: { id, name } }].
+    const relationValue = raw.assetDocumentTemplates;
+    const templateRelations = Array.isArray(relationValue)
+        ? relationValue
+        : relationValue
+            ? [relationValue]
             : [];
-
-    const linked: Option[] = relations
-        .map((pkg: any): Option | null => {
-            if (typeof pkg === 'string') {
-                return (
-                    allPackages.find((p) => p.id === pkg) ?? {
-                        id: pkg,
-                        name: pkg,
-                    }
-                );
-            }
-
-            const id = String(
-                pkg?.id ??
-                pkg?.service_package_id ??
-                pkg?.servicePackageId ??
-                '',
-            );
-
-            if (!id) return null;
-
-            return {
+    templateRelations.forEach((relation: any) => {
+        const template = relation?.documentTemplate ?? relation?.document_template;
+        if (!template?.id) return;
+        const id = String(template.id);
+        const option = allTemplates.find((templateOption) => templateOption.id === id);
+        linked.push({
+            id,
+            name: String(
+                template.name ??
+                template.nameAr ??
+                template.nameEn ??
+                option?.name ??
+                template.title ??
                 id,
-                name:
-                    getPackageName(pkg) ||
-                    allPackages.find((p) => p.id === id)?.name ||
-                    id,
-            };
-        })
-        .filter((pkg): pkg is Option => pkg !== null);
-
-    const ids = Array.isArray(raw.service_package_ids)
-        ? raw.service_package_ids
-        : [];
-
-    linked.push(
-        ...ids
-            .map((value: any) => {
-                const id =
-                    typeof value === 'string'
-                        ? value
-                        : String(value?.id ?? '');
-
-                if (!id) return null;
-
-                return (
-                    allPackages.find((pkg) => pkg.id === id) ?? {
-                        id,
-                        name: id,
-                    }
-                );
-            })
-            .filter((pkg: Option | null): pkg is Option => pkg !== null),
-    );
-
-    return Array.from(
-        new Map(linked.map((pkg) => [pkg.id, pkg])).values(),
-    );
+            ),
+        });
+    });
+    // Support direct template relations in responses from other API versions.
+    const directValue = raw.documentTemplates ?? raw.documentTemplate ?? raw.document_templates ?? [];
+    const directTemplates = Array.isArray(directValue)
+        ? directValue
+        : directValue
+            ? [directValue]
+            : [];
+    directTemplates.forEach((value: any) => {
+        const template = value?.documentTemplate ?? value?.document_template ?? value;
+        if (!template?.id) return;
+        const id = String(template.id);
+        const option = allTemplates.find((templateOption) => templateOption.id === id);
+        linked.push({
+            id,
+            name: String(
+                template.name ??
+                template.nameAr ??
+                template.nameEn ??
+                option?.name ??
+                template.title ??
+                id,
+            ),
+        });
+    });
+    // Support IDs returned directly by the API or retained in form data.
+    const rawIds = Array.isArray(raw.documentTemplate_ids)
+        ? raw.documentTemplate_ids
+        : Array.isArray(raw.documentTemplateIds)
+            ? raw.documentTemplateIds
+            : [];
+    rawIds.forEach((value: any) => {
+        const id = typeof value === 'string' ? value : String(value?.id ?? '');
+        if (!id) return;
+        const option = allTemplates.find((templateOption) => templateOption.id === id);
+        linked.push(option ?? { id, name: id });
+    });
+    // Remove duplicates by document-template ID, preferring a resolved human-readable name.
+    const unique = new Map<string, Option>();
+    linked.forEach((template) => {
+        const current = unique.get(template.id);
+        if (!current || current.name === current.id) {
+            unique.set(template.id, template);
+        }
+    });
+    return Array.from(unique.values());
 };
-
 export const AssetTypePage: React.FC = () => {
     const { i18n } = useTranslation();
     const queryClient = useQueryClient();
-
     const isRtl =
         i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
-
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<AssetType | null>(null);
     const [viewingItem, setViewingItem] = useState<AssetType | null>(null);
     const [deleteItem, setDeleteItem] = useState<AssetType | null>(null);
-
     const [searchValue, setSearchValue] = useState('');
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-
     const getError = useCallback(
         (error: unknown, fallbackAr: string, fallbackEn: string) =>
             getErrorMessage(error, isRtl ? fallbackAr : fallbackEn),
         [isRtl],
     );
-
     const assetTypesQuery = useQuery({
-        queryKey: [
-            'asset-types',
+        queryKey: ['asset-types',
             pageIndex,
             pageSize,
             searchValue.trim(),
@@ -170,34 +151,21 @@ export const AssetTypePage: React.FC = () => {
                 limit: pageSize,
                 search: searchValue.trim() || undefined,
             });
-
             const items = extractItems<AssetType>(response);
-
             return {
                 items,
                 count: extractCount(response, items.length),
             };
         },
     });
-
     const optionsQuery = useQuery({
         queryKey: ['asset-type-form-options'],
         queryFn: async () => {
-            const [categoriesResponse, packagesResponse] =
-                await Promise.all([
-                    assetApi.getAssetCategories({
-                        page: 1,
-                        limit: 1000,
-                    }),
-                    serviceApi.getServicePackages({
-                        page: 1,
-                        limit: 1000,
-                    }),
-                ]);
-
-            const categories: Option[] = extractItems<any>(
-                categoriesResponse,
-            ).map((item) => ({
+            const [categoriesResponse, documentTemplatesResponse] = await Promise.all([
+                assetApi.getAssetCategories({ page: 1, limit: 1000 }),
+                documentApi.getDocuments({ page: 1, limit: 1000 }),
+            ]);
+            const categories: Option[] = extractItems<any>(categoriesResponse).map((item) => ({
                 id: String(item.id),
                 name:
                     item.name ??
@@ -205,52 +173,32 @@ export const AssetTypePage: React.FC = () => {
                     item.nameEn ??
                     String(item.id),
             }));
-
-            const packages: Option[] = extractItems<any>(
-                packagesResponse,
-            ).map((item) => ({
+            const documentTemplates: Option[] = extractItems<any>(documentTemplatesResponse).map((item) => ({
                 id: String(item.id),
-                name: getPackageName(item) || String(item.id),
+                name: getDocumentTemplateName(item) || String(item.id),
             }));
-
-            return { categories, packages };
+            return { categories, documentTemplates };
         },
     });
-
     const records = assetTypesQuery.data?.items ?? [];
+    console.log('records', records);
     const count = assetTypesQuery.data?.count ?? 0;
     const categories = optionsQuery.data?.categories ?? [];
-    const servicePackages = optionsQuery.data?.packages ?? [];
-
+    const documentTemplates = optionsQuery.data?.documentTemplates ?? [];
     useEffect(() => {
         if (assetTypesQuery.error) {
-            toast.error(
-                getError(
-                    assetTypesQuery.error,
-                    'فشل تحميل أنواع الأصول',
-                    'Failed to load asset types',
-                ),
-            );
+            toast.error(getError(assetTypesQuery.error, 'فشل تحميل أنواع الأصول', 'Failed to load asset types'));
         }
     }, [assetTypesQuery.error, getError]);
-
     useEffect(() => {
         if (optionsQuery.error) {
-            toast.error(
-                getError(
-                    optionsQuery.error,
-                    'فشل تحميل الأقسام والباقات',
-                    'Failed to load categories and packages',
-                ),
-            );
+            toast.error(getError(optionsQuery.error, 'فشل تحميل الأقسام وقوالب المستندات', 'Failed to load categories and document templates'));
         }
     }, [optionsQuery.error, getError]);
-
     const invalidateAssetTypes = () =>
         queryClient.invalidateQueries({
             queryKey: ['asset-types'],
         });
-
     const saveMutation = useMutation({
         mutationFn: async ({
             data,
@@ -264,16 +212,14 @@ export const AssetTypePage: React.FC = () => {
                 name: data.name,
                 description: data.description || undefined,
                 assetsCategoryId: data.assetsCategoryId,
-                service_package_ids: data.service_package_ids,
+                documentTemplate_ids: data.documentTemplate_ids,
             };
-
             if (item) {
                 return assetApi.updateAssetType(item.id, payload);
             }
-
+            console.log('payload', payload);
             return assetApi.createAssetType(payload);
         },
-
         onSuccess: async (_response, variables) => {
             toast.success(
                 variables.item
@@ -284,13 +230,10 @@ export const AssetTypePage: React.FC = () => {
                         ? 'تم إنشاء نوع الأصل بنجاح'
                         : 'Asset type created successfully',
             );
-
             setIsFormOpen(false);
             setEditingItem(null);
-
             await invalidateAssetTypes();
         },
-
         onError: (error) => {
             toast.error(
                 getError(
@@ -301,27 +244,22 @@ export const AssetTypePage: React.FC = () => {
             );
         },
     });
-
     const deleteMutation = useMutation({
         mutationFn: (item: AssetType) =>
             assetApi.deleteAssetType(item.id),
-
         onSuccess: async () => {
             toast.success(
                 isRtl
                     ? 'تم حذف نوع الأصل بنجاح'
                     : 'Asset type deleted successfully',
             );
-
             setDeleteItem(null);
-
             if (records.length === 1 && pageIndex > 0) {
                 setPageIndex((previous) => previous - 1);
             } else {
                 await invalidateAssetTypes();
             }
         },
-
         onError: (error) => {
             toast.error(
                 getError(
@@ -332,36 +270,29 @@ export const AssetTypePage: React.FC = () => {
             );
         },
     });
-
     const openCreateForm = () => {
         setEditingItem(null);
         setIsFormOpen(true);
     };
-
     const openEditForm = (item: AssetType) => {
         setViewingItem(null);
         setEditingItem(item);
         setIsFormOpen(true);
     };
-
     const closeForm = () => {
         if (saveMutation.isPending) return;
-
         setIsFormOpen(false);
         setEditingItem(null);
     };
-
     const closeDetails = useCallback(() => {
         setViewingItem(null);
     }, []);
-
     const handleSubmit = (data: AssetTypeFormData) => {
         saveMutation.mutate({
             data,
             item: editingItem,
         });
     };
-
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
@@ -420,14 +351,10 @@ export const AssetTypePage: React.FC = () => {
                     '—',
             },
             {
-                id: 'servicePackages',
-                header: isRtl ? 'باقات الخدمات' : 'Service Packages',
+                id: 'documentTemplates',
+                header: isRtl ? 'الملفات' : 'Document Template',
                 cell: ({ row }) => {
-                    const linked = getLinkedPackages(
-                        row.original,
-                        servicePackages,
-                    );
-
+                    const linked = getLinkedDocumentTemplates(row.original, documentTemplates);
                     if (!linked.length) {
                         return (
                             <span className="text-xs text-[#857E74]">
@@ -435,7 +362,6 @@ export const AssetTypePage: React.FC = () => {
                             </span>
                         );
                     }
-
                     return (
                         <div className="flex max-w-52 flex-wrap gap-1.5">
                             {linked.slice(0, 2).map((pkg) => (
@@ -447,7 +373,6 @@ export const AssetTypePage: React.FC = () => {
                                     {pkg.name}
                                 </span>
                             ))}
-
                             {linked.length > 2 && (
                                 <span
                                     title={linked
@@ -467,11 +392,8 @@ export const AssetTypePage: React.FC = () => {
                 header: isRtl ? 'تاريخ الإنشاء' : 'Created Date',
                 cell: ({ row }) => {
                     const value = row.original.createdAt;
-
                     if (!value) return '—';
-
                     const date = new Date(value);
-
                     return Number.isNaN(date.getTime())
                         ? '—'
                         : date.toLocaleDateString(
@@ -494,7 +416,6 @@ export const AssetTypePage: React.FC = () => {
                         >
                             <Eye size={16} />
                         </button>
-
                         <button
                             type="button"
                             onClick={() => openEditForm(row.original)}
@@ -504,7 +425,6 @@ export const AssetTypePage: React.FC = () => {
                         >
                             <Edit2 size={16} />
                         </button>
-
                         <button
                             type="button"
                             onClick={() => setDeleteItem(row.original)}
@@ -518,9 +438,8 @@ export const AssetTypePage: React.FC = () => {
                 ),
             },
         ],
-        [isRtl, categories, servicePackages],
+        [isRtl, categories, documentTemplates],
     );
-
     const handleExport = useCallback(() => {
         if (!records.length) {
             toast.error(
@@ -528,25 +447,21 @@ export const AssetTypePage: React.FC = () => {
             );
             return;
         }
-
         const headers = [
             isRtl ? 'المعرّف' : 'Code Name',
             isRtl ? 'نوع الأصل' : 'Asset Type',
             isRtl ? 'اسم نوع الأصل' : 'Name',
             isRtl ? 'الوصف' : 'Description',
             isRtl ? 'قسم الأصل' : 'Asset Category',
-            isRtl ? 'باقات الخدمات' : 'Service Packages',
+            isRtl ? 'الملفات' : 'Document Template',
             isRtl ? 'تاريخ الإنشاء' : 'Created Date',
         ];
-
         const escapeCsv = (value: unknown): string => {
             const normalized = String(value ?? '').replace(/"/g, '""');
             return `"${normalized}"`;
         };
-
         const rows = records.map((item) => {
-            const linkedPackages = getLinkedPackages(item, servicePackages);
-
+            const linkedDocumentTemplates = getLinkedDocumentTemplates(item, documentTemplates);
             const categoryName =
                 item.assetsCategory?.name ??
                 (item as any).assets_category?.name ??
@@ -555,18 +470,15 @@ export const AssetTypePage: React.FC = () => {
                 )?.name ??
                 item.assetsCategoryId ??
                 '';
-
             const createdAt = item.createdAt
                 ? new Date(item.createdAt)
                 : null;
-
             const formattedDate =
                 createdAt && !Number.isNaN(createdAt.getTime())
                     ? createdAt.toLocaleDateString(
                         isRtl ? 'ar-EG' : 'en-GB',
                     )
                     : '';
-
             return [
                 escapeCsv((item as any).codeName),
                 escapeCsv(item.type),
@@ -574,37 +486,29 @@ export const AssetTypePage: React.FC = () => {
                 escapeCsv(item.description),
                 escapeCsv(categoryName),
                 escapeCsv(
-                    linkedPackages.map((pkg) => pkg.name).join(', '),
+                    linkedDocumentTemplates.map((pkg) => pkg.name).join(', '),
                 ),
                 escapeCsv(formattedDate),
             ].join(',');
         });
-
         const csv =
             '\uFEFF' +
             [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
-
         const blob = new Blob([csv], {
             type: 'text/csv;charset=utf-8;',
         });
-
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-
         link.href = url;
         link.download = 'asset-types.csv';
-
         document.body.appendChild(link);
         link.click();
         link.remove();
-
         URL.revokeObjectURL(url);
-
         toast.success(
             isRtl ? 'تم تصدير البيانات بنجاح' : 'Export completed',
         );
-    }, [records, servicePackages, categories, isRtl]);
-
+    }, [records, documentTemplates, categories, isRtl]);
     return (
         <div className="w-full space-y-4">
             <DataTable
@@ -615,8 +519,8 @@ export const AssetTypePage: React.FC = () => {
                 title={isRtl ? 'أنواع الأصول' : 'Asset Types'}
                 description={
                     isRtl
-                        ? 'إدارة أنواع الأصول وربطها بالأقسام وباقات الخدمات'
-                        : 'Manage asset types, categories, and service packages'
+                        ? 'إدارة أنواع الأصول وربطها بالأقسام والملفات'
+                        : 'Manage asset types, categories, and Document Template'
                 }
                 searchPlaceholder={
                     isRtl
@@ -641,25 +545,22 @@ export const AssetTypePage: React.FC = () => {
                 }
                 onExport={handleExport}
             />
-
             <AssetTypeForm
                 isOpen={isFormOpen}
                 editingItem={editingItem}
                 isSubmitting={saveMutation.isPending}
                 categories={categories}
-                servicePackages={servicePackages}
+                documentTemplates={documentTemplates}
                 onClose={closeForm}
                 onSubmit={handleSubmit}
             />
-
             <AssetTypeDetails
                 item={viewingItem}
-                packages={servicePackages}
+                documentTemplates={documentTemplates}
                 isRtl={isRtl}
                 onClose={closeDetails}
                 onEdit={openEditForm}
             />
-
             {deleteItem && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4 backdrop-blur-[1px]">
                     <div
@@ -671,19 +572,16 @@ export const AssetTypePage: React.FC = () => {
                         <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-950/30">
                             <Trash2 size={21} />
                         </div>
-
                         <h3 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">
                             {isRtl
                                 ? 'تأكيد حذف نوع الأصل'
                                 : 'Confirm Delete'}
                         </h3>
-
                         <p className="mt-3 text-sm text-[#6E6862] dark:text-slate-400">
                             {isRtl
                                 ? `هل أنت متأكد من حذف "${deleteItem.name}"؟`
                                 : `Are you sure you want to delete "${deleteItem.name}" ? `}
                         </p>
-
                         <div className="mt-6 flex justify-end gap-2">
                             <button
                                 type="button"
@@ -693,7 +591,6 @@ export const AssetTypePage: React.FC = () => {
                             >
                                 {isRtl ? 'إلغاء' : 'Cancel'}
                             </button>
-
                             <button
                                 type="button"
                                 disabled={deleteMutation.isPending}

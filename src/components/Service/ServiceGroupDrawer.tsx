@@ -1,13 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { serviceApi } from "../../api/api";
 import { toast } from "sonner";
+import { Search, RefreshCw, X, Check } from "lucide-react";
+
+type DrawerMode = "create" | "edit" | "view";
 
 interface ServiceGroupDrawerProps {
     isOpen: boolean;
     onClose: () => void;
     initialData?: any | null;
     isEdit?: boolean;
+    mode?: DrawerMode;
 }
 
 interface ServiceItem {
@@ -16,21 +20,15 @@ interface ServiceItem {
     service_title?: string;
     title?: string;
     description?: string;
-    serviceType?: {
-        id: string;
-        name?: string;
-    };
+    serviceType?: { id: string; name?: string };
     serviceType_id?: string;
     service_category_id?: string;
-    serviceCategory?: {
-        id: string;
-        name?: string;
-    };
+    serviceCategory?: { id: string; name?: string };
     [key: string]: any;
 }
 
 interface CreateServiceGroupDto {
-    service_ids?: string[];
+    service_ids: string[];
     name: string;
     description?: string;
     group_icon?: string;
@@ -39,57 +37,100 @@ interface CreateServiceGroupDto {
     status?: string;
 }
 
+const normalizeServices = (response: any): ServiceItem[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.data?.data)) return response.data.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.data?.items)) return response.data.items;
+    return [];
+};
+
+const getServiceId = (item: any): string | null => {
+    if (typeof item === "string") return item || null;
+    if (!item || typeof item !== "object") return null;
+
+    // A relation object has its own ID. Prefer the actual service ID.
+    if (item.service?.id) return String(item.service.id);
+    if (item.serviceId) return String(item.serviceId);
+    if (item.service_id) return String(item.service_id);
+
+    // Direct service objects have their own service ID.
+    if (
+        item.id &&
+        (item.name || item.service_title || item.title || item.serviceType)
+    ) {
+        return String(item.id);
+    }
+
+    return null;
+};
+
+const getInitialServiceIds = (data: any): string[] => {
+    if (!data) return [];
+
+    const candidates = [
+        data.service_ids,
+        data.services,
+        data.serviceGroups,
+    ];
+
+    for (const candidate of candidates) {
+        if (Array.isArray(candidate)) {
+            return Array.from(
+                new Set(
+                    candidate
+                        .map(getServiceId)
+                        .filter((id): id is string => Boolean(id))
+                )
+            );
+        }
+    }
+
+    return [];
+};
+
+const getErrorMessage = (error: any) => {
+    const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Something went wrong. Please try again.";
+
+    return Array.isArray(message) ? message[0] : message;
+};
+
 const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
     isOpen,
     onClose,
     initialData = null,
     isEdit = Boolean(initialData?.id),
+    mode,
 }) => {
     const queryClient = useQueryClient();
 
-    // =========================================================
+    const drawerMode: DrawerMode =
+        mode || (isEdit ? "edit" : "create");
+
+    const isView = drawerMode === "view";
+    const editing = drawerMode === "edit";
+    const isReadOnly = isView;
+
     // FORM STATE
-    // =========================================================
-
     const [name, setName] = useState("");
-    const [description, setDescription] =
-        useState("");
+    const [description, setDescription] = useState("");
+    const [groupIcon, setGroupIcon] = useState("briefcase");
+    const [groupType, setGroupType] = useState("employee");
+    const [boardingType, setBoardingType] = useState("other");
+    const [status, setStatus] = useState("active");
+    const [nameError, setNameError] = useState("");
 
-    const [groupIcon, setGroupIcon] =
-        useState("");
+    // SERVICE SELECTION
+    const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+    const [serviceSearch, setServiceSearch] = useState("");
+    const [serviceTypeFilter, setServiceTypeFilter] = useState("");
+    const [serviceCategoryFilter, setServiceCategoryFilter] = useState("");
 
-    const [groupType, setGroupType] =
-        useState("employee");
-
-    const [boardingType, setBoardingType] =
-        useState("other");
-
-    const [status, setStatus] =
-        useState("active");
-
-    const [nameError, setNameError] =
-        useState("");
-
-    // =========================================================
-    // SERVICES STATE
-    // =========================================================
-
-    const [selectedServiceIds, setSelectedServiceIds] =
-        useState<string[]>([]);
-
-    const [serviceSearch, setServiceSearch] =
-        useState("");
-
-    const [serviceTypeFilter, setServiceTypeFilter] =
-        useState("");
-
-    const [serviceCategoryFilter, setServiceCategoryFilter] =
-        useState("");
-
-    // =========================================================
     // LOAD SERVICES
-    // =========================================================
-
     const {
         data: servicesResponse,
         isLoading: isLoadingServices,
@@ -97,1093 +138,667 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
         isError: isServicesError,
         refetch: refetchServices,
     } = useQuery({
-        queryKey: [
-            "services",
-            {
-                search: serviceSearch,
-                serviceType_id:
-                    serviceTypeFilter,
-                service_category_id:
-                    serviceCategoryFilter,
-            },
-        ],
-
-        queryFn: async () => {
-            return serviceApi.getServices({
-                search:
-                    serviceSearch.trim() ||
-                    undefined,
-
-                serviceType_id:
-                    serviceTypeFilter ||
-                    undefined,
-
-                service_category_id:
-                    serviceCategoryFilter ||
-                    undefined,
-            });
-        },
-
+        queryKey: ["services", { search: serviceSearch.trim() }],
+        queryFn: () =>
+            serviceApi.getServices({
+                page: 1,
+                limit: 100,
+                search: serviceSearch.trim(),
+            }),
         enabled: isOpen,
-
         staleTime: 30_000,
     });
 
-    // =========================================================
-    // NORMALIZE SERVICES RESPONSE
-    // =========================================================
+    const services = useMemo(
+        () => normalizeServices(servicesResponse),
+        [servicesResponse]
+    );
 
-    const services: ServiceItem[] =
-        useMemo(() => {
-            if (
-                Array.isArray(
-                    servicesResponse
-                )
-            ) {
-                return servicesResponse;
-            }
-
-            if (
-                Array.isArray(
-                    servicesResponse?.data
-                )
-            ) {
-                return servicesResponse.data;
-            }
-
-            if (
-                Array.isArray(
-                    servicesResponse?.data?.data
-                )
-            ) {
-                return servicesResponse.data
-                    .data;
-            }
-
-            if (
-                Array.isArray(
-                    servicesResponse?.items
-                )
-            ) {
-                return servicesResponse.items;
-            }
-
-            if (
-                Array.isArray(
-                    servicesResponse?.data?.items
-                )
-            ) {
-                return servicesResponse.data
-                    .items;
-            }
-
-            return [];
-        }, [servicesResponse]);
-
-    // =========================================================
     // SERVICE TYPES
-    // =========================================================
-
     const serviceTypes = useMemo(() => {
-        const map = new Map<
-            string,
-            {
-                id: string;
-                name: string;
+        const map = new Map<string, { id: string; name: string }>();
+
+        services.forEach((service) => {
+            const id = service.serviceType_id || service.serviceType?.id;
+            const typeName = service.serviceType?.name;
+
+            if (id) {
+                map.set(id, {
+                    id,
+                    name: typeName || "Unknown Type",
+                });
             }
-        >();
+        });
 
-        services.forEach(
-            (service) => {
-                const id =
-                    service.serviceType_id ||
-                    service.serviceType?.id;
-
-                const name =
-                    service.serviceType
-                        ?.name;
-
-                if (id) {
-                    map.set(id, {
-                        id,
-                        name:
-                            name ||
-                            "Unknown Type",
-                    });
-                }
-            }
-        );
-
-        return Array.from(
-            map.values()
-        );
+        return Array.from(map.values());
     }, [services]);
 
-    // =========================================================
     // SERVICE CATEGORIES
-    // =========================================================
+    const serviceCategories = useMemo(() => {
+        const map = new Map<string, { id: string; name: string }>();
 
-    const serviceCategories =
-        useMemo(() => {
-            const map = new Map<
-                string,
-                {
-                    id: string;
-                    name: string;
-                }
-            >();
+        services.forEach((service) => {
+            const id =
+                service.service_category_id ||
+                service.serviceCategory?.id;
+            const categoryName = service.serviceCategory?.name;
 
-            services.forEach(
-                (service) => {
-                    const id =
-                        service.service_category_id ||
-                        service
-                            .serviceCategory
-                            ?.id;
+            if (id) {
+                map.set(id, {
+                    id,
+                    name: categoryName || "Unknown Category",
+                });
+            }
+        });
 
-                    const name =
-                        service
-                            .serviceCategory
-                            ?.name;
+        return Array.from(map.values());
+    }, [services]);
 
-                    if (id) {
-                        map.set(id, {
-                            id,
-                            name:
-                                name ||
-                                "Unknown Category",
-                        });
-                    }
-                }
-            );
+    // FILTER SERVICES
+    const filteredServices = useMemo(() => {
+        const search = serviceSearch.trim().toLowerCase();
 
-            return Array.from(
-                map.values()
-            );
-        }, [services]);
+        return services.filter((service) => {
+            const serviceName =
+                service.name ||
+                service.service_title ||
+                service.title ||
+                "";
 
-    // =========================================================
-    // CLIENT SIDE FILTER
-    // =========================================================
+            const matchesSearch =
+                !search || serviceName.toLowerCase().includes(search);
 
-    const filteredServices =
-        useMemo(() => {
-            const search =
-                serviceSearch
-                    .trim()
-                    .toLowerCase();
+            const typeId =
+                service.serviceType_id || service.serviceType?.id;
 
-            return services.filter(
-                (service) => {
-                    const serviceName =
-                        service.name ||
-                        service.service_title ||
-                        service.title ||
-                        "";
+            const categoryId =
+                service.service_category_id ||
+                service.serviceCategory?.id;
 
-                    const matchesSearch =
-                        !search ||
-                        serviceName
-                            .toLowerCase()
-                            .includes(
-                                search
-                            );
+            const matchesType =
+                !serviceTypeFilter || typeId === serviceTypeFilter;
 
-                    const typeId =
-                        service.serviceType_id ||
-                        service.serviceType
-                            ?.id;
+            const matchesCategory =
+                !serviceCategoryFilter ||
+                categoryId === serviceCategoryFilter;
 
-                    const categoryId =
-                        service.service_category_id ||
-                        service
-                            .serviceCategory
-                            ?.id;
+            return matchesSearch && matchesType && matchesCategory;
+        });
+    }, [
+        services,
+        serviceSearch,
+        serviceTypeFilter,
+        serviceCategoryFilter,
+    ]);
 
-                    const matchesType =
-                        !serviceTypeFilter ||
-                        typeId ===
-                        serviceTypeFilter;
+    // KEEP SELECTED IDS EVEN WHEN THEY ARE NOT IN THE CURRENT SEARCH RESULTS.
+    const selectedServices = useMemo(() => {
+        const serviceMap = new Map(
+            services.map((service) => [String(service.id), service])
+        );
 
-                    const matchesCategory =
-                        !serviceCategoryFilter ||
-                        categoryId ===
-                        serviceCategoryFilter;
+        return selectedServiceIds
+            .map((id) => serviceMap.get(id))
+            .filter((service): service is ServiceItem => Boolean(service));
+    }, [services, selectedServiceIds]);
 
-                    return (
-                        matchesSearch &&
-                        matchesType &&
-                        matchesCategory
-                    );
-                }
-            );
-        }, [
-            services,
-            serviceSearch,
-            serviceTypeFilter,
-            serviceCategoryFilter,
-        ]);
-
-    // =========================================================
-    // SELECTED SERVICES
-    // =========================================================
-
-    const selectedServices =
-        useMemo(() => {
-            return selectedServiceIds
-                .map((id) =>
-                    services.find(
-                        (service) =>
-                            service.id ===
-                            id
-                    )
-                )
-                .filter(
-                    Boolean
-                ) as ServiceItem[];
-        }, [
-            services,
-            selectedServiceIds,
-        ]);
-
-    // =========================================================
-    // RESET
-    // =========================================================
-
+    // RESET FORM
     const resetForm = () => {
         setName("");
         setDescription("");
-        setGroupIcon("");
+        setGroupIcon("briefcase");
         setGroupType("employee");
         setBoardingType("other");
         setStatus("active");
-
         setNameError("");
-
         setSelectedServiceIds([]);
-
         setServiceSearch("");
         setServiceTypeFilter("");
         setServiceCategoryFilter("");
     };
 
-    // =========================================================
-    // INITIAL DATA
-    // =========================================================
+    // INITIALIZE FORM WHEN OPENING OR CHANGING RECORD/MODE.
+    useEffect(() => {
+        if (!isOpen) return;
 
-    const [prevSyncKey, setPrevSyncKey] = useState("");
-    const currentSyncKey = `${isOpen}-${isEdit}-${initialData?.id ?? "new"}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
-        if (isOpen) {
-            if (isEdit && initialData) {
-                setName(initialData.name || "");
-                setDescription(initialData.description || "");
-                setGroupIcon(initialData.group_icon || "");
-                setGroupType(initialData.group_type || "employee");
-                setBoardingType(initialData.boarding_type || "other");
-                setStatus(initialData.status || "active");
-                setSelectedServiceIds(
-                    Array.isArray(initialData.service_ids)
-                        ? initialData.service_ids
-                        : Array.isArray(initialData.services)
-                            ? initialData.services.map((service: ServiceItem) => service.id)
-                            : []
-                );
-            } else {
-                resetForm();
-            }
+        if (drawerMode === "create" || !initialData) {
+            resetForm();
+            return;
         }
-    }
 
-    // =========================================================
-    // REMOVE SERVICE
-    // =========================================================
+        setName(initialData.name || "");
+        setDescription(initialData.description || "");
+        setGroupIcon(initialData.group_icon || "briefcase");
+        setGroupType(initialData.group_type || "employee");
+        setBoardingType(initialData.boarding_type || "other");
+        setStatus(
+            String(initialData.status || "active").toLowerCase()
+        );
+        setNameError("");
+        setSelectedServiceIds(getInitialServiceIds(initialData));
+        setServiceSearch("");
+        setServiceTypeFilter("");
+        setServiceCategoryFilter("");
 
-    const handleRemoveService = (
-        serviceId: string
-    ) => {
-        setSelectedServiceIds(
-            (prev) =>
-                prev.filter(
-                    (id) =>
-                        id !==
-                        serviceId
-                )
+        // Only initialize when opening, changing mode, or changing record.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, drawerMode, initialData?.id]);
+
+    // SERVICE SELECTION
+    const handleRemoveService = (serviceId: string) => {
+        if (isReadOnly) return;
+
+        setSelectedServiceIds((previous) =>
+            previous.filter((id) => id !== serviceId)
         );
     };
 
-    // =========================================================
-    // TOGGLE SERVICE
-    // =========================================================
+    const handleToggleService = (serviceId: string) => {
+        if (isReadOnly) return;
 
-    const handleToggleService = (
-        serviceId: string
-    ) => {
-        setSelectedServiceIds(
-            (prev) => {
-                if (
-                    prev.includes(
-                        serviceId
-                    )
-                ) {
-                    return prev.filter(
-                        (id) =>
-                            id !==
-                            serviceId
-                    );
-                }
-
-                return [
-                    ...prev,
-                    serviceId,
-                ];
-            }
+        setSelectedServiceIds((previous) =>
+            previous.includes(serviceId)
+                ? previous.filter((id) => id !== serviceId)
+                : [...previous, serviceId]
         );
     };
 
-    // =========================================================
+    // REFRESH GROUP LISTS AFTER SAVING.
+    const refreshGroupQueries = async () => {
+        await Promise.all([
+            queryClient.invalidateQueries({
+                queryKey: ["serviceGroups"],
+            }),
+            queryClient.invalidateQueries({
+                queryKey: ["service-groups"],
+            }),
+        ]);
+    };
+
     // CREATE
-    // =========================================================
+    const createMutation = useMutation({
+        mutationFn: (data: CreateServiceGroupDto) =>
+            serviceApi.createServiceGroup(data),
 
-    const createMutation =
-        useMutation({
-            mutationFn: (
-                data: CreateServiceGroupDto
-            ) =>
-                serviceApi.createServiceGroup(
-                    data
-                ),
+        onSuccess: async () => {
+            await refreshGroupQueries();
+            toast.success("Service group created successfully");
+            resetForm();
+            onClose();
+        },
 
-            onSuccess: () => {
-                queryClient.invalidateQueries({
-                    queryKey: ["serviceGroups"],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["service-groups"],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["services"],
-                });
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error));
+        },
+    });
 
-                resetForm();
-
-                onClose();
-            },
-        });
-
-    // =========================================================
     // UPDATE
-    // =========================================================
+    const updateMutation = useMutation({
+        mutationFn: ({
+            id,
+            data,
+        }: {
+            id: string;
+            data: CreateServiceGroupDto;
+        }) => serviceApi.updateServiceGroup(id, data),
 
-    const updateMutation =
-        useMutation({
-            mutationFn: ({
-                id,
-                data,
-            }: {
-                id: string;
-                data: CreateServiceGroupDto;
-            }) =>
-                serviceApi.updateServiceGroup(
-                    id,
-                    data
-                ),
+        onSuccess: async () => {
+            await refreshGroupQueries();
+            toast.success("Service group updated successfully");
+            resetForm();
+            onClose();
+        },
 
-            onSuccess: () => {
-                queryClient.invalidateQueries({
-                    queryKey: ["serviceGroups"],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["service-groups"],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["services"],
-                });
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error));
+        },
+    });
 
-                resetForm();
-
-                onClose();
-            },
-        });
-
-    // =========================================================
     // DELETE
-    // =========================================================
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => serviceApi.deleteServiceGroup(id),
 
-    const deleteMutation =
-        useMutation({
-            mutationFn: (
-                id: string
-            ) =>
-                serviceApi.deleteServiceGroup(
-                    id
-                ),
+        onSuccess: async () => {
+            await refreshGroupQueries();
+            toast.success("Service group deleted successfully");
+            resetForm();
+            onClose();
+        },
 
-            onSuccess: () => {
-                queryClient.invalidateQueries({
-                    queryKey: ["serviceGroups"],
-                });
-                queryClient.invalidateQueries({
-                    queryKey: ["service-groups"],
-                });
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error));
+        },
+    });
 
-                resetForm();
-
-                onClose();
-            },
-            onError: (error: any) => {
-                const message = error?.response?.data?.message;
-                toast.error(Array.isArray(message) ? message[0] : message);
-            }
-        });
-
-    // =========================================================
     // SUBMIT
-    // =========================================================
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+        if (isReadOnly) return;
 
-        const trimmedName =
-            name.trim();
+        const trimmedName = name.trim();
 
         if (!trimmedName) {
-            setNameError(
-                "Group name is required"
-            );
+            setNameError("Group name is required");
             return;
         }
 
         setNameError("");
 
-        const payload: CreateServiceGroupDto =
-        {
+        const payload: CreateServiceGroupDto = {
             name: trimmedName,
+            description: description.trim() || undefined,
+            group_icon: groupIcon.trim() || undefined,
+            group_type: groupType || undefined,
+            boarding_type: boardingType || undefined,
+            status: status || undefined,
 
-            description:
-                description.trim() ||
-                undefined,
-
-            group_icon:
-                groupIcon.trim() ||
-                undefined,
-
-            group_type:
-                groupType ||
-                undefined,
-
-            boarding_type:
-                boardingType ||
-                undefined,
-
-            status:
-                status ||
-                undefined,
-
-            service_ids:
-                selectedServiceIds,
+            // Send actual service UUIDs, not relation IDs.
+            service_ids: [...new Set(selectedServiceIds)],
         };
 
-        if (isEdit && initialData?.id) {
-            updateMutation.mutate(
-                {
-                    id: initialData.id,
-                    data: payload,
-                }
-            );
-
+        if (editing && initialData?.id) {
+            updateMutation.mutate({
+                id: String(initialData.id),
+                data: payload,
+            });
             return;
         }
-        console.log('payload', payload);
 
         createMutation.mutate(payload);
     };
 
-    // =========================================================
-    // DELETE HANDLER
-    // =========================================================
-
     const handleDelete = () => {
-        if (
-            !initialData?.id ||
-            deleteMutation.isPending
-        ) {
-            return;
-        }
+        if (!initialData?.id || deleteMutation.isPending || isView) return;
 
-        const confirmed =
-            window.confirm(
-                "Are you sure you want to delete this service group?"
-            );
-
-        if (!confirmed) {
-            return;
-        }
-
-        deleteMutation.mutate(
-            initialData.id
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this service group?"
         );
+
+        if (confirmed) {
+            deleteMutation.mutate(String(initialData.id));
+        }
     };
 
-    // =========================================================
-    // LOADING
-    // =========================================================
-
     const isSaving =
-        createMutation.isPending ||
-        updateMutation.isPending;
+        createMutation.isPending || updateMutation.isPending;
+    const isDeleting = deleteMutation.isPending;
+    const isBusy = isSaving || isDeleting;
 
-    const isDeleting =
-        deleteMutation.isPending;
+    const inputClass =
+        "w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:border-[#b5925a] focus:ring-2 focus:ring-[#b5925a]/10 disabled:bg-slate-50 disabled:text-slate-600";
 
-    // =========================================================
-    // ERROR
-    // =========================================================
+    const labelClass =
+        "block text-xs font-medium text-slate-700 mb-1.5";
 
-    const mutationError =
+    const displayedError =
         createMutation.error ||
         updateMutation.error ||
         deleteMutation.error;
 
-    // =========================================================
-    // RENDER
-    // =========================================================
-
     return (
         <>
-            {/* OVERLAY */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/30 z-40"
                     onClick={() => {
-                        if (
-                            !isSaving &&
-                            !isDeleting
-                        ) {
-                            onClose();
-                        }
+                        if (!isBusy) onClose();
                     }}
                 />
             )}
 
-            {/* DRAWER */}
             <div
-                className={`
-                    fixed top-0 right-0
-                    h-full
-                    w-full
-                    max-w-2xl
-                    bg-white
-                    z-50
-                    shadow-2xl
-                    transition-transform
-                    duration-300
-                    flex
-                    flex-col
-                    ${isOpen
-                        ? "translate-x-0"
-                        : "translate-x-full"
-                    }
-                `}
+                aria-hidden={!isOpen}
+                aria-label={
+                    isView
+                        ? "View Service Group"
+                        : editing
+                          ? "Edit Service Group"
+                          : "Add Service Group"
+                }
+                className={`fixed top-0 right-0 h-full w-full max-w-2xl bg-white z-50 shadow-2xl transition-transform duration-300 flex flex-col ${
+                    isOpen ? "translate-x-0" : "translate-x-full"
+                }`}
             >
-                {/* =================================================
-                    HEADER
-                ================================================== */}
-
+                {/* HEADER */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800">
-                            {isEdit
-                                ? "Edit Service Group"
-                                : "Add Service Group"}
+                            {isView
+                                ? "View Service Group"
+                                : editing
+                                  ? "Edit Service Group"
+                                  : "Add Service Group"}
                         </h2>
-
                         <p className="text-xs text-slate-500 mt-1">
-                            Manage service group
-                            information and
-                            associated services.
+                            {isView
+                                ? "View group information and associated services."
+                                : "Manage service group information and associated services."}
                         </p>
                     </div>
 
                     <button
                         type="button"
-                        onClick={
-                            onClose
-                        }
-                        disabled={
-                            isSaving ||
-                            isDeleting
-                        }
+                        onClick={onClose}
+                        disabled={isBusy}
+                        aria-label="Close drawer"
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                     >
-                        ×
+                        <X size={18} />
                     </button>
                 </div>
 
-                {/* =================================================
-                    BODY
-                ================================================== */}
-
                 <form
-                    onSubmit={
-                        handleSubmit
-                    }
+                    onSubmit={handleSubmit}
                     className="flex flex-col flex-1 min-h-0"
                 >
                     <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-                        {/* =============================================
-                            BASIC INFORMATION
-                        ============================================== */}
-
-                        <div>
+                        {/* GROUP INFORMATION */}
+                        <section>
                             <h3 className="text-sm font-semibold text-slate-800 mb-4">
                                 Group Information
                             </h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* NAME */}
-
                                 <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                    <label className={labelClass}>
                                         Group Name
-                                        <span className="text-red-500 ml-1">
-                                            *
-                                        </span>
+                                        {!isView && (
+                                            <span className="text-red-500 ml-1">
+                                                *
+                                            </span>
+                                        )}
                                     </label>
 
                                     <input
                                         type="text"
-                                        value={
-                                            name
-                                        }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setName(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
+                                        value={name}
+                                        readOnly={isReadOnly}
+                                        onChange={(event) => {
+                                            setName(event.target.value);
+                                            if (nameError) setNameError("");
+                                        }}
                                         placeholder="Enter group name"
-                                        className={`
-                                            w-full
-                                            h-10
-                                            px-3
-                                            rounded-lg
-                                            border
-                                            text-sm
-                                            outline-none
-                                            transition
-                                            ${nameError
-                                                ? "border-red-400 focus:ring-2 focus:ring-red-100"
-                                                : "border-slate-200 focus:border-[#b5925a] focus:ring-2 focus:ring-[#b5925a]/10"
-                                            }
-                                        `}
+                                        className={`${inputClass} ${
+                                            nameError
+                                                ? "border-red-400"
+                                                : ""
+                                        } ${
+                                            isReadOnly
+                                                ? "bg-slate-50 cursor-default"
+                                                : ""
+                                        }`}
                                     />
 
                                     {nameError && (
                                         <p className="text-[11px] text-red-500 mt-1">
-                                            {
-                                                nameError
-                                            }
+                                            {nameError}
                                         </p>
                                     )}
                                 </div>
 
-                                {/* GROUP TYPE */}
-
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                    <label className={labelClass}>
                                         Group Type
                                     </label>
-
                                     <select
-                                        value={
-                                            groupType
+                                        value={groupType}
+                                        disabled={isReadOnly}
+                                        onChange={(event) =>
+                                            setGroupType(event.target.value)
                                         }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setGroupType(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:border-[#b5925a]"
+                                        className={inputClass}
                                     >
                                         <option value="employee">
                                             Employee
                                         </option>
-
                                         <option value="business">
                                             Business
                                         </option>
-
                                         <option value="assets">
                                             Asset
                                         </option>
                                     </select>
                                 </div>
 
-                                {/* BOARDING TYPE */}
-
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                    <label className={labelClass}>
                                         Boarding Type
                                     </label>
-
                                     <select
-                                        value={
-                                            boardingType
+                                        value={boardingType}
+                                        disabled={isReadOnly}
+                                        onChange={(event) =>
+                                            setBoardingType(event.target.value)
                                         }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setBoardingType(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:border-[#b5925a]"
+                                        className={inputClass}
                                     >
-                                        <option value="other">
-                                            Other
-                                        </option>
-
+                                        <option value="other">Other</option>
                                         <option value="onboarding">
                                             On boarding
                                         </option>
-
                                         <option value="offboarding">
                                             Off boarding
                                         </option>
-
                                         <option value="renewal">
                                             Renewal
                                         </option>
                                     </select>
                                 </div>
 
-                                {/* STATUS */}
-
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                    <label className={labelClass}>
                                         Status
                                     </label>
-
                                     <select
-                                        value={
-                                            status
+                                        value={status}
+                                        disabled={isReadOnly}
+                                        onChange={(event) =>
+                                            setStatus(event.target.value)
                                         }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setStatus(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:border-[#b5925a]"
+                                        className={inputClass}
                                     >
-                                        <option value="active">
-                                            Active
-                                        </option>
-
+                                        <option value="active">Active</option>
                                         <option value="inactive">
                                             Inactive
                                         </option>
                                     </select>
                                 </div>
 
-                                {/* ICON */}
-
                                 <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                    <label className={labelClass}>
                                         Group Icon
                                     </label>
-
                                     <input
                                         type="text"
-                                        value={
-                                            groupIcon
+                                        value={groupIcon}
+                                        readOnly={isReadOnly}
+                                        onChange={(event) =>
+                                            setGroupIcon(event.target.value)
                                         }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setGroupIcon(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        placeholder="Icon URL or path"
-                                        className="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm outline-none focus:border-[#b5925a]"
+                                        placeholder="Icon name, URL or path"
+                                        className={inputClass}
                                     />
+                                    <p className="text-[11px] text-slate-400 mt-1">
+                                        Example: briefcase, users, building-2
+                                    </p>
                                 </div>
 
-                                {/* DESCRIPTION */}
-
                                 <div className="md:col-span-2">
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                    <label className={labelClass}>
                                         Description
                                     </label>
-
                                     <textarea
-                                        value={
-                                            description
-                                        }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setDescription(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
+                                        value={description}
+                                        readOnly={isReadOnly}
+                                        onChange={(event) =>
+                                            setDescription(event.target.value)
                                         }
                                         placeholder="Enter group description"
-                                        rows={
-                                            4
-                                        }
-                                        className="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm outline-none resize-none focus:border-[#b5925a]"
+                                        rows={4}
+                                        className={`w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm outline-none resize-none focus:border-[#b5925a] ${
+                                            isReadOnly
+                                                ? "bg-slate-50 text-slate-600"
+                                                : ""
+                                        }`}
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </section>
 
-                        {/* =============================================
-                            SERVICES
-                        ============================================== */}
-
-                        <div className="border-t border-slate-100 pt-6">
+                        {/* SERVICES */}
+                        <section className="border-t border-slate-100 pt-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-sm font-semibold text-slate-800">
                                         Services
                                     </h3>
-
                                     <p className="text-xs text-slate-500 mt-1">
-                                        Select one or
-                                        more services
-                                        to associate
-                                        with this group.
+                                        {isView
+                                            ? "Services associated with this group."
+                                            : "Select one or more services to associate with this group."}
                                     </p>
                                 </div>
 
                                 <span className="px-2.5 py-1 rounded-full bg-[#b5925a]/10 text-[#8f713f] text-xs font-semibold">
-                                    {
-                                        selectedServiceIds.length
-                                    }{" "}
-                                    selected
+                                    {selectedServiceIds.length} selected
                                 </span>
                             </div>
 
                             {/* SEARCH */}
+                            <div className="mb-4 relative">
+                                <Search
+                                    size={16}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                />
 
-                            <div className="mb-4">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={
-                                            serviceSearch
-                                        }
-                                        onChange={(
-                                            e
-                                        ) =>
-                                            setServiceSearch(
-                                                e
-                                                    .target
-                                                    .value
-                                            )
-                                        }
-                                        placeholder="Search services..."
-                                        className="w-full h-10 pl-10 pr-3 rounded-lg border border-slate-200 bg-slate-50 text-sm outline-none focus:bg-white focus:border-[#b5925a]"
-                                    />
+                                <input
+                                    type="text"
+                                    value={serviceSearch}
+                                    disabled={isReadOnly}
+                                    onChange={(event) =>
+                                        setServiceSearch(event.target.value)
+                                    }
+                                    placeholder="Search services..."
+                                    className={`${inputClass} pl-10 pr-10`}
+                                />
 
-                                    <svg
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={
-                                                2
-                                            }
-                                            d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"
+                                {isFetchingServices && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        <RefreshCw
+                                            size={14}
+                                            className="animate-spin text-slate-400"
                                         />
-                                    </svg>
-
-                                    {isFetchingServices &&
-                                        !isLoadingServices && (
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                                <div className="w-4 h-4 border-2 border-slate-300 border-t-[#b5925a] rounded-full animate-spin" />
-                                            </div>
-                                        )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* FILTERS */}
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                 <select
-                                    value={
-                                        serviceTypeFilter
-                                    }
-                                    onChange={(
-                                        e
-                                    ) =>
+                                    value={serviceTypeFilter}
+                                    disabled={isReadOnly}
+                                    onChange={(event) =>
                                         setServiceTypeFilter(
-                                            e
-                                                .target
-                                                .value
+                                            event.target.value
                                         )
                                     }
-                                    className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-xs outline-none focus:border-[#b5925a]"
+                                    className={inputClass}
                                 >
                                     <option value="">
                                         All Service Types
                                     </option>
-
-                                    {serviceTypes.map(
-                                        (
-                                            type
-                                        ) => (
-                                            <option
-                                                key={
-                                                    type.id
-                                                }
-                                                value={
-                                                    type.id
-                                                }
-                                            >
-                                                {
-                                                    type.name
-                                                }
-                                            </option>
-                                        )
-                                    )}
+                                    {serviceTypes.map((type) => (
+                                        <option
+                                            key={type.id}
+                                            value={type.id}
+                                        >
+                                            {type.name}
+                                        </option>
+                                    ))}
                                 </select>
 
                                 <select
-                                    value={
-                                        serviceCategoryFilter
-                                    }
-                                    onChange={(
-                                        e
-                                    ) =>
+                                    value={serviceCategoryFilter}
+                                    disabled={isReadOnly}
+                                    onChange={(event) =>
                                         setServiceCategoryFilter(
-                                            e
-                                                .target
-                                                .value
+                                            event.target.value
                                         )
                                     }
-                                    className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-xs outline-none focus:border-[#b5925a]"
+                                    className={inputClass}
                                 >
-                                    <option value="">
-                                        All Categories
-                                    </option>
-
-                                    {serviceCategories.map(
-                                        (
-                                            category
-                                        ) => (
-                                            <option
-                                                key={
-                                                    category.id
-                                                }
-                                                value={
-                                                    category.id
-                                                }
-                                            >
-                                                {
-                                                    category.name
-                                                }
-                                            </option>
-                                        )
-                                    )}
+                                    <option value="">All Categories</option>
+                                    {serviceCategories.map((category) => (
+                                        <option
+                                            key={category.id}
+                                            value={category.id}
+                                        >
+                                            {category.name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
                             {/* SELECTED SERVICES */}
+                            {selectedServices.length > 0 && (
+                                <div className="mb-4">
+                                    <p className="text-xs font-semibold text-slate-700 mb-2">
+                                        Selected Services
+                                    </p>
 
-                            {selectedServices.length >
-                                0 && (
-                                    <div className="mb-4">
-                                        <p className="text-xs font-semibold text-slate-700 mb-2">
-                                            Selected
-                                            Services
-                                        </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedServices.map((service) => {
+                                            const serviceName =
+                                                service.name ||
+                                                service.service_title ||
+                                                service.title ||
+                                                "Unnamed Service";
 
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedServices.map(
-                                                (
-                                                    service
-                                                ) => {
-                                                    const serviceName =
-                                                        service.name ||
-                                                        service.service_title ||
-                                                        service.title ||
-                                                        "Unnamed Service";
+                                            return (
+                                                <div
+                                                    key={service.id}
+                                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#b5925a]/10 border border-[#b5925a]/20 text-xs text-[#7d6237]"
+                                                >
+                                                    <span>{serviceName}</span>
 
-                                                    return (
-                                                        <div
-                                                            key={
-                                                                service.id
-                                                            }
-                                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#b5925a]/10 border border-[#b5925a]/20 text-xs text-[#7d6237]"
-                                                        >
-                                                            <span>
-                                                                {
-                                                                    serviceName
-                                                                }
-                                                            </span>
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    handleRemoveService(
+                                                    {!isReadOnly && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleRemoveService(
+                                                                    String(
                                                                         service.id
                                                                     )
-                                                                }
-                                                                className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-red-100 hover:text-red-600"
-                                                            >
-                                                                ×
-                                                            </button>
-                                                        </div>
-                                                    );
-                                                }
-                                            )}
-                                        </div>
+                                                                )
+                                                            }
+                                                            aria-label={`Remove ${serviceName}`}
+                                                            className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-red-100 hover:text-red-600"
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                )}
+                                </div>
+                            )}
 
-                            {/* SERVICES LIST */}
-
+                            {/* AVAILABLE SERVICES */}
                             <div className="border border-slate-200 rounded-xl overflow-hidden">
                                 <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                                     <span className="text-xs font-semibold text-slate-700">
-                                        Available
-                                        Services
+                                        Available Services
                                     </span>
 
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            refetchServices()
-                                        }
-                                        disabled={
-                                            isFetchingServices
-                                        }
-                                        className="text-xs text-[#9a7a48] hover:text-[#765b35] disabled:opacity-50"
+                                        onClick={() => refetchServices()}
+                                        disabled={isFetchingServices}
+                                        className="flex items-center gap-1.5 text-xs text-[#9a7a48] hover:text-[#765b35] disabled:opacity-50"
                                     >
+                                        <RefreshCw size={12} />
                                         Refresh
                                     </button>
                                 </div>
@@ -1192,20 +807,15 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                     {isLoadingServices ? (
                                         <div className="py-10 flex flex-col items-center justify-center">
                                             <div className="w-6 h-6 border-2 border-slate-200 border-t-[#b5925a] rounded-full animate-spin" />
-
                                             <p className="text-xs text-slate-400 mt-3">
-                                                Loading
-                                                services...
+                                                Loading services...
                                             </p>
                                         </div>
                                     ) : isServicesError ? (
                                         <div className="py-10 text-center">
                                             <p className="text-xs text-red-500 mb-2">
-                                                Failed
-                                                to load
-                                                services.
+                                                Failed to load services.
                                             </p>
-
                                             <button
                                                 type="button"
                                                 onClick={() =>
@@ -1213,210 +823,166 @@ const ServiceGroupDrawer: React.FC<ServiceGroupDrawerProps> = ({
                                                 }
                                                 className="text-xs text-[#9a7a48] underline"
                                             >
-                                                Try
-                                                again
+                                                Try again
                                             </button>
                                         </div>
-                                    ) : filteredServices.length ===
-                                        0 ? (
+                                    ) : filteredServices.length === 0 ? (
                                         <div className="py-10 text-center">
                                             <p className="text-xs text-slate-400">
-                                                No
-                                                services
-                                                found.
+                                                No services found.
                                             </p>
                                         </div>
                                     ) : (
-                                        filteredServices.map(
-                                            (
-                                                service
-                                            ) => {
-                                                const serviceName =
-                                                    service.name ||
-                                                    service.service_title ||
-                                                    service.title ||
-                                                    "Unnamed Service";
+                                        filteredServices.map((service) => {
+                                            const serviceName =
+                                                service.name ||
+                                                service.service_title ||
+                                                service.title ||
+                                                "Unnamed Service";
 
-                                                const isSelected =
-                                                    selectedServiceIds.includes(
-                                                        service.id
-                                                    );
+                                            const isSelected =
+                                                selectedServiceIds.includes(
+                                                    String(service.id)
+                                                );
 
-                                                const typeName =
-                                                    service
-                                                        .serviceType
-                                                        ?.name ||
-                                                    "";
+                                            const typeName =
+                                                service.serviceType?.name || "";
 
-                                                const categoryName =
-                                                    service
-                                                        .serviceCategory
-                                                        ?.name ||
-                                                    "";
+                                            const categoryName =
+                                                service.serviceCategory?.name ||
+                                                "";
 
-                                                return (
-                                                    <button
-                                                        key={
-                                                            service.id
-                                                        }
-                                                        type="button"
-                                                        onClick={() =>
-                                                            handleToggleService(
-                                                                service.id
-                                                            )
-                                                        }
-                                                        className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-0 transition-colors ${isSelected
+                                            return (
+                                                <button
+                                                    key={service.id}
+                                                    type="button"
+                                                    disabled={isReadOnly}
+                                                    onClick={() =>
+                                                        handleToggleService(
+                                                            String(service.id)
+                                                        )
+                                                    }
+                                                    className={`w-full text-left px-4 py-3 border-b border-slate-100 last:border-0 transition-colors disabled:cursor-default ${
+                                                        isSelected
                                                             ? "bg-[#b5925a]/5"
                                                             : "hover:bg-slate-50"
-                                                            }`}
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div
-                                                                className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${isSelected
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div
+                                                            className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 ${
+                                                                isSelected
                                                                     ? "bg-[#b5925a] border-[#b5925a] text-white"
                                                                     : "border-slate-300 bg-white"
-                                                                    }`}
-                                                            >
-                                                                {isSelected && (
-                                                                    <svg
-                                                                        width="12"
-                                                                        height="12"
-                                                                        viewBox="0 0 24 24"
-                                                                        fill="none"
-                                                                        stroke="currentColor"
-                                                                        strokeWidth={
-                                                                            3
-                                                                        }
-                                                                    >
-                                                                        <path d="m5 12 4 4L19 6" />
-                                                                    </svg>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="min-w-0 flex-1">
-                                                                <p className="text-xs font-medium text-slate-800 truncate">
-                                                                    {
-                                                                        serviceName
-                                                                    }
-                                                                </p>
-
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    {typeName && (
-                                                                        <span className="text-[10px] text-slate-400">
-                                                                            {
-                                                                                typeName
-                                                                            }
-                                                                        </span>
-                                                                    )}
-
-                                                                    {typeName &&
-                                                                        categoryName && (
-                                                                            <span className="text-slate-300">
-                                                                                •
-                                                                            </span>
-                                                                        )}
-
-                                                                    {categoryName && (
-                                                                        <span className="text-[10px] text-slate-400">
-                                                                            {
-                                                                                categoryName
-                                                                            }
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
+                                                            }`}
+                                                        >
                                                             {isSelected && (
-                                                                <span className="text-[10px] font-medium text-[#9a7a48]">
-                                                                    Selected
-                                                                </span>
+                                                                <Check
+                                                                    size={13}
+                                                                    strokeWidth={3}
+                                                                />
                                                             )}
                                                         </div>
-                                                    </button>
-                                                );
-                                            }
-                                        )
+
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs font-medium text-slate-800 truncate">
+                                                                {serviceName}
+                                                            </p>
+
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                {typeName && (
+                                                                    <span className="text-[10px] text-slate-400">
+                                                                        {typeName}
+                                                                    </span>
+                                                                )}
+
+                                                                {typeName &&
+                                                                    categoryName && (
+                                                                        <span className="text-slate-300">
+                                                                            •
+                                                                        </span>
+                                                                    )}
+
+                                                                {categoryName && (
+                                                                    <span className="text-[10px] text-slate-400">
+                                                                        {categoryName}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {isSelected && (
+                                                            <span className="text-[10px] font-medium text-[#9a7a48]">
+                                                                Selected
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* =============================================
-                            ERROR
-                        ============================================== */}
+                            {selectedServiceIds.length >
+                                selectedServices.length && (
+                                <p className="text-xs text-slate-500 mt-2">
+                                    {selectedServiceIds.length -
+                                        selectedServices.length}{" "}
+                                    selected service(s) are not in the current
+                                    results. Their IDs will be preserved when
+                                    saving.
+                                </p>
+                            )}
+                        </section>
 
-                        {mutationError && (
+                        {displayedError && (
                             <div className="p-3 rounded-lg bg-red-50 border border-red-200">
                                 <p className="text-xs text-red-600">
-                                    {(
-                                        mutationError as any
-                                    )?.response
-                                        ?.data
-                                        ?.message ||
-                                        (
-                                            mutationError as any
-                                        )?.message ||
-                                        "Something went wrong. Please try again."}
+                                    {getErrorMessage(displayedError)}
                                 </p>
                             </div>
                         )}
                     </div>
 
-                    {/* =================================================
-                        FOOTER
-                    ================================================== */}
-
+                    {/* FOOTER */}
                     <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-white">
                         <div>
-                            {isEdit &&
-                                initialData?.id && (
-                                    <button
-                                        type="button"
-                                        onClick={
-                                            handleDelete
-                                        }
-                                        disabled={
-                                            isSaving ||
-                                            isDeleting
-                                        }
-                                        className="px-4 py-2 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                    >
-                                        {isDeleting
-                                            ? "Deleting..."
-                                            : "Delete"}
-                                    </button>
-                                )}
+                            {editing && initialData?.id && (
+                                <button
+                                    type="button"
+                                    onClick={handleDelete}
+                                    disabled={isBusy}
+                                    className="px-4 py-2 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                >
+                                    {isDeleting ? "Deleting..." : "Delete"}
+                                </button>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={
-                                    onClose
-                                }
-                                disabled={
-                                    isSaving ||
-                                    isDeleting
-                                }
+                                onClick={onClose}
+                                disabled={isBusy}
                                 className="px-5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                             >
-                                Cancel
+                                {isView ? "Close" : "Cancel"}
                             </button>
 
-                            <button
-                                type="submit"
-                                disabled={
-                                    isSaving ||
-                                    isDeleting
-                                }
-                                className="px-6 py-2.5 rounded-lg bg-[#b5925a] text-white text-xs font-medium hover:bg-[#a1804c] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSaving
-                                    ? "Saving..."
-                                    : isEdit
-                                        ? "Update Group"
-                                        : "Create Group"}
-                            </button>
+                            {!isView && (
+                                <button
+                                    type="submit"
+                                    disabled={isBusy}
+                                    className="px-6 py-2.5 rounded-lg bg-[#b5925a] text-white text-xs font-medium hover:bg-[#a1804c] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSaving
+                                        ? "Saving..."
+                                        : editing
+                                          ? "Update Group"
+                                          : "Create Group"}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </form>

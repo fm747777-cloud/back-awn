@@ -879,35 +879,6 @@ export const authApi = {
 
 export const serviceApi = {
     getServices: async (data: any = {}) => {
-        if (USE_DEMO_MODE) {
-            const list = getLocal('services', initialServices);
-            const search = (data?.search || '').toLowerCase().trim();
-            const filtered = search
-                ? list.filter((item: any) => {
-                    const mapped = mapServiceItem(item);
-                    return (
-                        String(mapped.title || '').toLowerCase().includes(search) ||
-                        String(mapped.code || '').toLowerCase().includes(search) ||
-                        String(mapped.portal || '').toLowerCase().includes(search) ||
-                        String(mapped.category || '').toLowerCase().includes(search) ||
-                        String(mapped.type || '').toLowerCase().includes(search) ||
-                        String(mapped.tags || '').toLowerCase().includes(search)
-                    );
-                })
-                : list;
-
-            const page = Number(data?.page || 1);
-            const limit = Number(data?.limit || 10);
-            const start = (page - 1) * limit;
-            const paged = filtered.slice(start, start + limit);
-
-            return {
-                data: paged.map(mapServiceItem),
-                count: filtered.length,
-                total: filtered.length,
-            };
-        }
-
         const response = await axiosClient.get('/service', { params: data });
         const resData = response.data;
         const rawList = Array.isArray(resData?.data) ? resData.data : Array.isArray(resData) ? resData : [];
@@ -919,221 +890,64 @@ export const serviceApi = {
     },
 
     getServiceById: async (id: string) => {
-        if (USE_DEMO_MODE) {
-            const list = getLocal('services', initialServices);
-            const found = list.find((s: any) => String(s.id) === String(id));
-            return found ? mapServiceItem(found) : null;
-        }
-
         const response = await axiosClient.get(`/service/${id}`);
         const item = response.data?.data ?? response.data;
-        return item ? mapServiceItem(item) : item;
+        return item
     },
 
     createService: async (data: any) => {
-        if (USE_DEMO_MODE) {
-            const list = getLocal('services', initialServices);
-            const portals = getLocal('portals', initialPortals);
-            const categories = getLocal('categories', initialCategories);
-            const types = getLocal('types', initialTypes);
-            const tags = getLocal('tags', initialTags);
-
-            const matchedPortal = portals.find((p: any) => p.id === data.servicePortal_id);
-            const matchedType = types.find((t: any) => t.id === data.serviceType_id);
-            const matchedCategory =
-                categories.find((c: any) => c.id === data.service_category_id) ||
-                matchedType?.serviceCategory;
-            const matchedTag = tags.find((tg: any) => tg.id === data.serviceTag_id);
-
-            const nextNum = list.length + 1;
-            const newService = {
-                ...data,
-                id: `srv-${Date.now()}`,
-                code: `SRV-${String(nextNum).padStart(3, '0')}`,
-                servicePortal: matchedPortal ? { id: matchedPortal.id, name: matchedPortal.name } : undefined,
-                serviceCategory: matchedCategory ? { id: matchedCategory.id, name: matchedCategory.name } : undefined,
-                serviceType: matchedType
-                    ? {
-                        id: matchedType.id,
-                        name: matchedType.name,
-                        serviceCategory: matchedCategory
-                            ? { id: matchedCategory.id, name: matchedCategory.name }
-                            : matchedType.serviceCategory,
-                    }
-                    : undefined,
-                serviceTag: matchedTag ? { id: matchedTag.id, name: matchedTag.name } : undefined,
-                servicePayment: {
-                    sadad_payment_available: Boolean(data.sadad_payment_available),
-                    other_payment_method: data.other_payment_method_id || '',
-                    fees: Number(data.service_fees || 0),
-                },
-                createdAt: new Date().toISOString().split('T')[0],
-                createdBy: { name: 'Karim Wagdi', email: 'karim@awn.sa' },
-                status: 'Active',
-            };
-
-            const updated = [newService, ...list];
-            setLocal('services', updated);
-            return mapServiceItem(newService);
+        try {
+            console.log('data', data);
+            const response = await axiosClient.post('/service', data);
+            return response.data;
+        } catch (error) {
+            console.log('Backend error:', error?.response?.data);
         }
-
-        const payload = buildServicePayload(data);
-        const response = await axiosClient.post('/service', payload);
-        return response.data;
     },
 
     updateService: async (id: string, data: any) => {
-        if (USE_DEMO_MODE) {
-            const list = getLocal('services', initialServices);
-            const portals = getLocal('portals', initialPortals);
-            const categories = getLocal('categories', initialCategories);
-            const types = getLocal('types', initialTypes);
-            const tags = getLocal('tags', initialTags);
-
-            const matchedPortal = portals.find((p: any) => p.id === data.servicePortal_id);
-            const matchedType = types.find((t: any) => t.id === data.serviceType_id);
-            const matchedCategory =
-                categories.find((c: any) => c.id === data.service_category_id) ||
-                matchedType?.serviceCategory;
-            const matchedTag = tags.find((tg: any) => tg.id === data.serviceTag_id);
-
-            let updatedRecord: any = null;
-            const updatedList = list.map((item: any) => {
-                if (String(item.id) !== String(id)) return item;
-                updatedRecord = {
-                    ...item,
-                    ...data,
-                    id: item.id,
-                    code: item.code,
-                    servicePortal: matchedPortal
-                        ? { id: matchedPortal.id, name: matchedPortal.name }
-                        : item.servicePortal,
-                    serviceCategory: matchedCategory
-                        ? { id: matchedCategory.id, name: matchedCategory.name }
-                        : item.serviceCategory,
-                    serviceType: matchedType
-                        ? {
-                            id: matchedType.id,
-                            name: matchedType.name,
-                            serviceCategory: matchedCategory
-                                ? { id: matchedCategory.id, name: matchedCategory.name }
-                                : matchedType.serviceCategory,
-                        }
-                        : item.serviceType,
-                    serviceTag: matchedTag ? { id: matchedTag.id, name: matchedTag.name } : item.serviceTag,
-                    servicePayment: {
-                        sadad_payment_available: Boolean(data.sadad_payment_available),
-                        other_payment_method: data.other_payment_method_id || '',
-                        fees: Number(data.service_fees ?? item.service_fees ?? 0),
-                    },
-                };
-                return updatedRecord;
-            });
-
-            setLocal('services', updatedList);
-            return updatedRecord ? mapServiceItem(updatedRecord) : { success: true };
-        }
-
-        const payload = buildServicePayload(data);
-        const response = await axiosClient.patch(`/service/${id}`, payload);
+        const response = await axiosClient.patch(`/service/${id}`, data);
         return response.data;
     },
 
     deleteService: async (id: string) => {
-        if (USE_DEMO_MODE) {
-            const list = getLocal('services', initialServices);
-            const updated = list.filter((s: any) => String(s.id) !== String(id));
-            setLocal('services', updated);
-            return { success: true };
-        }
-
         const response = await axiosClient.delete(`/service/${id}`);
         return response.data;
     },
 
     getServiceTags: async (data: any = {}) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service-tag', { params: data });
-                return response.data;
-            } catch {
-                // Fallback to local store
-            }
+        try {
+            const response = await axiosClient.get('/service-tag', { params: data });
+            return response.data;
+        } catch {
+            // Fallback to local store
         }
-
-        const list = getLocal('tags', initialTags);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item) =>
-                    item.name.toLowerCase().includes(search) ||
-                    item.tagCode.toLowerCase().includes(search)
-            )
-            : list;
-
-        const page = Number(data?.page || 1);
-        const limit = Number(data?.limit || 10);
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
-
-        return {
-            data: paged,
-            count: filtered.length,
-            total: filtered.length,
-        };
     },
 
     createServiceTag: async (data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service-tag', data);
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.post('/service-tag', data);
+            return response.data;
+        } catch {
+            // Fallback
         }
+    },
 
-        const list = getLocal('tags', initialTags);
-        const existingIdx = data.id ? list.findIndex((t: any) => t.id === data.id) : -1;
-        if (existingIdx >= 0) {
-            const updatedTag = {
-                ...list[existingIdx],
-                name: data.name ?? list[existingIdx].name,
-                description: data.description ?? list[existingIdx].description,
-                status: data.status ?? list[existingIdx].status,
-            };
-            const updated = [...list];
-            updated[existingIdx] = updatedTag;
-            setLocal('tags', updated);
-            return updatedTag;
+    updateServiceTag: async (id: string, data: any) => {
+        try {
+            const res = await axiosClient.patch(`/service-tag/${id}`, data);
+            return res.data
+        } catch {
+            // Fallback
         }
-
-        const newTag = {
-            id: `tag-${Date.now()}`,
-            tagCode: `TAG-${String(list.length + 1).padStart(3, '0')}`,
-            name: data.name,
-            description: data.description || '',
-            createdAt: new Date().toISOString().split('T')[0],
-            createdBy: 'Karim Wagdi',
-            status: data.status || 'active',
-        };
-        const updated = [newTag, ...list];
-        setLocal('tags', updated);
-        return newTag;
     },
 
     deleteServiceTag: async (id: string) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                await axiosClient.delete(`/service-tag/${id}`);
-            } catch {
-                // Fallback
-            }
+        try {
+            await axiosClient.delete(`/service-tag/${id}`);
+        } catch {
+            // Fallback
         }
-        const list = getLocal('tags', initialTags);
-        const updated = list.filter((t: any) => t.id !== id);
-        setLocal('tags', updated);
-        return { success: true };
     },
 
     getServicePortals: async (data: any = {}) => {
@@ -1170,242 +984,105 @@ export const serviceApi = {
     },
 
     createServicePortal: async (data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service-portal', data);
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.post('/service-portal', data);
+            return response.data;
+        } catch {
+            // Fallback
         }
+    },
 
-        const list = getLocal('portals', initialPortals);
-        const existingIdx = data.id ? list.findIndex((p: any) => p.id === data.id) : -1;
-        if (existingIdx >= 0) {
-            const updatedPortal = {
-                ...list[existingIdx],
-                name: data.name ?? list[existingIdx].name,
-                url: data.url ?? list[existingIdx].url,
-                contact_number: data.contact_number !== undefined ? String(data.contact_number) : list[existingIdx].contact_number,
-                email: data.email ?? list[existingIdx].email,
-                description: data.description ?? list[existingIdx].description,
-            };
-            const updated = [...list];
-            updated[existingIdx] = updatedPortal;
-            setLocal('portals', updated);
-            return updatedPortal;
+    updateServicePortal: async (id: string, data: any) => {
+        try {
+            const res = await axiosClient.patch(`/service-portal/${id}`, data);
+            return res.data
+        } catch {
+            // Fallback
         }
-
-        const newPortal = {
-            id: `prt-${Date.now()}`,
-            tagCode: `PRT-${String(list.length + 1).padStart(3, '0')}`,
-            name: data.name,
-            url: data.url,
-            contact_number: String(data.contact_number),
-            email: data.email,
-            description: data.description || '',
-            createdAt: new Date().toISOString().split('T')[0],
-            createdBy: 'Karim Wagdi',
-            status: 'active',
-        };
-        const updated = [newPortal, ...list];
-        setLocal('portals', updated);
-        return newPortal;
     },
 
     deleteServicePortal: async (id: string) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                await axiosClient.delete(`/service-portal/${id}`);
-            } catch {
-                // Fallback
-            }
+        try {
+            const data = await axiosClient.delete(`/service-portal/${id}`);
+            return data.data
+        } catch {
+            // Fallback
         }
-        const list = getLocal('portals', initialPortals);
-        const updated = list.filter((p: any) => p.id !== id);
-        setLocal('portals', updated);
-        return { success: true };
     },
 
     getServiceCategories: async (data: any = {}) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service-category', { params: data });
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.get('/service-category', { params: data });
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const list = getLocal('categories', initialCategories);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item) =>
-                    item.name.toLowerCase().includes(search) ||
-                    item.tagCode.toLowerCase().includes(search)
-            )
-            : list;
-
-        const page = Number(data?.page || 1);
-        const limit = Number(data?.limit || 10);
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
-
-        return {
-            data: paged,
-            count: filtered.length,
-            total: filtered.length,
-        };
     },
 
     createServiceCategory: async (data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service-category', data);
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.post('/service-category', data);
+            return response.data;
+        } catch {
+            // Fallback
         }
+    },
 
-        const list = getLocal('categories', initialCategories);
-        const existingIdx = data.id ? list.findIndex((c: any) => c.id === data.id) : -1;
-        if (existingIdx >= 0) {
-            const updatedCat = {
-                ...list[existingIdx],
-                name: data.name ?? list[existingIdx].name,
-                description: data.description ?? list[existingIdx].description,
-                status: data.status ?? list[existingIdx].status,
-            };
-            const updated = [...list];
-            updated[existingIdx] = updatedCat;
-            setLocal('categories', updated);
-            return updatedCat;
+    updateServiceCategory: async (id: string, data: any) => {
+        try {
+            const response = await axiosClient.patch(`/service-category/${id}`, data);
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const newCat = {
-            id: `cat-${Date.now()}`,
-            tagCode: `CAT-${String(list.length + 1).padStart(3, '0')}`,
-            name: data.name,
-            description: data.description || '',
-            createdAt: new Date().toISOString().split('T')[0],
-            createdBy: 'Karim Wagdi',
-            status: data.status || 'active',
-        };
-        const updated = [newCat, ...list];
-        setLocal('categories', updated);
-        return newCat;
     },
 
     deleteServiceCategory: async (id: string) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                await axiosClient.delete(`/service-category/${id}`);
-            } catch {
-                // Fallback
-            }
+        try {
+            await axiosClient.delete(`/service-category/${id}`);
+        } catch {
+            // Fallback
         }
-        const list = getLocal('categories', initialCategories);
-        const updated = list.filter((c: any) => c.id !== id);
-        setLocal('categories', updated);
-        return { success: true };
     },
 
     getServiceTypes: async (data: any = {}) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service-type', { params: data });
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.get('/service-type', { params: data });
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const list = getLocal('types', initialTypes);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item) =>
-                    item.name.toLowerCase().includes(search) ||
-                    item.typeCode.toLowerCase().includes(search) ||
-                    (item.serviceCategory?.name && item.serviceCategory.name.toLowerCase().includes(search))
-            )
-            : list;
-
-        const page = Number(data?.page || 1);
-        const limit = Number(data?.limit || 10);
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
-
-        return {
-            data: paged,
-            count: filtered.length,
-            total: filtered.length,
-        };
     },
 
     createServiceType: async (data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service-type', data);
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.post('/service-type', data);
+            return response.data;
+        } catch {
+            // Fallback
         }
+    },
 
-        const list = getLocal('types', initialTypes);
-        const categories = getLocal('categories', initialCategories);
-        const cat = categories.find((c) => c.id === data.serviceCategory_id);
-
-        const existingIdx = data.id ? list.findIndex((t: any) => t.id === data.id) : -1;
-        if (existingIdx >= 0) {
-            const updatedType = {
-                ...list[existingIdx],
-                name: data.name ?? list[existingIdx].name,
-                serviceCategory: cat ? { id: cat.id, name: cat.name } : list[existingIdx].serviceCategory,
-                description: data.description ?? list[existingIdx].description,
-                status: data.status ?? list[existingIdx].status,
-            };
-            const updated = [...list];
-            updated[existingIdx] = updatedType;
-            setLocal('types', updated);
-            return updatedType;
+    updateServiceType: async (id: string, data: any) => {
+        try {
+            const response = await axiosClient.patch(`/service-type/${id}`, data);
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const newType = {
-            id: `typ-${Date.now()}`,
-            typeCode: `TYP-${String(list.length + 1).padStart(3, '0')}`,
-            name: data.name,
-            serviceCategory: cat ? { id: cat.id, name: cat.name } : undefined,
-            description: data.description || '',
-            createdAt: new Date().toISOString().split('T')[0],
-            createdBy: 'Karim Wagdi',
-            status: data.status || 'active',
-        };
-        const updated = [newType, ...list];
-        setLocal('types', updated);
-        return newType;
     },
 
     deleteServiceType: async (id: string) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                await axiosClient.delete(`/service-type/${id}`);
-            } catch {
-                // Fallback
-            }
+        try {
+            await axiosClient.delete(`/service-type/${id}`);
+        } catch {
+            // Fallback
         }
-        const list = getLocal('types', initialTypes);
-        const updated = list.filter((t: any) => t.id !== id);
-        setLocal('types', updated);
-        return { success: true };
     },
 
     getServiceGroup: async (data: any = {}) => {
         try {
-            const response = await axiosClient.get('/service-group', { params: data });
+            const response = await axiosClient.get('/group', { params: data });
             return response.data;
         } catch {
             // Fallback
@@ -1413,162 +1090,73 @@ export const serviceApi = {
     },
 
     createServiceGroup: async (data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service-group', data);
-                if (response.data !== undefined) return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.post('/group', data);
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const list = getLocal<any[]>('groups', initialGroups);
-        const allServices = getLocal<any[]>('services', initialServices);
-        const resolvedServices = Array.isArray(data.service_ids)
-            ? data.service_ids.map((sid: string) => {
-                const found = allServices.find((s: any) => String(s.id) === String(sid));
-                return found ? { id: found.id, name: found.service_title || found.name } : { id: sid };
-            })
-            : undefined;
-
-        const existingIdx = data.id ? list.findIndex((g: any) => g.id === data.id) : -1;
-        if (existingIdx >= 0) {
-            const updatedGroup = {
-                ...list[existingIdx],
-                name: data.name ?? list[existingIdx].name,
-                description: data.description ?? list[existingIdx].description,
-                group_icon: data.group_icon ?? list[existingIdx].group_icon,
-                group_type: data.group_type ?? list[existingIdx].group_type,
-                boarding_type: data.boarding_type ?? list[existingIdx].boarding_type,
-                servicePackage_id: data.servicePackage_id ?? list[existingIdx].servicePackage_id,
-                services: resolvedServices ?? list[existingIdx].services ?? [],
-                status: data.status ?? list[existingIdx].status,
-            };
-            const updated = [...list];
-            updated[existingIdx] = updatedGroup;
-            setLocal('groups', updated);
-            return updatedGroup;
-        }
-
-        const newGroup = {
-            id: `grp-${Date.now()}`,
-            groupCode: `GRP-${String(list.length + 1).padStart(3, '0')}`,
-            name: data.name,
-            description: data.description || '',
-            group_icon: data.group_icon || 'briefcase',
-            group_type: data.group_type || 'business',
-            boarding_type: data.boarding_type || 'OTHER',
-            servicePackage_id: data.servicePackage_id,
-            services: resolvedServices || [],
-            createdAt: new Date().toISOString().split('T')[0],
-            createdBy: 'Karim Wagdi',
-            status: data.status || 'active',
-        };
-        const updated = [newGroup, ...list];
-        setLocal('groups', updated);
-        return newGroup;
     },
 
     updateServiceGroup: async (id: string, data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.patch(`/service-group/${id}`, data);
-                if (response.data !== undefined) return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.patch(`/group/${id}`, data);
+            return response.data;
+        } catch {
+            // Fallback
         }
-        return serviceApi.createServiceGroup({ ...data, id });
     },
 
     deleteServiceGroup: async (id: string) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                await axiosClient.delete(`/service-group/${id}`);
-            } catch {
-                // Fallback
-            }
+        try {
+            await axiosClient.delete(`/group/${id}`);
+        } catch {
+            // Fallback
         }
-        const list = getLocal('groups', initialGroups);
-        const updated = list.filter((g: any) => g.id !== id);
-        setLocal('groups', updated);
-        return { success: true };
     },
 
     getServicePackages: async (data: any = {}) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service-package', { params: data });
-                if (response.data !== undefined) return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.get('/package', { params: data });
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const list = getLocal('packages', initialPackages);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item: any) =>
-                    String(item.name || item.package_name || '').toLowerCase().includes(search) ||
-                    String(item.packageCode || '').toLowerCase().includes(search)
-            )
-            : list;
-
-        return {
-            data: filtered,
-            count: filtered.length,
-            total: filtered.length,
-        };
     },
 
     createServicePackage: async (data: any) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.post('/service-package', data);
-                if (response.data !== undefined) return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.post('/package', data);
+            return response.data;
+        } catch {
+            // Fallback
         }
+    },
 
-        const list = getLocal('packages', initialPackages);
-        const groups = getLocal('groups', initialGroups);
-        const linkedGroups = Array.isArray(data?.serviceGroup_ids)
-            ? data.serviceGroup_ids.map((gid: string) => {
-                const found = groups.find((g: any) => g.id === gid);
-                return found ? { id: found.id, name: found.name } : { id: gid };
-            })
-            : [];
+    updateServicePackage: async (id: string, data: any) => {
+        try {
+            const response = await axiosClient.patch(`/package/${id}`, data);
+            return response.data;
+        } catch {
+            // Fallback
+        }
+    },
 
-        const pkgName = data?.package_name || data?.name || 'New Service Package';
-        const newPackage = {
-            id: `pkg-${Date.now()}`,
-            packageCode: `PKG-${String(list.length + 1).padStart(3, '0')}`,
-            name: pkgName,
-            package_name: pkgName,
-            group_type: data?.group_type || 'business',
-            serviceGroups: linkedGroups,
-            billingCycle: data?.billing_cycle || data?.billingCycle || 'annual',
-            billing_cycle: data?.billing_cycle || data?.billingCycle || 'annual',
-            price: Number(data?.unit_price ?? data?.price ?? 0),
-            unit_price: Number(data?.unit_price ?? data?.price ?? 0),
-            description: data?.description || '',
-            status: data?.status || 'active',
-            createdAt: new Date().toISOString().split('T')[0],
-            createdBy: 'Karim Wagdi',
-        };
-        const updated = [newPackage, ...list];
-        setLocal('packages', updated);
-        return newPackage;
+    deleteServicePackage: async (id: string) => {
+        try {
+            await axiosClient.delete(`/package/${id}`);
+        } catch {
+            // Fallback
+        }
     },
 
 
     getServiceDocs: async (data: any = {}) => {
         try {
             const response = await axiosClient.get('/service-doc', { params: data });
-            if (response.data !== undefined) return response.data;
+            return response.data;
         } catch {
+
         }
     },
 };
@@ -1655,22 +1243,22 @@ export const userApi = {
 
 export const documentApi = {
     getDocuments: async (params: any) => {
-        const response = await axiosClient.get('/document', { params });
+        const response = await axiosClient.get('/document-template', { params });
         return response.data;
     },
 
     createDocument: async (data: any) => {
-        const response = await axiosClient.post('/document', data);
+        const response = await axiosClient.post('/document-template', data);
         return response.data;
     },
 
-    updateDocument: async (data: any) => {
-        const response = await axiosClient.put('/document', data);
+    updateDocument: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/document-template/${id}`, data);
         return response.data;
     },
 
-    deleteDocument: async (data: any) => {
-        const response = await axiosClient.delete('/document', data);
+    deleteDocument: async (id: string) => {
+        const response = await axiosClient.delete(`/document-template/${id}`);
         return response.data;
     },
 
@@ -1685,13 +1273,13 @@ export const documentApi = {
         return response.data;
     },
 
-    updateDocumentCategory: async (data: any) => {
-        const response = await axiosClient.put('/document-category', data);
+    updateDocumentCategory: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/document-category/${id}`, data);
         return response.data;
     },
 
-    deleteDocumentCategory: async (data: any) => {
-        const response = await axiosClient.delete('/document-category', data);
+    deleteDocumentCategory: async (id: string) => {
+        const response = await axiosClient.delete(`/document-category/${id}`);
         return response.data;
     },
 
@@ -1707,13 +1295,13 @@ export const documentApi = {
         return response.data;
     },
 
-    updateDocumentType: async (data: any) => {
-        const response = await axiosClient.put('/document-type', data);
+    updateDocumentType: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/document-type/${id}`, data);
         return response.data;
     },
 
-    deleteDocumentType: async (data: any) => {
-        const response = await axiosClient.delete('/document-type', data);
+    deleteDocumentType: async (id: string) => {
+        const response = await axiosClient.delete(`/document-type/${id}`);
         return response.data;
     },
 
@@ -1729,13 +1317,13 @@ export const documentApi = {
         return response.data;
     },
 
-    updateDocumentTag: async (data: any) => {
-        const response = await axiosClient.put('/document-tag', data);
+    updateDocumentTag: async (id: string, data: any) => {
+        const response = await axiosClient.put(`/document-tag/${id}`, data);
         return response.data;
     },
 
-    deleteDocumentTag: async (data: any) => {
-        const response = await axiosClient.delete('/document-tag', data);
+    deleteDocumentTag: async (id: string) => {
+        const response = await axiosClient.delete(`/document-tag/${id}`);
         return response.data;
     },
 }

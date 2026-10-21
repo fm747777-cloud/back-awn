@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
@@ -12,32 +13,37 @@ import {
     Layers,
     FileText,
     MoreHorizontal,
+    Eye,
+    Pencil,
+    Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+
 import { DataTable } from "../DataTable";
 import {
     GroupType,
     BoardingType,
     ServiceTagStatus,
-    type CreateServiceGroupDto,
 } from "./serviceGroupTypes";
 import { serviceApi } from "../../api/api";
 import ServiceGroupDrawer from "./ServiceGroupDrawer";
 
 export interface ServiceGroupItem {
     id: string;
-    groupCode?: string;
+    codeName?: string;
     name: string;
     servicesCount: number;
     description: string;
     createdAt: string;
-    status: 'active' | 'inactive';
+    status: "active" | "inactive";
     group_icon?: string;
     servicePackage_id?: string;
     group_type?: GroupType;
     boarding_type?: BoardingType;
-    service_ids?: string[];
+    service_ids: string[];
 }
+
+export type ServiceGroupDrawerMode = "create" | "edit" | "view";
 
 const renderGroupIcon = (iconName?: string) => {
     switch (iconName) {
@@ -61,6 +67,65 @@ const renderGroupIcon = (iconName?: string) => {
     }
 };
 
+const normalizeGroupsResponse = (response: any): any[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.data?.data)) return response.data.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.data?.items)) return response.data.items;
+    return [];
+};
+
+/**
+ * The API may return:
+ * 1. ["service-uuid"]
+ * 2. [{ id: "service-uuid", name: "Service" }]
+ * 3. [{ id: "relation-uuid", service: { id: "service-uuid" } }]
+ *
+ * For relation objects, use service.id, NOT the relation's id.
+ */
+const extractServiceIds = (value: any): string[] => {
+    if (!Array.isArray(value)) return [];
+
+    return Array.from(
+        new Set(
+            value
+                .map((item: any) => {
+                    if (typeof item === "string") {
+                        return item;
+                    }
+
+                    if (!item || typeof item !== "object") {
+                        return null;
+                    }
+
+                    return (
+                        item.service?.id ??
+                        item.serviceId ??
+                        item.service_id ??
+                        null
+                    );
+                })
+                .filter(
+                    (id: unknown): id is string =>
+                        typeof id === "string" && id.length > 0
+                )
+        )
+    );
+};
+
+const getGroupServiceRelations = (item: any): any[] => {
+    if (Array.isArray(item?.service_ids)) return item.service_ids;
+    if (Array.isArray(item?.serviceGroups)) return item.serviceGroups;
+    if (Array.isArray(item?.services)) return item.services;
+    return [];
+};
+
+const getErrorMessage = (error: any) => {
+    const message = error?.response?.data?.message || error?.message;
+    return Array.isArray(message) ? message[0] : message;
+};
+
 export const ServiceGroupsTab: React.FC = () => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
@@ -69,120 +134,265 @@ export const ServiceGroupsTab: React.FC = () => {
     const [pageIndex, setPageIndex] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
-    // Drawer state
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [editingGroup, setEditingGroup] = useState<ServiceGroupItem | null>(null);
+    const [drawerMode, setDrawerMode] =
+        useState<ServiceGroupDrawerMode>("create");
+    const [selectedGroup, setSelectedGroup] =
+        useState<ServiceGroupItem | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-    // 1. Fetching Data using TanStack Query
-    const { data: rawGroups = [], isLoading } = useQuery({
+    // FETCH GROUPS
+    const {
+        data: rawGroups = [],
+        isLoading,
+        isError,
+        refetch,
+    } = useQuery({
         queryKey: ["service-groups"],
         queryFn: async () => {
-            const res = await serviceApi.getServiceGroup();
-            return Array.isArray(res) ? res : res?.data || [];
+            const response = await serviceApi.getServiceGroup();
+            return normalizeGroupsResponse(response);
         },
     });
 
-    // Transform backend data to match ServiceGroupItem interface
+    // NORMALIZE API RESPONSE
     const groups: ServiceGroupItem[] = useMemo(() => {
-        return rawGroups.map((item: any) => ({
-            id: item.id,
-            groupCode: item.groupCode || `GRP-${item.id?.substring(0, 4) || '000'}`,
-            name: item.name,
-            servicesCount: Array.isArray(item.services) ? item.services.length : 0,
-            description: item.description || "",
-            createdAt: item.createdAt ? new Date(item.createdAt).toISOString().split("T")[0] : "",
-            status: item.status === ServiceTagStatus.ACTIVE ? 'active' : 'inactive',
-            group_icon: item.group_icon,
-            servicePackage_id: item.servicePackage?.id || item.servicePackage_id,
-            group_type: item.group_type,
-            boarding_type: item.boarding_type,
-            service_ids: item.services ? item.services.map((s: any) => s.id) : [],
-        }));
+        return rawGroups.map((item: any) => {
+            const relations = getGroupServiceRelations(item);
+            const serviceIds = extractServiceIds(relations);
+
+            // Prefer the actual relation count over a stale servicesCount.
+            const servicesCount = relations.length > 0
+                ? relations.length
+                : Number(item.servicesCount ?? 0);
+
+            const createdAt = item.createdAt
+                ? String(item.createdAt).slice(0, 10)
+                : "";
+
+            return {
+                id: String(item.id),
+                codeName:
+                    item.codeName ||
+                    item.groupCode ||
+                    `GRP-${String(item.id || "").substring(0, 4) || "000"}`,
+                name: item.name || "",
+                servicesCount,
+                description: item.description || "",
+                createdAt,
+                status:
+                    String(item.status || "active").toLowerCase() === "inactive"
+                        ? "inactive"
+                        : "active",
+                group_icon: item.group_icon,
+                servicePackage_id:
+                    item.servicePackage?.id ??
+                    item.servicePackage_id ??
+                    undefined,
+                group_type: item.group_type,
+                boarding_type: item.boarding_type,
+                service_ids: serviceIds,
+            };
+        });
     }, [rawGroups]);
 
-    // 2. Create Mutation
-    const createMutation = useMutation({
-        mutationFn: (dto: CreateServiceGroupDto) => serviceApi.createServiceGroup(dto),
-        onSuccess: () => {
-            toast.success(t("groups.messages.created"));
-            queryClient.invalidateQueries({ queryKey: ["service-groups"] });
-            setIsDrawerOpen(false);
-            setEditingGroup(null);
-        },
-        onError: (error) => {
-            console.error("Failed to create service group:", error);
-            toast.error(t("groups.messages.createError", { defaultValue: "Failed to create group" }));
-        },
-    });
-
-    // 3. Update Mutation
-    const updateMutation = useMutation({
-        mutationFn: ({ id, dto }: { id: string; dto: CreateServiceGroupDto }) => {
-            return serviceApi.updateServiceGroup(id, dto)
-        }
-        ,
-        onSuccess: () => {
-            toast.success(t("groups.messages.updated"));
-            queryClient.invalidateQueries({ queryKey: ["service-groups"] });
-            setIsDrawerOpen(false);
-            setEditingGroup(null);
-        },
-        onError: (error) => {
-            console.error("Failed to update service group:", error);
-            toast.error(t("groups.messages.updateError", { defaultValue: "Failed to update group" }));
-        },
-    });
-
+    // SEARCH
     const filtered = useMemo(() => {
-        if (!searchTerm) return groups;
-        const term = searchTerm.toLowerCase();
-        return groups.filter(
-            (g) =>
-                g.name.toLowerCase().includes(term) ||
-                t(`groups.groupOptions.${g.name}`, { defaultValue: g.name }).toLowerCase().includes(term) ||
-                (g.groupCode && g.groupCode.toLowerCase().includes(term)) ||
-                g.description.toLowerCase().includes(term) ||
-                t(`groups.groupDescriptions.${g.description}`, { defaultValue: g.description }).toLowerCase().includes(term)
-        );
+        const term = searchTerm.trim().toLowerCase();
+
+        if (!term) return groups;
+
+        return groups.filter((group) => {
+            const translatedName = t(`groups.groupOptions.${group.name}`, {
+                defaultValue: group.name,
+            });
+
+            const translatedDescription = t(
+                `groups.groupDescriptions.${group.description}`,
+                { defaultValue: group.description }
+            );
+
+            return (
+                group.name.toLowerCase().includes(term) ||
+                translatedName.toLowerCase().includes(term) ||
+                (group.codeName || "").toLowerCase().includes(term) ||
+                group.description.toLowerCase().includes(term) ||
+                translatedDescription.toLowerCase().includes(term)
+            );
+        });
     }, [groups, searchTerm, t]);
 
-    const handleOpenCreate = () => {
-        setEditingGroup(null);
-        setIsDrawerOpen(true);
-    };
+    const pageCount = Math.ceil(filtered.length / pageSize);
+    const currentPageIndex =
+        pageCount > 0 ? Math.min(pageIndex, pageCount - 1) : 0;
 
-    const handleOpenEdit = useCallback((group: ServiceGroupItem) => {
-        setEditingGroup(group);
-        setIsDrawerOpen(true);
+    const paginatedGroups = useMemo(() => {
+        const start = currentPageIndex * pageSize;
+        return filtered.slice(start, start + pageSize);
+    }, [filtered, currentPageIndex, pageSize]);
+
+    // DRAWER
+    const openDrawer = useCallback(
+        (
+            mode: ServiceGroupDrawerMode,
+            group: ServiceGroupItem | null = null
+        ) => {
+            setSelectedGroup(group);
+            setDrawerMode(mode);
+            setOpenMenuId(null);
+            setIsDrawerOpen(true);
+        },
+        []
+    );
+
+    const closeDrawer = useCallback(() => {
+        setIsDrawerOpen(false);
+        setSelectedGroup(null);
+        setDrawerMode("create");
     }, []);
 
+    const handleOpenCreate = useCallback(() => {
+        openDrawer("create");
+    }, [openDrawer]);
+
+    const handleOpenEdit = useCallback(
+        (group: ServiceGroupItem) => {
+            openDrawer("edit", group);
+        },
+        [openDrawer]
+    );
+
+    const handleOpenView = useCallback(
+        (group: ServiceGroupItem) => {
+            openDrawer("view", group);
+        },
+        [openDrawer]
+    );
+
+    // DELETE
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => serviceApi.deleteServiceGroup(id),
+
+        onSuccess: async () => {
+            toast.success(
+                t("groups.messages.deleted", {
+                    defaultValue: "Service group deleted successfully",
+                })
+            );
+
+            setOpenMenuId(null);
+
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["service-groups"],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ["serviceGroups"],
+                }),
+            ]);
+        },
+
+        onError: (error: any) => {
+            console.error("Failed to delete service group:", error);
+
+            toast.error(
+                getErrorMessage(error) ||
+                t("groups.messages.deleteError", {
+                    defaultValue: "Failed to delete service group",
+                })
+            );
+        },
+    });
+
+    const handleDelete = useCallback(
+        (group: ServiceGroupItem) => {
+            setOpenMenuId(null);
+
+            if (deleteMutation.isPending) return;
+
+            const confirmed = window.confirm(
+                `Are you sure you want to delete "${group.name}"?`
+            );
+
+            if (confirmed) {
+                deleteMutation.mutate(group.id);
+            }
+        },
+        [deleteMutation]
+    );
+
+    // EXPORT CSV
+    const handleExport = useCallback(() => {
+        if (filtered.length === 0) {
+            toast.error(
+                t("common.noDataToExport", {
+                    defaultValue: "No service groups to export",
+                })
+            );
+            return;
+        }
+
+        const headers = [
+            "Group Code",
+            "Group Name",
+            "Group Type",
+            "Boarding Type",
+            "Description",
+            "Services Count",
+            "Status",
+            "Created At",
+        ];
+
+        const escapeCsv = (value: unknown) =>
+            `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+        const rows = filtered.map((group) => [
+            group.codeName,
+            group.name,
+            group.group_type,
+            group.boarding_type,
+            group.description,
+            group.servicesCount,
+            group.status,
+            group.createdAt,
+        ]);
+
+        const csv = [
+            headers.map(escapeCsv).join(","),
+            ...rows.map((row) => row.map(escapeCsv).join(",")),
+        ].join("\r\n");
+
+        const blob = new Blob(["\uFEFF", csv], {
+            type: "text/csv;charset=utf-8;",
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = "service-groups.csv";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        toast.success(
+            t("common.exportSuccess", {
+                defaultValue: "Service groups exported successfully",
+            })
+        );
+    }, [filtered, t]);
+
+    // TABLE COLUMNS
     const columns = useMemo<ColumnDef<any, any>[]>(
         () => [
             {
-                id: "select",
-                header: ({ table }) => (
-                    <input
-                        type="checkbox"
-                        checked={table.getIsAllRowsSelected()}
-                        onChange={table.getToggleAllRowsSelectedHandler()}
-                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                    />
-                ),
-                cell: ({ row }) => (
-                    <input
-                        type="checkbox"
-                        checked={row.getIsSelected()}
-                        onChange={row.getToggleSelectedHandler()}
-                        className="rounded border-[#DCD6CD] text-[#2D3F2C] focus:ring-[#2D3F2C] cursor-pointer"
-                    />
-                ),
-            },
-            {
-                accessorKey: "groupCode",
+                accessorKey: "codeName",
                 header: t("groups.groupCode"),
-                cell: (info) => (
-                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]" dir="ltr">
-                        {(info.getValue() as string) || "—"}
+                cell: ({ row }) => (
+                    <span className="font-semibold font-mono text-xs text-[#2D3F2C]">
+                        {row.original.codeName}
                     </span>
                 ),
             },
@@ -191,13 +401,17 @@ export const ServiceGroupsTab: React.FC = () => {
                 header: t("groups.groupName"),
                 cell: ({ row }) => {
                     const item = row.original;
+
                     return (
                         <div className="flex items-center gap-2.5">
                             <span className="w-6 h-6 rounded-md bg-[#FAF8F5] border border-[#E5E0D8] text-[#6A7358] flex items-center justify-center shrink-0 shadow-2xs">
                                 {renderGroupIcon(item.group_icon)}
                             </span>
+
                             <span className="font-medium text-[#0D0D0D]">
-                                {t(`groups.groupOptions.${item.name}`, { defaultValue: item.name })}
+                                {t(`groups.groupOptions.${item.name}`, {
+                                    defaultValue: item.name,
+                                })}
                             </span>
                         </div>
                     );
@@ -208,7 +422,9 @@ export const ServiceGroupsTab: React.FC = () => {
                 header: t("groups.linkedServices"),
                 cell: (info) => (
                     <span className="inline-flex px-2 py-0.5 rounded text-xs font-semibold font-mono bg-[#FAF8F5] border border-[#E5E0D8] text-[#2D3F2C]">
-                        {t("common.servicesCountBadge", { count: info.getValue() as number })}
+                        {t("common.servicesCountBadge", {
+                            count: info.getValue() as number,
+                        })}
                     </span>
                 ),
             },
@@ -216,10 +432,15 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "description",
                 header: t("groups.description"),
                 cell: (info) => {
-                    const desc = info.getValue() as string;
+                    const description = info.getValue() as string;
+
                     return (
                         <span className="text-[#6E6862] max-w-xs truncate block">
-                            {desc ? t(`groups.groupDescriptions.${desc}`, { defaultValue: desc }) : "—"}
+                            {description
+                                ? t(`groups.groupDescriptions.${description}`, {
+                                    defaultValue: description,
+                                })
+                                : "—"}
                         </span>
                     );
                 },
@@ -228,16 +449,18 @@ export const ServiceGroupsTab: React.FC = () => {
                 accessorKey: "createdAt",
                 header: t("services.createDate"),
                 cell: (info) => (
-                    <span className="font-mono text-[#6E6862]" dir="ltr">{(info.getValue() as string) || "—"}</span>
+                    <span className="font-mono text-[#6E6862]" dir="ltr">
+                        {(info.getValue() as string) || "—"}
+                    </span>
                 ),
             },
             {
                 accessorKey: "status",
                 header: t("common.status"),
                 cell: ({ row }) => {
-                    const isGroupActive =
-                        String(row.original?.status || "active").toLowerCase() !== "inactive";
-                    return isGroupActive ? (
+                    const active = row.original.status !== "inactive";
+
+                    return active ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#2D3F2C]/10 text-[#2D3F2C] border border-[#2D3F2C]/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#2D3F2C]" />
                             {t("common.active")}
@@ -252,74 +475,156 @@ export const ServiceGroupsTab: React.FC = () => {
             },
             {
                 id: "actions",
-                header: () => <div className="text-end">{t("common.actions")}</div>,
-                cell: ({ row }) => (
-                    <div className="text-end">
-                        <button
-                            onClick={() => handleOpenEdit(row.original)}
-                            className="p-1 rounded hover:bg-[#F8F6F2] text-[#857E74] hover:text-[#0D0D0D] transition cursor-pointer"
-                        >
-                            <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                    </div>
+                header: () => (
+                    <div className="text-end">{t("common.actions")}</div>
                 ),
+                cell: ({ row }) => {
+                    const group = row.original;
+                    const menuOpen = openMenuId === group.id;
+
+                    return (
+                        <div className="relative flex justify-end">
+                            <button
+                                type="button"
+                                aria-label="Open service group actions"
+                                aria-expanded={menuOpen}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    setOpenMenuId((current) =>
+                                        current === group.id ? null : group.id
+                                    );
+                                }}
+                                className="p-1.5 rounded-md hover:bg-[#F8F6F2] text-[#857E74] hover:text-[#0D0D0D] transition cursor-pointer"
+                            >
+                                <MoreHorizontal className="w-4 h-4" />
+                            </button>
+
+                            {menuOpen && (
+                                <div
+                                    className="absolute right-0 top-full mt-1 w-40 rounded-lg border border-[#E5E0D8] bg-white shadow-lg z-30 py-1"
+                                    onClick={(event) => event.stopPropagation()}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenView(group)}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#3F3B36] hover:bg-[#FAF8F5] transition"
+                                    >
+                                        <Eye size={15} />
+                                        View
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenEdit(group)}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#3F3B36] hover:bg-[#FAF8F5] transition"
+                                    >
+                                        <Pencil size={15} />
+                                        Edit
+                                    </button>
+
+                                    <div className="my-1 border-t border-[#F0ECE6]" />
+
+                                    <button
+                                        type="button"
+                                        disabled={deleteMutation.isPending}
+                                        onClick={() => handleDelete(group)}
+                                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+                                    >
+                                        <Trash2 size={15} />
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
             },
         ],
-        [t, handleOpenEdit]
+        [
+            t,
+            openMenuId,
+            handleOpenView,
+            handleOpenEdit,
+            handleDelete,
+            deleteMutation.isPending,
+        ]
     );
 
-    const drawerInitialData: (CreateServiceGroupDto & { id: string }) | null = editingGroup
-        ? {
-            id: editingGroup.id,
-            name: editingGroup.name,
-            description: editingGroup.description,
-            group_icon: editingGroup.group_icon || "briefcase",
-            servicePackage_id: editingGroup.servicePackage_id || "",
-            group_type: editingGroup.group_type || GroupType.EMPLOYEE,
-            boarding_type: editingGroup.boarding_type || BoardingType.OTHER,
+    // DRAWER INITIAL DATA
+    const drawerInitialData = useMemo(() => {
+        if (!selectedGroup) return null;
+
+        return {
+            id: selectedGroup.id,
+            name: selectedGroup.name,
+            description: selectedGroup.description,
+            group_icon: selectedGroup.group_icon || "briefcase",
+            servicePackage_id: selectedGroup.servicePackage_id || "",
+            group_type: selectedGroup.group_type || GroupType.EMPLOYEE,
+            boarding_type:
+                selectedGroup.boarding_type || BoardingType.OTHER,
             status:
-                editingGroup.status === "active"
+                selectedGroup.status === "active"
                     ? ServiceTagStatus.ACTIVE
                     : ServiceTagStatus.INACTIVE,
-            service_ids: editingGroup.service_ids || [],
-        }
-        : null;
 
-    const isSubmitting = createMutation.isPending || updateMutation.isPending;
+            // These are actual service UUIDs, not relation UUIDs.
+            service_ids: selectedGroup.service_ids,
+        };
+    }, [selectedGroup]);
 
     return (
         <div className="space-y-4">
+            {isError && (
+                <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                    <p className="text-sm text-red-600">
+                        Failed to load service groups.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className="text-sm font-medium text-red-700 underline"
+                    >
+                        Try again
+                    </button>
+                </div>
+            )}
+
             <DataTable
                 columns={columns}
-                data={filtered.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)}
+                data={paginatedGroups}
                 count={filtered.length}
                 loading={isLoading}
-                searchPlaceholder={t("pages.serviceGroups.searchPlaceholder")}
-                pageIndex={pageIndex}
+                searchPlaceholder={t(
+                    "pages.serviceGroups.searchPlaceholder"
+                )}
+                pageIndex={currentPageIndex}
                 pageSize={pageSize}
                 onPageChange={setPageIndex}
-                onPageSizeChange={setPageSize}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPageIndex(0);
+                }}
                 searchValue={searchTerm}
-                onSearchChange={(val) => {
-                    setSearchTerm(val);
+                onSearchChange={(value) => {
+                    setSearchTerm(value);
                     setPageIndex(0);
                 }}
                 onAddNew={handleOpenCreate}
                 title="Service Groups"
                 addNewLabel={t("pages.serviceGroups.addLabel")}
+                onExport={handleExport}
             />
 
             <ServiceGroupDrawer
                 isOpen={isDrawerOpen}
-                onClose={() => {
-                    if (!isSubmitting) {
-                        setIsDrawerOpen(false);
-                        setEditingGroup(null);
-                    }
-                }}
-                isEdit={Boolean(editingGroup)}
+                onClose={closeDrawer}
                 initialData={drawerInitialData}
+                mode={drawerMode}
+                isEdit={drawerMode === "edit"}
             />
         </div>
     );
 };
+
+export default ServiceGroupsTab;
