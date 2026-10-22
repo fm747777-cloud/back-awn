@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Settings, ChevronDown, FolderKanban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSidebarStore, getMenuGroupsForPath } from '../store/useSidebarStore';
+import awnLogo from '../assets/awn-logo.png';
 
 const GROUP_TITLE_KEYS: Record<string, string> = {
     MAIN: 'nav.main',
@@ -129,26 +130,18 @@ export const Sidebar = () => {
         >
             {/* Header / Brand Logo */}
             <div>
-                <div className="h-16 border-b border-[#E5E7EB] flex items-center justify-center px-4">
-                    {!collapsed ? (
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-[#37848C] border border-[#BF9A56]/40 flex items-center justify-center shadow-xs shrink-0">
-                                <span className="text-sm font-black text-white">ع</span>
-                            </div>
-                            <div className="text-start">
-                                <span className="text-base font-bold text-[#1F2937] block leading-tight tracking-wide">
-                                    عَـــــوْن
-                                </span>
-                                <span className="text-[9px] font-semibold tracking-[0.25em] text-[#37848C] uppercase block">
-                                    {t('common.awnEnterprise')}
-                                </span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="w-9 h-9 rounded-lg bg-[#37848C] border border-[#BF9A56]/50 flex items-center justify-center">
-                            <span className="text-xs font-black text-white">ع</span>
-                        </div>
-                    )}
+                <div
+                    className={`h-16 border-b border-[#E5E7EB] flex items-center ${
+                        collapsed ? 'justify-center px-2' : 'justify-start px-4'
+                    }`}
+                >
+                    <img
+                        src={awnLogo}
+                        alt={t('common.awnEnterprise', { defaultValue: 'AWN' })}
+                        className={`object-contain object-left rtl:object-right select-none shrink-0 transition-all duration-300 ${
+                            collapsed ? 'h-9 w-auto max-w-full' : 'h-11 w-auto max-w-full'
+                        }`}
+                    />
                 </div>
 
                 {/* Navigation Groups */}

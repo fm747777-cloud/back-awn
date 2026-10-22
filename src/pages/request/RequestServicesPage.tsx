@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next';
 import {
     Layers,
     Search as SearchIcon,
-    Plus,
     Download,
     MoreHorizontal,
     Eye,
-    Edit2,
     Trash2,
     Send,
     X,
@@ -26,18 +24,11 @@ import { toast } from 'sonner';
 import {
     REQUEST_BUSINESS_OWNERS,
     REQUEST_COMPANIES,
-    REQUEST_PACKAGE_PRESETS,
     REQUEST_SERVICE_GROUPS,
-    REQUEST_CATALOG_SERVICES,
     loadRequestServices,
-    createRequestServiceRecord,
-    updateRequestServiceRecord,
     deleteRequestServiceRecord,
     loadInitiatedRequests,
-    saveInitiatedRequest,
     type RequestServiceRecord,
-    type RequestServiceStatus,
-    type RequestPriority,
     type InitiatedRequestPayload,
 } from './requestServicesMockData';
 import { appendRequestAuditEntry } from './requestsMockData';
@@ -316,22 +307,18 @@ const ExpandableBadgesCell: React.FC<ExpandableBadgesCellProps> = ({
 };
 
 // ============================================================================
-// Row Actions Menu (Initiate Request, View, Edit, Delete)
+// Row Actions Menu (View, Delete)
 // ============================================================================
 
 interface ServiceActionsMenuProps {
     item: RequestServiceRecord;
-    onInitiate: (item: RequestServiceRecord) => void;
     onView: (item: RequestServiceRecord) => void;
-    onEdit: (item: RequestServiceRecord) => void;
     onDelete: (item: RequestServiceRecord) => void;
 }
 
 const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
     item,
-    onInitiate,
     onView,
-    onEdit,
     onDelete,
 }) => {
     const { t } = useTranslation();
@@ -361,19 +348,6 @@ const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
 
     return (
         <div className="flex items-center gap-1.5">
-            <button
-                type="button"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onInitiate(item);
-                }}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#037F8C]/10 hover:bg-[#037F8C] text-[#037F8C] hover:text-[#FAF8F5] dark:bg-emerald-950/50 dark:text-emerald-300 dark:hover:bg-emerald-700 dark:hover:text-white border border-[#037F8C]/20 transition-colors cursor-pointer"
-                title={t('request.services.actions.initiateRequest')}
-            >
-                <Send size={12} className="shrink-0" />
-                <span>{t('request.services.actions.initiateRequest')}</span>
-            </button>
-
             <div className="relative inline-block text-start" ref={menuRef}>
                 <button
                     type="button"
@@ -399,38 +373,12 @@ const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
-                                onInitiate(item);
-                            }}
-                            className="w-full text-start px-3.5 py-2 text-[#037F8C] dark:text-emerald-300 font-semibold hover:bg-[#FAF8F5] dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                            <Send size={14} className="shrink-0" />
-                            <span>{t('request.services.actions.initiateRequest')}</span>
-                        </button>
-
-                        <div className="my-1 border-t border-[#F0ECE4] dark:border-slate-700" />
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsOpen(false);
                                 onView(item);
                             }}
                             className="w-full text-start px-3.5 py-2 text-[#0D0D0D] dark:text-slate-100 hover:bg-[#FAF8F5] dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
                         >
                             <Eye size={14} className="text-[#6E6862] dark:text-slate-400 shrink-0" />
                             <span>{t('request.services.actions.viewService')}</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsOpen(false);
-                                onEdit(item);
-                            }}
-                            className="w-full text-start px-3.5 py-2 text-[#0D0D0D] dark:text-slate-100 hover:bg-[#FAF8F5] dark:hover:bg-slate-700 flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                            <Edit2 size={14} className="text-[#6E6862] dark:text-slate-400 shrink-0" />
-                            <span>{t('request.services.actions.editService')}</span>
                         </button>
 
                         <div className="my-1 border-t border-[#F0ECE4] dark:border-slate-700" />
@@ -454,86 +402,25 @@ const ServiceActionsMenu: React.FC<ServiceActionsMenuProps> = ({
 };
 
 // ============================================================================
-// Add / Edit / View Service Drawer
+// View Service Drawer (Read-Only)
 // ============================================================================
 
-export type ServiceDrawerMode = 'add' | 'edit' | 'view';
-
-interface ServiceFormSubmitPayload {
-    ownerId: string;
-    companyId: string;
-    packageName: string;
-    serviceGroups: string[];
-    serviceGroupsAr: string[];
-    selectedServices: string[];
-    selectedServicesAr: string[];
-    createdDate: string;
-    status: RequestServiceStatus;
-}
+export type ServiceDrawerMode = 'view';
 
 interface ServiceRecordDrawerProps {
     isOpen: boolean;
-    mode: ServiceDrawerMode;
     item: RequestServiceRecord | null;
     isAr: boolean;
     onClose: () => void;
-    onSwitchToEdit: () => void;
-    onInitiateFromView: (item: RequestServiceRecord) => void;
-    onSubmit: (data: ServiceFormSubmitPayload, existingItem: RequestServiceRecord | null) => void;
 }
 
 const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
     isOpen,
-    mode,
     item,
     isAr,
     onClose,
-    onSwitchToEdit,
-    onInitiateFromView,
-    onSubmit,
 }) => {
     const { t } = useTranslation();
-
-    const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
-
-    const [ownerId, setOwnerId] = useState('');
-    const [companyId, setCompanyId] = useState('');
-    const [packageName, setPackageName] = useState('');
-    const [serviceGroups, setServiceGroups] = useState<string[]>([]);
-    const [selectedServices, setSelectedServices] = useState<string[]>([]);
-    const [createdDate, setCreatedDate] = useState(todayStr);
-    const [status, setStatus] = useState<RequestServiceStatus>('Active');
-
-    const [customGroupInput, setCustomGroupInput] = useState('');
-    const [customServiceInput, setCustomServiceInput] = useState('');
-    const [hasSubmitted, setHasSubmitted] = useState(false);
-
-    const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${mode}-${item?.id ?? 'new'}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
-        setHasSubmitted(false);
-        setCustomGroupInput('');
-        setCustomServiceInput('');
-
-        if (isOpen && item && (mode === 'edit' || mode === 'view')) {
-            setOwnerId(item.ownerId);
-            setCompanyId(item.companyId);
-            setPackageName(isAr ? item.packageNameAr || item.packageName : item.packageName);
-            setServiceGroups([...item.serviceGroups]);
-            setSelectedServices([...item.selectedServices]);
-            setCreatedDate(item.createdDate);
-            setStatus(item.status);
-        } else if (isOpen && mode === 'add') {
-            setOwnerId('');
-            setCompanyId('');
-            setPackageName('');
-            setServiceGroups([]);
-            setSelectedServices([]);
-            setCreatedDate(todayStr);
-            setStatus('Active');
-        }
-    }
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -544,136 +431,6 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
-
-    // Interconnected Companies inside Drawer based on selected Business Owner
-    const availableCompanies = useMemo(() => {
-        if (!ownerId) return REQUEST_COMPANIES;
-        return REQUEST_COMPANIES.filter((c) => c.ownerId === ownerId);
-    }, [ownerId]);
-
-    const handleDrawerOwnerChange = (nextOwnerId: string) => {
-        setOwnerId(nextOwnerId);
-        if (nextOwnerId && companyId) {
-            const comp = REQUEST_COMPANIES.find((c) => c.id === companyId);
-            if (comp && comp.ownerId !== nextOwnerId) {
-                const firstForOwner = REQUEST_COMPANIES.find((c) => c.ownerId === nextOwnerId);
-                setCompanyId(firstForOwner ? firstForOwner.id : '');
-            }
-        }
-    };
-
-    const handleDrawerCompanyChange = (nextCompanyId: string) => {
-        setCompanyId(nextCompanyId);
-        const comp = REQUEST_COMPANIES.find((c) => c.id === nextCompanyId);
-        if (comp && comp.ownerId !== ownerId) {
-            setOwnerId(comp.ownerId);
-        }
-    };
-
-    const toggleGroup = (groupNameEn: string) => {
-        setServiceGroups((prev) =>
-            prev.includes(groupNameEn)
-                ? prev.filter((g) => g !== groupNameEn)
-                : [...prev, groupNameEn]
-        );
-    };
-
-    const toggleService = (serviceNameEn: string) => {
-        setSelectedServices((prev) =>
-            prev.includes(serviceNameEn)
-                ? prev.filter((s) => s !== serviceNameEn)
-                : [...prev, serviceNameEn]
-        );
-    };
-
-    const handleAddCustomGroup = () => {
-        const trimmed = customGroupInput.trim();
-        if (!trimmed) return;
-        if (!serviceGroups.includes(trimmed)) {
-            setServiceGroups((prev) => [...prev, trimmed]);
-        }
-        setCustomGroupInput('');
-    };
-
-    const handleAddCustomService = () => {
-        const trimmed = customServiceInput.trim();
-        if (!trimmed) return;
-        if (!selectedServices.includes(trimmed)) {
-            setSelectedServices((prev) => [...prev, trimmed]);
-        }
-        setCustomServiceInput('');
-    };
-
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setHasSubmitted(true);
-
-        if (
-            !ownerId ||
-            !companyId ||
-            !packageName.trim() ||
-            serviceGroups.length === 0 ||
-            selectedServices.length === 0 ||
-            !createdDate
-        ) {
-            return;
-        }
-
-        const resolvedGroupsAr = serviceGroups.map((gEn) => {
-            const found = REQUEST_SERVICE_GROUPS.find(
-                (item) => item.nameEn === gEn || item.nameAr === gEn
-            );
-            return found ? found.nameAr : gEn;
-        });
-
-        const resolvedServicesAr = selectedServices.map((sEn) => {
-            const found = REQUEST_CATALOG_SERVICES.find(
-                (item) => item.nameEn === sEn || item.nameAr === sEn
-            );
-            return found ? found.nameAr : sEn;
-        });
-
-        onSubmit(
-            {
-                ownerId,
-                companyId,
-                packageName: packageName.trim(),
-                serviceGroups,
-                serviceGroupsAr: resolvedGroupsAr,
-                selectedServices,
-                selectedServicesAr: resolvedServicesAr,
-                createdDate,
-                status,
-            },
-            mode === 'edit' ? item : null
-        );
-    };
-
-    const allKnownGroups = useMemo(() => {
-        const base = REQUEST_SERVICE_GROUPS.map((g) => ({
-            nameEn: g.nameEn,
-            nameAr: g.nameAr,
-        }));
-        for (const g of serviceGroups) {
-            if (!base.some((b) => b.nameEn === g || b.nameAr === g)) {
-                base.push({ nameEn: g, nameAr: g });
-            }
-        }
-        return base;
-    }, [serviceGroups]);
-
-    const allKnownServices = useMemo(() => {
-        const base = REQUEST_CATALOG_SERVICES.map((s) => ({
-            nameEn: s.nameEn,
-            nameAr: s.nameAr,
-        }));
-        for (const s of selectedServices) {
-            if (!base.some((b) => b.nameEn === s || b.nameAr === s)) {
-                base.push({ nameEn: s, nameAr: s });
-            }
-        }
-        return base;
-    }, [selectedServices]);
 
     return (
         <div
@@ -696,22 +453,12 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                 <div className="flex justify-between items-center px-6 py-4 border-b border-[#E5E0D8] dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
                     <div>
                         <h2 className="text-lg font-bold text-[#0D0D0D] dark:text-slate-100">
-                            {mode === 'add'
-                                ? t('request.services.drawer.addTitle')
-                                : mode === 'edit'
-                                  ? t('request.services.drawer.editTitle')
-                                  : t('request.services.drawer.viewTitle')}
+                            {t('request.services.drawer.viewTitle')}
                         </h2>
                         <p className="text-xs text-[#6E6862] dark:text-slate-400 mt-0.5">
-                            {mode === 'add'
-                                ? t('request.services.drawer.addSubtitle')
-                                : mode === 'edit'
-                                  ? t('request.services.drawer.editSubtitle', {
-                                        code: item?.code || '',
-                                    })
-                                  : t('request.services.drawer.viewSubtitle', {
-                                        code: item?.code || '',
-                                    })}
+                            {t('request.services.drawer.viewSubtitle', {
+                                code: item?.code || '',
+                            })}
                         </p>
                     </div>
                     <button
@@ -726,7 +473,7 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                 </div>
 
                 {/* View Mode */}
-                {mode === 'view' && item && (
+                {item && (
                     <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs">
                         <div className="grid grid-cols-2 gap-3 bg-[#FAF8F5] dark:bg-slate-800/60 border border-[#E5E0D8] dark:border-slate-700 rounded-xl p-4">
                             <div>
@@ -849,275 +596,6 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                     </div>
                 )}
 
-                {/* Add / Edit Form Mode */}
-                {(mode === 'add' || mode === 'edit') && (
-                    <form
-                        id="awn-request-service-form"
-                        onSubmit={handleFormSubmit}
-                        noValidate
-                        className="p-6 overflow-y-auto flex-1 space-y-4 text-xs"
-                    >
-                        {/* Interconnected Business Owner & Company */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                    {t('request.services.drawer.businessOwner')}{' '}
-                                    <span className="text-[#A23B2A]">*</span>
-                                </label>
-                                <select
-                                    value={ownerId}
-                                    onChange={(e) => handleDrawerOwnerChange(e.target.value)}
-                                    className={`w-full px-3 py-2.5 rounded-lg border text-xs transition ${
-                                        hasSubmitted && !ownerId
-                                            ? 'border-red-400 bg-white dark:bg-slate-800'
-                                            : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                    } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
-                                >
-                                    <option value="">
-                                        {t('request.services.drawer.selectBusinessOwner')}
-                                    </option>
-                                    {REQUEST_BUSINESS_OWNERS.map((owner) => (
-                                        <option key={owner.id} value={owner.id}>
-                                            {isAr ? owner.nameAr : owner.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
-                                {hasSubmitted && !ownerId && (
-                                    <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                        {t('request.services.drawer.errors.ownerRequired')}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                    {t('request.services.drawer.company')}{' '}
-                                    <span className="text-[#A23B2A]">*</span>
-                                </label>
-                                <select
-                                    value={companyId}
-                                    onChange={(e) => handleDrawerCompanyChange(e.target.value)}
-                                    className={`w-full px-3 py-2.5 rounded-lg border text-xs transition ${
-                                        hasSubmitted && !companyId
-                                            ? 'border-red-400 bg-white dark:bg-slate-800'
-                                            : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                    } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
-                                >
-                                    <option value="">
-                                        {t('request.services.drawer.selectCompany')}
-                                    </option>
-                                    {availableCompanies.map((comp) => (
-                                        <option key={comp.id} value={comp.id}>
-                                            {comp.name} ({isAr ? comp.ownerNameAr : comp.ownerNameEn})
-                                        </option>
-                                    ))}
-                                </select>
-                                {hasSubmitted && !companyId && (
-                                    <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                        {t('request.services.drawer.errors.companyRequired')}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Package Name + Presets */}
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.drawer.packageName')}{' '}
-                                <span className="text-[#A23B2A]">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={packageName}
-                                onChange={(e) => setPackageName(e.target.value)}
-                                placeholder={t('request.services.drawer.packageNamePlaceholder')}
-                                className={`w-full px-3.5 py-2.5 rounded-lg border text-xs transition ${
-                                    hasSubmitted && !packageName.trim()
-                                        ? 'border-red-400 bg-white dark:bg-slate-800'
-                                        : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
-                            />
-                            {hasSubmitted && !packageName.trim() && (
-                                <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                    {t('request.services.drawer.errors.packageRequired')}
-                                </span>
-                            )}
-                            <div className="mt-2">
-                                <span className="text-[10px] text-[#6E6862] dark:text-slate-400 block mb-1">
-                                    {t('request.services.drawer.packagePresetsLabel')}
-                                </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {REQUEST_PACKAGE_PRESETS.map((preset) => (
-                                        <button
-                                            key={preset.nameEn}
-                                            type="button"
-                                            onClick={() => setPackageName(preset.nameEn)}
-                                            className={`px-2 py-1 rounded-md text-[11px] border transition cursor-pointer ${
-                                                packageName === preset.nameEn
-                                                    ? 'bg-[#037F8C] text-white border-[#037F8C]'
-                                                    : 'bg-[#FAF8F5] dark:bg-slate-800 border-[#E5E0D8] dark:border-slate-700 text-[#595550] dark:text-slate-300 hover:border-[#BFAB93]'
-                                            }`}
-                                        >
-                                            {preset.nameEn}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Service Groups Multi-Select */}
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.drawer.serviceGroups')}{' '}
-                                <span className="text-[#A23B2A]">*</span>
-                            </label>
-                            <div className="max-h-40 overflow-y-auto p-2.5 rounded-xl border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5]/60 dark:bg-slate-800/50 space-y-1.5">
-                                {allKnownGroups.map((grp) => {
-                                    const checked = serviceGroups.includes(grp.nameEn);
-                                    return (
-                                        <label
-                                            key={grp.nameEn}
-                                            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 cursor-pointer transition"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={checked}
-                                                onChange={() => toggleGroup(grp.nameEn)}
-                                                className="rounded border-[#DCD6CD] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                                            />
-                                            <span className="text-xs text-[#0D0D0D] dark:text-slate-200">
-                                                {isAr ? grp.nameAr : grp.nameEn}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                                <input
-                                    type="text"
-                                    value={customGroupInput}
-                                    onChange={(e) => setCustomGroupInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddCustomGroup();
-                                        }
-                                    }}
-                                    placeholder={t('request.services.drawer.customGroupPlaceholder')}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddCustomGroup}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-[#037F8C] dark:text-emerald-300 hover:bg-[#EFECE6] cursor-pointer"
-                                >
-                                    {t('request.services.drawer.addCustomBtn')}
-                                </button>
-                            </div>
-                            {hasSubmitted && serviceGroups.length === 0 && (
-                                <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                    {t('request.services.drawer.errors.serviceGroupsRequired')}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Selected Services Multi-Select */}
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.drawer.selectedServices')}{' '}
-                                <span className="text-[#A23B2A]">*</span>
-                            </label>
-                            <div className="max-h-48 overflow-y-auto p-2.5 rounded-xl border border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5]/60 dark:bg-slate-800/50 space-y-1.5">
-                                {allKnownServices.map((srv) => {
-                                    const checked = selectedServices.includes(srv.nameEn);
-                                    return (
-                                        <label
-                                            key={srv.nameEn}
-                                            className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 cursor-pointer transition"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={checked}
-                                                onChange={() => toggleService(srv.nameEn)}
-                                                className="rounded border-[#DCD6CD] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                                            />
-                                            <span className="text-xs text-[#0D0D0D] dark:text-slate-200">
-                                                {isAr ? srv.nameAr : srv.nameEn}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                                <input
-                                    type="text"
-                                    value={customServiceInput}
-                                    onChange={(e) => setCustomServiceInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddCustomService();
-                                        }
-                                    }}
-                                    placeholder={t('request.services.drawer.customServicePlaceholder')}
-                                    className="flex-1 px-3 py-1.5 rounded-lg border border-[#E5E0D8] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddCustomService}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF8F5] dark:bg-slate-800 border border-[#DCD6CD] dark:border-slate-700 text-[#037F8C] dark:text-emerald-300 hover:bg-[#EFECE6] cursor-pointer"
-                                >
-                                    {t('request.services.drawer.addCustomBtn')}
-                                </button>
-                            </div>
-                            {hasSubmitted && selectedServices.length === 0 && (
-                                <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                    {t('request.services.drawer.errors.selectedServicesRequired')}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Created Date & Status */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                    {t('request.services.drawer.createdDate')}{' '}
-                                    <span className="text-[#A23B2A]">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    dir="ltr"
-                                    value={createdDate}
-                                    onChange={(e) => setCreatedDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                                />
-                                {hasSubmitted && !createdDate && (
-                                    <span className="text-[11px] text-red-500 mt-1 block font-medium">
-                                        {t('request.services.drawer.errors.createdDateRequired')}
-                                    </span>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                    {t('request.services.drawer.status')}{' '}
-                                    <span className="text-[#A23B2A]">*</span>
-                                </label>
-                                <select
-                                    value={status}
-                                    onChange={(e) =>
-                                        setStatus(e.target.value as RequestServiceStatus)
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                                >
-                                    <option value="Active">{t('common.active')}</option>
-                                    <option value="Inactive">{t('common.inactive')}</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-                )}
-
                 {/* Drawer Footer */}
                 <div className="px-6 py-4 border-t border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-900 flex justify-end gap-2.5 shrink-0">
                     <button
@@ -1125,401 +603,9 @@ const ServiceRecordDrawer: React.FC<ServiceRecordDrawerProps> = ({
                         onClick={onClose}
                         className="px-4 py-2 text-xs font-semibold text-[#595550] dark:text-slate-300 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
                     >
-                        {t('common.cancel')}
-                    </button>
-
-                    {mode === 'view' && item ? (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onClose();
-                                    onInitiateFromView(item);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#037F8C] dark:text-emerald-300 bg-[#037F8C]/10 hover:bg-[#037F8C]/20 border border-[#037F8C]/25 rounded-lg transition cursor-pointer"
-                            >
-                                <Send size={13} />
-                                <span>{t('request.services.actions.initiateRequest')}</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onSwitchToEdit}
-                                className="px-5 py-2 text-xs font-semibold text-white bg-[#037F8C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
-                            >
-                                {t('request.services.actions.editService')}
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            type="submit"
-                            form="awn-request-service-form"
-                            className="px-5 py-2 text-xs font-semibold text-white bg-[#037F8C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
-                        >
-                            {mode === 'add'
-                                ? t('request.services.drawer.saveService')
-                                : t('request.services.drawer.saveChanges')}
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// ============================================================================
-// Initiate Request Modal (Preselects Company & Service, stores locally)
-// ============================================================================
-
-interface InitiateRequestModalProps {
-    isOpen: boolean;
-    serviceRecord: RequestServiceRecord | null;
-    isAr: boolean;
-    onClose: () => void;
-    onSubmitRequest: (payload: Omit<InitiatedRequestPayload, 'id' | 'requestCode' | 'createdAt' | 'status'>) => void;
-}
-
-const InitiateRequestModal: React.FC<InitiateRequestModalProps> = ({
-    isOpen,
-    serviceRecord,
-    isAr,
-    onClose,
-    onSubmitRequest,
-}) => {
-    const { t } = useTranslation();
-
-    const defaultDueDate = useMemo(() => {
-        const d = new Date();
-        d.setDate(d.getDate() + 7);
-        return d.toISOString().split('T')[0];
-    }, []);
-
-    const [selectedGroup, setSelectedGroup] = useState('');
-    const [selectedService, setSelectedService] = useState('');
-    const [requestTitle, setRequestTitle] = useState('');
-    const [beneficiaryName, setBeneficiaryName] = useState('');
-    const [priority, setPriority] = useState<RequestPriority>('Medium');
-    const [requestedDueDate, setRequestedDueDate] = useState(defaultDueDate);
-    const [notes, setNotes] = useState('');
-    const [hasSubmitted, setHasSubmitted] = useState(false);
-
-    const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${serviceRecord?.id ?? 'none'}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
-        setHasSubmitted(false);
-
-        if (isOpen && serviceRecord) {
-            const groupsList =
-                isAr && serviceRecord.serviceGroupsAr?.length
-                    ? serviceRecord.serviceGroupsAr
-                    : serviceRecord.serviceGroups;
-            const servicesList =
-                isAr && serviceRecord.selectedServicesAr?.length
-                    ? serviceRecord.selectedServicesAr
-                    : serviceRecord.selectedServices;
-
-            const firstGroup = groupsList[0] || '';
-            const firstService = servicesList[0] || '';
-
-            setSelectedGroup(firstGroup);
-            setSelectedService(firstService);
-            setRequestTitle(
-                `${firstService} - ${
-                    isAr
-                        ? serviceRecord.companyNameAr || serviceRecord.companyName
-                        : serviceRecord.companyName
-                }`
-            );
-            setBeneficiaryName(isAr ? serviceRecord.ownerNameAr : serviceRecord.ownerNameEn);
-            setPriority('Medium');
-            setRequestedDueDate(defaultDueDate);
-            setNotes('');
-        }
-    }
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose();
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
-
-    if (!isOpen || !serviceRecord) return null;
-
-    const availableGroups =
-        isAr && serviceRecord.serviceGroupsAr?.length
-            ? serviceRecord.serviceGroupsAr
-            : serviceRecord.serviceGroups;
-
-    const availableServices =
-        isAr && serviceRecord.selectedServicesAr?.length
-            ? serviceRecord.selectedServicesAr
-            : serviceRecord.selectedServices;
-
-    const handleServiceSelectionChange = (nextService: string) => {
-        setSelectedService(nextService);
-        setRequestTitle(
-            `${nextService} - ${
-                isAr
-                    ? serviceRecord.companyNameAr || serviceRecord.companyName
-                    : serviceRecord.companyName
-            }`
-        );
-    };
-
-    const handleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setHasSubmitted(true);
-
-        if (
-            !selectedService.trim() ||
-            !requestTitle.trim() ||
-            !beneficiaryName.trim() ||
-            !requestedDueDate
-        ) {
-            return;
-        }
-
-        onSubmitRequest({
-            serviceRecordId: serviceRecord.id,
-            ownerId: serviceRecord.ownerId,
-            ownerName: isAr ? serviceRecord.ownerNameAr : serviceRecord.ownerNameEn,
-            companyId: serviceRecord.companyId,
-            companyName: isAr
-                ? serviceRecord.companyNameAr || serviceRecord.companyName
-                : serviceRecord.companyName,
-            packageName: isAr
-                ? serviceRecord.packageNameAr || serviceRecord.packageName
-                : serviceRecord.packageName,
-            serviceGroup: selectedGroup || availableGroups[0] || '',
-            serviceName: selectedService,
-            requestTitle: requestTitle.trim(),
-            beneficiaryName: beneficiaryName.trim(),
-            priority,
-            requestedDueDate,
-            notes: notes.trim(),
-        });
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-xs p-4 overflow-y-auto">
-            <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-[#E5E0D8] dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden text-start animate-in fade-in zoom-in-95 duration-150">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8] dark:border-slate-800 bg-[#FAF8F5] dark:bg-slate-900">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#037F8C] text-[#FAF8F5] flex items-center justify-center shrink-0">
-                            <Send size={16} />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-bold text-[#0D0D0D] dark:text-slate-100">
-                                {t('request.services.initiateModal.title')}
-                            </h3>
-                            <p className="text-xs text-[#6E6862] dark:text-slate-400">
-                                {t('request.services.initiateModal.subtitle')}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[#857E74] hover:text-[#0D0D0D] dark:hover:text-slate-200 hover:bg-[#EFECE6] dark:hover:bg-slate-800 transition cursor-pointer"
-                    >
-                        <X size={18} />
+                        {t('common.close')}
                     </button>
                 </div>
-
-                {/* Modal Form */}
-                <form onSubmit={handleFormSubmit} noValidate className="p-6 space-y-4 text-xs">
-                    {/* Preselected Context Card */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 rounded-xl bg-[#FAF8F5] dark:bg-slate-800/70 border border-[#E5E0D8] dark:border-slate-700">
-                        <div>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 block">
-                                {t('request.services.initiateModal.company')}
-                            </span>
-                            <span className="font-bold text-[#0D0D0D] dark:text-slate-100 mt-0.5 block truncate">
-                                {isAr
-                                    ? serviceRecord.companyNameAr || serviceRecord.companyName
-                                    : serviceRecord.companyName}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 block">
-                                {t('request.services.initiateModal.businessOwner')}
-                            </span>
-                            <span className="font-semibold text-[#0D0D0D] dark:text-slate-200 mt-0.5 block truncate">
-                                {isAr ? serviceRecord.ownerNameAr : serviceRecord.ownerNameEn}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#6E6862] dark:text-slate-400 block">
-                                {t('request.services.initiateModal.packageName')}
-                            </span>
-                            <span className="font-semibold text-[#037F8C] dark:text-emerald-300 mt-0.5 block truncate">
-                                {isAr
-                                    ? serviceRecord.packageNameAr || serviceRecord.packageName
-                                    : serviceRecord.packageName}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Preselected Service Group & Service */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.initiateModal.serviceGroup')}
-                            </label>
-                            <select
-                                value={selectedGroup}
-                                onChange={(e) => setSelectedGroup(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                            >
-                                {availableGroups.map((grp) => (
-                                    <option key={grp} value={grp}>
-                                        {grp}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.initiateModal.selectedService')}{' '}
-                                <span className="text-[#A23B2A]">*</span>
-                            </label>
-                            <select
-                                value={selectedService}
-                                onChange={(e) => handleServiceSelectionChange(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                            >
-                                {availableServices.map((srv) => (
-                                    <option key={srv} value={srv}>
-                                        {srv}
-                                    </option>
-                                ))}
-                            </select>
-                            {hasSubmitted && !selectedService.trim() && (
-                                <span className="text-[11px] text-red-500 mt-1 block">
-                                    {t('request.services.initiateModal.errors.serviceRequired')}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Request Title */}
-                    <div>
-                        <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                            {t('request.services.initiateModal.requestTitle')}{' '}
-                            <span className="text-[#A23B2A]">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={requestTitle}
-                            onChange={(e) => setRequestTitle(e.target.value)}
-                            placeholder={t('request.services.initiateModal.requestTitlePlaceholder')}
-                            className={`w-full px-3.5 py-2 rounded-lg border text-xs ${
-                                hasSubmitted && !requestTitle.trim()
-                                    ? 'border-red-400 bg-white dark:bg-slate-800'
-                                    : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                            } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
-                        />
-                        {hasSubmitted && !requestTitle.trim() && (
-                            <span className="text-[11px] text-red-500 mt-1 block">
-                                {t('request.services.initiateModal.errors.titleRequired')}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Beneficiary, Priority, Due Date */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.initiateModal.beneficiaryName')}{' '}
-                                <span className="text-[#A23B2A]">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={beneficiaryName}
-                                onChange={(e) => setBeneficiaryName(e.target.value)}
-                                placeholder={t('request.services.initiateModal.beneficiaryPlaceholder')}
-                                className={`w-full px-3 py-2 rounded-lg border text-xs ${
-                                    hasSubmitted && !beneficiaryName.trim()
-                                        ? 'border-red-400 bg-white dark:bg-slate-800'
-                                        : 'border-[#E5E0D8] dark:border-slate-700 bg-[#FAF8F5] dark:bg-slate-800'
-                                } text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]`}
-                            />
-                            {hasSubmitted && !beneficiaryName.trim() && (
-                                <span className="text-[11px] text-red-500 mt-1 block">
-                                    {t('request.services.initiateModal.errors.beneficiaryRequired')}
-                                </span>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.initiateModal.priority')}
-                            </label>
-                            <select
-                                value={priority}
-                                onChange={(e) => setPriority(e.target.value as RequestPriority)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                            >
-                                <option value="Low">{t('request.dashboard.priorities.low')}</option>
-                                <option value="Medium">{t('request.dashboard.priorities.medium')}</option>
-                                <option value="High">{t('request.dashboard.priorities.high')}</option>
-                                <option value="Critical">{t('request.dashboard.priorities.critical')}</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                                {t('request.services.initiateModal.preferredDueDate')}{' '}
-                                <span className="text-[#A23B2A]">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                dir="ltr"
-                                value={requestedDueDate}
-                                onChange={(e) => setRequestedDueDate(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs font-mono text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                        <label className="block text-xs font-semibold text-[#0D0D0D] dark:text-slate-200 mb-1.5">
-                            {t('request.services.initiateModal.notes')}
-                        </label>
-                        <textarea
-                            rows={3}
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder={t('request.services.initiateModal.notesPlaceholder')}
-                            className="w-full px-3.5 py-2 rounded-lg bg-[#FAF8F5] dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 text-xs text-[#0D0D0D] dark:text-slate-100 focus:outline-none focus:border-[#037F8C]"
-                        />
-                    </div>
-
-                    {/* Modal Footer */}
-                    <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#EFECE6] dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-xs font-semibold text-[#595550] dark:text-slate-300 bg-white dark:bg-slate-800 border border-[#E5E0D8] dark:border-slate-700 rounded-lg hover:bg-[#F8F6F2] transition cursor-pointer"
-                        >
-                            {t('request.services.initiateModal.cancel')}
-                        </button>
-                        <button
-                            type="submit"
-                            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-[#037F8C] hover:bg-[#233222] rounded-lg shadow-xs transition cursor-pointer"
-                        >
-                            <Send size={13} />
-                            <span>{t('request.services.initiateModal.submit')}</span>
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     );
@@ -1555,11 +641,9 @@ export const RequestServicesPage: React.FC = () => {
     // Drawer / Modal State
     const [drawerState, setDrawerState] = useState<{
         isOpen: boolean;
-        mode: ServiceDrawerMode;
         item: RequestServiceRecord | null;
-    }>({ isOpen: false, mode: 'view', item: null });
+    }>({ isOpen: false, item: null });
     const [deletingService, setDeletingService] = useState<RequestServiceRecord | null>(null);
-    const [initiatingService, setInitiatingService] = useState<RequestServiceRecord | null>(null);
 
     useEffect(() => {
         const handleStorage = () => {
@@ -1750,122 +834,14 @@ export const RequestServicesPage: React.FC = () => {
         [services]
     );
 
-    // CRUD Handlers
-    const handleOpenAdd = () => {
-        setDrawerState({ isOpen: true, mode: 'add', item: null });
-    };
-
+    // Handlers
     const handleOpenView = useCallback((item: RequestServiceRecord) => {
-        setDrawerState({ isOpen: true, mode: 'view', item });
-    }, []);
-
-    const handleOpenEdit = useCallback((item: RequestServiceRecord) => {
-        setDrawerState({ isOpen: true, mode: 'edit', item });
+        setDrawerState({ isOpen: true, item });
     }, []);
 
     const handleOpenDelete = useCallback((item: RequestServiceRecord) => {
         setDeletingService(item);
     }, []);
-
-    const handleOpenInitiate = useCallback((item: RequestServiceRecord) => {
-        setInitiatingService(item);
-    }, []);
-
-    const handleDrawerSubmit = useCallback(
-        (formData: ServiceFormSubmitPayload, existingItem: RequestServiceRecord | null) => {
-            const ownerObj = REQUEST_BUSINESS_OWNERS.find((o) => o.id === formData.ownerId);
-            const compObj = REQUEST_COMPANIES.find((c) => c.id === formData.companyId);
-
-            if (existingItem) {
-                const updated: RequestServiceRecord = {
-                    ...existingItem,
-                    ownerId: formData.ownerId,
-                    ownerNameEn: ownerObj?.nameEn || existingItem.ownerNameEn,
-                    ownerNameAr: ownerObj?.nameAr || existingItem.ownerNameAr,
-                    companyId: formData.companyId,
-                    companyName: compObj?.name || existingItem.companyName,
-                    companyNameAr: compObj?.nameAr || compObj?.name || existingItem.companyNameAr,
-                    packageName: formData.packageName,
-                    packageNameAr: formData.packageName,
-                    serviceGroups: formData.serviceGroups,
-                    serviceGroupsAr: formData.serviceGroupsAr,
-                    selectedServices: formData.selectedServices,
-                    selectedServicesAr: formData.selectedServicesAr,
-                    createdDate: formData.createdDate,
-                    status: formData.status,
-                };
-                const nextList = updateRequestServiceRecord(updated);
-                setServices(nextList);
-                appendRequestAuditEntry({
-                    action: 'Update Service',
-                    actionCode: 'UPDATED',
-                    resource: 'Service',
-                    recordId: updated.code,
-                    requestId: updated.code,
-                    serviceId: updated.code,
-                    requestTitle: updated.packageName,
-                    requestTitleAr: updated.packageNameAr || updated.packageName,
-                    packageName: updated.packageName,
-                    packageNameAr: updated.packageNameAr || updated.packageName,
-                    businessName: updated.companyName,
-                    businessNameAr: updated.companyNameAr || updated.companyName,
-                    performedByEn: 'Operations Admin',
-                    performedByAr: 'مدير العمليات',
-                    detailsEn: `Updated service package ${updated.code} (${updated.packageName}) for ${updated.companyName}.`,
-                    detailsAr: `تم تحديث باقة الخدمة ${updated.code} (${updated.packageNameAr || updated.packageName}) لصالح ${updated.companyNameAr || updated.companyName}.`,
-                    previousStatus: existingItem.status,
-                    newStatus: updated.status,
-                });
-                setDrawerState({ isOpen: false, mode: 'view', item: null });
-                toast.success(t('request.services.feedback.updateSuccess'));
-            } else {
-                const nextCodeNum = services.length + 1;
-                const newRecord: RequestServiceRecord = {
-                    id: `req-srv-${Date.now()}`,
-                    code: `RSRV-${String(nextCodeNum).padStart(3, '0')}`,
-                    ownerId: formData.ownerId,
-                    ownerNameEn: ownerObj?.nameEn || 'Business Owner',
-                    ownerNameAr: ownerObj?.nameAr || 'مالك المنشأة',
-                    companyId: formData.companyId,
-                    companyName: compObj?.name || 'Company',
-                    companyNameAr: compObj?.nameAr || compObj?.name || 'الشركة',
-                    packageName: formData.packageName,
-                    packageNameAr: formData.packageName,
-                    serviceGroups: formData.serviceGroups,
-                    serviceGroupsAr: formData.serviceGroupsAr,
-                    selectedServices: formData.selectedServices,
-                    selectedServicesAr: formData.selectedServicesAr,
-                    createdDate: formData.createdDate,
-                    status: formData.status,
-                };
-                const nextList = createRequestServiceRecord(newRecord);
-                setServices(nextList);
-                appendRequestAuditEntry({
-                    action: 'Create Service',
-                    actionCode: 'CREATED',
-                    resource: 'Service',
-                    recordId: newRecord.code,
-                    requestId: newRecord.code,
-                    serviceId: newRecord.code,
-                    requestTitle: newRecord.packageName,
-                    requestTitleAr: newRecord.packageNameAr || newRecord.packageName,
-                    packageName: newRecord.packageName,
-                    packageNameAr: newRecord.packageNameAr || newRecord.packageName,
-                    businessName: newRecord.companyName,
-                    businessNameAr: newRecord.companyNameAr || newRecord.companyName,
-                    performedByEn: newRecord.ownerNameEn,
-                    performedByAr: newRecord.ownerNameAr,
-                    detailsEn: `Created service package ${newRecord.code} (${newRecord.packageName}) for ${newRecord.companyName}.`,
-                    detailsAr: `تم إنشاء باقة الخدمة ${newRecord.code} (${newRecord.packageNameAr || newRecord.packageName}) لصالح ${newRecord.companyNameAr || newRecord.companyName}.`,
-                    newStatus: newRecord.status,
-                });
-                setPageIndex(0);
-                setDrawerState({ isOpen: false, mode: 'view', item: null });
-                toast.success(t('request.services.feedback.createSuccess'));
-            }
-        },
-        [services.length, t]
-    );
 
     const handleConfirmDelete = useCallback(() => {
         if (!deletingService) return;
@@ -1897,35 +873,6 @@ export const RequestServicesPage: React.FC = () => {
         setDeletingService(null);
         toast.success(t('request.services.feedback.deleteSuccess'));
     }, [deletingService, pageIndex, pageSize, t]);
-
-    const handleInitiateSubmit = useCallback(
-        (
-            payload: Omit<
-                InitiatedRequestPayload,
-                'id' | 'requestCode' | 'createdAt' | 'status'
-            >
-        ) => {
-            const nextSeq = initiatedRequests.length + 101;
-            const requestCode = `REQ-2026-${nextSeq}`;
-            const fullRecord: InitiatedRequestPayload = {
-                ...payload,
-                id: `init-req-${Date.now()}`,
-                requestCode,
-                status: 'Initiated',
-                createdAt: new Date().toISOString(),
-            };
-            const updatedInitiated = saveInitiatedRequest(fullRecord);
-            setInitiatedRequests(updatedInitiated);
-            setInitiatingService(null);
-            toast.success(
-                t('request.services.feedback.initiateSuccess', {
-                    code: requestCode,
-                    company: payload.companyName,
-                })
-            );
-        },
-        [initiatedRequests.length, t]
-    );
 
     const handleExportCsv = useCallback(() => {
         const headers = [
@@ -2004,15 +951,6 @@ export const RequestServicesPage: React.FC = () => {
                     >
                         <Download size={14} className="text-[#6A7358]" />
                         <span>{t('request.services.exportCsv')}</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={handleOpenAdd}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#037F8C] hover:bg-[#233222] text-[#FAF8F5] text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-xs"
-                    >
-                        <Plus size={14} className="text-[#BFAB93]" />
-                        <span>{t('request.services.addService')}</span>
                     </button>
                 </div>
             </div>
@@ -2419,9 +1357,7 @@ export const RequestServicesPage: React.FC = () => {
                                             <td className="px-4 py-3.5 whitespace-nowrap">
                                                 <ServiceActionsMenu
                                                     item={rec}
-                                                    onInitiate={handleOpenInitiate}
                                                     onView={handleOpenView}
-                                                    onEdit={handleOpenEdit}
                                                     onDelete={handleOpenDelete}
                                                 />
                                             </td>
@@ -2481,27 +1417,12 @@ export const RequestServicesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* 7. Add / Edit / View Service Drawer */}
+            {/* 7. View Service Drawer */}
             <ServiceRecordDrawer
                 isOpen={drawerState.isOpen}
-                mode={drawerState.mode}
                 item={drawerState.item}
                 isAr={isAr}
-                onClose={() => setDrawerState({ isOpen: false, mode: 'view', item: null })}
-                onSwitchToEdit={() =>
-                    setDrawerState((prev) => ({ ...prev, mode: 'edit' }))
-                }
-                onInitiateFromView={handleOpenInitiate}
-                onSubmit={handleDrawerSubmit}
-            />
-
-            {/* 8. Initiate Request Modal */}
-            <InitiateRequestModal
-                isOpen={Boolean(initiatingService)}
-                serviceRecord={initiatingService}
-                isAr={isAr}
-                onClose={() => setInitiatingService(null)}
-                onSubmitRequest={handleInitiateSubmit}
+                onClose={() => setDrawerState({ isOpen: false, item: null })}
             />
 
             {/* 9. Delete Confirmation Modal */}

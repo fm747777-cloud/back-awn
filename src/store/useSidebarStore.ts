@@ -146,7 +146,6 @@ export const WORKFLOW_SIDEBAR_GROUPS: MenuGroup[] = [
     {
         title: 'Masters',
         items: [
-            { label: 'Masters', path: '/workflow/masters', icon: FolderKanban },
             { label: 'Status Levels', path: '/workflow/status-levels', icon: ListFilter },
             { label: 'Email Templates', path: '/workflow/email-templates', icon: Mail },
         ],

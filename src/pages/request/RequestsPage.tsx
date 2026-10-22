@@ -308,6 +308,7 @@ export const RequestsPage = () => {
         }
         if (Object.keys(errors).length > 0) {
             setCreateErrors(errors);
+            setCreateRequestType('Business');
             return;
         }
 
@@ -989,7 +990,7 @@ export const RequestsPage = () => {
                             <Plus size={18} />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-[#0D0D0D]">
+                            <h2 className="text-base font-bold text-[#0D0D0D]">
                                 {t('request.requests.createForm.sectionTitle')}
                             </h2>
                             <p className="text-xs text-[#6E6862]">
@@ -1014,14 +1015,32 @@ export const RequestsPage = () => {
 
                 {isCreateExpanded && (
                     <form onSubmit={handleCreateSubmit} className="p-6 space-y-6">
-                        {/* Company Context Banner (Initial State: No Company Selected, CR-Not Provided, Unified-Not Provided) */}
+                        {/* Company Information Header (No Company Selected, CR-Not Provided, Unified-Not Provided + advance SVG asset) */}
                         <div className="bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-white border border-[#E5E0D8] text-[#8C6046] flex items-center justify-center shrink-0">
-                                    <Building2 size={18} />
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-11 h-11 rounded-xl bg-white border border-[#E5E0D8] text-[#037F8C] flex items-center justify-center shrink-0 shadow-2xs">
+                                    <svg
+                                        width="22"
+                                        height="22"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.8"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+                                        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+                                        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+                                        <path d="M10 6h4" />
+                                        <path d="M10 10h4" />
+                                        <path d="M10 14h4" />
+                                        <path d="M10 18h4" />
+                                    </svg>
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-[#0D0D0D]">
+                                    <p className="text-sm font-bold text-[#0D0D0D]">
                                         {selectedCreateBusinessObj
                                             ? isRtl
                                                 ? selectedCreateBusinessObj.nameAr ||
@@ -1029,219 +1048,291 @@ export const RequestsPage = () => {
                                                 : selectedCreateBusinessObj.name
                                             : t('request.requests.createForm.noCompanySelected')}
                                     </p>
-                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
                                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white border border-[#E5E0D8] text-[#6E6862]">
                                             <Hash size={11} className="text-[#8C6046]" />
                                             {selectedCreateBusinessObj
-                                                ? `${t('request.requests.createForm.crPrefix')}: ${selectedCreateBusinessObj.crNumber}`
+                                                ? `${t('request.requests.createForm.crPrefix')}-${selectedCreateBusinessObj.crNumber}`
                                                 : t('request.requests.createForm.crNotProvided')}
                                         </span>
                                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-white border border-[#E5E0D8] text-[#6E6862]">
                                             <Hash size={11} className="text-[#037F8C]" />
                                             {selectedCreateBusinessObj
-                                                ? `${t('request.requests.createForm.unifiedPrefix')}: ${getCompanyUnifiedNumber(selectedCreateBusinessObj.id)}`
+                                                ? `${t('request.requests.createForm.unifiedPrefix')}-${getCompanyUnifiedNumber(selectedCreateBusinessObj.id)}`
                                                 : t('request.requests.createForm.unifiedNotProvided')}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Request Type Selector: Business | Employees | Assets */}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                <span className="text-xs font-semibold text-[#6E6862]">
-                                    {t('request.requests.createForm.requestTypeLabel')}:
-                                </span>
-                                <div className="inline-flex rounded-lg border border-[#E5E0D8] bg-white p-1 gap-1">
-                                    {REQUEST_TYPES.map((rt) => {
-                                        const active = createRequestType === rt;
-                                        return (
-                                            <button
-                                                key={rt}
-                                                type="button"
-                                                onClick={() => setCreateRequestType(rt)}
-                                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                                                    active
-                                                        ? 'bg-[#037F8C] text-white shadow-2xs'
-                                                        : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5]'
-                                                }`}
-                                            >
-                                                {t(`request.requests.createForm.types.${rt}`)}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                            {/* Form Sections / Tabs: Business | Employees | Assets */}
+                            <div
+                                role="tablist"
+                                aria-label={t('request.requests.createForm.requestTypeLabel')}
+                                className="inline-flex rounded-lg border border-[#E5E0D8] bg-white p-1 gap-1 self-start lg:self-auto"
+                            >
+                                {REQUEST_TYPES.map((rt) => {
+                                    const active = createRequestType === rt;
+                                    return (
+                                        <button
+                                            key={rt}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={active}
+                                            onClick={() => setCreateRequestType(rt)}
+                                            className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                                                active
+                                                    ? 'bg-[#037F8C] text-white shadow-2xs'
+                                                    : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5]'
+                                            }`}
+                                        >
+                                            {t(`request.requests.createForm.types.${rt}`)}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
-                        {/* Customer Details Fields */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C6046]">
-                                {t('request.requests.createForm.customerDetailsTitle')}
-                            </h3>
+                        {/* Section 1: Business */}
+                        {createRequestType === 'Business' && (
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C6046]">
+                                    {t('request.requests.createForm.customerDetailsTitle')}
+                                </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Customer* */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('request.requests.createForm.customerLabel')}
-                                    </label>
-                                    <select
-                                        value={createCustomerId}
-                                        onChange={(e) => handleCreateCustomerChange(e.target.value)}
-                                        className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
-                                            createErrors.customer
-                                                ? 'border-[#EF4444]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    >
-                                        <option value="">
-                                            {t('request.requests.createForm.selectCustomer')}
-                                        </option>
-                                        {REQUEST_BUSINESS_OWNERS.map((owner) => (
-                                            <option key={owner.id} value={owner.id}>
-                                                {isRtl ? owner.nameAr : owner.nameEn}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {/* Customer* */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            {t('request.requests.createForm.customerLabel')}
+                                        </label>
+                                        <select
+                                            value={createCustomerId}
+                                            onChange={(e) =>
+                                                handleCreateCustomerChange(e.target.value)
+                                            }
+                                            className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
+                                                createErrors.customer
+                                                    ? 'border-[#EF4444]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                            }`}
+                                        >
+                                            <option value="">
+                                                {t('request.requests.createForm.selectCustomer')}
                                             </option>
-                                        ))}
-                                    </select>
-                                    {createErrors.customer && (
-                                        <p className="text-[11px] text-[#B91C1C] mt-1 flex items-center gap-1">
-                                            <AlertCircle size={12} />
-                                            <span>{createErrors.customer}</span>
-                                        </p>
-                                    )}
-                                </div>
+                                            {REQUEST_BUSINESS_OWNERS.map((owner) => (
+                                                <option key={owner.id} value={owner.id}>
+                                                    {isRtl ? owner.nameAr : owner.nameEn}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {createErrors.customer && (
+                                            <p className="text-[11px] text-[#B91C1C] mt-1 flex items-center gap-1">
+                                                <AlertCircle size={12} />
+                                                <span>{createErrors.customer}</span>
+                                            </p>
+                                        )}
+                                    </div>
 
-                                {/* Business* */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('request.requests.createForm.businessLabel')}
-                                    </label>
-                                    <select
-                                        value={createBusinessId}
-                                        onChange={(e) => handleCreateBusinessChange(e.target.value)}
-                                        className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
-                                            createErrors.business
-                                                ? 'border-[#EF4444]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    >
-                                        <option value="">
-                                            {t('request.requests.createForm.selectBusiness')}
-                                        </option>
-                                        {createAvailableBusinesses.map((comp) => (
-                                            <option key={comp.id} value={comp.id}>
-                                                {isRtl ? comp.nameAr || comp.name : comp.name}
+                                    {/* Business* */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            {t('request.requests.createForm.businessLabel')}
+                                        </label>
+                                        <select
+                                            value={createBusinessId}
+                                            onChange={(e) =>
+                                                handleCreateBusinessChange(e.target.value)
+                                            }
+                                            className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
+                                                createErrors.business
+                                                    ? 'border-[#EF4444]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                            }`}
+                                        >
+                                            <option value="">
+                                                {t('request.requests.createForm.selectBusiness')}
                                             </option>
-                                        ))}
-                                    </select>
-                                    {createErrors.business && (
-                                        <p className="text-[11px] text-[#B91C1C] mt-1 flex items-center gap-1">
-                                            <AlertCircle size={12} />
-                                            <span>{createErrors.business}</span>
-                                        </p>
-                                    )}
-                                </div>
+                                            {createAvailableBusinesses.map((comp) => (
+                                                <option key={comp.id} value={comp.id}>
+                                                    {isRtl ? comp.nameAr || comp.name : comp.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {createErrors.business && (
+                                            <p className="text-[11px] text-[#B91C1C] mt-1 flex items-center gap-1">
+                                                <AlertCircle size={12} />
+                                                <span>{createErrors.business}</span>
+                                            </p>
+                                        )}
+                                    </div>
 
-                                {/* Services* */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('request.requests.createForm.servicesLabel')}
-                                    </label>
-                                    <select
-                                        value={createServiceKey}
-                                        onChange={(e) => {
-                                            setCreateServiceKey(e.target.value);
-                                            setCreateErrors((prev) => ({
-                                                ...prev,
-                                                service: undefined,
-                                            }));
-                                        }}
-                                        className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
-                                            createErrors.service
-                                                ? 'border-[#EF4444]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    >
-                                        <option value="">
-                                            {t('request.requests.createForm.selectService')}
-                                        </option>
-                                        {createAvailableServices.map((srv) => (
-                                            <option key={srv.key} value={srv.key}>
-                                                {isRtl
-                                                    ? `${srv.packageNameAr} — ${srv.serviceNameAr}`
-                                                    : `${srv.packageNameEn} — ${srv.serviceNameEn}`}
+                                    {/* Services* */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            {t('request.requests.createForm.servicesLabel')}
+                                        </label>
+                                        <select
+                                            value={createServiceKey}
+                                            onChange={(e) => {
+                                                setCreateServiceKey(e.target.value);
+                                                setCreateErrors((prev) => ({
+                                                    ...prev,
+                                                    service: undefined,
+                                                }));
+                                            }}
+                                            className={`w-full h-10 px-3 rounded-lg border bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none ${
+                                                createErrors.service
+                                                    ? 'border-[#EF4444]'
+                                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                            }`}
+                                        >
+                                            <option value="">
+                                                {t('request.requests.createForm.selectService')}
                                             </option>
-                                        ))}
-                                    </select>
-                                    {selectedCreateServiceObj && (
-                                        <p className="text-[11px] text-[#2D6A4F] mt-1 font-medium">
-                                            {t('request.requests.createForm.packageBadge', {
-                                                package: isRtl
-                                                    ? selectedCreateServiceObj.packageNameAr
-                                                    : selectedCreateServiceObj.packageNameEn,
-                                            })}
-                                        </p>
-                                    )}
-                                    {createErrors.service && (
-                                        <p className="text-[11px] text-[#B91C1C] mt-1 flex items-center gap-1">
-                                            <AlertCircle size={12} />
-                                            <span>{createErrors.service}</span>
-                                        </p>
-                                    )}
+                                            {createAvailableServices.map((srv) => (
+                                                <option key={srv.key} value={srv.key}>
+                                                    {isRtl
+                                                        ? `${srv.packageNameAr} — ${srv.serviceNameAr}`
+                                                        : `${srv.packageNameEn} — ${srv.serviceNameEn}`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {selectedCreateServiceObj && (
+                                            <p className="text-[11px] text-[#2D6A4F] mt-1 font-medium">
+                                                {t('request.requests.createForm.packageBadge', {
+                                                    package: isRtl
+                                                        ? selectedCreateServiceObj.packageNameAr
+                                                        : selectedCreateServiceObj.packageNameEn,
+                                                })}
+                                            </p>
+                                        )}
+                                        {createErrors.service && (
+                                            <p className="text-[11px] text-[#B91C1C] mt-1 flex items-center gap-1">
+                                                <AlertCircle size={12} />
+                                                <span>{createErrors.service}</span>
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {/* Priority */}
+                                {/* Description (multiline input) */}
                                 <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('request.requests.createForm.priorityLabel')}
-                                    </label>
-                                    <select
-                                        value={createPriority}
-                                        onChange={(e) =>
-                                            setCreatePriority(e.target.value as RequestPriority)
-                                        }
-                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
-                                    >
-                                        {REQUEST_PRIORITIES.map((p) => (
-                                            <option key={p} value={p}>
-                                                {t(`request.requests.priorities.${p}`)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Due Date */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                        {t('request.requests.createForm.dueDateLabel')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={createDueDateIso}
-                                        onChange={(e) => setCreateDueDateIso(e.target.value)}
-                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                {/* Description */}
-                                <div className="md:col-span-1">
                                     <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
                                         {t('request.requests.createForm.descriptionLabel')}
                                     </label>
-                                    <input
-                                        type="text"
+                                    <textarea
+                                        rows={3}
                                         value={createDescription}
                                         onChange={(e) => setCreateDescription(e.target.value)}
                                         placeholder={t(
                                             'request.requests.createForm.descriptionPlaceholder'
                                         )}
-                                        className="w-full h-10 px-3 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#6E6862]/70 focus:outline-none focus:border-[#037F8C]"
+                                        className="w-full px-3 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-xs text-[#0D0D0D] placeholder:text-[#6E6862]/70 focus:outline-none focus:border-[#037F8C] resize-y"
                                     />
                                 </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Section 2: Employees */}
+                        {createRequestType === 'Employees' && (
+                            <div className="border border-[#E5E0D8] rounded-xl overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-start text-xs">
+                                        <thead className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[#595550]">
+                                            <tr>
+                                                <th className="w-12 px-4 py-3 text-center border-e border-[#F0ECE4]">
+                                                    <input
+                                                        type="checkbox"
+                                                        disabled
+                                                        aria-label="Select all employees"
+                                                        className="rounded border-[#DCD6CD] text-[#037F8C] focus:ring-[#037F8C] cursor-not-allowed opacity-60"
+                                                    />
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.employeesTable.srNo')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.employeesTable.employeeId')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.employeesTable.fullName')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.employeesTable.email')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.employeesTable.citizen')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.employeesTable.nationality')}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#EFECE6] text-[#0D0D0D]">
+                                            <tr>
+                                                <td
+                                                    colSpan={7}
+                                                    className="text-center py-10 text-xs font-medium text-[#6E6862]"
+                                                >
+                                                    {t('request.requests.createForm.employeesTable.empty')}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Section 3: Assets */}
+                        {createRequestType === 'Assets' && (
+                            <div className="border border-[#E5E0D8] rounded-xl overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-start text-xs">
+                                        <thead className="bg-[#FAF8F5] border-b border-[#E5E0D8] text-[#595550]">
+                                            <tr>
+                                                <th className="w-12 px-4 py-3 text-center border-e border-[#F0ECE4]">
+                                                    <input
+                                                        type="checkbox"
+                                                        disabled
+                                                        aria-label="Select all assets"
+                                                        className="rounded border-[#DCD6CD] text-[#037F8C] focus:ring-[#037F8C] cursor-not-allowed opacity-60"
+                                                    />
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.assetsTable.srNo')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.assetsTable.assetId')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.assetsTable.brand')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.assetsTable.serialNumber')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold border-e border-[#F0ECE4] text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.assetsTable.plateNumber')}
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold text-start whitespace-nowrap">
+                                                    {t('request.requests.createForm.assetsTable.vinNumber')}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#EFECE6] text-[#0D0D0D]">
+                                            <tr>
+                                                <td
+                                                    colSpan={7}
+                                                    className="text-center py-10 text-xs font-medium text-[#6E6862]"
+                                                >
+                                                    {t('request.requests.createForm.assetsTable.empty')}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Form Actions */}
                         <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#E5E0D8]/70">

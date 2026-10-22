@@ -1,25 +1,24 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Search, Braces, Plus, AlertCircle } from 'lucide-react';
+import {
+    X,
+    Braces,
+    Plus,
+    AlertCircle,
+    EyeOff,
+    Eye,
+    Bold,
+    Italic,
+    Underline,
+    List,
+    ListOrdered,
+    Link2,
+} from 'lucide-react';
 import {
     type WorkflowEmailTemplateRecord,
-    type WorkflowEmailTemplateStatus,
     type CommunicationWorkflowDefinition,
 } from '../../pages/workflow/workflowMockData';
-
-export interface EmailTemplateFormState {
-    templateNameEn: string;
-    templateNameAr: string;
-    communicationWorkflowKey: string;
-    subjectEn: string;
-    subjectAr: string;
-    contentEn: string;
-    contentAr: string;
-    creatorNameEn: string;
-    creatorNameAr: string;
-    email: string;
-    status: WorkflowEmailTemplateStatus;
-}
+import type { EmailTemplateFormState } from '../../pages/workflow/workflowUtils';
 
 export interface FormValidationErrors {
     templateName?: string;
@@ -27,20 +26,6 @@ export interface FormValidationErrors {
     subject?: string;
     content?: string;
 }
-
-export const DEFAULT_EMAIL_TEMPLATE_FORM_STATE: EmailTemplateFormState = {
-    templateNameEn: '',
-    templateNameAr: '',
-    communicationWorkflowKey: '',
-    subjectEn: '',
-    subjectAr: '',
-    contentEn: '',
-    contentAr: '',
-    creatorNameEn: 'Khalifah Alsharabi',
-    creatorNameAr: 'خليفة الشرعبي',
-    email: 'k.alsharabi@awn.sa',
-    status: 'Active',
-};
 
 interface WorkflowEmailTemplateFormDrawerProps {
     isOpen: boolean;
@@ -51,8 +36,8 @@ interface WorkflowEmailTemplateFormDrawerProps {
     formErrors: FormValidationErrors;
     setFormErrors: React.Dispatch<React.SetStateAction<FormValidationErrors>>;
     editingRecord: WorkflowEmailTemplateRecord | null;
-    workflowSearchTerm: string;
-    setWorkflowSearchTerm: (term: string) => void;
+    workflowSearchTerm?: string;
+    setWorkflowSearchTerm?: (term: string) => void;
     searchableWorkflowOptions: CommunicationWorkflowDefinition[];
     currentWorkflowVariables: string[];
     onInsertVariable: (token: string) => void;
@@ -66,17 +51,75 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
     setFormState,
     formErrors,
     setFormErrors,
-    editingRecord,
-    workflowSearchTerm,
-    setWorkflowSearchTerm,
     searchableWorkflowOptions,
     currentWorkflowVariables,
     onInsertVariable,
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language?.startsWith('ar') ?? false;
+    const [isVariablesVisible, setIsVariablesVisible] = useState<boolean>(true);
+    const editorRef = useRef<HTMLTextAreaElement | null>(null);
 
     if (!isOpen) return null;
+
+    const applyFormatting = (
+        format: 'bold' | 'italic' | 'underline' | 'bullet' | 'numbered' | 'link'
+    ) => {
+        const textarea = editorRef.current;
+        const currentValue = formState.contentEn;
+        const start = textarea?.selectionStart ?? currentValue.length;
+        const end = textarea?.selectionEnd ?? currentValue.length;
+        const selected = currentValue.slice(start, end);
+
+        let replacement = selected;
+        if (format === 'bold') {
+            replacement = `**${selected || 'text'}**`;
+        } else if (format === 'italic') {
+            replacement = `*${selected || 'text'}*`;
+        } else if (format === 'underline') {
+            replacement = `<u>${selected || 'text'}</u>`;
+        } else if (format === 'bullet') {
+            replacement = selected
+                ? selected
+                      .split('\n')
+                      .map((line) => (line.startsWith('- ') ? line : `- ${line}`))
+                      .join('\n')
+                : '\n- ';
+        } else if (format === 'numbered') {
+            replacement = selected
+                ? selected
+                      .split('\n')
+                      .map((line, idx) => `${idx + 1}. ${line}`)
+                      .join('\n')
+                : '\n1. ';
+        } else if (format === 'link') {
+            replacement = `[${selected || 'link'}](https://)`;
+        }
+
+        const nextContent =
+            currentValue.slice(0, start) + replacement + currentValue.slice(end);
+
+        setFormState((prev) => ({
+            ...prev,
+            contentEn: nextContent,
+            contentAr: nextContent,
+        }));
+
+        if (formErrors.content && nextContent.trim()) {
+            setFormErrors((prev) => ({
+                ...prev,
+                content: undefined,
+            }));
+        }
+
+        requestAnimationFrame(() => {
+            if (textarea) {
+                textarea.focus();
+                const cursor = start + replacement.length;
+                textarea.setSelectionRange(cursor, cursor);
+            }
+        });
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[1px]">
@@ -87,33 +130,36 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                 dir={isRtl ? 'rtl' : 'ltr'}
             >
                 <div>
-                    <div className="px-6 py-5 border-b border-[#E5E0D8] flex items-center justify-between gap-3 bg-[#FAF8F5]">
+                    <div className="px-6 py-5 border-b border-[#E5E0D8] flex items-start justify-between gap-3 bg-[#FAF8F5]">
                         <div>
                             <h2 className="text-base font-bold text-[#0D0D0D]">
-                                {editingRecord
-                                    ? t('workflow.emailTemplates.drawer.editTitle')
-                                    : t('workflow.emailTemplates.drawer.createTitle')}
+                                {t('workflow.emailTemplates.drawer.createTitle')}
                             </h2>
-                            <p className="text-xs text-[#6E6862] mt-0.5">
+                            <p className="text-xs text-[#6E6862] mt-1 leading-relaxed">
                                 {t('workflow.emailTemplates.drawer.formSubtitle')}
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-2 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors cursor-pointer"
+                            aria-label={t('common.close', 'Close')}
+                            className="p-2 rounded-lg text-[#6E6862] hover:text-[#0D0D0D] hover:bg-white transition-colors cursor-pointer shrink-0"
                         >
                             <X size={18} />
                         </button>
                     </div>
 
                     <div className="p-6 space-y-4">
-                        {/* Template Name */}
+                        {/* 1. Template Name */}
                         <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                            <label
+                                htmlFor="email-template-name"
+                                className="block text-xs font-semibold text-[#0D0D0D] mb-1.5"
+                            >
                                 {t('workflow.emailTemplates.drawer.templateName')} *
                             </label>
                             <input
+                                id="email-template-name"
                                 type="text"
                                 value={formState.templateNameEn}
                                 onChange={(e) => {
@@ -146,27 +192,16 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                             )}
                         </div>
 
-                        {/* Communication Workflow Searchable Dropdown */}
-                        <div className="space-y-1.5">
-                            <label className="block text-xs font-semibold text-[#0D0D0D]">
+                        {/* 2. Communication Workflow */}
+                        <div>
+                            <label
+                                htmlFor="email-template-workflow"
+                                className="block text-xs font-semibold text-[#0D0D0D] mb-1.5"
+                            >
                                 {t('workflow.emailTemplates.drawer.communicationWorkflow')} *
                             </label>
-                            <div className="relative">
-                                <Search
-                                    size={13}
-                                    className="absolute top-1/2 -translate-y-1/2 start-3 text-[#857E74] pointer-events-none"
-                                />
-                                <input
-                                    type="text"
-                                    value={workflowSearchTerm}
-                                    onChange={(e) => setWorkflowSearchTerm(e.target.value)}
-                                    placeholder={t(
-                                        'workflow.emailTemplates.drawer.searchWorkflowPlaceholder'
-                                    )}
-                                    className="w-full ps-8 pe-3 py-1.5 text-xs rounded-t-lg border border-b-0 border-[#E5E0D8] bg-[#FAF8F5]/70 text-[#0D0D0D] placeholder:text-[#857E74] focus:outline-hidden focus:bg-white"
-                                />
-                            </div>
                             <select
+                                id="email-template-workflow"
                                 value={formState.communicationWorkflowKey}
                                 onChange={(e) => {
                                     const val = e.target.value;
@@ -184,7 +219,7 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                                 aria-label={t(
                                     'workflow.emailTemplates.drawer.communicationWorkflow'
                                 )}
-                                className={`w-full px-3 py-2 text-xs rounded-b-lg border bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white cursor-pointer ${
+                                className={`w-full px-3 py-2 text-xs rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white cursor-pointer transition-colors ${
                                     formErrors.communicationWorkflow
                                         ? 'border-[#A63A3A] focus:border-[#A63A3A]'
                                         : 'border-[#E5E0D8] focus:border-[#037F8C]'
@@ -197,7 +232,7 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                                 </option>
                                 {searchableWorkflowOptions.map((wf) => (
                                     <option key={wf.key} value={wf.key}>
-                                        {isRtl ? wf.nameAr : wf.nameEn} ({wf.source})
+                                        {isRtl ? wf.nameAr : wf.nameEn}
                                     </option>
                                 ))}
                             </select>
@@ -209,48 +244,16 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                             )}
                         </div>
 
-                        {/* Available Variables Box */}
-                        <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D0D0D]">
-                                    <Braces size={14} className="text-[#037F8C]" />
-                                    <span>
-                                        {t('workflow.emailTemplates.drawer.availableVariables')}
-                                    </span>
-                                </span>
-                                <span className="text-[11px] text-[#6E6862]">
-                                    {t('workflow.emailTemplates.drawer.clickToInsertHint')}
-                                </span>
-                            </div>
-
-                            {currentWorkflowVariables.length === 0 ? (
-                                <div className="py-2 px-3 rounded-lg bg-white border border-dashed border-[#E5E0D8] text-xs font-medium text-[#6E6862] text-center">
-                                    {t('workflow.emailTemplates.drawer.noAvailableVariables')}
-                                </div>
-                            ) : (
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    {currentWorkflowVariables.map((variableToken) => (
-                                        <button
-                                            key={variableToken}
-                                            type="button"
-                                            onClick={() => onInsertVariable(variableToken)}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#037F8C] text-[#037F8C] hover:text-[#FAF8F5] border border-[#E5E0D8] hover:border-[#037F8C] text-[11px] font-mono font-semibold transition-colors cursor-pointer shadow-2xs"
-                                            dir="ltr"
-                                        >
-                                            <Plus size={11} />
-                                            <span>{variableToken}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Email Subject */}
+                        {/* 3. Email Subject */}
                         <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                            <label
+                                htmlFor="email-template-subject"
+                                className="block text-xs font-semibold text-[#0D0D0D] mb-1.5"
+                            >
                                 {t('workflow.emailTemplates.drawer.emailSubject')} *
                             </label>
                             <input
+                                id="email-template-subject"
                                 type="text"
                                 value={formState.subjectEn}
                                 onChange={(e) => {
@@ -283,104 +286,176 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                             )}
                         </div>
 
-                        {/* Email Content */}
-                        <div>
-                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                {t('workflow.emailTemplates.drawer.emailContent')} *
-                            </label>
-                            <textarea
-                                rows={6}
-                                value={formState.contentEn}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setFormState((prev) => ({
-                                        ...prev,
-                                        contentEn: val,
-                                    }));
-                                    if (formErrors.content && val.trim()) {
-                                        setFormErrors((prev) => ({
-                                            ...prev,
-                                            content: undefined,
-                                        }));
-                                    }
-                                }}
-                                placeholder={t(
-                                    'workflow.emailTemplates.drawer.emailContentPlaceholder'
-                                )}
-                                className={`w-full px-3 py-2 text-xs rounded-lg border bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white transition-colors leading-relaxed ${
+                        {/* 4. Email Template + Hide Variables + Available Variables */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <label
+                                    htmlFor="email-template-content"
+                                    className="block text-xs font-semibold text-[#0D0D0D]"
+                                >
+                                    {t('workflow.emailTemplates.drawer.emailContent')} *
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsVariablesVisible((prev) => !prev)}
+                                    aria-expanded={isVariablesVisible}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-[#EFECE6] text-[11px] font-semibold text-[#037F8C] transition-colors cursor-pointer"
+                                >
+                                    {isVariablesVisible ? (
+                                        <>
+                                            <EyeOff size={12} />
+                                            <span>
+                                                {t('workflow.emailTemplates.drawer.hideVariables')}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Eye size={12} />
+                                            <span>
+                                                {t('workflow.emailTemplates.drawer.showVariables')}
+                                            </span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {isVariablesVisible && (
+                                <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D0D0D]">
+                                            <Braces size={14} className="text-[#037F8C]" />
+                                            <span>
+                                                {t(
+                                                    'workflow.emailTemplates.drawer.availableVariables'
+                                                )}
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    {currentWorkflowVariables.length === 0 ? (
+                                        <div className="py-2 px-3 rounded-lg bg-white border border-dashed border-[#E5E0D8] text-xs font-medium text-[#6E6862] text-center">
+                                            {t(
+                                                'workflow.emailTemplates.drawer.noAvailableVariables'
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            {currentWorkflowVariables.map((variableToken) => (
+                                                <button
+                                                    key={variableToken}
+                                                    type="button"
+                                                    onClick={() => onInsertVariable(variableToken)}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-[#037F8C] text-[#037F8C] hover:text-[#FAF8F5] border border-[#E5E0D8] hover:border-[#037F8C] text-[11px] font-mono font-semibold transition-colors cursor-pointer shadow-2xs"
+                                                    dir="ltr"
+                                                >
+                                                    <Plus size={11} />
+                                                    <span>{variableToken}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Email Template Editor */}
+                            <div
+                                className={`overflow-hidden rounded-lg border bg-[#FAF8F5] transition-colors focus-within:bg-white ${
                                     formErrors.content
-                                        ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                        : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                        ? 'border-[#A63A3A] focus-within:border-[#A63A3A]'
+                                        : 'border-[#E5E0D8] focus-within:border-[#037F8C]'
                                 }`}
-                            />
+                            >
+                                <div className="flex flex-wrap items-center gap-1 border-b border-[#E5E0D8] bg-[#FAF8F5] px-2.5 py-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => applyFormatting('bold')}
+                                        title="Bold"
+                                        aria-label="Bold"
+                                        className="rounded-md p-1.5 text-[#6E6862] hover:bg-white hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                    >
+                                        <Bold size={13} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => applyFormatting('italic')}
+                                        title="Italic"
+                                        aria-label="Italic"
+                                        className="rounded-md p-1.5 text-[#6E6862] hover:bg-white hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                    >
+                                        <Italic size={13} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => applyFormatting('underline')}
+                                        title="Underline"
+                                        aria-label="Underline"
+                                        className="rounded-md p-1.5 text-[#6E6862] hover:bg-white hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                    >
+                                        <Underline size={13} />
+                                    </button>
+                                    <span className="mx-1 h-4 w-px bg-[#E5E0D8]" />
+                                    <button
+                                        type="button"
+                                        onClick={() => applyFormatting('bullet')}
+                                        title="Bullet List"
+                                        aria-label="Bullet List"
+                                        className="rounded-md p-1.5 text-[#6E6862] hover:bg-white hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                    >
+                                        <List size={13} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => applyFormatting('numbered')}
+                                        title="Numbered List"
+                                        aria-label="Numbered List"
+                                        className="rounded-md p-1.5 text-[#6E6862] hover:bg-white hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                    >
+                                        <ListOrdered size={13} />
+                                    </button>
+                                    <span className="mx-1 h-4 w-px bg-[#E5E0D8]" />
+                                    <button
+                                        type="button"
+                                        onClick={() => applyFormatting('link')}
+                                        title="Insert Link"
+                                        aria-label="Insert Link"
+                                        className="rounded-md p-1.5 text-[#6E6862] hover:bg-white hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                                    >
+                                        <Link2 size={13} />
+                                    </button>
+                                </div>
+
+                                <textarea
+                                    id="email-template-content"
+                                    ref={editorRef}
+                                    rows={7}
+                                    value={formState.contentEn}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormState((prev) => ({
+                                            ...prev,
+                                            contentEn: val,
+                                            contentAr: val,
+                                        }));
+                                        if (formErrors.content && val.trim()) {
+                                            setFormErrors((prev) => ({
+                                                ...prev,
+                                                content: undefined,
+                                            }));
+                                        }
+                                    }}
+                                    placeholder={t(
+                                        'workflow.emailTemplates.drawer.emailContentPlaceholder'
+                                    )}
+                                    className="w-full px-3 py-2.5 text-xs bg-transparent text-[#0D0D0D] focus:outline-hidden leading-relaxed resize-y"
+                                />
+                            </div>
+
                             {formErrors.content && (
                                 <p className="mt-1 flex items-center gap-1 text-[11px] text-[#A63A3A]">
                                     <AlertCircle size={12} />
                                     <span>{formErrors.content}</span>
                                 </p>
                             )}
-                        </div>
-
-                        {/* Creator, Email & Status */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('workflow.emailTemplates.table.creator')}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.creatorNameEn}
-                                    onChange={(e) =>
-                                        setFormState((prev) => ({
-                                            ...prev,
-                                            creatorNameEn: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#037F8C]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('workflow.emailTemplates.table.email')}
-                                </label>
-                                <input
-                                    type="email"
-                                    dir="ltr"
-                                    value={formState.email}
-                                    onChange={(e) =>
-                                        setFormState((prev) => ({
-                                            ...prev,
-                                            email: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#037F8C]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('workflow.emailTemplates.table.status')}
-                                </label>
-                                <select
-                                    value={formState.status}
-                                    onChange={(e) =>
-                                        setFormState((prev) => ({
-                                            ...prev,
-                                            status: e.target
-                                                .value as WorkflowEmailTemplateStatus,
-                                        }))
-                                    }
-                                    className="w-full px-3 py-2 text-xs rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] text-[#0D0D0D] focus:outline-hidden focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    <option value="Active">
-                                        {t('workflow.emailTemplates.statuses.active')}
-                                    </option>
-                                    <option value="Inactive">
-                                        {t('workflow.emailTemplates.statuses.inactive')}
-                                    </option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -391,18 +466,17 @@ export const WorkflowEmailTemplateFormDrawer: React.FC<WorkflowEmailTemplateForm
                         onClick={onClose}
                         className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                     >
-                        {t('common.cancel', 'Cancel')}
+                        {t('workflow.emailTemplates.drawer.cancel')}
                     </button>
                     <button
                         type="submit"
                         className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
                     >
-                        {editingRecord
-                            ? t('common.saveChanges', 'Save Changes')
-                            : t('common.create', 'Create')}
+                        {t('workflow.emailTemplates.drawer.submit')}
                     </button>
                 </div>
             </form>
         </div>
     );
 };
+
