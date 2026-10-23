@@ -1,4 +1,5 @@
 import { axiosClient, IS_BACKEND_ENABLED } from "./axiosClient";
+import { loadEmployees } from "../pages/ums/umsMockData";
 import {
     crmLeadSourceInputSchema,
     crmLeadSourceSchema,
@@ -280,6 +281,7 @@ const initialPortals = [
 const initialCategories = [
     {
         id: "cat-1",
+        codeName: "CAT-001",
         tagCode: "CAT-001",
         name: "Labor & Employment",
         description: "Services related to workforce, work permits and employment contracts",
@@ -289,6 +291,7 @@ const initialCategories = [
     },
     {
         id: "cat-2",
+        codeName: "CAT-002",
         tagCode: "CAT-002",
         name: "Commercial Licenses",
         description: "Company incorporation, CR and business permits",
@@ -298,6 +301,7 @@ const initialCategories = [
     },
     {
         id: "cat-3",
+        codeName: "CAT-003",
         tagCode: "CAT-003",
         name: "Municipal Services",
         description: "Signage, shop licenses, and civil defense compliance",
@@ -307,6 +311,7 @@ const initialCategories = [
     },
     {
         id: "cat-4",
+        codeName: "CAT-004",
         tagCode: "CAT-004",
         name: "Social Insurance",
         description: "Employee registration and GOSI salary declarations",
@@ -316,6 +321,7 @@ const initialCategories = [
     },
     {
         id: "cat-5",
+        codeName: "CAT-005",
         tagCode: "CAT-005",
         name: "Tax & Customs",
         description: "VAT, withholding tax, and corporate zakat certificates",
@@ -328,6 +334,7 @@ const initialCategories = [
 const initialTypes = [
     {
         id: "typ-1",
+        codeName: "TYP-001",
         typeCode: "TYP-001",
         name: "Issuance",
         serviceCategory: { id: "cat-1", name: "Labor & Employment" },
@@ -338,6 +345,7 @@ const initialTypes = [
     },
     {
         id: "typ-2",
+        codeName: "TYP-002",
         typeCode: "TYP-002",
         name: "Renewal",
         serviceCategory: { id: "cat-2", name: "Commercial Licenses" },
@@ -348,6 +356,7 @@ const initialTypes = [
     },
     {
         id: "typ-3",
+        codeName: "TYP-003",
         typeCode: "TYP-003",
         name: "Cancellation",
         serviceCategory: { id: "cat-2", name: "Commercial Licenses" },
@@ -358,6 +367,7 @@ const initialTypes = [
     },
     {
         id: "typ-4",
+        codeName: "TYP-004",
         typeCode: "TYP-004",
         name: "Amendment",
         serviceCategory: { id: "cat-1", name: "Labor & Employment" },
@@ -368,6 +378,7 @@ const initialTypes = [
     },
     {
         id: "typ-5",
+        codeName: "TYP-005",
         typeCode: "TYP-005",
         name: "Transfer of Service",
         serviceCategory: { id: "cat-1", name: "Labor & Employment" },
@@ -381,6 +392,7 @@ const initialTypes = [
 const initialTags = [
     {
         id: "tag-1",
+        codeName: "TAG-001",
         tagCode: "TAG-001",
         name: "Urgent",
         description: "Requires priority execution within 24 hours",
@@ -390,6 +402,7 @@ const initialTags = [
     },
     {
         id: "tag-2",
+        codeName: "TAG-002",
         tagCode: "TAG-002",
         name: "Annual Compliance",
         description: "Recurring regulatory requirement every calendar year",
@@ -399,6 +412,7 @@ const initialTags = [
     },
     {
         id: "tag-3",
+        codeName: "TAG-003",
         tagCode: "TAG-003",
         name: "Legal Requirement",
         description: "Statutory mandatory filing",
@@ -408,6 +422,7 @@ const initialTags = [
     },
     {
         id: "tag-4",
+        codeName: "TAG-004",
         tagCode: "TAG-004",
         name: "Quarterly Audit",
         description: "Audited every fiscal quarter",
@@ -417,6 +432,7 @@ const initialTags = [
     },
     {
         id: "tag-5",
+        codeName: "TAG-005",
         tagCode: "TAG-005",
         name: "Priority",
         description: "Critical business dependency",
@@ -484,6 +500,7 @@ const initialGroups = [
 const initialPackages = [
     {
         id: "pkg-1",
+        codeName: "PKG-001",
         packageCode: "PKG-001",
         name: "Enterprise Corporate Bundle",
         package_name: "Enterprise Corporate Bundle",
@@ -500,6 +517,7 @@ const initialPackages = [
     },
     {
         id: "pkg-2",
+        codeName: "PKG-002",
         packageCode: "PKG-002",
         name: "SME Comprehensive Support",
         package_name: "SME Comprehensive Support",
@@ -516,6 +534,7 @@ const initialPackages = [
     },
     {
         id: "pkg-3",
+        codeName: "PKG-003",
         packageCode: "PKG-003",
         name: "Workforce & Labor Package",
         package_name: "Workforce & Labor Package",
@@ -532,6 +551,7 @@ const initialPackages = [
     },
     {
         id: "pkg-4",
+        codeName: "PKG-004",
         packageCode: "PKG-004",
         name: "Licensing & Permits Essentials",
         package_name: "Licensing & Permits Essentials",
@@ -548,6 +568,7 @@ const initialPackages = [
     },
     {
         id: "pkg-5",
+        codeName: "PKG-005",
         packageCode: "PKG-005",
         name: "Logistics & Fleet Standard Package",
         package_name: "Logistics & Fleet Standard Package",
@@ -882,95 +903,225 @@ export const authApi = {
 
 export const serviceApi = {
     getServices: async (data: any = {}) => {
-        const response = await axiosClient.get('/service', { params: data });
-        const resData = response.data;
-        const rawList = Array.isArray(resData?.data) ? resData.data : Array.isArray(resData) ? resData : [];
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service', { params: data });
+                const resData = response.data;
+                const rawList = Array.isArray(resData?.data) ? resData.data : Array.isArray(resData) ? resData : [];
+                return {
+                    ...resData,
+                    data: rawList.map(mapServiceItem),
+                    count: resData?.count ?? rawList.length,
+                };
+            } catch {
+                // Fallback to local store
+            }
+        }
+
+        const list = getLocal<any[]>('services', initialServices);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    (item.service_title || item.title || '').toLowerCase().includes(search) ||
+                    (item.code || item.serviceCode || '').toLowerCase().includes(search) ||
+                    (item.category || '').toLowerCase().includes(search)
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || 10);
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
         return {
-            ...resData,
-            data: rawList.map(mapServiceItem),
-            count: resData?.count ?? rawList.length,
+            data: paged.map(mapServiceItem),
+            count: filtered.length,
+            total: filtered.length,
         };
     },
 
     getServiceById: async (id: string) => {
-        const response = await axiosClient.get(`/service/${id}`);
-        const item = response.data?.data ?? response.data;
-        return item
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get(`/service/${id}`);
+                const item = response.data?.data ?? response.data;
+                if (item) return mapServiceItem(item);
+            } catch {
+                // Fallback
+            }
+        }
+
+        const list = getLocal<any[]>('services', initialServices);
+        const item = list.find((s) => String(s.id) === String(id));
+        return item ? mapServiceItem(item) : null;
     },
 
     createService: async (data: any) => {
-        try {
-            console.log('data', data);
-            const response = await axiosClient.post('/service', data);
-            return response.data;
-        } catch (error) {
-            console.log('Backend error:', error?.response?.data);
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service', data);
+                if (response?.data) return response.data;
+            } catch (error: any) {
+                console.log('Backend error:', error?.response?.data);
+            }
         }
+
+        const list = getLocal<any[]>('services', initialServices);
+        const newService = {
+            id: `srv-${Date.now()}`,
+            code: `SRV-${String(list.length + 1).padStart(3, '0')}`,
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'Active',
+            ...data,
+        };
+        const updated = [newService, ...list];
+        setLocal('services', updated);
+        return newService;
     },
 
     updateService: async (id: string, data: any) => {
-        const response = await axiosClient.patch(`/service/${id}`, data);
-        return response.data;
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.patch(`/service/${id}`, data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
+        }
+
+        const list = getLocal<any[]>('services', initialServices);
+        const updated = list.map((item) => (String(item.id) === String(id) ? { ...item, ...data } : item));
+        setLocal('services', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteService: async (id: string) => {
-        const response = await axiosClient.delete(`/service/${id}`);
-        return response.data;
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.delete(`/service/${id}`);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
+        }
+
+        const list = getLocal<any[]>('services', initialServices);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('services', updated);
+        return { success: true, id };
     },
 
     getServiceTags: async (data: any = {}) => {
-        try {
-            const response = await axiosClient.get('/service-tag', { params: data });
-            return response.data;
-        } catch {
-            // Fallback to local store
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service-tag', { params: data });
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback to local store
+            }
         }
+
+        const list = getLocal<any[]>('service_tags', initialTags);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    item.name?.toLowerCase().includes(search) ||
+                    item.codeName?.toLowerCase().includes(search) ||
+                    item.tagCode?.toLowerCase().includes(search) ||
+                    item.description?.toLowerCase().includes(search)
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || (data?.page ? 10 : filtered.length || 10));
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
+        return {
+            data: paged,
+            count: filtered.length,
+            total: filtered.length,
+        };
     },
 
     createServiceTag: async (data: any) => {
-        try {
-            const response = await axiosClient.post('/service-tag', data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service-tag', data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_tags', initialTags);
+        const newTag = {
+            id: `tag-${Date.now()}`,
+            codeName: `TAG-${String(list.length + 1).padStart(3, '0')}`,
+            tagCode: `TAG-${String(list.length + 1).padStart(3, '0')}`,
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'active',
+            ...data,
+        };
+        const updated = [newTag, ...list];
+        setLocal('service_tags', updated);
+        return newTag;
     },
 
     updateServiceTag: async (id: string, data: any) => {
-        try {
-            const res = await axiosClient.patch(`/service-tag/${id}`, data);
-            return res.data
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const res = await axiosClient.patch(`/service-tag/${id}`, data);
+                if (res?.data) return res.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_tags', initialTags);
+        const updated = list.map((item) => (String(item.id) === String(id) ? { ...item, ...data } : item));
+        setLocal('service_tags', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteServiceTag: async (id: string) => {
-        try {
-            await axiosClient.delete(`/service-tag/${id}`);
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-tag/${id}`);
+                return { success: true, id };
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_tags', initialTags);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('service_tags', updated);
+        return { success: true, id };
     },
 
     getServicePortals: async (data: any = {}) => {
         if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
             try {
                 const response = await axiosClient.get('/service-portal', { params: data });
-                return response.data;
+                if (response?.data) return response.data;
             } catch {
                 // Fallback
             }
         }
 
-        const list = getLocal('portals', initialPortals);
+        const list = getLocal<any[]>('portals', initialPortals);
         const search = (data?.search || '').toLowerCase().trim();
         const filtered = search
             ? list.filter(
                 (item) =>
-                    item.name.toLowerCase().includes(search) ||
-                    item.tagCode.toLowerCase().includes(search) ||
-                    item.url.toLowerCase().includes(search)
+                    item.name?.toLowerCase().includes(search) ||
+                    item.tagCode?.toLowerCase().includes(search) ||
+                    item.url?.toLowerCase().includes(search)
             )
             : list;
 
@@ -987,267 +1138,602 @@ export const serviceApi = {
     },
 
     createServicePortal: async (data: any) => {
-        try {
-            const response = await axiosClient.post('/service-portal', data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service-portal', data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('portals', initialPortals);
+        const newPortal = {
+            id: `prt-${Date.now()}`,
+            tagCode: `PRT-${String(list.length + 1).padStart(3, '0')}`,
+            codeName: `PRT-${String(list.length + 1).padStart(3, '0')}`,
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'active',
+            ...data,
+        };
+        const updated = [newPortal, ...list];
+        setLocal('portals', updated);
+        return newPortal;
     },
 
     updateServicePortal: async (id: string, data: any) => {
-        try {
-            const res = await axiosClient.patch(`/service-portal/${id}`, data);
-            return res.data
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const res = await axiosClient.patch(`/service-portal/${id}`, data);
+                if (res?.data) return res.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('portals', initialPortals);
+        const updated = list.map((item) => (String(item.id) === String(id) ? { ...item, ...data } : item));
+        setLocal('portals', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteServicePortal: async (id: string) => {
-        try {
-            const data = await axiosClient.delete(`/service-portal/${id}`);
-            return data.data
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const res = await axiosClient.delete(`/service-portal/${id}`);
+                return res?.data || { success: true, id };
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('portals', initialPortals);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('portals', updated);
+        return { success: true, id };
     },
 
     getServiceCategories: async (data: any = {}) => {
-        try {
-            const response = await axiosClient.get('/service-category', { params: data });
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service-category', { params: data });
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_categories', initialCategories);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    item.name?.toLowerCase().includes(search) ||
+                    item.codeName?.toLowerCase().includes(search) ||
+                    item.tagCode?.toLowerCase().includes(search) ||
+                    item.description?.toLowerCase().includes(search)
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || (data?.page ? 10 : filtered.length || 10));
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
+        return {
+            data: paged,
+            count: filtered.length,
+            total: filtered.length,
+        };
     },
 
     createServiceCategory: async (data: any) => {
-        try {
-            const response = await axiosClient.post('/service-category', data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service-category', data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_categories', initialCategories);
+        const newCat = {
+            id: `cat-${Date.now()}`,
+            codeName: `CAT-${String(list.length + 1).padStart(3, '0')}`,
+            tagCode: `CAT-${String(list.length + 1).padStart(3, '0')}`,
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'active',
+            ...data,
+        };
+        const updated = [newCat, ...list];
+        setLocal('service_categories', updated);
+        return newCat;
     },
 
     updateServiceCategory: async (id: string, data: any) => {
-        try {
-            const response = await axiosClient.patch(`/service-category/${id}`, data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.patch(`/service-category/${id}`, data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_categories', initialCategories);
+        const updated = list.map((item) => (String(item.id) === String(id) ? { ...item, ...data } : item));
+        setLocal('service_categories', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteServiceCategory: async (id: string) => {
-        try {
-            await axiosClient.delete(`/service-category/${id}`);
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-category/${id}`);
+                return { success: true, id };
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_categories', initialCategories);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('service_categories', updated);
+        return { success: true, id };
     },
 
     getServiceTypes: async (data: any = {}) => {
-        try {
-            const response = await axiosClient.get('/service-type', { params: data });
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service-type', { params: data });
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_types', initialTypes);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    item.name?.toLowerCase().includes(search) ||
+                    item.typeCode?.toLowerCase().includes(search) ||
+                    item.codeName?.toLowerCase().includes(search) ||
+                    item.serviceCategory?.name?.toLowerCase().includes(search) ||
+                    item.description?.toLowerCase().includes(search)
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || (data?.page ? 10 : filtered.length || 10));
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
+        return {
+            data: paged,
+            count: filtered.length,
+            total: filtered.length,
+        };
     },
 
     createServiceType: async (data: any) => {
-        try {
-            const response = await axiosClient.post('/service-type', data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/service-type', data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_types', initialTypes);
+        const categories = getLocal<any[]>('service_categories', initialCategories);
+        const matchedCategory = categories.find((c) => String(c.id) === String(data.serviceCategory_id || data.serviceCategoryId));
+        const newType = {
+            id: `typ-${Date.now()}`,
+            typeCode: `TYP-${String(list.length + 1).padStart(3, '0')}`,
+            codeName: `TYP-${String(list.length + 1).padStart(3, '0')}`,
+            serviceCategory: matchedCategory
+                ? { id: matchedCategory.id, name: matchedCategory.name }
+                : { id: 'cat-1', name: 'General' },
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'active',
+            ...data,
+        };
+        const updated = [newType, ...list];
+        setLocal('service_types', updated);
+        return newType;
     },
 
     updateServiceType: async (id: string, data: any) => {
-        try {
-            const response = await axiosClient.patch(`/service-type/${id}`, data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.patch(`/service-type/${id}`, data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_types', initialTypes);
+        const categories = getLocal<any[]>('service_categories', initialCategories);
+        const updated = list.map((item) => {
+            if (String(item.id) !== String(id)) return item;
+            const updatedItem = { ...item, ...data };
+            if (data.serviceCategory_id) {
+                const matchedCategory = categories.find((c) => String(c.id) === String(data.serviceCategory_id));
+                if (matchedCategory) {
+                    updatedItem.serviceCategory = { id: matchedCategory.id, name: matchedCategory.name };
+                }
+            }
+            return updatedItem;
+        });
+        setLocal('service_types', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteServiceType: async (id: string) => {
-        try {
-            await axiosClient.delete(`/service-type/${id}`);
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/service-type/${id}`);
+                return { success: true, id };
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_types', initialTypes);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('service_types', updated);
+        return { success: true, id };
     },
 
     getServiceGroup: async (data: any = {}) => {
-        try {
-            const response = await axiosClient.get('/group', { params: data });
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/group', { params: data });
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_groups', initialGroups);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    item.name?.toLowerCase().includes(search) ||
+                    item.groupCode?.toLowerCase().includes(search) ||
+                    item.description?.toLowerCase().includes(search)
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || (data?.page ? 10 : filtered.length || 10));
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
+        return {
+            data: paged,
+            count: filtered.length,
+            total: filtered.length,
+        };
     },
 
     createServiceGroup: async (data: any) => {
-        try {
-            const response = await axiosClient.post('/group', data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/group', data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_groups', initialGroups);
+        const newGroup = {
+            id: `grp-${Date.now()}`,
+            groupCode: `GRP-${String(list.length + 1).padStart(3, '0')}`,
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'active',
+            ...data,
+        };
+        const updated = [newGroup, ...list];
+        setLocal('service_groups', updated);
+        return newGroup;
     },
 
     updateServiceGroup: async (id: string, data: any) => {
-        try {
-            const response = await axiosClient.patch(`/group/${id}`, data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.patch(`/group/${id}`, data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_groups', initialGroups);
+        const updated = list.map((item) => (String(item.id) === String(id) ? { ...item, ...data } : item));
+        setLocal('service_groups', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteServiceGroup: async (id: string) => {
-        try {
-            await axiosClient.delete(`/group/${id}`);
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/group/${id}`);
+                return { success: true, id };
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_groups', initialGroups);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('service_groups', updated);
+        return { success: true, id };
     },
 
     getServicePackages: async (data: any = {}) => {
-        try {
-            const response = await axiosClient.get('/package', { params: data });
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/package', { params: data });
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_packages', initialPackages);
+        const search = (data?.search || '').toLowerCase().trim();
+        const filtered = search
+            ? list.filter(
+                (item) =>
+                    item.name?.toLowerCase().includes(search) ||
+                    item.package_name?.toLowerCase().includes(search) ||
+                    item.packageCode?.toLowerCase().includes(search) ||
+                    item.description?.toLowerCase().includes(search)
+            )
+            : list;
+
+        const page = Number(data?.page || 1);
+        const limit = Number(data?.limit || (data?.page ? 10 : filtered.length || 10));
+        const start = (page - 1) * limit;
+        const paged = filtered.slice(start, start + limit);
+
+        return {
+            data: paged,
+            count: filtered.length,
+            total: filtered.length,
+        };
     },
 
     createServicePackage: async (data: any) => {
-        try {
-            const response = await axiosClient.post('/package', data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.post('/package', data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_packages', initialPackages);
+        const newPkg = {
+            id: `pkg-${Date.now()}`,
+            packageCode: `PKG-${String(list.length + 1).padStart(3, '0')}`,
+            name: data.name || data.package_name || 'New Package',
+            package_name: data.name || data.package_name || 'New Package',
+            createdAt: new Date().toISOString().split('T')[0],
+            createdBy: 'Admin User',
+            status: 'active',
+            ...data,
+        };
+        const updated = [newPkg, ...list];
+        setLocal('service_packages', updated);
+        return newPkg;
     },
 
     updateServicePackage: async (id: string, data: any) => {
-        try {
-            const response = await axiosClient.patch(`/package/${id}`, data);
-            return response.data;
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.patch(`/package/${id}`, data);
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_packages', initialPackages);
+        const updated = list.map((item) => (String(item.id) === String(id) ? { ...item, ...data } : item));
+        setLocal('service_packages', updated);
+        return updated.find((item) => String(item.id) === String(id)) || data;
     },
 
     deleteServicePackage: async (id: string) => {
-        try {
-            await axiosClient.delete(`/package/${id}`);
-        } catch {
-            // Fallback
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                await axiosClient.delete(`/package/${id}`);
+                return { success: true, id };
+            } catch {
+                // Fallback
+            }
         }
+
+        const list = getLocal<any[]>('service_packages', initialPackages);
+        const updated = list.filter((item) => String(item.id) !== String(id));
+        setLocal('service_packages', updated);
+        return { success: true, id };
     },
 
-
     getServiceDocs: async (data: any = {}) => {
-        try {
-            const response = await axiosClient.get('/service-doc', { params: data });
-            return response.data;
-        } catch {
-
+        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
+            try {
+                const response = await axiosClient.get('/service-doc', { params: data });
+                if (response?.data) return response.data;
+            } catch {
+                // Fallback to local store
+            }
         }
+
+        return {
+            data: [],
+            count: 0,
+            total: 0,
+        };
     },
 };
 
 export const ticketApi = {
     getTickets: async (params: { page: number; limit: number; search?: string }) => {
-        const response = await axiosClient.get('/task', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/task', { params });
+            return response.data || { data: [], count: 0 };
+        } catch {
+            return { data: [], count: 0 };
+        }
     },
 
     createTicket: async (data: any) => {
-        const response = await axiosClient.post('/task', data);
-        return response.data;
+        try {
+            const response = await axiosClient.post('/task', data);
+            return response.data;
+        } catch {
+            return { id: `tkt-${Date.now()}`, ...data };
+        }
     },
 
     deleteTicket: async (id: string) => {
-        const response = await axiosClient.delete(`/task/${id}`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/task/${id}`);
+            return response.data;
+        } catch {
+            return { success: true, id };
+        }
     },
 
     updateTicket: async (id: string, data: { subject: string; message: string }) => {
-        const response = await axiosClient.patch(`/task/${id}`, data);
-        return response.data;
+        try {
+            const response = await axiosClient.patch(`/task/${id}`, data);
+            return response.data;
+        } catch {
+            return { id, ...data };
+        }
     },
 
-
     getTicketTypes: async (params: { page: number; limit: number; search?: string }) => {
-        const response = await axiosClient.get('/task-type', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/task-type', { params });
+            return response.data || { data: [], count: 0 };
+        } catch {
+            return { data: [], count: 0 };
+        }
     },
 
     createTicketType: async (data: any) => {
-        const response = await axiosClient.post('/task-type', data);
-        return response.data;
+        try {
+            const response = await axiosClient.post('/task-type', data);
+            return response.data;
+        } catch {
+            return { id: `tt-${Date.now()}`, ...data };
+        }
     },
 
     deleteTicketType: async (id: string) => {
-        const response = await axiosClient.delete(`/task-type/${id}`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/task-type/${id}`);
+            return response.data;
+        } catch {
+            return { success: true, id };
+        }
     },
 
-
     getReplies: async (params: { page: number; limit: number; search?: string }) => {
-        const response = await axiosClient.get('/canned-replies', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/canned-replies', { params });
+            return response.data || { data: [], count: 0 };
+        } catch {
+            return { data: [], count: 0 };
+        }
     },
 
     createReply: async (data: any) => {
-        const response = await axiosClient.post('/canned-replies', data);
-        return response.data;
+        try {
+            const response = await axiosClient.post('/canned-replies', data);
+            return response.data;
+        } catch {
+            return { id: `rep-${Date.now()}`, ...data };
+        }
     },
 
     deleteReply: async (id: string) => {
-        const response = await axiosClient.delete(`/canned-replies/${id}`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/canned-replies/${id}`);
+            return response.data;
+        } catch {
+            return { success: true, id };
+        }
     },
 
     updateReply: async (id: string, data: { subject: string; message: string }) => {
-        const response = await axiosClient.patch(`/canned-replies/${id}`, data);
-        return response.data;
+        try {
+            const response = await axiosClient.patch(`/canned-replies/${id}`, data);
+            return response.data;
+        } catch {
+            return { id, ...data };
+        }
     },
-}
+};
 
 export const companyBranchApi = {
     getCompaniesBranchs: async (params: any) => {
-        const response = await axiosClient.get('/company-branch', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/company-branch', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     }
-}
+};
 
 export const companyUserApi = {
     getCompanyUsers: async (params: any) => {
-        const response = await axiosClient.get('/company-user', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/company-user', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     }
-}
+};
 
 export const userApi = {
     getUsers: async (params: any) => {
-        const response = await axiosClient.get('/user', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/user', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     }
-}
+};
 
 export const documentApi = {
     getDocuments: async (params: any) => {
-        const response = await axiosClient.get('/document-template', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/document-template', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     },
 
     createDocument: async (data: any) => {
@@ -1267,69 +1753,117 @@ export const documentApi = {
 
 
     getDocumentCategories: async (params: any) => {
-        const response = await axiosClient.get('/document-category', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/document-category', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     },
 
     createDocumentCategory: async (data: any) => {
-        const response = await axiosClient.post('/document-category', data);
-        return response.data;
+        try {
+            const response = await axiosClient.post('/document-category', data);
+            return response.data;
+        } catch {
+            return { id: `cat-${Date.now()}`, ...data };
+        }
     },
 
     updateDocumentCategory: async (id: string, data: any) => {
-        const response = await axiosClient.patch(`/document-category/${id}`, data);
-        return response.data;
+        try {
+            const response = await axiosClient.patch(`/document-category/${id}`, data);
+            return response.data;
+        } catch {
+            return { id, ...data };
+        }
     },
 
     deleteDocumentCategory: async (id: string) => {
-        const response = await axiosClient.delete(`/document-category/${id}`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/document-category/${id}`);
+            return response.data;
+        } catch {
+            return { success: true, id };
+        }
     },
 
 
 
     getDocumentTypes: async (params: any) => {
-        const response = await axiosClient.get('/document-type', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/document-type', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     },
 
     createDocumentType: async (data: any) => {
-        const response = await axiosClient.post('/document-type', data);
-        return response.data;
+        try {
+            const response = await axiosClient.post('/document-type', data);
+            return response.data;
+        } catch {
+            return { id: `dt-${Date.now()}`, ...data };
+        }
     },
 
     updateDocumentType: async (id: string, data: any) => {
-        const response = await axiosClient.patch(`/document-type/${id}`, data);
-        return response.data;
+        try {
+            const response = await axiosClient.patch(`/document-type/${id}`, data);
+            return response.data;
+        } catch {
+            return { id, ...data };
+        }
     },
 
     deleteDocumentType: async (id: string) => {
-        const response = await axiosClient.delete(`/document-type/${id}`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/document-type/${id}`);
+            return response.data;
+        } catch {
+            return { success: true, id };
+        }
     },
 
 
 
     getDocumentTags: async (params: any) => {
-        const response = await axiosClient.get('/document-tag', { params });
-        return response.data;
+        try {
+            const response = await axiosClient.get('/document-tag', { params });
+            return response.data || [];
+        } catch {
+            return [];
+        }
     },
 
     createDocumentTag: async (data: any) => {
-        const response = await axiosClient.post('/document-tag', data);
-        return response.data;
+        try {
+            const response = await axiosClient.post('/document-tag', data);
+            return response.data;
+        } catch {
+            return { id: `tag-${Date.now()}`, ...data };
+        }
     },
 
     updateDocumentTag: async (id: string, data: any) => {
-        const response = await axiosClient.put(`/document-tag/${id}`, data);
-        return response.data;
+        try {
+            const response = await axiosClient.put(`/document-tag/${id}`, data);
+            return response.data;
+        } catch {
+            return { id, ...data };
+        }
     },
 
     deleteDocumentTag: async (id: string) => {
-        const response = await axiosClient.delete(`/document-tag/${id}`);
-        return response.data;
+        try {
+            const response = await axiosClient.delete(`/document-tag/${id}`);
+            return response.data;
+        } catch {
+            return { success: true, id };
+        }
     },
-}
+};
 
 export const assetApi = {
     getAssetCategories: async (params: any) => {
@@ -2167,1807 +2701,61 @@ const initialCrmOwnershipTypes: CrmOwnershipTypeRecord[] = [
     },
 ];
 
-export const CRM_SALES_EMPLOYEES: CrmSalesEmployee[] = [
-    {
-        id: 'emp-1',
-        code: 'EMP-001',
-        nameEn: 'Karim Wagdi',
-        nameAr: 'كريم وجدي',
-        roleEn: 'Senior Enterprise Account Director',
-        roleAr: 'مدير حسابات الشركات الكبرى',
-        departmentEn: 'Enterprise Commercial & Sales',
-        departmentAr: 'المبيعات التجارية والشركات الكبرى',
-        email: 'karim@awn.sa',
-    },
-    {
-        id: 'emp-2',
-        code: 'EMP-002',
-        nameEn: 'Noura Al-Subaie',
-        nameAr: 'نورة السبيعي',
-        roleEn: 'Commercial Growth Manager',
-        roleAr: 'مديرة النمو التجاري',
-        departmentEn: 'Commercial Growth & Proposals',
-        departmentAr: 'النمو التجاري والعروض',
-        email: 'noura.alsubaie@awn.sa',
-    },
-    {
-        id: 'emp-3',
-        code: 'EMP-003',
-        nameEn: 'Tariq Al-Ghamdi',
-        nameAr: 'طارق الغامدي',
-        roleEn: 'B2B Onboarding Specialist',
-        roleAr: 'أخصائي تأهيل عملاء الشركات',
-        departmentEn: 'Client Onboarding & Government PRO',
-        departmentAr: 'تأهيل العملاء والعلاقات الحكومية',
-        email: 'tariq.alghamdi@awn.sa',
-    },
-    {
-        id: 'emp-4',
-        code: 'EMP-004',
-        nameEn: 'Layan Al-Otaibi',
-        nameAr: 'ليان العتيبي',
-        roleEn: 'Strategic Accounts Executive',
-        roleAr: 'مسؤولة الحسابات الاستراتيجية',
-        departmentEn: 'Strategic Accounts & Legal Governance',
-        departmentAr: 'الحسابات الاستراتيجية والحوكمة القانونية',
-        email: 'layan.alotaibi@awn.sa',
-    },
-];
+export const CRM_SALES_EMPLOYEES: CrmSalesEmployee[] = (() => {
+    try {
+        const umsEmps = loadEmployees();
+        if (umsEmps && umsEmps.length > 0) {
+            return umsEmps.map(emp => ({
+                id: emp.id,
+                code: emp.code || emp.id,
+                nameEn: emp.nameEn || `${emp.firstNameEn || ''} ${emp.lastNameEn || ''}`.trim() || emp.workEmail || 'Employee',
+                nameAr: emp.nameAr || emp.nameEn || 'موظف',
+                roleEn: emp.jobTitleName || emp.designationTitle || 'Employee',
+                roleAr: emp.jobTitleName || emp.designationTitle || 'موظف',
+                departmentEn: emp.departmentName || 'General',
+                departmentAr: emp.departmentNameAr || emp.departmentName || 'عام',
+                email: emp.workEmail || emp.email || '',
+            }));
+        }
+    } catch {
+        // Fallback
+    }
+    return [];
+})();
 
-// Deterministic Phase 2C Seed Data for Leads, Companies, Contacts, and Owners
-const initialCrmLeads: CrmLeadRecord[] = [
-    {
-        id: 'crm-lead-1',
-        code: 'LD-001',
-        title: 'Al-Wataniya Fleet & Government Relations Onboarding',
-        leadType: 'company',
-        leadSourceId: 'crm-src-1',
-        leadSourceNameEn: 'Website Inquiry',
-        leadSourceNameAr: 'استفسار الموقع الإلكتروني',
-        leadStatusId: 'crm-lst-3',
-        leadStatusNameEn: 'Qualified',
-        leadStatusNameAr: 'مؤهل',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        sectorId: 'crm-sec-1',
-        sectorNameEn: 'Logistics & Supply Chain',
-        sectorNameAr: 'الخدمات اللوجستية وسلاسل الإمداد',
-        contactName: 'Faisal Al-Qahtani',
-        contactJobTitle: 'VP of Operations',
-        contactPhone: '+966501234567',
-        contactEmail: 'faisal@wataniya-logistics.sa',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        companySize: '201-500',
-        organizationalTypeId: 'crm-org-1',
-        estimatedValue: 85000,
-        city: 'Riyadh',
-        state: 'Riyadh Province',
-        country: 'Saudi Arabia',
-        pinCode: '12214',
-        address: 'King Fahd Road, Al Olaya District, Riyadh',
-        website: 'https://wataniya-logistics.sa',
-        notes: 'Enterprise fleet licensing and Muqeem/Qiwa automation inquiry.',
-        status: 'active',
-        createdAt: '2026-01-15',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-lead-2',
-        code: 'LD-002',
-        title: 'Najd Smart Warehousing MISA & CR Expansion',
-        leadType: 'company',
-        leadSourceId: 'crm-src-3',
-        leadSourceNameEn: 'Government & Chamber Events',
-        leadSourceNameAr: 'فعاليات الغرف التجارية والجهات الحكومية',
-        leadStatusId: 'crm-lst-1',
-        leadStatusNameEn: 'New',
-        leadStatusNameAr: 'جديد',
-        assignedEmployeeId: '',
-        assignedEmployeeNameEn: '',
-        assignedEmployeeNameAr: '',
-        sectorId: 'crm-sec-1',
-        sectorNameEn: 'Logistics & Supply Chain',
-        sectorNameAr: 'الخدمات اللوجستية وسلاسل الإمداد',
-        contactName: 'Bader Al-Mutairi',
-        contactJobTitle: 'Managing Director',
-        contactPhone: '+966542233445',
-        contactEmail: 'bader@najd-warehousing.sa',
-        temporaryCompanyName: 'Najd Smart Warehousing Co.',
-        companySize: '51-200',
-        organizationalTypeId: 'crm-org-1',
-        estimatedValue: 64000,
-        city: 'Dammam',
-        state: 'Eastern Province',
-        country: 'Saudi Arabia',
-        pinCode: '32241',
-        address: 'King Abdulaziz Street, Dammam',
-        notes: 'Registered during Riyadh Chamber Logistics Forum; awaiting sales assignment.',
-        status: 'active',
-        createdAt: '2026-01-18',
-        createdBy: 'System Admin',
-    },
-    {
-        id: 'crm-lead-3',
-        code: 'LD-003',
-        title: 'Dar Al-Omran Civil Contracting PRO Retainer',
-        leadType: 'company',
-        leadSourceId: 'crm-src-2',
-        leadSourceNameEn: 'Executive Referral',
-        leadSourceNameAr: 'توصية تنفيذية',
-        leadStatusId: 'crm-lst-2',
-        leadStatusNameEn: 'Contacted',
-        leadStatusNameAr: 'تم التواصل',
-        assignedEmployeeId: 'emp-2',
-        assignedEmployeeNameEn: 'Noura Al-Subaie',
-        assignedEmployeeNameAr: 'نورة السبيعي',
-        sectorId: 'crm-sec-2',
-        sectorNameEn: 'Construction & Real Estate Development',
-        sectorNameAr: 'المقاولات والتطوير العقاري',
-        contactName: 'Eng. Majed Al-Harbi',
-        contactJobTitle: 'Chief Executive Officer',
-        contactPhone: '+966558877665',
-        contactEmail: 'majed@dar-alomran.sa',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        companySize: '500+',
-        organizationalTypeId: 'crm-org-2',
-        estimatedValue: 140000,
-        city: 'Jeddah',
-        state: 'Makkah Province',
-        country: 'Saudi Arabia',
-        pinCode: '23432',
-        address: 'Prince Sultan Road, Al Rawdah, Jeddah',
-        website: 'https://dar-alomran.sa',
-        notes: 'Discovery call completed; preparing engineer visa & Balady compliance package.',
-        status: 'active',
-        createdAt: '2026-01-19',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-lead-4',
-        code: 'LD-004',
-        title: 'Dr. Huda Al-Shammari Medical Polyclinic Setup',
-        leadType: 'individual',
-        leadSourceId: 'crm-src-1',
-        leadSourceNameEn: 'Website Inquiry',
-        leadSourceNameAr: 'استفسار الموقع الإلكتروني',
-        leadStatusId: 'crm-lst-1',
-        leadStatusNameEn: 'New',
-        leadStatusNameAr: 'جديد',
-        assignedEmployeeId: 'emp-3',
-        assignedEmployeeNameEn: 'Tariq Al-Ghamdi',
-        assignedEmployeeNameAr: 'طارق الغامدي',
-        sectorId: 'crm-sec-4',
-        sectorNameEn: 'Healthcare & Medical Supplies',
-        sectorNameAr: 'الرعاية الصحية والمستلزمات الطبية',
-        contactName: 'Dr. Huda Al-Shammari',
-        contactJobTitle: 'Founder & Medical Director',
-        contactPhone: '+966563344556',
-        contactEmail: 'huda.shammari@medcare-clinic.sa',
-        temporaryCompanyName: 'Al-Shammari Specialized Polyclinic',
-        companySize: '11-50',
-        organizationalTypeId: 'crm-org-3',
-        estimatedValue: 42000,
-        city: 'Riyadh',
-        state: 'Riyadh Province',
-        country: 'Saudi Arabia',
-        pinCode: '13315',
-        address: 'Anas Ibn Malik Road, Al Malqa, Riyadh',
-        notes: 'Individual investor establishing a new specialized medical clinic in North Riyadh.',
-        status: 'active',
-        createdAt: '2026-01-21',
-        createdBy: 'Tariq Al-Ghamdi',
-    },
-    {
-        id: 'crm-lead-5',
-        code: 'LD-005',
-        title: 'Afaq Digital Cloud Regional HQ Licensing',
-        leadType: 'company',
-        leadSourceId: 'crm-src-4',
-        leadSourceNameEn: 'Outbound Enterprise Sales',
-        leadSourceNameAr: 'مبيعات الشركات المباشرة',
-        leadStatusId: 'crm-lst-3',
-        leadStatusNameEn: 'Qualified',
-        leadStatusNameAr: 'مؤهل',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        sectorId: 'crm-sec-3',
-        sectorNameEn: 'Technology & Digital Services',
-        sectorNameAr: 'التقنية والخدمات الرقمية',
-        contactName: 'Sara Al-Zahrani',
-        contactJobTitle: 'General Counsel & Legal Director',
-        contactPhone: '+966509988776',
-        contactEmail: 'sara@afaq-cloud.sa',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        companySize: '51-200',
-        organizationalTypeId: 'crm-org-4',
-        estimatedValue: 195000,
-        city: 'Riyadh',
-        state: 'Riyadh Province',
-        country: 'Saudi Arabia',
-        pinCode: '13519',
-        address: 'KAFD Parcel 4, Al Aqiq District, Riyadh',
-        website: 'https://afaq-cloud.sa',
-        notes: 'Qualified MISA Regional HQ compliance and executive residency portfolio.',
-        status: 'active',
-        createdAt: '2026-01-22',
-        createdBy: 'Karim Wagdi',
-    },
-];
-
-const initialCrmCompanies: CrmCompanyRecord[] = [
-    {
-        id: 'crm-comp-1',
-        code: 'CMP-001',
-        businessType: 'existing_business',
-        nameEn: 'Al-Wataniya Logistics Co.',
-        nameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        businessName: 'Al-Wataniya Transport & Supply Chain',
-        organizationalTypeId: 'crm-org-1',
-        organizationalTypeNameEn: 'Limited Liability Company (LLC)',
-        organizationalTypeNameAr: 'شركة ذات مسؤولية محدودة',
-        ownershipTypeId: 'crm-own-type-1',
-        ownershipTypeNameEn: 'Saudi National Ownership',
-        ownershipTypeNameAr: 'ملكية مواطن سعودي',
-        sectorId: 'crm-sec-1',
-        sectorNameEn: 'Logistics & Supply Chain',
-        sectorNameAr: 'الخدمات اللوجستية وسلاسل الإمداد',
-        phone: '+966114001122',
-        email: 'info@wataniya-logistics.sa',
-        website: 'https://wataniya-logistics.sa',
-        hasVehicles: true,
-        saudiEmployeesCount: 85,
-        nonSaudiEmployeesCount: 140,
-        hasBranches: true,
-        buildingNumber: '4210',
-        street: 'King Fahd Road',
-        district: 'Al Olaya District',
-        city: 'Riyadh',
-        postalCode: '12214',
-        province: 'Riyadh Province',
-        address: 'King Fahd Road, Al Olaya District, Riyadh',
-        crNumber: '1010456789',
-        unifiedNumber: '7001234567',
-        taxNumber: '300123456700003',
-        chamberOfCommerceNumber: 'CC-88219',
-        establishmentDate: '2018-04-12',
-        crExpiryDate: '2028-04-12',
-        capitalAmount: 5000000,
-        representativeName: 'Faisal Al-Qahtani',
-        representativeJobTitle: 'VP of Operations',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        owners: [
-            {
-                ownerId: 'crm-own-1',
-                firstName: 'Sultan',
-                lastName: 'Al-Rashid',
-                fullNameEn: 'Sultan Al-Rashid',
-                fullNameAr: 'سلطان الراشد',
-                gender: 'male',
-                nationality: 'Saudi',
-                ownershipTypeId: 'crm-own-type-1',
-                ownershipTypeNameEn: 'Saudi National Ownership',
-                ownershipTypeNameAr: 'ملكية مواطن سعودي',
-                nationalIdOrIqama: '1045678901',
-                phone: '+966551122334',
-                email: 'sultan@wataniya-logistics.sa',
-                ownershipPercentage: 100,
-                isMainOwner: true,
-            },
-        ],
-        onboardingStatus: 'active',
-        status: 'active',
-        notes: 'Key enterprise logistics account with nationwide fleet operations.',
-        createdAt: '2026-01-14',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-comp-2',
-        code: 'CMP-002',
-        businessType: 'existing_business',
-        nameEn: 'Dar Al-Omran Contracting CJSC',
-        nameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        businessName: 'Dar Al-Omran Engineering & Contracting',
-        organizationalTypeId: 'crm-org-2',
-        organizationalTypeNameEn: 'Closed Joint Stock Company (CJSC)',
-        organizationalTypeNameAr: 'شركة مساهمة مقفلة',
-        ownershipTypeId: 'crm-own-type-1',
-        ownershipTypeNameEn: 'Saudi National Ownership',
-        ownershipTypeNameAr: 'ملكية مواطن سعودي',
-        sectorId: 'crm-sec-2',
-        sectorNameEn: 'Construction & Real Estate Development',
-        sectorNameAr: 'المقاولات والتطوير العقاري',
-        phone: '+966126604455',
-        email: 'contracts@dar-alomran.sa',
-        website: 'https://dar-alomran.sa',
-        hasVehicles: true,
-        saudiEmployeesCount: 160,
-        nonSaudiEmployeesCount: 420,
-        hasBranches: true,
-        buildingNumber: '7821',
-        street: 'Prince Sultan Road',
-        district: 'Al Rawdah District',
-        city: 'Jeddah',
-        postalCode: '23432',
-        province: 'Makkah Province',
-        address: 'Prince Sultan Road, Al Rawdah District, Jeddah',
-        crNumber: '4030229911',
-        unifiedNumber: '7009887766',
-        taxNumber: '310988776600003',
-        chamberOfCommerceNumber: 'JCC-44102',
-        establishmentDate: '2015-09-01',
-        crExpiryDate: '2027-09-01',
-        capitalAmount: 25000000,
-        representativeName: 'Eng. Majed Al-Harbi',
-        representativeJobTitle: 'Chief Executive Officer',
-        assignedEmployeeId: 'emp-2',
-        assignedEmployeeNameEn: 'Noura Al-Subaie',
-        assignedEmployeeNameAr: 'نورة السبيعي',
-        owners: [
-            {
-                ownerId: 'crm-own-2',
-                firstName: 'Khalid',
-                lastName: 'Al-Omran',
-                fullNameEn: 'Khalid Al-Omran',
-                fullNameAr: 'خالد العمران',
-                gender: 'male',
-                nationality: 'Saudi',
-                ownershipTypeId: 'crm-own-type-1',
-                ownershipTypeNameEn: 'Saudi National Ownership',
-                ownershipTypeNameAr: 'ملكية مواطن سعودي',
-                nationalIdOrIqama: '1022334455',
-                phone: '+966504455667',
-                email: 'khalid@dar-alomran.sa',
-                ownershipPercentage: 60,
-                isMainOwner: true,
-            },
-            {
-                ownerId: 'crm-own-3',
-                firstName: 'Fahad',
-                lastName: 'Al-Omran',
-                fullNameEn: 'Fahad Al-Omran',
-                fullNameAr: 'فهد العمران',
-                gender: 'male',
-                nationality: 'Saudi',
-                ownershipTypeId: 'crm-own-type-1',
-                ownershipTypeNameEn: 'Saudi National Ownership',
-                ownershipTypeNameAr: 'ملكية مواطن سعودي',
-                nationalIdOrIqama: '1022334499',
-                phone: '+966504455668',
-                email: 'fahad@dar-alomran.sa',
-                ownershipPercentage: 40,
-                isMainOwner: false,
-            },
-        ],
-        onboardingStatus: 'pre_onboarding',
-        status: 'active',
-        notes: 'Pre-onboarding completed; awaiting final commercial contract signature.',
-        createdAt: '2026-01-19',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-comp-3',
-        code: 'CMP-003',
-        businessType: 'new_business',
-        nameEn: 'Afaq Digital Cloud Solutions',
-        nameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        businessName: 'Afaq Cloud KSA',
-        organizationalTypeId: 'crm-org-4',
-        organizationalTypeNameEn: 'Foreign Company Branch (MISA)',
-        organizationalTypeNameAr: 'فرع شركة أجنبية (وزارة الاستثمار)',
-        ownershipTypeId: 'crm-own-type-4',
-        ownershipTypeNameEn: '100% Foreign Investment (MISA)',
-        ownershipTypeNameAr: 'استثمار أجنبي كامل (100%)',
-        sectorId: 'crm-sec-3',
-        sectorNameEn: 'Technology & Digital Services',
-        sectorNameAr: 'التقنية والخدمات الرقمية',
-        phone: '+966112998877',
-        email: 'ksa-office@afaq-cloud.sa',
-        website: 'https://afaq-cloud.sa',
-        hasVehicles: false,
-        saudiEmployeesCount: 45,
-        nonSaudiEmployeesCount: 60,
-        hasBranches: false,
-        buildingNumber: '3104',
-        street: 'Al Aqiq Boulevard',
-        district: 'KAFD',
-        city: 'Riyadh',
-        postalCode: '13519',
-        province: 'Riyadh Province',
-        address: 'KAFD Parcel 4, Al Aqiq District, Riyadh',
-        crNumber: '1010998822',
-        unifiedNumber: '7011223344',
-        taxNumber: '301122334400003',
-        representativeName: 'Sara Al-Zahrani',
-        representativeJobTitle: 'General Counsel & Legal Director',
-        assignedEmployeeId: 'emp-4',
-        assignedEmployeeNameEn: 'Layan Al-Otaibi',
-        assignedEmployeeNameAr: 'ليان العتيبي',
-        owners: [],
-        onboardingStatus: 'active',
-        status: 'active',
-        notes: 'MISA-licensed technology provider expanding KAFD regional headquarters.',
-        createdAt: '2026-01-22',
-        createdBy: 'Layan Al-Otaibi',
-    },
-];
-
-const initialCrmContacts: CrmContactRecord[] = [
-    {
-        id: 'crm-cnt-1',
-        code: 'CNT-001',
-        fullNameEn: 'Faisal Al-Qahtani',
-        fullNameAr: 'فيصل القحطاني',
-        contactType: 'decision_maker',
-        jobTitle: 'VP of Operations',
-        department: 'Fleet & Government Relations',
-        phone: '+966501234567',
-        secondaryPhone: '+966114001122',
-        email: 'faisal@wataniya-logistics.sa',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        leadId: 'crm-lead-1',
-        leadTitle: 'Al-Wataniya Fleet & Government Relations Onboarding',
-        isPrimary: true,
-        notes: 'Primary executive sponsor for Al-Wataniya annual retainer.',
-        status: 'active',
-        createdAt: '2026-01-15',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-cnt-2',
-        code: 'CNT-002',
-        fullNameEn: 'Reem Al-Dossary',
-        fullNameAr: 'ريم الدوسري',
-        contactType: 'billing',
-        jobTitle: 'Financial Controller',
-        department: 'Finance & ZATCA Compliance',
-        phone: '+966559911223',
-        email: 'reem.finance@wataniya-logistics.sa',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        isPrimary: false,
-        notes: 'Handles VAT invoices, payment releases, and ZATCA e-invoicing.',
-        status: 'active',
-        createdAt: '2026-01-16',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-cnt-3',
-        code: 'CNT-003',
-        fullNameEn: 'Eng. Majed Al-Harbi',
-        fullNameAr: 'م. ماجد الحربي',
-        contactType: 'decision_maker',
-        jobTitle: 'Chief Executive Officer',
-        department: 'Executive Management',
-        phone: '+966558877665',
-        email: 'majed@dar-alomran.sa',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        leadId: 'crm-lead-3',
-        leadTitle: 'Dar Al-Omran Civil Contracting PRO Retainer',
-        isPrimary: true,
-        notes: 'Authorized signatory for Dar Al-Omran CJSC.',
-        status: 'active',
-        createdAt: '2026-01-19',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-cnt-4',
-        code: 'CNT-004',
-        fullNameEn: 'Sara Al-Zahrani',
-        fullNameAr: 'سارة الزهراني',
-        contactType: 'legal_representative',
-        jobTitle: 'General Counsel & Legal Director',
-        department: 'Legal & Regulatory Affairs',
-        phone: '+966509988776',
-        email: 'sara@afaq-cloud.sa',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        leadId: 'crm-lead-5',
-        leadTitle: 'Afaq Digital Cloud Regional HQ Licensing',
-        isPrimary: true,
-        notes: 'Oversees MISA licensing and corporate governance.',
-        status: 'active',
-        createdAt: '2026-01-22',
-        createdBy: 'Layan Al-Otaibi',
-    },
-];
-
-const initialCrmOwners: CrmOwnerRecord[] = [
-    {
-        id: 'crm-own-1',
-        code: 'OWN-001',
-        firstName: 'Sultan',
-        lastName: 'Al-Rashid',
-        fullNameEn: 'Sultan Al-Rashid',
-        fullNameAr: 'سلطان الراشد',
-        gender: 'male',
-        ownershipTypeId: 'crm-own-type-1',
-        ownershipTypeNameEn: 'Saudi National Ownership',
-        ownershipTypeNameAr: 'ملكية مواطن سعودي',
-        nationalIdOrIqama: '1045678901',
-        nationality: 'Saudi',
-        phone: '+966551122334',
-        email: 'sultan@wataniya-logistics.sa',
-        ownershipPercentage: 100,
-        isMainOwner: true,
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        notes: 'Sole proprietor and Chairman of Al-Wataniya Logistics Co.',
-        status: 'active',
-        createdAt: '2026-01-14',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-own-2',
-        code: 'OWN-002',
-        firstName: 'Khalid',
-        lastName: 'Al-Omran',
-        fullNameEn: 'Khalid Al-Omran',
-        fullNameAr: 'خالد العمران',
-        gender: 'male',
-        ownershipTypeId: 'crm-own-type-1',
-        ownershipTypeNameEn: 'Saudi National Ownership',
-        ownershipTypeNameAr: 'ملكية مواطن سعودي',
-        nationalIdOrIqama: '1022334455',
-        nationality: 'Saudi',
-        phone: '+966504455667',
-        email: 'khalid@dar-alomran.sa',
-        ownershipPercentage: 60,
-        isMainOwner: true,
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        notes: 'Majority shareholder and Chairman of the Board.',
-        status: 'active',
-        createdAt: '2026-01-19',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-own-3',
-        code: 'OWN-003',
-        firstName: 'Fahad',
-        lastName: 'Al-Omran',
-        fullNameEn: 'Fahad Al-Omran',
-        fullNameAr: 'فهد العمران',
-        gender: 'male',
-        ownershipTypeId: 'crm-own-type-1',
-        ownershipTypeNameEn: 'Saudi National Ownership',
-        ownershipTypeNameAr: 'ملكية مواطن سعودي',
-        nationalIdOrIqama: '1022334499',
-        nationality: 'Saudi',
-        phone: '+966504455668',
-        email: 'fahad@dar-alomran.sa',
-        ownershipPercentage: 40,
-        isMainOwner: false,
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        notes: 'Co-founder and Board Member.',
-        status: 'active',
-        createdAt: '2026-01-19',
-        createdBy: 'Noura Al-Subaie',
-    },
-];
-
-const initialCrmDeals: CrmDealRecord[] = [
-    {
-        id: 'crm-deal-1',
-        code: 'DL-001',
-        titleEn: 'Al-Wataniya Annual Retainer',
-        titleAr: 'عقد الخدمات السنوي للشركة الوطنية',
-        leadId: 'crm-lead-1',
-        leadCode: 'LD-001',
-        leadTitle: 'Al-Wataniya Fleet & Government Relations Onboarding',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        contactId: 'crm-cnt-1',
-        contactName: 'Faisal Al-Qahtani',
-        sectorId: 'crm-sec-1',
-        sectorNameEn: 'Logistics & Supply Chain',
-        sectorNameAr: 'الخدمات اللوجستية وسلاسل الإمداد',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        stage: 'won',
-        probability: 100,
-        expectedValue: 85000,
-        amount: 85000,
-        currency: 'SAR',
-        expectedCloseDate: '2026-01-25',
-        wonAt: '2026-01-20',
-        notes: 'Closed-won annual government compliance & fleet licensing retainer.',
-        status: 'active',
-        createdAt: '2026-01-16',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-deal-2',
-        code: 'DL-002',
-        titleEn: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        titleAr: 'منظومة خدمات العمالة والمهندسين لشركة دار العمران',
-        leadId: 'crm-lead-3',
-        leadCode: 'LD-003',
-        leadTitle: 'Dar Al-Omran Civil Contracting PRO Retainer',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        contactId: 'crm-cnt-3',
-        contactName: 'Eng. Majed Al-Harbi',
-        sectorId: 'crm-sec-2',
-        sectorNameEn: 'Construction & Real Estate Development',
-        sectorNameAr: 'المقاولات والتطوير العقاري',
-        assignedEmployeeId: 'emp-2',
-        assignedEmployeeNameEn: 'Noura Al-Subaie',
-        assignedEmployeeNameAr: 'نورة السبيعي',
-        stage: 'negotiation',
-        probability: 80,
-        expectedValue: 140000,
-        amount: 140000,
-        currency: 'SAR',
-        expectedCloseDate: '2026-02-28',
-        notes: 'Finalizing multi-branch Qiwa & Balady SLA terms with executive board.',
-        status: 'active',
-        createdAt: '2026-01-21',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-deal-3',
-        code: 'DL-003',
-        titleEn: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        titleAr: 'باقة تراخيص المقر الإقليمي والإقامات المميزة لشركة آفاق',
-        leadId: 'crm-lead-5',
-        leadCode: 'LD-005',
-        leadTitle: 'Afaq Digital Cloud Regional HQ Licensing',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        contactId: 'crm-cnt-4',
-        contactName: 'Sara Al-Zahrani',
-        sectorId: 'crm-sec-3',
-        sectorNameEn: 'Technology & Digital Services',
-        sectorNameAr: 'التقنية والخدمات الرقمية',
-        assignedEmployeeId: 'emp-4',
-        assignedEmployeeNameEn: 'Layan Al-Otaibi',
-        assignedEmployeeNameAr: 'ليان العتيبي',
-        stage: 'won',
-        probability: 100,
-        expectedValue: 195000,
-        amount: 195000,
-        currency: 'SAR',
-        expectedCloseDate: '2026-02-10',
-        wonAt: '2026-02-02',
-        notes: 'Approved MISA Regional HQ compliance and executive visa onboarding.',
-        status: 'active',
-        createdAt: '2026-01-24',
-        createdBy: 'Layan Al-Otaibi',
-    },
-    {
-        id: 'crm-deal-4',
-        code: 'DL-004',
-        titleEn: 'Al-Wataniya Customs & Port Clearance Add-On',
-        titleAr: 'ملحق خدمات التخليص الجمركي وتصاريح الموانئ للوطنية',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        contactId: 'crm-cnt-2',
-        contactName: 'Reem Al-Dossary',
-        sectorId: 'crm-sec-1',
-        sectorNameEn: 'Logistics & Supply Chain',
-        sectorNameAr: 'الخدمات اللوجستية وسلاسل الإمداد',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        stage: 'proposal',
-        probability: 60,
-        expectedValue: 48000,
-        amount: 48000,
-        currency: 'SAR',
-        expectedCloseDate: '2026-03-15',
-        notes: 'Expansion proposal submitted for Dammam and Jeddah port fleet permits.',
-        status: 'active',
-        createdAt: '2026-01-28',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-deal-5',
-        code: 'DL-005',
-        titleEn: 'Dar Al-Omran ZATCA E-Invoicing Phase 2 Advisory',
-        titleAr: 'استشارات الربط والتكامل للفوترة الإلكترونية (فاتورة) — دار العمران',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        contactId: 'crm-cnt-3',
-        contactName: 'Eng. Majed Al-Harbi',
-        sectorId: 'crm-sec-2',
-        sectorNameEn: 'Construction & Real Estate Development',
-        sectorNameAr: 'المقاولات والتطوير العقاري',
-        assignedEmployeeId: 'emp-3',
-        assignedEmployeeNameEn: 'Tariq Al-Ghamdi',
-        assignedEmployeeNameAr: 'طارق الغامدي',
-        stage: 'qualified',
-        probability: 40,
-        expectedValue: 65000,
-        amount: 65000,
-        currency: 'SAR',
-        expectedCloseDate: '2026-04-10',
-        notes: 'Technical discovery completed for ZATCA Phase 2 ERP connector.',
-        status: 'active',
-        createdAt: '2026-02-01',
-        createdBy: 'Tariq Al-Ghamdi',
-    },
-];
-
-const initialCrmContracts: CrmContractRecord[] = [
-    {
-        id: 'crm-con-1',
-        code: 'CON-001',
-        contractNumber: 'CNT-2026-001',
-        titleEn: 'Master Corporate Government Relations Agreement',
-        titleAr: 'اتفاقية خدمات العلاقات الحكومية الشاملة',
-        dealId: 'crm-deal-1',
-        dealCode: 'DL-001',
-        dealTitle: 'Al-Wataniya Annual Retainer',
-        dealTitleEn: 'Al-Wataniya Annual Retainer',
-        dealTitleAr: 'عقد الخدمات السنوي للشركة الوطنية',
-        quotationId: 'crm-qt-1',
-        quotationCode: 'QT-001',
-        quotationTitleEn: 'Annual Corporate & Fleet PRO Services Quotation',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        contactId: 'crm-cnt-1',
-        contactName: 'Faisal Al-Qahtani',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        startDate: '2026-02-01',
-        endDate: '2027-01-31',
-        signedDate: '2026-01-20',
-        renewalType: 'annual_auto',
-        billingCycle: 'annual',
-        subtotal: 73913.04,
-        discountTotal: 0,
-        taxAmount: 11086.96,
-        totalValue: 85000,
-        contractValue: 85000,
-        currency: 'SAR',
-        contractStatus: 'active',
-        termsAndConditions:
-            '1. Scope covers Absher Business, Qiwa, Muqeem, GOSI, and Balady renewals.\n2. Dedicated Account Manager SLA response within 4 business hours.\n3. Government statutory fees billed as pass-through via SADAD.',
-        notes: 'Signed and stamped by VP of Operations.',
-        status: 'active',
-        createdAt: '2026-01-20',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-con-2',
-        code: 'CON-002',
-        contractNumber: 'CNT-2026-002',
-        titleEn: 'Afaq Regional HQ MISA & Executive Mobility Retainer',
-        titleAr: 'اتفاقية خدمات المقر الإقليمي وتراخيص وزارة الاستثمار لشركة آفاق',
-        dealId: 'crm-deal-3',
-        dealCode: 'DL-003',
-        dealTitle: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        dealTitleEn: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        dealTitleAr: 'باقة تراخيص المقر الإقليمي والإقامات المميزة لشركة آفاق',
-        quotationId: 'crm-qt-2',
-        quotationCode: 'QT-002',
-        quotationTitleEn: 'Afaq KAFD Regional HQ Setup & Annual Compliance Proposal',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        contactId: 'crm-cnt-4',
-        contactName: 'Sara Al-Zahrani',
-        assignedEmployeeId: 'emp-4',
-        assignedEmployeeNameEn: 'Layan Al-Otaibi',
-        assignedEmployeeNameAr: 'ليان العتيبي',
-        startDate: '2026-02-15',
-        endDate: '2027-02-14',
-        signedDate: '2026-02-03',
-        renewalType: 'annual_auto',
-        billingCycle: 'quarterly',
-        subtotal: 28900,
-        discountTotal: 1850,
-        taxAmount: 4057.5,
-        totalValue: 31107.5,
-        contractValue: 31107.5,
-        currency: 'SAR',
-        contractStatus: 'active',
-        termsAndConditions:
-            '1. MISA Regional HQ license maintenance and quarterly compliance reporting.\n2. Executive residency and family visa processing.\n3. Quarterly billing schedule net 15 days.',
-        notes: 'Executed by Afaq General Counsel.',
-        status: 'active',
-        createdAt: '2026-02-03',
-        createdBy: 'Layan Al-Otaibi',
-    },
-    {
-        id: 'crm-con-3',
-        code: 'CON-003',
-        contractNumber: 'CNT-2026-003',
-        titleEn: 'Dar Al-Omran Municipal & Workforce Compliance SLA',
-        titleAr: 'اتفاقية مستوى الخدمة لتراخيص البلدية والقوى العاملة — دار العمران',
-        dealId: 'crm-deal-2',
-        dealCode: 'DL-002',
-        dealTitle: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        dealTitleEn: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        dealTitleAr: 'منظومة خدمات العمالة والمهندسين لشركة دار العمران',
-        quotationId: 'crm-qt-3',
-        quotationCode: 'QT-003',
-        quotationTitleEn: 'Dar Al-Omran Construction Workforce & Balady Proposal',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        contactId: 'crm-cnt-3',
-        contactName: 'Eng. Majed Al-Harbi',
-        assignedEmployeeId: 'emp-2',
-        assignedEmployeeNameEn: 'Noura Al-Subaie',
-        assignedEmployeeNameAr: 'نورة السبيعي',
-        startDate: '2026-03-01',
-        endDate: '2027-02-28',
-        renewalType: 'manual',
-        billingCycle: 'annual',
-        subtotal: 6000,
-        discountTotal: 500,
-        taxAmount: 825,
-        totalValue: 6325,
-        contractValue: 6325,
-        currency: 'SAR',
-        contractStatus: 'pending_signature',
-        termsAndConditions:
-            '1. Annual renewal of 5 branch municipal commercial licenses.\n2. Dedicated PRO specialist for engineering accreditation.',
-        notes: 'Awaiting digital signature from Dar Al-Omran Managing Director.',
-        status: 'active',
-        createdAt: '2026-02-05',
-        createdBy: 'Noura Al-Subaie',
-    },
-];
-
-const initialCrmQuotations: CrmQuotationRecord[] = [
-    {
-        id: 'crm-qt-1',
-        code: 'QT-001',
-        titleEn: 'Annual Corporate & Fleet PRO Services Quotation',
-        titleAr: 'عرض سعر خدمات العلاقات الحكومية والأسطول السنوي',
-        dealId: 'crm-deal-1',
-        dealCode: 'DL-001',
-        dealTitle: 'Al-Wataniya Annual Retainer',
-        dealTitleEn: 'Al-Wataniya Annual Retainer',
-        dealTitleAr: 'عقد الخدمات السنوي للشركة الوطنية',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        contactId: 'crm-cnt-1',
-        contactName: 'Faisal Al-Qahtani',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        issueDate: '2026-01-18',
-        validUntil: '2026-02-18',
-        currency: 'SAR',
-        lineItems: [
-            {
-                id: 'qli-1',
-                itemType: 'package',
-                packageId: 'pkg-1',
-                servicePackageId: 'pkg-1',
-                descriptionEn: 'Enterprise Corporate Bundle',
-                descriptionAr: 'باقة الشركات المتكاملة',
-                quantity: 1,
-                unitPrice: 14500,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'fixed',
-                discountPercent: 0,
-                discountValue: 0,
-                discountAmount: 0,
-                taxableAmount: 14500,
-                taxId: 'crm-tax-1',
-                taxRate: 15,
-                taxAmount: 2175,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 2175,
-                lineTotal: 16675,
-            },
-        ],
-        subtotal: 14500,
-        discountTotal: 0,
-        totalDiscount: 0,
-        taxableAmount: 14500,
-        taxAmount: 2175,
-        totalTax: 2175,
-        totalVat: 2175,
-        grandTotal: 16675,
-        quotationStatus: 'accepted',
-        termsAndConditions: '50% advance upon contract signature, 50% net 30 days. Subject to 15% ZATCA VAT.',
-        notes: 'Approved by Al-Wataniya procurement committee.',
-        status: 'active',
-        createdAt: '2026-01-18',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-qt-2',
-        code: 'QT-002',
-        titleEn: 'Afaq KAFD Regional HQ Setup & Annual Compliance Proposal',
-        titleAr: 'عرض تأسيس المقر الإقليمي والالتزام السنوي لشركة آفاق',
-        dealId: 'crm-deal-3',
-        dealCode: 'DL-003',
-        dealTitle: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        dealTitleEn: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        dealTitleAr: 'باقة تراخيص المقر الإقليمي والإقامات المميزة لشركة آفاق',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        contactId: 'crm-cnt-4',
-        contactName: 'Sara Al-Zahrani',
-        assignedEmployeeId: 'emp-4',
-        assignedEmployeeNameEn: 'Layan Al-Otaibi',
-        assignedEmployeeNameAr: 'ليان العتيبي',
-        issueDate: '2026-01-26',
-        validUntil: '2026-02-26',
-        currency: 'SAR',
-        lineItems: [
-            {
-                id: 'qli-201',
-                itemType: 'package',
-                packageId: 'pkg-1',
-                servicePackageId: 'pkg-1',
-                descriptionEn: 'Enterprise Corporate Bundle (MISA & Commercial Compliance)',
-                descriptionAr: 'باقة الشركات المتكاملة (الالتزام التجاري ووزارة الاستثمار)',
-                quantity: 1,
-                unitPrice: 14500,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'percentage',
-                discountPercent: 10,
-                discountValue: 10,
-                discountAmount: 1450,
-                taxableAmount: 13050,
-                taxRate: 15,
-                taxAmount: 1957.5,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 1957.5,
-                lineTotal: 15007.5,
-            },
-            {
-                id: 'qli-202',
-                itemType: 'package',
-                packageId: 'pkg-3',
-                servicePackageId: 'pkg-3',
-                descriptionEn: 'Workforce & Labor Package (4 Quarters)',
-                descriptionAr: 'باقة خدمات القوى العاملة وعقود قوى (4 أرباع سنوية)',
-                quantity: 1,
-                unitPrice: 3600,
-                period: 4,
-                periodUnit: 'months',
-                discountType: 'fixed',
-                discountPercent: 2.78,
-                discountValue: 400,
-                discountAmount: 400,
-                taxableAmount: 14000,
-                taxRate: 15,
-                taxAmount: 2100,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 2100,
-                lineTotal: 16100,
-            },
-        ],
-        subtotal: 28900,
-        discountTotal: 1850,
-        totalDiscount: 1850,
-        taxableAmount: 27050,
-        taxAmount: 4057.5,
-        totalTax: 4057.5,
-        totalVat: 4057.5,
-        grandTotal: 31107.5,
-        quotationStatus: 'accepted',
-        termsAndConditions: 'Quarterly billing net 15 days. Subject to 15% ZATCA VAT.',
-        notes: '10% strategic enterprise discount applied on annual bundle.',
-        status: 'active',
-        createdAt: '2026-01-26',
-        createdBy: 'Layan Al-Otaibi',
-    },
-    {
-        id: 'crm-qt-3',
-        code: 'QT-003',
-        titleEn: 'Dar Al-Omran Construction Workforce & Balady Proposal',
-        titleAr: 'عرض خدمات القوى العاملة وتراخيص بلدي لشركة دار العمران',
-        dealId: 'crm-deal-2',
-        dealCode: 'DL-002',
-        dealTitle: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        dealTitleEn: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        dealTitleAr: 'منظومة خدمات العمالة والمهندسين لشركة دار العمران',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        contactId: 'crm-cnt-3',
-        contactName: 'Eng. Majed Al-Harbi',
-        assignedEmployeeId: 'emp-2',
-        assignedEmployeeNameEn: 'Noura Al-Subaie',
-        assignedEmployeeNameAr: 'نورة السبيعي',
-        issueDate: '2026-01-29',
-        validUntil: '2026-02-28',
-        currency: 'SAR',
-        lineItems: [
-            {
-                id: 'qli-301',
-                itemType: 'service',
-                serviceId: 'srv-103',
-                descriptionEn: 'Municipal Commercial License Renewal (5 Branches)',
-                descriptionAr: 'إصدار وتجديد رخصة البلدية التجارية (5 فروع)',
-                quantity: 5,
-                unitPrice: 1200,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'fixed',
-                discountPercent: 8.33,
-                discountValue: 500,
-                discountAmount: 500,
-                taxableAmount: 5500,
-                taxRate: 15,
-                taxAmount: 825,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 825,
-                lineTotal: 6325,
-            },
-        ],
-        subtotal: 6000,
-        discountTotal: 500,
-        totalDiscount: 500,
-        taxableAmount: 5500,
-        taxAmount: 825,
-        totalTax: 825,
-        totalVat: 825,
-        grandTotal: 6325,
-        quotationStatus: 'sent',
-        termsAndConditions: 'Valid for 30 calendar days from issue date.',
-        notes: 'Dispatched to CEO office for review.',
-        status: 'active',
-        createdAt: '2026-01-29',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-qt-4',
-        code: 'QT-004',
-        titleEn: 'Al-Wataniya Port & Customs Clearance Expansion Quote',
-        titleAr: 'عرض توسعة خدمات التخليص الجمركي وتصاريح الموانئ للوطنية',
-        dealId: 'crm-deal-4',
-        dealCode: 'DL-004',
-        dealTitle: 'Al-Wataniya Customs & Port Clearance Add-On',
-        dealTitleEn: 'Al-Wataniya Customs & Port Clearance Add-On',
-        dealTitleAr: 'ملحق خدمات التخليص الجمركي وتصاريح الموانئ للوطنية',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        contactId: 'crm-cnt-2',
-        contactName: 'Reem Al-Dossary',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        issueDate: '2026-02-02',
-        validUntil: '2026-03-04',
-        currency: 'SAR',
-        lineItems: [
-            {
-                id: 'qli-401',
-                itemType: 'service',
-                serviceId: 'srv-101',
-                descriptionEn: 'Port & Fleet Customs Permit Processing (Annual)',
-                descriptionAr: 'معالجة تصاريح الموانئ والأسطول الجمركية (سنوي)',
-                quantity: 1,
-                unitPrice: 40000,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'percentage',
-                discountPercent: 0,
-                discountValue: 0,
-                discountAmount: 0,
-                taxableAmount: 40000,
-                taxRate: 15,
-                taxAmount: 6000,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 6000,
-                lineTotal: 46000,
-            },
-        ],
-        subtotal: 40000,
-        discountTotal: 0,
-        totalDiscount: 0,
-        taxableAmount: 40000,
-        taxAmount: 6000,
-        totalTax: 6000,
-        totalVat: 6000,
-        grandTotal: 46000,
-        quotationStatus: 'draft',
-        termsAndConditions: 'Standard corporate addendum terms apply.',
-        notes: 'Draft prepared for logistics operations review.',
-        status: 'active',
-        createdAt: '2026-02-02',
-        createdBy: 'Karim Wagdi',
-    },
-];
-
-const initialCrmInvoices: CrmInvoiceRecord[] = [
-    {
-        id: 'crm-inv-1',
-        invoiceType: 'final_tax',
-        code: 'INV-001',
-        invoiceNumber: 'INV-2026-001',
-        titleEn: 'Annual Corporate Retainer Invoice #1',
-        titleAr: 'فاتورة عقد الخدمات السنوي رقم 1',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        dealId: 'crm-deal-1',
-        dealCode: 'DL-001',
-        dealTitle: 'Al-Wataniya Annual Retainer',
-        dealTitleEn: 'Al-Wataniya Annual Retainer',
-        quotationId: 'crm-qt-1',
-        quotationCode: 'QT-001',
-        contractId: 'crm-con-1',
-        contractCode: 'CON-001',
-        contractNumber: 'CNT-2026-001',
-        contactId: 'crm-cnt-2',
-        contactName: 'Reem Al-Dossary',
-        assignedEmployeeId: 'emp-1',
-        assignedEmployeeNameEn: 'Karim Wagdi',
-        assignedEmployeeNameAr: 'كريم وجدي',
-        issueDate: '2026-01-20',
-        dueDate: '2026-02-20',
-        lineItems: [
-            {
-                id: 'inv-li-1',
-                itemType: 'package',
-                packageId: 'pkg-1',
-                servicePackageId: 'pkg-1',
-                descriptionEn: 'Enterprise Corporate Bundle',
-                descriptionAr: 'باقة الشركات المتكاملة',
-                quantity: 1,
-                unitPrice: 14500,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'fixed',
-                discountPercent: 0,
-                discountValue: 0,
-                discountAmount: 0,
-                taxableAmount: 14500,
-                taxId: 'crm-tax-1',
-                taxRate: 15,
-                taxAmount: 2175,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 2175,
-                lineTotal: 16675,
-            },
-        ],
-        subtotal: 14500,
-        discountTotal: 0,
-        discountAmount: 0,
-        taxId: 'crm-tax-1',
-        taxRate: 15,
-        taxAmount: 2175,
-        vatId: 'crm-tax-1',
-        vatRate: 15,
-        vatAmount: 2175,
-        totalAmount: 16675,
-        paidAmount: 16675,
-        remainingAmount: 0,
-        balanceDue: 0,
-        currency: 'SAR',
-        paymentMethod: 'bank_transfer',
-        paymentReference: 'SARIE-2026-99182',
-        paidAt: '2026-01-23',
-        invoiceStatus: 'paid',
-        notes: 'Settled in full via corporate bank transfer.',
-        status: 'active',
-        createdAt: '2026-01-20',
-        createdBy: 'Karim Wagdi',
-    },
-    {
-        id: 'crm-inv-2',
-        invoiceType: 'final_tax',
-        code: 'INV-002',
-        invoiceNumber: 'INV-2026-002',
-        titleEn: 'Afaq Regional HQ Mobilization & Q1 Compliance Invoice',
-        titleAr: 'فاتورة تأسيس المقر الإقليمي والربع الأول لشركة آفاق',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        dealId: 'crm-deal-3',
-        dealCode: 'DL-003',
-        dealTitle: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        dealTitleEn: 'Afaq Cloud KAFD Regional HQ MISA & Residency Package',
-        quotationId: 'crm-qt-2',
-        quotationCode: 'QT-002',
-        contractId: 'crm-con-2',
-        contractCode: 'CON-002',
-        contractNumber: 'CNT-2026-002',
-        contactId: 'crm-cnt-4',
-        contactName: 'Sara Al-Zahrani',
-        assignedEmployeeId: 'emp-4',
-        assignedEmployeeNameEn: 'Layan Al-Otaibi',
-        assignedEmployeeNameAr: 'ليان العتيبي',
-        issueDate: '2026-02-04',
-        dueDate: '2026-03-04',
-        lineItems: [
-            {
-                id: 'inv-li-201',
-                itemType: 'package',
-                packageId: 'pkg-1',
-                servicePackageId: 'pkg-1',
-                descriptionEn: 'Enterprise Corporate Bundle (MISA & Commercial Compliance)',
-                descriptionAr: 'باقة الشركات المتكاملة (الالتزام التجاري ووزارة الاستثمار)',
-                quantity: 1,
-                unitPrice: 14500,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'percentage',
-                discountPercent: 10,
-                discountValue: 10,
-                discountAmount: 1450,
-                taxableAmount: 13050,
-                taxId: 'crm-tax-1',
-                taxRate: 15,
-                taxAmount: 1957.5,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 1957.5,
-                lineTotal: 15007.5,
-            },
-            {
-                id: 'inv-li-202',
-                itemType: 'service',
-                serviceId: 'srv-1',
-                descriptionEn: 'Executive Mobility & Premium Residency Advisory',
-                descriptionAr: 'استشارات الإقامة المميزة والتنقل التنفيذي',
-                quantity: 1,
-                unitPrice: 14400,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'fixed',
-                discountPercent: 0,
-                discountValue: 400,
-                discountAmount: 400,
-                taxableAmount: 14000,
-                taxId: 'crm-tax-1',
-                taxRate: 15,
-                taxAmount: 2100,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 2100,
-                lineTotal: 16100,
-            },
-        ],
-        subtotal: 28900,
-        discountTotal: 1850,
-        discountAmount: 1850,
-        taxRate: 15,
-        taxAmount: 4057.5,
-        vatId: 'crm-tax-1',
-        vatRate: 15,
-        vatAmount: 4057.5,
-        totalAmount: 31107.5,
-        paidAmount: 15000,
-        remainingAmount: 16107.5,
-        balanceDue: 16107.5,
-        currency: 'SAR',
-        paymentMethod: 'sadad',
-        paymentReference: 'SDD-884120',
-        paidAt: '2026-02-06',
-        invoiceStatus: 'partially_paid',
-        notes: 'First mobilization installment received; balance due upon MISA certificate issuance.',
-        status: 'active',
-        createdAt: '2026-02-04',
-        createdBy: 'Layan Al-Otaibi',
-    },
-    {
-        id: 'crm-inv-3',
-        invoiceType: 'final_tax',
-        code: 'INV-003',
-        invoiceNumber: 'INV-2026-003',
-        titleEn: 'Dar Al-Omran Branch Municipal Audit Advance Invoice',
-        titleAr: 'فاتورة دفعة مقدمة لتدقيق تراخيص فروع دار العمران',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        dealId: 'crm-deal-2',
-        dealCode: 'DL-002',
-        dealTitle: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        dealTitleEn: 'Dar Al-Omran Workforce & Engineering PRO Suite',
-        quotationId: 'crm-qt-3',
-        quotationCode: 'QT-003',
-        contractId: 'crm-con-3',
-        contractCode: 'CON-003',
-        contractNumber: 'CNT-2026-003',
-        contactId: 'crm-cnt-3',
-        contactName: 'Eng. Majed Al-Harbi',
-        assignedEmployeeId: 'emp-2',
-        assignedEmployeeNameEn: 'Noura Al-Subaie',
-        assignedEmployeeNameAr: 'نورة السبيعي',
-        issueDate: '2026-02-05',
-        dueDate: '2026-03-05',
-        lineItems: [
-            {
-                id: 'inv-li-301',
-                itemType: 'service',
-                serviceId: 'srv-3',
-                descriptionEn: 'Municipal Commercial Licenses Branch Audit',
-                descriptionAr: 'تدقيق وتجديد التراخيص البلدية التجارية للفروع',
-                quantity: 5,
-                unitPrice: 1200,
-                period: 1,
-                periodUnit: 'years',
-                discountType: 'fixed',
-                discountPercent: 0,
-                discountValue: 500,
-                discountAmount: 500,
-                taxableAmount: 5500,
-                taxId: 'crm-tax-1',
-                taxRate: 15,
-                taxAmount: 825,
-                vatId: 'crm-tax-1',
-                vatRate: 15,
-                vatAmount: 825,
-                lineTotal: 6325,
-            },
-        ],
-        subtotal: 6000,
-        discountTotal: 500,
-        discountAmount: 500,
-        taxRate: 15,
-        taxAmount: 825,
-        vatId: 'crm-tax-1',
-        vatRate: 15,
-        vatAmount: 825,
-        totalAmount: 6325,
-        paidAmount: 0,
-        remainingAmount: 6325,
-        balanceDue: 6325,
-        currency: 'SAR',
-        invoiceStatus: 'issued',
-        notes: 'Issued upon quotation dispatch for mobilization.',
-        status: 'active',
-        createdAt: '2026-02-05',
-        createdBy: 'Noura Al-Subaie',
-    },
-];
-
-const initialCrmApprovalTasks: CrmApprovalTaskRecord[] = [
-    {
-        id: 'crm-apt-1',
-        code: 'APT-001',
-        serialNumber: 1,
-        titleEn: 'Approve Construction Workforce & Balady Quotation (QT-003)',
-        titleAr: 'اعتماد عرض سعر خدمات القوى العاملة وتراخيص بلدي (QT-003)',
-        targetEntityType: 'Quotation',
-        targetEntityId: 'crm-qt-3',
-        targetEntityCode: 'QT-003',
-        targetEntityNameEn: 'Dar Al-Omran Construction Workforce & Balady Proposal',
-        targetEntityNameAr: 'عرض خدمات القوى العاملة وتراخيص بلدي لشركة دار العمران',
-        module: 'Quotation',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        stageNameEn: 'Commercial Pricing & Discount Review',
-        stageNameAr: 'مراجعة التسعير التجاري والخصومات',
-        priority: 'High',
-        assignedApproverId: 'emp-1',
-        assignedApproverNameEn: 'Karim Wagdi',
-        assignedApproverNameAr: 'كريم وجدي',
-        departmentEn: 'Enterprise Commercial & Sales',
-        departmentAr: 'المبيعات التجارية والشركات الكبرى',
-        designationEn: 'Senior Enterprise Account Director',
-        designationAr: 'مدير حسابات الشركات الكبرى',
-        requestedByNameEn: 'Noura Al-Subaie',
-        requestedByNameAr: 'نورة السبيعي',
-        requestedByEmail: 'noura.alsubaie@awn.sa',
-        createdBy: 'Noura Al-Subaie',
-        createdAt: '2026-01-29',
-        dueDate: '2026-02-20',
-        approvalStatus: 'Pending',
-    },
-    {
-        id: 'crm-apt-2',
-        code: 'APT-002',
-        serialNumber: 2,
-        titleEn: 'Executive Legal Sign-Off for Municipal Compliance SLA (CON-003)',
-        titleAr: 'الاعتماد القانوني والتنفيذي لاتفاقية مستوى الخدمة (CON-003)',
-        targetEntityType: 'Contract',
-        targetEntityId: 'crm-con-3',
-        targetEntityCode: 'CON-003',
-        targetEntityNameEn: 'Dar Al-Omran Municipal & Workforce Compliance SLA',
-        targetEntityNameAr: 'اتفاقية مستوى الخدمة لتراخيص البلدية والقوى العاملة — دار العمران',
-        module: 'Contract',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        stageNameEn: 'Legal & Governance SLA Verification',
-        stageNameAr: 'تدقيق الشروط التعاقدية ومستوى الخدمة',
-        priority: 'Urgent',
-        assignedApproverId: 'emp-4',
-        assignedApproverNameEn: 'Layan Al-Otaibi',
-        assignedApproverNameAr: 'ليان العتيبي',
-        departmentEn: 'Strategic Accounts & Legal Governance',
-        departmentAr: 'الحسابات الاستراتيجية والحوكمة القانونية',
-        designationEn: 'Strategic Accounts Executive',
-        designationAr: 'مسؤولة الحسابات الاستراتيجية',
-        requestedByNameEn: 'Noura Al-Subaie',
-        requestedByNameAr: 'نورة السبيعي',
-        requestedByEmail: 'noura.alsubaie@awn.sa',
-        createdBy: 'Noura Al-Subaie',
-        createdAt: '2026-02-05',
-        dueDate: '2026-02-25',
-        approvalStatus: 'Pending',
-    },
-    {
-        id: 'crm-apt-3',
-        code: 'APT-003',
-        serialNumber: 3,
-        titleEn: 'Pre-Onboarding KYB & Shareholder Verification — Dar Al-Omran CJSC',
-        titleAr: 'اعتماد التحقق من السجل التجاري والمساهمين — شركة دار العمران',
-        targetEntityType: 'Company',
-        targetEntityId: 'crm-comp-2',
-        targetEntityCode: 'CMP-002',
-        targetEntityNameEn: 'Dar Al-Omran Contracting CJSC',
-        targetEntityNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        module: 'Company',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        stageNameEn: 'KYB & Statutory Document Clearance',
-        stageNameAr: 'مطابقة الوثائق النظامية والسجل التجاري',
-        priority: 'Medium',
-        assignedApproverId: 'emp-3',
-        assignedApproverNameEn: 'Tariq Al-Ghamdi',
-        assignedApproverNameAr: 'طارق الغامدي',
-        departmentEn: 'Client Onboarding & Government PRO',
-        departmentAr: 'تأهيل العملاء والعلاقات الحكومية',
-        designationEn: 'B2B Onboarding Specialist',
-        designationAr: 'أخصائي تأهيل عملاء الشركات',
-        requestedByNameEn: 'Noura Al-Subaie',
-        requestedByNameAr: 'نورة السبيعي',
-        requestedByEmail: 'noura.alsubaie@awn.sa',
-        createdBy: 'Noura Al-Subaie',
-        createdAt: '2026-01-20',
-        dueDate: '2026-02-22',
-        approvalStatus: 'Pending',
-    },
-    {
-        id: 'crm-apt-4',
-        code: 'APT-004',
-        serialNumber: 4,
-        titleEn: 'Approve Enterprise Fleet PRO Retainer Quotation (QT-001)',
-        titleAr: 'اعتماد عرض سعر خدمات العلاقات الحكومية والأسطول السنوي (QT-001)',
-        targetEntityType: 'Quotation',
-        targetEntityId: 'crm-qt-1',
-        targetEntityCode: 'QT-001',
-        targetEntityNameEn: 'Annual Corporate & Fleet PRO Services Quotation',
-        targetEntityNameAr: 'عرض سعر خدمات العلاقات الحكومية والأسطول السنوي',
-        module: 'Quotation',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        stageNameEn: 'Enterprise Commercial Approval',
-        stageNameAr: 'اعتماد العروض التجارية للشركات',
-        priority: 'High',
-        assignedApproverId: 'emp-1',
-        assignedApproverNameEn: 'Karim Wagdi',
-        assignedApproverNameAr: 'كريم وجدي',
-        departmentEn: 'Enterprise Commercial & Sales',
-        departmentAr: 'المبيعات التجارية والشركات الكبرى',
-        designationEn: 'Senior Enterprise Account Director',
-        designationAr: 'مدير حسابات الشركات الكبرى',
-        requestedByNameEn: 'Karim Wagdi',
-        requestedByNameAr: 'كريم وجدي',
-        requestedByEmail: 'karim@awn.sa',
-        createdBy: 'Karim Wagdi',
-        createdAt: '2026-01-18',
-        dueDate: '2026-01-25',
-        approvalStatus: 'Approved',
-        decidedBy: 'Karim Wagdi',
-        decidedByAr: 'كريم وجدي',
-        decidedAt: '2026-01-19T14:20:00Z',
-        decisionRemarks: 'Approved standard 15% ZATCA VAT enterprise retainer pricing schedule.',
-    },
-    {
-        id: 'crm-apt-5',
-        code: 'APT-005',
-        serialNumber: 5,
-        titleEn: 'Special Fee Waiver Exception on Port Clearance Deal (DL-004)',
-        titleAr: 'طلب استثناء خصم خاص على صفقة التخليص الجمركي والموانئ (DL-004)',
-        targetEntityType: 'Deal',
-        targetEntityId: 'crm-deal-4',
-        targetEntityCode: 'DL-004',
-        targetEntityNameEn: 'Al-Wataniya Customs & Port Clearance Add-On',
-        targetEntityNameAr: 'ملحق خدمات التخليص الجمركي وتصاريح الموانئ للوطنية',
-        module: 'Deal',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        stageNameEn: 'Commercial Margin Exception Committee',
-        stageNameAr: 'لجنة استثناءات الهوامش التجارية',
-        priority: 'Low',
-        assignedApproverId: 'emp-2',
-        assignedApproverNameEn: 'Noura Al-Subaie',
-        assignedApproverNameAr: 'نورة السبيعي',
-        departmentEn: 'Commercial Growth & Proposals',
-        departmentAr: 'النمو التجاري والعروض',
-        designationEn: 'Commercial Growth Manager',
-        designationAr: 'مديرة النمو التجاري',
-        requestedByNameEn: 'Karim Wagdi',
-        requestedByNameAr: 'كريم وجدي',
-        requestedByEmail: 'karim@awn.sa',
-        createdBy: 'Karim Wagdi',
-        createdAt: '2026-01-30',
-        dueDate: '2026-02-05',
-        approvalStatus: 'Rejected',
-        decidedBy: 'Noura Al-Subaie',
-        decidedByAr: 'نورة السبيعي',
-        decidedAt: '2026-02-03T11:15:00Z',
-        decisionRemarks: 'Requested 25% fee waiver exceeds unbundled port clearance margin policy.',
-        rejectionReason: 'Requested 25% fee waiver exceeds unbundled port clearance margin policy.',
-    },
-];
-
-const initialCrmOperationalTasks: CrmOperationalTaskRecord[] = [
-    {
-        id: 'crm-opt-1',
-        code: 'OPT-001',
-        titleEn: 'Verify Commercial Registration & Chamber Certificate for Dar Al-Omran',
-        titleAr: 'التحقق من السجل التجاري وشهادة الغرفة التجارية لشركة دار العمران',
-        relatedEntityType: 'Company',
-        relatedEntityId: 'crm-comp-2',
-        relatedEntityCode: 'CMP-002',
-        relatedEntityNameEn: 'Dar Al-Omran Contracting CJSC',
-        relatedEntityNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        assignedSpecialistId: 'emp-3',
-        assignedSpecialistNameEn: 'Tariq Al-Ghamdi',
-        assignedSpecialistNameAr: 'طارق الغامدي',
-        departmentEn: 'Client Onboarding & Government PRO',
-        departmentAr: 'تأهيل العملاء والعلاقات الحكومية',
-        designationEn: 'B2B Onboarding Specialist',
-        designationAr: 'أخصائي تأهيل عملاء الشركات',
-        priority: 'High',
-        taskStatus: 'In Progress',
-        dueDate: '2026-02-22',
-        notes: 'Validating Ministry of Commerce CR #4030229911 and Jeddah Chamber membership.',
-        status: 'active',
-        createdAt: '2026-01-20',
-        updatedAt: '2026-02-02',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-opt-2',
-        code: 'OPT-002',
-        titleEn: 'Coordinate Authorized Signatory E-Signature on Municipal SLA Contract',
-        titleAr: 'تنسيق التوقيع الإلكتروني للمفوض بالتوقيع على اتفاقية مستوى الخدمة',
-        relatedEntityType: 'Contract',
-        relatedEntityId: 'crm-con-3',
-        relatedEntityCode: 'CON-003',
-        relatedEntityNameEn: 'Dar Al-Omran Municipal & Workforce Compliance SLA',
-        relatedEntityNameAr: 'اتفاقية مستوى الخدمة لتراخيص البلدية والقوى العاملة — دار العمران',
-        companyId: 'crm-comp-2',
-        companyNameEn: 'Dar Al-Omran Contracting CJSC',
-        companyNameAr: 'شركة دار العمران للمقاولات المساهمة المقفلة',
-        assignedSpecialistId: 'emp-2',
-        assignedSpecialistNameEn: 'Noura Al-Subaie',
-        assignedSpecialistNameAr: 'نورة السبيعي',
-        departmentEn: 'Commercial Growth & Proposals',
-        departmentAr: 'النمو التجاري والعروض',
-        designationEn: 'Commercial Growth Manager',
-        designationAr: 'مديرة النمو التجاري',
-        priority: 'Urgent',
-        taskStatus: 'Assigned',
-        dueDate: '2026-02-25',
-        notes: 'Sent Nafath / Absher digital signature link to CEO Eng. Majed Al-Harbi.',
-        status: 'active',
-        createdAt: '2026-02-05',
-        createdBy: 'Noura Al-Subaie',
-    },
-    {
-        id: 'crm-opt-3',
-        code: 'OPT-003',
-        titleEn: 'Follow Up on Remaining SADAD Mobilization Balance (SAR 16,107.50)',
-        titleAr: 'متابعة تحصيل الدفعة المتبقية عبر سداد (16,107.50 ر.س) لشركة آفاق',
-        relatedEntityType: 'Invoice',
-        relatedEntityId: 'crm-inv-2',
-        relatedEntityCode: 'INV-002',
-        relatedEntityNameEn: 'Afaq Regional HQ Mobilization & Q1 Compliance Invoice',
-        relatedEntityNameAr: 'فاتورة تأسيس المقر الإقليمي والربع الأول لشركة آفاق',
-        companyId: 'crm-comp-3',
-        companyNameEn: 'Afaq Digital Cloud Solutions',
-        companyNameAr: 'شركة آفاق للحلول السحابية الرقمية',
-        assignedSpecialistId: 'emp-4',
-        assignedSpecialistNameEn: 'Layan Al-Otaibi',
-        assignedSpecialistNameAr: 'ليان العتيبي',
-        departmentEn: 'Strategic Accounts & Legal Governance',
-        departmentAr: 'الحسابات الاستراتيجية والحوكمة القانونية',
-        designationEn: 'Strategic Accounts Executive',
-        designationAr: 'مسؤولة الحسابات الاستراتيجية',
-        priority: 'Medium',
-        taskStatus: 'Under Review',
-        dueDate: '2026-03-01',
-        notes: 'Client finance team confirmed second tranche release upon MISA certificate issuance.',
-        status: 'active',
-        createdAt: '2026-02-06',
-        updatedAt: '2026-02-07',
-        createdBy: 'Layan Al-Otaibi',
-    },
-    {
-        id: 'crm-opt-4',
-        code: 'OPT-004',
-        titleEn: 'Initial Qualification Call & MISA Warehouse Licensing Scoping',
-        titleAr: 'مكالمة التأهيل الأولية وتحديد نطاق تراخيص المستودعات لوزارة الاستثمار',
-        relatedEntityType: 'Lead',
-        relatedEntityId: 'crm-lead-2',
-        relatedEntityCode: 'LD-002',
-        relatedEntityNameEn: 'Najd Smart Warehousing MISA & CR Expansion',
-        relatedEntityNameAr: 'Najd Smart Warehousing MISA & CR Expansion',
-        assignedSpecialistId: '',
-        assignedSpecialistNameEn: '',
-        assignedSpecialistNameAr: '',
-        priority: 'High',
-        taskStatus: 'Pending',
-        dueDate: '2026-02-19',
-        notes: 'Unassigned operational follow-up for Dammam logistics forum inquiry.',
-        status: 'active',
-        createdAt: '2026-01-19',
-        createdBy: 'System Admin',
-    },
-    {
-        id: 'crm-opt-5',
-        code: 'OPT-005',
-        titleEn: 'Complete Qiwa & Muqeem Portal Delegation Handover for Al-Wataniya',
-        titleAr: 'استكمال تفويض منصتي قوى ومقيم للشركة الوطنية للخدمات اللوجستية',
-        relatedEntityType: 'Deal',
-        relatedEntityId: 'crm-deal-1',
-        relatedEntityCode: 'DL-001',
-        relatedEntityNameEn: 'Al-Wataniya Annual Retainer',
-        relatedEntityNameAr: 'عقد الخدمات السنوي للشركة الوطنية',
-        companyId: 'crm-comp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        assignedSpecialistId: 'emp-1',
-        assignedSpecialistNameEn: 'Karim Wagdi',
-        assignedSpecialistNameAr: 'كريم وجدي',
-        departmentEn: 'Enterprise Commercial & Sales',
-        departmentAr: 'المبيعات التجارية والشركات الكبرى',
-        designationEn: 'Senior Enterprise Account Director',
-        designationAr: 'مدير حسابات الشركات الكبرى',
-        priority: 'Medium',
-        taskStatus: 'Completed',
-        dueDate: '2026-01-25',
-        completedAt: '2026-01-24',
-        notes: 'All Absher Business, Qiwa, and Muqeem delegations verified and active.',
-        status: 'active',
-        createdAt: '2026-01-20',
-        updatedAt: '2026-01-24',
-        createdBy: 'Karim Wagdi',
-    },
-];
-
-const initialCrmAuditTrails: CrmAuditTrailEntry[] = [
-    {
-        id: 'crm-aud-5',
-        code: 'CRMAUD-005',
-        action: 'STATUS_CHANGED',
-        resourceType: 'Invoice',
-        resourceId: 'crm-inv-2',
-        resourceCode: 'INV-002',
-        resourceNameEn: 'Afaq Regional HQ Mobilization & Q1 Compliance Invoice',
-        resourceNameAr: 'فاتورة تأسيس المقر الإقليمي والربع الأول لشركة آفاق',
-        detailsEn: 'Recorded payment of SAR 15,000 on Invoice "INV-2026-002" (INV-002). Paid: SAR 15,000 / Remaining: SAR 16,107.5 — Status: partially_paid.',
-        detailsAr: 'تم تسجيل دفعة بقيمة 15,000 ر.س على الفاتورة "INV-2026-002" (INV-002). المتبقي: 16,107.5 ر.س — الحالة: partially_paid.',
-        actorName: 'Layan Al-Otaibi',
-        actorEmail: 'layan.alotaibi@awn.sa',
-        timestamp: '2026-02-06T13:45:00Z',
-        previousState: JSON.stringify({ invoiceStatus: 'issued', paidAmount: 0, remainingAmount: 31107.5 }),
-        newState: JSON.stringify({ invoiceStatus: 'partially_paid', paidAmount: 15000, remainingAmount: 16107.5, paymentMethod: 'sadad' }),
-    },
-    {
-        id: 'crm-aud-4',
-        code: 'CRMAUD-004',
-        action: 'REJECTED',
-        resourceType: 'Approval Task',
-        resourceId: 'crm-apt-5',
-        resourceCode: 'APT-005',
-        resourceNameEn: 'Special Fee Waiver Exception on Port Clearance Deal (DL-004)',
-        resourceNameAr: 'طلب استثناء خصم خاص على صفقة التخليص الجمركي والموانئ (DL-004)',
-        detailsEn: 'Rejected Approval Task "Special Fee Waiver Exception on Port Clearance Deal (DL-004)" (APT-005). Reason: Requested 25% fee waiver exceeds unbundled port clearance margin policy.',
-        detailsAr: 'تم رفض مهمة الاعتماد "طلب استثناء خصم خاص على صفقة التخليص الجمركي والموانئ (DL-004)" (APT-005). السبب: نسبة الخصم المطلوبة تتجاوز سياسة هامش الربح المحددة.',
-        actorName: 'Noura Al-Subaie',
-        actorEmail: 'noura.alsubaie@awn.sa',
-        timestamp: '2026-02-03T11:15:00Z',
-        previousState: JSON.stringify({ approvalStatus: 'Pending', code: 'APT-005' }),
-        newState: JSON.stringify({ approvalStatus: 'Rejected', code: 'APT-005', decidedBy: 'Noura Al-Subaie', rejectionReason: 'Requested 25% fee waiver exceeds unbundled port clearance margin policy.' }),
-    },
-    {
-        id: 'crm-aud-3',
-        code: 'CRMAUD-003',
-        action: 'STATUS_CHANGED',
-        resourceType: 'Deal',
-        resourceId: 'crm-deal-1',
-        resourceCode: 'DL-001',
-        resourceNameEn: 'Al-Wataniya Annual Retainer',
-        resourceNameAr: 'عقد الخدمات السنوي للشركة الوطنية',
-        detailsEn: 'Transitioned Deal "Al-Wataniya Annual Retainer" (DL-001) stage from negotiation to won (100% probability).',
-        detailsAr: 'تم تغيير مرحلة الصفقة "عقد الخدمات السنوي للشركة الوطنية" (DL-001) من negotiation إلى won (احتمالية 100%).',
-        actorName: 'Karim Wagdi',
-        actorEmail: 'karim@awn.sa',
-        timestamp: '2026-01-20T16:10:00Z',
-        previousState: JSON.stringify({ stage: 'negotiation', probability: 80, expectedValue: 85000 }),
-        newState: JSON.stringify({ stage: 'won', probability: 100, expectedValue: 85000, wonAt: '2026-01-20' }),
-    },
-    {
-        id: 'crm-aud-2',
-        code: 'CRMAUD-002',
-        action: 'APPROVED',
-        resourceType: 'Approval Task',
-        resourceId: 'crm-apt-4',
-        resourceCode: 'APT-004',
-        resourceNameEn: 'Approve Enterprise Fleet PRO Retainer Quotation (QT-001)',
-        resourceNameAr: 'اعتماد عرض سعر خدمات العلاقات الحكومية والأسطول السنوي (QT-001)',
-        detailsEn: 'Approved Approval Task "Approve Enterprise Fleet PRO Retainer Quotation (QT-001)" (APT-004) for Quotation QT-001.',
-        detailsAr: 'تمت الموافقة على مهمة الاعتماد "اعتماد عرض سعر خدمات العلاقات الحكومية والأسطول السنوي (QT-001)" (APT-004) لعرض السعر QT-001.',
-        actorName: 'Karim Wagdi',
-        actorEmail: 'karim@awn.sa',
-        timestamp: '2026-01-19T14:20:00Z',
-        previousState: JSON.stringify({ approvalStatus: 'Pending', code: 'APT-004', targetEntityCode: 'QT-001' }),
-        newState: JSON.stringify({ approvalStatus: 'Approved', code: 'APT-004', targetEntityCode: 'QT-001', decidedBy: 'Karim Wagdi' }),
-    },
-    {
-        id: 'crm-aud-1',
-        code: 'CRMAUD-001',
-        action: 'CREATED',
-        resourceType: 'Company',
-        resourceId: 'crm-comp-1',
-        resourceCode: 'CMP-001',
-        resourceNameEn: 'Al-Wataniya Logistics Co.',
-        resourceNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        detailsEn: 'Completed 3-step pre-onboarding for Al-Wataniya Logistics Co.',
-        detailsAr: 'تم استكمال التأهيل المسبق من 3 خطوات للشركة الوطنية للخدمات اللوجستية.',
-        actorName: 'Karim Wagdi',
-        actorEmail: 'karim@awn.sa',
-        timestamp: '2026-01-14T10:30:00Z',
-        newState: JSON.stringify({ id: 'crm-comp-1', code: 'CMP-001', nameEn: 'Al-Wataniya Logistics Co.', onboardingStatus: 'active' }),
-    },
-];
+// Clean Empty Business Record Collections
+const initialCrmLeads: CrmLeadRecord[] = [];
+const initialCrmCompanies: CrmCompanyRecord[] = [];
+const initialCrmContacts: CrmContactRecord[] = [];
+const initialCrmOwners: CrmOwnerRecord[] = [];
+const initialCrmDeals: CrmDealRecord[] = [];
+const initialCrmContracts: CrmContractRecord[] = [];
+const initialCrmQuotations: CrmQuotationRecord[] = [];
+const initialCrmInvoices: CrmInvoiceRecord[] = [];
+const initialCrmApprovalTasks: CrmApprovalTaskRecord[] = [];
+const initialCrmOperationalTasks: CrmOperationalTaskRecord[] = [];
+const initialCrmAuditTrails: CrmAuditTrailEntry[] = [];
 
 // ----------------------------------------------------------------------------
 // Deterministic Storage Initialization & Helpers
 // ----------------------------------------------------------------------------
 
-function readOrInitializeCrmCollection<T>(storageKey: string, seedData: T[]): T[] {
+function isCrmDemoRecordId(id: unknown): boolean {
+    if (typeof id !== "string") return false;
+    return /^crm-(lead|comp|cont|own|deal|cnt|quo|inv|appr|op|adt)-/.test(id);
+}
+
+function readOrInitializeCrmCollection<T extends { id?: string }>(storageKey: string, seedData: T[]): T[] {
     const resolvedKey = resolveStorageKey(storageKey);
     const existing = getLocal<T[] | null>(resolvedKey, null);
     if (Array.isArray(existing)) {
-        return existing;
+        const sanitized = existing.filter((item) => item && typeof item === "object" && !isCrmDemoRecordId(item.id));
+        if (sanitized.length !== existing.length) {
+            setLocal(resolvedKey, sanitized);
+        }
+        return sanitized;
     }
-    const initialCopy = seedData.map((item) => ({ ...item }));
+    const initialCopy = seedData.filter((item) => item && typeof item === "object" && !isCrmDemoRecordId(item.id)).map((item) => ({ ...item }));
     setLocal(resolvedKey, initialCopy);
     return initialCopy;
 }
@@ -10040,48 +8828,50 @@ export const crmApi = {
                 existingPendingTaskIdx === -1
             ) {
                 const approver = CRM_SALES_EMPLOYEES[0];
-                const due = new Date();
-                due.setDate(due.getDate() + 7);
-                const newTask: CrmApprovalTaskRecord = {
-                    id: generateDeterministicCrmId(approvalTasks, 'crm-apt'),
-                    code: generateNextCrmCode(approvalTasks, 'APT'),
-                    serialNumber: approvalTasks.length + 1,
-                    titleEn: `Approve Quotation: ${updatedRecord.titleEn} (${updatedRecord.code})`,
-                    titleAr: `اعتماد عرض السعر: ${updatedRecord.titleAr || updatedRecord.titleEn} (${updatedRecord.code})`,
-                    targetEntityType: 'Quotation',
-                    targetEntityId: updatedRecord.id,
-                    targetEntityCode: updatedRecord.code,
-                    targetEntityNameEn: updatedRecord.titleEn,
-                    targetEntityNameAr: updatedRecord.titleAr || updatedRecord.titleEn,
-                    module: 'Quotation',
-                    companyId: updatedRecord.companyId,
-                    companyNameEn: updatedRecord.companyNameEn,
-                    companyNameAr: updatedRecord.companyNameAr,
-                    stageNameEn: 'Commercial Quotation Review',
-                    stageNameAr: 'مراجعة واعتماد عرض السعر التجاري',
-                    priority: updatedRecord.grandTotal >= 50000 ? 'High' : 'Medium',
-                    assignedApproverId: approver.id,
-                    assignedApproverNameEn: approver.nameEn,
-                    assignedApproverNameAr: approver.nameAr,
-                    departmentEn: approver.departmentEn,
-                    departmentAr: approver.departmentAr,
-                    designationEn: approver.roleEn,
-                    designationAr: approver.roleAr,
-                    requestedByNameEn:
-                        updatedRecord.assignedEmployeeNameEn || 'Karim Wagdi',
-                    requestedByNameAr:
-                        updatedRecord.assignedEmployeeNameAr || 'كريم وجدي',
-                    requestedByEmail: employee?.email || 'karim@awn.sa',
-                    createdBy:
-                        updatedRecord.assignedEmployeeNameEn || 'Karim Wagdi',
-                    createdAt: todayIso,
-                    dueDate: due.toISOString().split('T')[0],
-                    approvalStatus: 'Pending',
-                };
-                setLocal(CRM_STORAGE_KEYS.APPROVAL_TASKS, [
-                    newTask,
-                    ...approvalTasks,
-                ]);
+                if (approver) {
+                    const due = new Date();
+                    due.setDate(due.getDate() + 7);
+                    const newTask: CrmApprovalTaskRecord = {
+                        id: generateDeterministicCrmId(approvalTasks, 'crm-apt'),
+                        code: generateNextCrmCode(approvalTasks, 'APT'),
+                        serialNumber: approvalTasks.length + 1,
+                        titleEn: `Approve Quotation: ${updatedRecord.titleEn} (${updatedRecord.code})`,
+                        titleAr: `اعتماد عرض السعر: ${updatedRecord.titleAr || updatedRecord.titleEn} (${updatedRecord.code})`,
+                        targetEntityType: 'Quotation',
+                        targetEntityId: updatedRecord.id,
+                        targetEntityCode: updatedRecord.code,
+                        targetEntityNameEn: updatedRecord.titleEn,
+                        targetEntityNameAr: updatedRecord.titleAr || updatedRecord.titleEn,
+                        module: 'Quotation',
+                        companyId: updatedRecord.companyId,
+                        companyNameEn: updatedRecord.companyNameEn,
+                        companyNameAr: updatedRecord.companyNameAr,
+                        stageNameEn: 'Commercial Quotation Review',
+                        stageNameAr: 'مراجعة واعتماد عرض السعر التجاري',
+                        priority: updatedRecord.grandTotal >= 50000 ? 'High' : 'Medium',
+                        assignedApproverId: approver.id,
+                        assignedApproverNameEn: approver.nameEn,
+                        assignedApproverNameAr: approver.nameAr,
+                        departmentEn: approver.departmentEn,
+                        departmentAr: approver.departmentAr,
+                        designationEn: approver.roleEn,
+                        designationAr: approver.roleAr,
+                        requestedByNameEn:
+                            updatedRecord.assignedEmployeeNameEn || 'Karim Wagdi',
+                        requestedByNameAr:
+                            updatedRecord.assignedEmployeeNameAr || 'كريم وجدي',
+                        requestedByEmail: employee?.email || 'karim@awn.sa',
+                        createdBy:
+                            updatedRecord.assignedEmployeeNameEn || 'Karim Wagdi',
+                        createdAt: todayIso,
+                        dueDate: due.toISOString().split('T')[0],
+                        approvalStatus: 'Pending',
+                    };
+                    setLocal(CRM_STORAGE_KEYS.APPROVAL_TASKS, [
+                        newTask,
+                        ...approvalTasks,
+                    ]);
+                }
             } else if (
                 (updatedRecord.quotationStatus === 'approved' ||
                     updatedRecord.quotationStatus === 'accepted') &&
@@ -12314,35 +11104,35 @@ export const crmApi = {
                 CRM_SALES_EMPLOYEES.find(
                     (e) =>
                         e.id === item.assignedApproverId ||
-                        e.nameEn.toLowerCase() ===
-                        item.assignedApproverNameEn.toLowerCase()
-                ) || CRM_SALES_EMPLOYEES[0];
+                        (e.nameEn && item.assignedApproverNameEn && e.nameEn.toLowerCase() ===
+                        item.assignedApproverNameEn.toLowerCase())
+                );
             return {
                 ...item,
                 serialNumber: item.serialNumber ?? idx + 1,
                 module: item.module || item.targetEntityType,
-                assignedApproverId: item.assignedApproverId || matchedEmp.id,
+                assignedApproverId: item.assignedApproverId || matchedEmp?.id || '',
                 assignedApproverNameEn:
-                    item.assignedApproverNameEn || matchedEmp.nameEn,
+                    item.assignedApproverNameEn || matchedEmp?.nameEn || '',
                 assignedApproverNameAr:
-                    item.assignedApproverNameAr || matchedEmp.nameAr,
+                    item.assignedApproverNameAr || matchedEmp?.nameAr || '',
                 departmentEn:
                     item.departmentEn ||
-                    matchedEmp.departmentEn ||
-                    'Enterprise Commercial & Sales',
+                    matchedEmp?.departmentEn ||
+                    '',
                 departmentAr:
                     item.departmentAr ||
-                    matchedEmp.departmentAr ||
-                    'المبيعات التجارية والشركات الكبرى',
+                    matchedEmp?.departmentAr ||
+                    '',
                 designationEn:
                     item.designationEn ||
-                    matchedEmp.roleEn ||
-                    'Senior Enterprise Account Director',
+                    matchedEmp?.roleEn ||
+                    '',
                 designationAr:
                     item.designationAr ||
-                    matchedEmp.roleAr ||
-                    'مدير حسابات الشركات الكبرى',
-                createdBy: item.createdBy || item.requestedByNameEn,
+                    matchedEmp?.roleAr ||
+                    '',
+                createdBy: item.createdBy || item.requestedByNameEn || '',
             };
         });
 
@@ -12477,25 +11267,25 @@ export const crmApi = {
             CRM_SALES_EMPLOYEES.find(
                 (e) =>
                     e.id === data.assignedApproverId ||
-                    e.nameEn.toLowerCase() ===
-                    (data.assignedApproverNameEn || '').toLowerCase()
-            ) || CRM_SALES_EMPLOYEES[0];
+                    (e.nameEn && data.assignedApproverNameEn && e.nameEn.toLowerCase() ===
+                    (data.assignedApproverNameEn || '').toLowerCase())
+            );
 
         const validated = validateWithSchema(
             crmApprovalTaskInputSchema,
             {
                 ...data,
-                assignedApproverId: data.assignedApproverId || approver.id,
+                assignedApproverId: data.assignedApproverId || approver?.id || '',
                 assignedApproverNameEn:
-                    data.assignedApproverNameEn?.trim() || approver.nameEn,
+                    data.assignedApproverNameEn?.trim() || approver?.nameEn || '',
                 assignedApproverNameAr:
-                    data.assignedApproverNameAr?.trim() || approver.nameAr,
+                    data.assignedApproverNameAr?.trim() || approver?.nameAr || '',
                 departmentEn:
-                    data.departmentEn?.trim() || approver.departmentEn,
+                    data.departmentEn?.trim() || approver?.departmentEn || '',
                 departmentAr:
-                    data.departmentAr?.trim() || approver.departmentAr,
-                designationEn: data.designationEn?.trim() || approver.roleEn,
-                designationAr: data.designationAr?.trim() || approver.roleAr,
+                    data.departmentAr?.trim() || approver?.departmentAr || '',
+                designationEn: data.designationEn?.trim() || approver?.roleEn || '',
+                designationAr: data.departmentAr?.trim() || approver?.roleAr || '',
                 module: data.module?.trim() || data.targetEntityType,
             },
             'Approval Task'

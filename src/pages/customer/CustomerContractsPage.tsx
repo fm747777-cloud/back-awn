@@ -39,127 +39,7 @@ export interface CustomerContractItem {
 
 const STORAGE_KEY = 'awn_customer_contracts_v1';
 
-const INITIAL_CONTRACTS: CustomerContractItem[] = [
-    {
-        id: 'cnt-1',
-        contractNumber: 'CNT-2026-081',
-        titleEn: 'Enterprise Fleet Telematics Master Agreement',
-        titleAr: 'اتفاقية تقديم خدمات تتبع وإدارة أسطول النقل',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        linkedQuotationId: 'qt-1',
-        linkedQuotationNumber: 'QT-2026-101',
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
-        contractValue: 437000,
-        status: 'active',
-        notes: 'Includes annual maintenance, 99.9% telematics uptime SLA, and quarterly site reviews.',
-        createdAt: '2026-01-01',
-    },
-    {
-        id: 'cnt-2',
-        contractNumber: 'CNT-2026-082',
-        titleEn: 'Cloud Infrastructure & Managed Cyber Services',
-        titleAr: 'عقد استضافة البنية التحتية والخدمات السحابية المدارة',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Tech Solutions',
-        companyNameAr: 'شركة حلول الرياض التقنية',
-        linkedQuotationId: 'qt-2',
-        linkedQuotationNumber: 'QT-2026-102',
-        startDate: '2026-03-01',
-        endDate: '2027-02-28',
-        contractValue: 345000,
-        status: 'pending_signature',
-        notes: 'Awaiting board executive signature from client authorized signatories.',
-        createdAt: '2026-03-01',
-    },
-    {
-        id: 'cnt-3',
-        contractNumber: 'CNT-2026-083',
-        titleEn: 'Petrochemical Site Regulatory Compliance',
-        titleAr: 'عقد الامتثال البيئي والتنظيمي للمنشآت البتروكيماوية',
-        companyId: 'cmp-3',
-        companyNameEn: 'Gulf Energy Trading Corp',
-        companyNameAr: 'مؤسسة طاقة الخليج التجارية',
-        linkedQuotationId: 'qt-3',
-        linkedQuotationNumber: 'QT-2026-103',
-        startDate: '2026-02-15',
-        endDate: '2027-02-14',
-        contractValue: 189750,
-        status: 'active',
-        notes: 'Compliance management and monthly reporting to national environmental agencies.',
-        createdAt: '2026-02-15',
-    },
-    {
-        id: 'cnt-4',
-        contractNumber: 'CNT-2026-084',
-        titleEn: 'Zakat & Corporate Financial Advisory SLA',
-        titleAr: 'عقد الاستشارات الزكوية والضريبية والحوكمة المالية',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Financial Advisory Group',
-        companyNameAr: 'مجموعة نجم للاستشارات المالية',
-        linkedQuotationId: 'qt-4',
-        linkedQuotationNumber: 'QT-2026-104',
-        startDate: '2025-11-01',
-        endDate: '2026-10-31',
-        contractValue: 603750,
-        status: 'active',
-        notes: 'Quarterly financial audits, tax submissions, and statutory board support.',
-        createdAt: '2025-11-01',
-    },
-    {
-        id: 'cnt-5',
-        contractNumber: 'CNT-2026-085',
-        titleEn: 'Workforce Permitting & Government Affairs',
-        titleAr: 'اتفاقية تجديد إقامات ورخص العمل والخدمات الحكومية',
-        companyId: 'cmp-5',
-        companyNameEn: 'Arabian Horizon Contracting',
-        companyNameAr: 'شركة الأفق العربي للمقاولات',
-        linkedQuotationId: 'qt-5',
-        linkedQuotationNumber: 'QT-2026-105',
-        startDate: '2026-04-01',
-        endDate: '2027-03-31',
-        contractValue: 230000,
-        status: 'draft',
-        notes: 'Under review by client legal counsel before issuing final bilateral contract.',
-        createdAt: '2026-03-25',
-    },
-    {
-        id: 'cnt-6',
-        contractNumber: 'CNT-2025-045',
-        titleEn: 'Civil Works Site Supervision Framework',
-        titleAr: 'عقد الإشراف الفني الميداني على المشروعات الإنشائية',
-        companyId: 'cmp-6',
-        companyNameEn: 'Modern Infrastructure LLC',
-        companyNameAr: 'شركة البنية التحتية الحديثة',
-        linkedQuotationId: 'qt-6',
-        linkedQuotationNumber: 'QT-2026-106',
-        startDate: '2025-01-01',
-        endDate: '2025-12-31',
-        contractValue: 184000,
-        status: 'expired',
-        notes: 'Service term completed and signed off. Awaiting renewal request from client.',
-        createdAt: '2025-01-01',
-    },
-    {
-        id: 'cnt-7',
-        contractNumber: 'CNT-2025-032',
-        titleEn: 'Logistics Center Security & Facilities SLA',
-        titleAr: 'عقد خدمات حراسة وأمن المستودعات والمرافق اللوجستية',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        linkedQuotationId: 'none',
-        linkedQuotationNumber: undefined,
-        startDate: '2025-03-01',
-        endDate: '2026-02-28',
-        contractValue: 125000,
-        status: 'terminated',
-        notes: 'Early mutual termination due to client warehouse restructuring.',
-        createdAt: '2025-03-01',
-    },
-];
+const INITIAL_CONTRACTS: CustomerContractItem[] = [];
 
 import { CUSTOMER_COMPANIES_SIMPLE_OPTIONS } from './customerMockData';
 
@@ -187,9 +67,10 @@ export const CustomerContractsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {

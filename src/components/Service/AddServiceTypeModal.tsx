@@ -288,9 +288,11 @@ export const AddServiceTypeModal: React.FC<AddServiceTypeModalProps> = ({ isOpen
                     <form
                         id="service-type-form"
                         noValidate
-                        onSubmit={handleSubmit(onSubmit, (errs) =>
-                            focusAndScrollToFirstError(errs),
-                        )}
+                        onSubmit={(e) => {
+                            void handleSubmit(onSubmit, (errs) =>
+                                focusAndScrollToFirstError(errs),
+                            )(e);
+                        }}
                         className="space-y-5"
                     >
                         {/* Type Name */}

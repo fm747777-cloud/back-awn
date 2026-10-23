@@ -81,86 +81,7 @@ const CATALOG_SERVICES: LinkedServiceItem[] = [
     },
 ];
 
-const INITIAL_PACKAGES: CustomerServicePackageItem[] = [
-    {
-        id: 'pkg-1',
-        code: 'PKG-GOV-01',
-        nameEn: 'Executive Government Relations Bundle',
-        nameAr: 'باقة العلاقات الحكومية والتراخيص التنفيذية',
-        descriptionEn: 'Full commercial registration handling, municipal licenses, chamber attestations, and governmental liaison.',
-        descriptionAr: 'معالجة متكاملة للسجلات التجارية والتراخيص البلدية وتصديقات الغرف والتمثيل لدى الجهات الحكومية.',
-        price: 18500,
-        billingCycle: 'annual',
-        status: 'active',
-        linkedServices: [CATALOG_SERVICES[0], CATALOG_SERVICES[5]],
-        createdAt: '2026-01-15',
-    },
-    {
-        id: 'pkg-2',
-        code: 'PKG-WRK-02',
-        nameEn: 'Workforce & Labor Compliance Suite',
-        nameAr: 'باقة إدارة الكوادر والامتثال لمنظومة العمل',
-        descriptionEn: 'Expatriate residency renewals, Qiwa authentication, Mudad wage protection, and Nitaqat quota balancing.',
-        descriptionAr: 'تجديد إقامات الكوادر وتوثيق عقود قوى ونظام حماية الأجور (مدد) وإدارة نسب التوطين ونطاقات.',
-        price: 12000,
-        billingCycle: 'semi_annual',
-        status: 'active',
-        linkedServices: [CATALOG_SERVICES[1]],
-        createdAt: '2026-02-01',
-    },
-    {
-        id: 'pkg-3',
-        code: 'PKG-LOG-03',
-        nameEn: 'Fleet Telematics & WASL Integration',
-        nameAr: 'باقة التتبع اللوجستي والربط المباشر مع منصة وصل',
-        descriptionEn: 'Real-time telemetry, transport sensor monitors, temperature tracking, and mandatory regulatory compliance with WASL.',
-        descriptionAr: 'تتبع الشاحنات والمركبات بالاستشعار الحي ومراقبة الحمولات والربط الإلزامي اللحظي مع منصة وصل.',
-        price: 22000,
-        billingCycle: 'annual',
-        status: 'active',
-        linkedServices: [CATALOG_SERVICES[2]],
-        createdAt: '2026-02-12',
-    },
-    {
-        id: 'pkg-4',
-        code: 'PKG-TAX-04',
-        nameEn: 'ZATCA Compliance & Tax Advisory Plan',
-        nameAr: 'باقة الامتثال الضريبي والربط مع منظومة زاتكا',
-        descriptionEn: 'Phase 2 e-invoicing clearance, quarterly Zakat/VAT filings, tax audit support, and withholding tax filings.',
-        descriptionAr: 'الربط مع الفاتورة الإلكترونية المرحلة الثانية وتقديم الإقرارات الزكوية والضريبية والشهادات النظامية.',
-        price: 15000,
-        billingCycle: 'quarterly',
-        status: 'active',
-        linkedServices: [CATALOG_SERVICES[3]],
-        createdAt: '2026-02-20',
-    },
-    {
-        id: 'pkg-5',
-        code: 'PKG-ENT-05',
-        nameEn: 'Comprehensive Enterprise Operations Suite',
-        nameAr: 'باقة العمليات المؤسسية الشاملة للشركات الكبرى',
-        descriptionEn: 'All-inclusive premium corporate suite bundling government relations, workforce, logistics tracking, and ZATCA audit.',
-        descriptionAr: 'باقة شاملة تضم الشؤون الحكومية والكوادر والامتثال الضريبي والتتبع اللوجستي لدعم استمرارية الأعمال.',
-        price: 48000,
-        billingCycle: 'annual',
-        status: 'active',
-        linkedServices: [CATALOG_SERVICES[0], CATALOG_SERVICES[1], CATALOG_SERVICES[2], CATALOG_SERVICES[3]],
-        createdAt: '2026-03-01',
-    },
-    {
-        id: 'pkg-6',
-        code: 'PKG-SME-06',
-        nameEn: 'SME Commercial Launch Starter',
-        nameAr: 'باقة انطلاق المنشآت الصغيرة والمتوسطة',
-        descriptionEn: 'Essential baseline commercial registration and foundational government filings for new market entrants.',
-        descriptionAr: 'الباقة التأسيسية لإصدار السجلات وتراخيص الأنشطة للشركات والمنشآت الناشئة.',
-        price: 4500,
-        billingCycle: 'monthly',
-        status: 'inactive',
-        linkedServices: [CATALOG_SERVICES[0]],
-        createdAt: '2026-03-10',
-    },
-];
+const INITIAL_PACKAGES: CustomerServicePackageItem[] = [];
 
 export const CustomerServicePackagesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -173,9 +94,10 @@ export const CustomerServicePackagesPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {

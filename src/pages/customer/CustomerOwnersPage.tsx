@@ -50,128 +50,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const INITIAL_OWNERS: CustomerOwnerItem[] = [
-    {
-        id: 'own-1',
-        code: 'OWN-201',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        ownerNameEn: 'Sheikh Abdulaziz Al-Muqrin',
-        ownerNameAr: 'الشيخ عبدالعزيز المقرن',
-        ownerType: 'individual',
-        ownershipPercentage: 55.0,
-        nationalIdOrCr: '1018928401',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودي',
-        phone: '+966 50 541 2288',
-        email: 'a.muqrin@alwataniya.sa',
-        status: 'active',
-        votingPower: true,
-        notes: 'Founding majority shareholder with full commercial governance authority.',
-        createdAt: '2026-01-05',
-    },
-    {
-        id: 'own-2',
-        code: 'OWN-202',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        ownerNameEn: 'Olayan Logistics Capital Ltd.',
-        ownerNameAr: 'شركة العليان للاستثمار اللوجستي',
-        ownerType: 'corporate',
-        ownershipPercentage: 45.0,
-        nationalIdOrCr: '7001928401',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودية (كيان تجاري)',
-        phone: '+966 11 498 7700',
-        email: 'investments@olayan-capital.sa',
-        status: 'active',
-        votingPower: true,
-        notes: 'Institutional strategic partner holding representative board seat.',
-        createdAt: '2026-01-12',
-    },
-    {
-        id: 'own-3',
-        code: 'OWN-203',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        ownerNameEn: 'Al-Khereiji Industrial Fund',
-        ownerNameAr: 'صندوق الخريجي للاستثمار الصناعي',
-        ownerType: 'institutional',
-        ownershipPercentage: 65.0,
-        nationalIdOrCr: '7028192048',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'صندوق استثماري مرخص',
-        phone: '+966 11 210 5000',
-        email: 'directors@khereiji-fund.sa',
-        status: 'active',
-        votingPower: true,
-        notes: 'CMA licensed private equity vehicle funding regional manufacturing expansion.',
-        createdAt: '2026-01-18',
-    },
-    {
-        id: 'own-4',
-        code: 'OWN-204',
-        companyId: 'cmp-3',
-        companyNameEn: 'Tamweel Capital Partners',
-        companyNameAr: 'تمويل كابيتال المالية',
-        ownerNameEn: 'Sultan Bin Khalid Al-Saud',
-        ownerNameAr: 'سلطان بن خالد آل سعود',
-        ownerType: 'individual',
-        ownershipPercentage: 51.0,
-        nationalIdOrCr: '1004928172',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودي',
-        phone: '+966 55 491 8000',
-        email: 'sultan@tamweel-cap.sa',
-        status: 'active',
-        votingPower: true,
-        notes: 'Managing partner and registered beneficial owner with ZATCA filings.',
-        createdAt: '2026-02-01',
-    },
-    {
-        id: 'own-5',
-        code: 'OWN-205',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        ownerNameEn: 'Gulf Medical Horizons Co.',
-        ownerNameAr: 'شركة آفاق الخليج الطبية',
-        ownerType: 'corporate',
-        ownershipPercentage: 40.0,
-        nationalIdOrCr: '1010398291',
-        nationalityEn: 'Kuwait / GCC',
-        nationalityAr: 'خليجي (الكويت)',
-        phone: '+965 22 901 400',
-        email: 'governance@gulfmed.com',
-        status: 'active',
-        votingPower: true,
-        notes: 'MISA licensed regional healthcare group with verified beneficial owner disclosures.',
-        createdAt: '2026-02-15',
-    },
-    {
-        id: 'own-6',
-        code: 'OWN-206',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        ownerNameEn: 'Global Coastal Resorts S.A.',
-        ownerNameAr: 'مجموعة المنتجعات الساحلية العالمية',
-        ownerType: 'foreign_investor',
-        ownershipPercentage: 25.0,
-        nationalIdOrCr: '7091823901',
-        nationalityEn: 'Switzerland',
-        nationalityAr: 'أجنبي (سويسرا)',
-        phone: '+41 22 710 8820',
-        email: 'legal@globalcoastal.ch',
-        status: 'inactive',
-        votingPower: false,
-        notes: 'Restructuring ownership share via Ministry of Investment foreign investor portal.',
-        createdAt: '2026-02-28',
-    },
-];
+const INITIAL_OWNERS: CustomerOwnerItem[] = [];
 
 export const CustomerOwnersPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -184,9 +63,10 @@ export const CustomerOwnersPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {

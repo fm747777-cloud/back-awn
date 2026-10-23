@@ -47,6 +47,7 @@ export const OperationalTaskFormDrawer: React.FC<
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
+    const defaultEmp = CRM_SALES_EMPLOYEES[0];
     const defaultDueDate = DEFAULT_DUE_DATE;
 
     const {
@@ -72,13 +73,13 @@ export const OperationalTaskFormDrawer: React.FC<
             priority: 'High',
             taskStatus: 'Assigned',
             dueDate: defaultDueDate,
-            assignedSpecialistId: CRM_SALES_EMPLOYEES[0].id,
-            assignedSpecialistNameEn: CRM_SALES_EMPLOYEES[0].nameEn,
-            assignedSpecialistNameAr: CRM_SALES_EMPLOYEES[0].nameAr,
-            departmentEn: CRM_SALES_EMPLOYEES[0].departmentEn,
-            departmentAr: CRM_SALES_EMPLOYEES[0].departmentAr,
-            designationEn: CRM_SALES_EMPLOYEES[0].roleEn,
-            designationAr: CRM_SALES_EMPLOYEES[0].roleAr,
+            assignedSpecialistId: defaultEmp?.id || '',
+            assignedSpecialistNameEn: defaultEmp?.nameEn || '',
+            assignedSpecialistNameAr: defaultEmp?.nameAr || '',
+            departmentEn: defaultEmp?.departmentEn || '',
+            departmentAr: defaultEmp?.departmentAr || '',
+            designationEn: defaultEmp?.roleEn || '',
+            designationAr: defaultEmp?.roleAr || '',
             notes: '',
         },
     });

@@ -570,7 +570,7 @@ export function loadOperationalTasks(): OperationalTaskRecord[] {
         if (!Array.isArray(parsed)) {
             return syncRequestsIntoOperationalTasks([...INITIAL_OPERATIONAL_TASKS]);
         }
-        const valid = parsed.filter(isValidOperationalTask);
+        const valid = parsed.filter(isValidOperationalTask).filter((t) => !/^opt-\d{2}$/.test(t.id));
         if (parsed.length > 0 && valid.length === 0) {
             return syncRequestsIntoOperationalTasks([...INITIAL_OPERATIONAL_TASKS]);
         }

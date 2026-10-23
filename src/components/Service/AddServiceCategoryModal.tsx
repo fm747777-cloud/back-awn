@@ -175,9 +175,11 @@ export const AddServiceCategoryModal: React.FC<
                     <form
                         id="service-category-form"
                         noValidate
-                        onSubmit={handleSubmit(onSubmit, (errs) =>
-                            focusAndScrollToFirstError(errs),
-                        )}
+                        onSubmit={(e) => {
+                            void handleSubmit(onSubmit, (errs) =>
+                                focusAndScrollToFirstError(errs),
+                            )(e);
+                        }}
                         className="space-y-5"
                     >
                         {/* Category Name */}

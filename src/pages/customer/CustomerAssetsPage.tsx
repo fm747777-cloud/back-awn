@@ -48,110 +48,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const INITIAL_ASSETS: CustomerAssetItem[] = [
-    {
-        id: 'ast-1',
-        assetCode: 'AST-501',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Mercedes-Benz Actros 3340 Prime Mover',
-        nameAr: 'شاحنة مرسيدس أكتروس 3340 للنقل الثقيل',
-        category: 'fleet_vehicle',
-        serialOrPlate: '7821-BTA',
-        assignedLocationEn: 'Jeddah Central Logistics Terminal',
-        assignedLocationAr: 'محطة جدة المركزية للخدمات اللوجستية',
-        valuationSar: 420000,
-        purchaseDate: '2024-05-12',
-        status: 'operational',
-        notes: 'GPS telematics installed; periodic inspection valid until 2027.',
-    },
-    {
-        id: 'ast-2',
-        assetCode: 'AST-502',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        nameEn: 'Caterpillar 320D Hydraulic Excavator',
-        nameAr: 'حفار كاتربيلر هيدروليكي موديل 320D',
-        category: 'heavy_equipment',
-        serialOrPlate: 'CAT-320D-98124',
-        assignedLocationEn: 'Sudair Industrial City Quarry',
-        assignedLocationAr: 'محجر مدينة سدير الصناعية',
-        valuationSar: 780000,
-        purchaseDate: '2023-11-20',
-        status: 'operational',
-        notes: 'Full service contract with Zahid Tractor dealership.',
-    },
-    {
-        id: 'ast-3',
-        assetCode: 'AST-503',
-        companyId: 'cmp-5',
-        companyNameEn: 'Horizon Digital Technologies',
-        companyNameAr: 'تقنيات الأفق الرقمية',
-        nameEn: 'Dell PowerEdge R760 Rack Server Cluster',
-        nameAr: 'مصفوفة خوادم ديل باور إيدج R760',
-        category: 'it_infrastructure',
-        serialOrPlate: 'SRV-DL-882910',
-        assignedLocationEn: 'Tier-III Primary Datacenter (Riyadh)',
-        assignedLocationAr: 'مركز البيانات الرئيسي (الرياض)',
-        valuationSar: 350000,
-        purchaseDate: '2025-02-14',
-        status: 'operational',
-        notes: 'Dual redundant PSU; enterprise NVMe storage arrays.',
-    },
-    {
-        id: 'ast-4',
-        assetCode: 'AST-504',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        nameEn: 'Siemens Magnetom Altea 1.5T MRI Scanner',
-        nameAr: 'جهاز رنين مغناطيسي سيمنز 1.5 تسلا',
-        category: 'machinery',
-        serialOrPlate: 'MOH-RAD-449102',
-        assignedLocationEn: 'Al-Rayyan Specialist Medical Complex',
-        assignedLocationAr: 'مجمع الريان الطبي التخصصي',
-        valuationSar: 2400000,
-        purchaseDate: '2024-08-30',
-        status: 'under_maintenance',
-        notes: 'Scheduled helium cryogenic cooling maintenance.',
-    },
-    {
-        id: 'ast-5',
-        assetCode: 'AST-505',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        nameEn: 'Caterpillar 500kVA Soundproof Generator',
-        nameAr: 'مولد كهربائي كاتربيلر عازل للصوت 500 كيلو فولت',
-        category: 'facility_asset',
-        serialOrPlate: 'GEN-CAT-500K-01',
-        assignedLocationEn: 'Umluj Coral Beach Resort Island',
-        assignedLocationAr: 'منتجع شاطئ المرجان بجزر أملج',
-        valuationSar: 290000,
-        purchaseDate: '2024-01-18',
-        status: 'operational',
-        notes: 'Primary backup power for island desalination and lighting.',
-    },
-    {
-        id: 'ast-6',
-        assetCode: 'AST-506',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Toyota 8FBN25 Electric Forklift (2.5 Ton)',
-        nameAr: 'رافعة شوكية كهربائية تويوتا حمولة 2.5 طن',
-        category: 'heavy_equipment',
-        serialOrPlate: 'TYT-FL-25-1092',
-        assignedLocationEn: 'Dammam Dry Port Distribution Hub',
-        assignedLocationAr: 'مستودع الميناء الجاف بالدمام',
-        valuationSar: 125000,
-        purchaseDate: '2023-04-10',
-        status: 'decommissioned',
-        notes: 'Retired following battery cycle expiration; slated for salvage auction.',
-    },
-];
+const INITIAL_ASSETS: CustomerAssetItem[] = [];
 
 export const CustomerAssetsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -164,9 +61,10 @@ export const CustomerAssetsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
