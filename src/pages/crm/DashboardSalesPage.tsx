@@ -85,6 +85,11 @@ export const DashboardSalesPage: React.FC = () => {
         queryFn: () => crmApi.deals.getAll({ limit: 200 }),
     });
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
     const isLoading = isDashboardLoading || isTasksLoading || isDealsLoading;
     const isFetching =
         isDashboardFetching || isTasksFetching || isDealsFetching;
@@ -359,7 +364,7 @@ export const DashboardSalesPage: React.FC = () => {
                             <option value="all">
                                 {t('crm.dashboardSales.filters.allReps')}
                             </option>
-                            {CRM_SALES_EMPLOYEES.map((emp) => (
+                            {employees.map((emp) => (
                                 <option key={emp.id} value={emp.id}>
                                     {isRtl ? emp.nameAr : emp.nameEn}
                                 </option>

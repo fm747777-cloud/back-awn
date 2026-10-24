@@ -85,10 +85,8 @@ export function getActiveUmsPersistenceMode(): UmsPersistenceMode {
 
 export const DEFAULT_SUPER_ADMIN_ACTOR: UmsActorContext = {
     isAuthenticated: true,
-    actorEmployeeId: 'emp-1',
     actorRoleId: 'rol-1',
     actorSecurityGroupId: 'sec-1',
-    actorEmail: 'karim@awn.sa',
 };
 
 export const umsApi = {
@@ -222,8 +220,8 @@ export const umsApi = {
             detailsAr: `${existing ? 'تحديث' : 'إنشاء'} ملف الموظف ${employee.nameAr} (${employee.code}) عبر مستودع البيانات.`,
             previousState: existing ? JSON.stringify(existing) : undefined,
             newState: JSON.stringify(employee),
-            actorId: actor.actorEmployeeId || 'demo-admin-1',
-            actorEmail: actor.actorEmail || 'karim@awn.sa',
+            actorId: actor.actorEmployeeId || 'system',
+            actorEmail: actor.actorEmail || '',
         });
 
         const reloaded = loadEmployees().find((e) => e.id === employee.id) || employee;
@@ -309,8 +307,8 @@ export const umsApi = {
             detailsEn: `Deleted unlinked employee record ${target.nameEn} (${target.code}).`,
             detailsAr: `حذف ملف الموظف غير المرتبط ${target.nameAr} (${target.code}).`,
             previousState: JSON.stringify(target),
-            actorId: actor.actorEmployeeId || 'demo-admin-1',
-            actorEmail: actor.actorEmail || 'karim@awn.sa',
+            actorId: actor.actorEmployeeId || 'system',
+            actorEmail: actor.actorEmail || '',
         });
 
         return {

@@ -53,155 +53,9 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const DEMO_SERVICES = [
-    { id: 'srv-1', code: 'SRV-GA-01', nameEn: 'Commercial Registration Issuance & Renewal', nameAr: 'إصدار وتجديد السجل التجاري والأنشطة' },
-    { id: 'srv-2', code: 'SRV-WL-02', nameEn: 'Workforce Iqama Renewal & Labor Quota', nameAr: 'تجديد الإقامات المهنية وتدقيق نطاقات العمل' },
-    { id: 'srv-3', code: 'SRV-TL-03', nameEn: 'Fleet GPS Telematics & SLA Monitoring', nameAr: 'تتبع أسطول النقل اللوجستي والربط مع وصل' },
-    { id: 'srv-4', code: 'SRV-CA-04', nameEn: 'Zakat, Tax & Customs Regulatory Compliance', nameAr: 'الامتثال الضريبي والزكوي والفوترة الإلكترونية' },
-    { id: 'srv-5', code: 'SRV-IT-05', nameEn: 'Cloud Infrastructure & 24/7 Server SLA', nameAr: 'البنية السحابية ودعم الخوادم على مدار الساعة' },
-    { id: 'srv-6', code: 'SRV-LM-06', nameEn: 'Executive Legal & Municipal Licensing', nameAr: 'الاستشارات القانونية والتراخيص البلدية التنفيذية' },
-];
+const DEMO_SERVICES: { id: string; code: string; nameEn: string; nameAr: string }[] = [];
 
-const INITIAL_REQUESTS: CustomerRequestItem[] = [
-    {
-        id: 'req-1',
-        code: 'REQ-2026-081',
-        titleEn: 'Annual Commercial Registration Renewal & Chamber Attestation',
-        titleAr: 'تجديد السجل التجاري السنوي وتصديق الغرفة التجارية',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        serviceId: 'srv-1',
-        serviceCode: 'SRV-GA-01',
-        serviceNameEn: 'Commercial Registration Issuance & Renewal',
-        serviceNameAr: 'إصدار وتجديد السجل التجاري والأنشطة',
-        requestType: 'government',
-        priority: 'high',
-        status: 'in_progress',
-        submissionDate: '2026-03-01',
-        dueDate: '2026-03-15',
-        descriptionEn: 'Renewal of primary commercial registration with economic activities update and Riyadh Chamber certified attestation.',
-        descriptionAr: 'تجديد السجل التجاري الرئيسي وتحديث الأنشطة الاقتصادية وتصديق الغرفة التجارية بمدينة الرياض.',
-        govReferenceNo: 'MC-2026-948102',
-        notes: 'Chamber fees settled. Pending final commercial certificate generation.',
-        createdAt: '2026-03-01',
-    },
-    {
-        id: 'req-2',
-        code: 'REQ-2026-082',
-        titleEn: 'Fleet WASL Platform Direct Sensor Integration',
-        titleAr: 'الربط المباشر لأجهزة تتبع الأسطول مع منصة وصل',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        serviceId: 'srv-3',
-        serviceCode: 'SRV-TL-03',
-        serviceNameEn: 'Fleet GPS Telematics & SLA Monitoring',
-        serviceNameAr: 'تتبع أسطول النقل اللوجستي والربط مع وصل',
-        requestType: 'technical',
-        priority: 'urgent',
-        status: 'under_review',
-        submissionDate: '2026-03-03',
-        dueDate: '2026-03-12',
-        descriptionEn: 'Configuration of 45 heavy vehicle telematics units with statutory WASL regulatory endpoints and temperature sensor probes.',
-        descriptionAr: 'تهيئة وبرمجة 45 جهاز تتبع شاحنات مع نقاط ربط منصة وصل الحكومية وحساسات مراقبة درجات الحرارة.',
-        govReferenceNo: 'WASL-FL-83011',
-        notes: 'API tokens validated. Testing live stream payloads with Transport Authority.',
-        createdAt: '2026-03-03',
-    },
-    {
-        id: 'req-3',
-        code: 'REQ-2026-083',
-        titleEn: 'Workforce Qiwa Digital Contract Attestation & Nitaqat Audit',
-        titleAr: 'توثيق عقود الكوادر عبر منصة قوى وتدقيق نطاقات العمل',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        serviceId: 'srv-2',
-        serviceCode: 'SRV-WL-02',
-        serviceNameEn: 'Workforce Iqama Renewal & Labor Quota',
-        serviceNameAr: 'تجديد الإقامات المهنية وتدقيق نطاقات العمل',
-        requestType: 'workforce',
-        priority: 'medium',
-        status: 'pending',
-        submissionDate: '2026-03-05',
-        dueDate: '2026-03-20',
-        descriptionEn: 'Quarterly review of 120 professional contracts on Qiwa portal, balancing Platinum tier Nitaqat workforce requirements.',
-        descriptionAr: 'المراجعة الربع سنوية لـ 120 عقداً عبر منصة قوى وضمان الحفاظ على النطاق البلاتيني وفق متطلبات التوطين.',
-        govReferenceNo: 'QIWA-CR-554109',
-        notes: 'Awaiting client approval of updated standard labor contracts.',
-        createdAt: '2026-03-05',
-    },
-    {
-        id: 'req-4',
-        code: 'REQ-2026-084',
-        titleEn: 'Q1 ZATCA Phase 2 E-Invoicing Verification & Audit Clearance',
-        titleAr: 'تدقيق منظومة الفوترة الإلكترونية المرحلة الثانية وإقرار الربع الأول',
-        companyId: 'cmp-3',
-        companyNameEn: 'Tamweel Capital Partners',
-        companyNameAr: 'تمويل كابيتال المالية',
-        serviceId: 'srv-4',
-        serviceCode: 'SRV-CA-04',
-        serviceNameEn: 'Zakat, Tax & Customs Regulatory Compliance',
-        serviceNameAr: 'الامتثال الضريبي والزكوي والفوترة الإلكترونية',
-        requestType: 'compliance',
-        priority: 'urgent',
-        status: 'in_progress',
-        submissionDate: '2026-02-28',
-        dueDate: '2026-03-18',
-        descriptionEn: 'Cryptographic stamp audit and XML ledger clearance certificate issuance for Zakat & Tax Authority quarterly filing.',
-        descriptionAr: 'مراجعة الأختام الرقمية والتأكد من توافق دفاتر الفواتير بصيغة XML وشهادة براءة الذمة الضريبية للربع الأول.',
-        govReferenceNo: 'ZATCA-TX-109283',
-        notes: 'Compliance dry run passed with 100% adherence to FATOORA standards.',
-        createdAt: '2026-02-28',
-    },
-    {
-        id: 'req-5',
-        code: 'REQ-2026-085',
-        titleEn: 'Executive Municipal Health & Safety Licensing Renewal',
-        titleAr: 'تجديد رخصة بلدي للأنشطة والامتثال للمعايير الصحية',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        serviceId: 'srv-6',
-        serviceCode: 'SRV-LM-06',
-        serviceNameEn: 'Executive Legal & Municipal Licensing',
-        serviceNameAr: 'الاستشارات القانونية والتراخيص البلدية التنفيذية',
-        requestType: 'licensing',
-        priority: 'high',
-        status: 'completed',
-        submissionDate: '2026-02-15',
-        dueDate: '2026-03-02',
-        descriptionEn: 'Field inspection clearance and municipal license renewal via Balady platform for specialized healthcare clinic centers.',
-        descriptionAr: 'إنهاء التفتيش الميداني وتجديد رخصة بلدي الفورية للمراكز والعيادات الطبية التخصصية.',
-        govReferenceNo: 'BALADY-LIC-77412',
-        notes: 'License renewed and issued successfully. Valid until March 2027.',
-        createdAt: '2026-02-15',
-    },
-    {
-        id: 'req-6',
-        code: 'REQ-2026-086',
-        titleEn: 'Hospitality Enterprise Dedicated Cloud Server SLA Provisioning',
-        titleAr: 'تخصيص الخوادم السحابية واتفاقية مستوى الخدمة لمشروع الضيافة',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        serviceId: 'srv-5',
-        serviceCode: 'SRV-IT-05',
-        serviceNameEn: 'Cloud Infrastructure & 24/7 Server SLA',
-        serviceNameAr: 'البنية السحابية ودعم الخوادم على مدار الساعة',
-        requestType: 'technical',
-        priority: 'low',
-        status: 'completed',
-        submissionDate: '2026-02-20',
-        dueDate: '2026-03-05',
-        descriptionEn: 'Provisioning redundant cloud cluster with 99.95% uptime SLA guarantee and 24/7 proactive incident monitoring.',
-        descriptionAr: 'تجهيز خوادم سحابية متبادلة مع ضمان استمرارية الخدمة بنسبة 99.95% ومراقبة فنية على مدار الساعة.',
-        govReferenceNo: 'CLOUD-SLA-9021',
-        notes: 'Cluster live in Saudi Cloud Region. Monitoring dashboard delivered.',
-        createdAt: '2026-02-20',
-    },
-];
+const INITIAL_REQUESTS: CustomerRequestItem[] = [];
 
 export const CustomerRequestsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -214,9 +68,10 @@ export const CustomerRequestsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -252,8 +107,8 @@ export const CustomerRequestsPage: React.FC = () => {
         code: '',
         titleEn: '',
         titleAr: '',
-        companyId: DEMO_COMPANIES[0].id,
-        serviceId: DEMO_SERVICES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
+        serviceId: DEMO_SERVICES[0]?.id || '',
         requestType: 'government' as RequestType,
         priority: 'medium' as RequestPriority,
         status: 'pending' as RequestStatus,
@@ -417,8 +272,8 @@ export const CustomerRequestsPage: React.FC = () => {
             code: generatedCode,
             titleEn: '',
             titleAr: '',
-            companyId: DEMO_COMPANIES[0].id,
-            serviceId: DEMO_SERVICES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
+            serviceId: DEMO_SERVICES[0]?.id || '',
             requestType: 'government',
             priority: 'medium',
             status: 'pending',
@@ -504,8 +359,10 @@ export const CustomerRequestsPage: React.FC = () => {
             return;
         }
 
-        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
-        const selectedService = DEMO_SERVICES.find((s) => s.id === formData.serviceId) || DEMO_SERVICES[0];
+        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
+        const selectedService = DEMO_SERVICES.find((s) => s.id === formData.serviceId) ||
+            DEMO_SERVICES[0] || { id: formData.serviceId || '', code: 'SRV', nameEn: '—', nameAr: '—' };
 
         if (editingRequestId) {
             setRequests((prev) =>

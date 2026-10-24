@@ -2,73 +2,17 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import {
-    WORKFLOW_SOURCES,
     type WorkflowStatusLevelRecord,
     type WorkflowStageCategory,
     type WorkflowSource,
     type WorkflowStatus,
     type WorkflowType,
 } from '../../pages/workflow/workflowMockData';
-
-export const STAGE_CATEGORIES: WorkflowStageCategory[] = [
-    'Initiation',
-    'Verification',
-    'Compliance',
-    'Authorization',
-    'Completion',
-];
-
-export const COLOR_OPTIONS = [
-    '#037F8C',
-    '#037F8C',
-    '#8C6046',
-    '#6A7358',
-    '#BFAB93',
-    '#857E74',
-    '#A63A3A',
-];
-
-export interface StatusLevelFormState {
-    code: string;
-    levelNameEn: string;
-    levelNameAr: string;
-    workflowTitleEn: string;
-    workflowTitleAr: string;
-    workflowType: WorkflowType;
-    source: WorkflowSource;
-    levelOrder: number;
-    stageCategory: WorkflowStageCategory;
-    approverRoleEn: string;
-    approverRoleAr: string;
-    slaHours: number;
-    color: string;
-    isFinalLevel: boolean;
-    requireComment: boolean;
-    status: WorkflowStatus;
-    descriptionEn: string;
-    descriptionAr: string;
-}
-
-export const DEFAULT_STATUS_LEVEL_FORM_STATE: StatusLevelFormState = {
-    code: 'STL-NEW-01',
-    levelNameEn: '',
-    levelNameAr: '',
-    workflowTitleEn: 'Sector',
-    workflowTitleAr: 'القطاع',
-    workflowType: 'approval',
-    source: 'CRM',
-    levelOrder: 1,
-    stageCategory: 'Verification',
-    approverRoleEn: 'Governance Specialist',
-    approverRoleAr: 'أخصائي الحوكمة',
-    slaHours: 24,
-    color: '#037F8C',
-    isFinalLevel: false,
-    requireComment: true,
-    status: 'Enabled',
-    descriptionEn: '',
-    descriptionAr: '',
-};
+import {
+    STAGE_CATEGORIES,
+    COLOR_OPTIONS,
+    type StatusLevelFormState,
+} from '../../pages/workflow/workflowUtils';
 
 interface WorkflowStatusLevelFormDrawerProps {
     isOpen: boolean;
@@ -86,7 +30,7 @@ export const WorkflowStatusLevelFormDrawer: React.FC<WorkflowStatusLevelFormDraw
     onSubmit,
     formState,
     setFormState,
-    editingRecord,
+    editingRecord: _editingRecord,
     availableWorkflows,
 }) => {
     const { t, i18n } = useTranslation();
@@ -105,9 +49,7 @@ export const WorkflowStatusLevelFormDrawer: React.FC<WorkflowStatusLevelFormDraw
                     <div className="px-6 py-5 border-b border-[#E5E0D8] flex items-center justify-between gap-3 bg-[#FAF8F5]">
                         <div>
                             <h2 className="text-base font-bold text-[#0D0D0D]">
-                                {editingRecord
-                                    ? t('workflow.statusLevels.drawer.editTitle')
-                                    : t('workflow.statusLevels.drawer.createTitle')}
+                                {t('workflow.statusLevels.drawer.editTitle')}
                             </h2>
                             <p className="text-xs text-[#6E6862] mt-0.5">
                                 {t('workflow.statusLevels.drawer.formSubtitle')}
@@ -456,9 +398,7 @@ export const WorkflowStatusLevelFormDrawer: React.FC<WorkflowStatusLevelFormDraw
                         type="submit"
                         className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-medium text-[#FAF8F5] transition-colors cursor-pointer"
                     >
-                        {editingRecord
-                            ? t('common.saveChanges', 'Save Changes')
-                            : t('common.create', 'Create')}
+                        {t('common.saveChanges', 'Save Changes')}
                     </button>
                 </div>
             </form>

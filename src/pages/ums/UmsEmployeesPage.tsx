@@ -1990,7 +1990,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 {t('ums.employees.details.fields.createdBy')}
                             </span>
                             <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
-                                {employee.createdBy || 'Karim Wagdi'}
+                                {employee.createdBy || notProvidedText}
                             </span>
                         </div>
 

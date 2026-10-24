@@ -58,86 +58,7 @@ interface QuickLinkItem {
     badgeColor: string;
 }
 
-const CUSTOMER_ACTIVITIES: RecentActivityItem[] = [
-    {
-        id: 'act-1',
-        clientNameEn: 'Al-Wataniya Logistics Co.',
-        clientNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        category: 'commercial',
-        actionEn: 'Annual enterprise service contract renewed (SAR 320,000)',
-        actionAr: 'تم تجديد عقد الخدمات المؤسسي السنوي بقيمة 320,000 ر.س',
-        timeEn: '12 min ago',
-        timeAr: 'منذ 12 دقيقة',
-        status: 'completed',
-        icon: FileCheck,
-        route: '/customer/contracts',
-    },
-    {
-        id: 'act-2',
-        clientNameEn: 'Riyadh Tech Solutions',
-        clientNameAr: 'شركة حلول الرياض التقنية',
-        category: 'governance',
-        actionEn: 'Statutory commercial registration & Zakat certification verified',
-        actionAr: 'تم التحقق من نظامية السجل التجاري والشهادة الزكوية',
-        timeEn: '45 min ago',
-        timeAr: 'منذ 45 دقيقة',
-        status: 'completed',
-        icon: ShieldCheck,
-        route: '/customer/documents',
-    },
-    {
-        id: 'act-3',
-        clientNameEn: 'Gulf Energy Trading Corp',
-        clientNameAr: 'مؤسسة طاقة الخليج التجارية',
-        category: 'operations',
-        actionEn: 'Municipal branch permit renewal request submitted to portal',
-        actionAr: 'تم تقديم طلب تجديد الرخصة البلدية للفرع عبر البوابة',
-        timeEn: '2 hours ago',
-        timeAr: 'منذ ساعتين',
-        status: 'in_progress',
-        icon: ClipboardList,
-        route: '/customer/requests',
-    },
-    {
-        id: 'act-4',
-        clientNameEn: 'Najm Financial Advisory Group',
-        clientNameAr: 'مجموعة نجم للاستشارات المالية',
-        category: 'support',
-        actionEn: 'VIP corporate portal access issue resolved #TCK-2026-089',
-        actionAr: 'تم إغلاق تذكرة الدعم الفني لكبار العملاء بنجاح #TCK-2026-089',
-        timeEn: '3 hours ago',
-        timeAr: 'منذ 3 ساعات',
-        status: 'resolved',
-        icon: Ticket,
-        route: '/customer/tickets',
-    },
-    {
-        id: 'act-5',
-        clientNameEn: 'Arabian Horizon Contracting',
-        clientNameAr: 'شركة الأفق العربي للمقاولات',
-        category: 'operations',
-        actionEn: 'Batch residency (Iqama) renewals processed for 15 employees',
-        actionAr: 'تم إنجاز تجديد الإقامات ورخص العمل لـ 15 موظفاً بنجاح',
-        timeEn: '5 hours ago',
-        timeAr: 'منذ 5 ساعات',
-        status: 'completed',
-        icon: Users,
-        route: '/customer/employees',
-    },
-    {
-        id: 'act-6',
-        clientNameEn: 'Modern Infrastructure LLC',
-        clientNameAr: 'شركة البنية التحتية الحديثة',
-        category: 'governance',
-        actionEn: 'Governance approval granted for regional branch registration',
-        actionAr: 'تمت الموافقة على اعتماد الحوكمة لفتح فرع الشركة الإقليمي',
-        timeEn: 'Yesterday',
-        timeAr: 'يوم أمس',
-        status: 'completed',
-        icon: CheckCircle2,
-        route: '/customer/approval-tasks',
-    },
-];
+const CUSTOMER_ACTIVITIES: RecentActivityItem[] = [];
 
 export const CustomerDashboardPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -161,7 +82,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-accounts',
             titleKey: 'customer.pages.dashboard.kpis.activeAccounts',
-            value: '48',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.activeAccountsSub',
             isPositive: true,
             icon: Building2,
@@ -172,7 +93,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-contracts',
             titleKey: 'customer.pages.dashboard.kpis.activeContracts',
-            value: '112',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.activeContractsSub',
             isPositive: true,
             icon: FileCheck,
@@ -183,7 +104,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-requests',
             titleKey: 'customer.pages.dashboard.kpis.inflightRequests',
-            value: '27',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.inflightRequestsSub',
             isPositive: true,
             icon: ClipboardList,
@@ -194,7 +115,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-governance',
             titleKey: 'customer.pages.dashboard.kpis.pendingGovernance',
-            value: '8',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.pendingGovernanceSub',
             isPositive: false,
             icon: ShieldCheck,
@@ -422,11 +343,11 @@ export const CustomerDashboardPage: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#037F8C]">
                             <Sparkles className="w-3.5 h-3.5 text-[#037F8C]" />
-                            <span>{isRtl ? '99.8% جاهزية الخدمات' : '99.8% Service Availability'}</span>
+                            <span>{isRtl ? 'جاهزية الخدمات: —' : 'Service Availability: —'}</span>
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#037F8C]">
                             <Clock className="w-3.5 h-3.5 text-[#8C6D3B]" />
-                            <span>{isRtl ? 'متوسط سرعة المعالجة: 1.4 ساعة' : 'Avg. Turnaround: 1.4h'}</span>
+                            <span>{isRtl ? 'متوسط سرعة المعالجة: —' : 'Avg. Turnaround: —'}</span>
                         </span>
                     </div>
                 </div>
@@ -434,22 +355,22 @@ export const CustomerDashboardPage: React.FC = () => {
                 {/* Tier Progress Bar */}
                 <div className="space-y-2">
                     <div className="w-full h-3 rounded-full bg-[#EFECE6] overflow-hidden flex">
-                        <div className="bg-[#037F8C] h-full" style={{ width: '45%' }} title="Enterprise (45%)" />
-                        <div className="bg-[#4A5D4E] h-full" style={{ width: '35%' }} title="Commercial & SMB (35%)" />
-                        <div className="bg-[#BFAB93] h-full" style={{ width: '20%' }} title="Strategic Government (20%)" />
+                        <div className="bg-[#037F8C] h-full" style={{ width: '0%' }} title="Enterprise (0%)" />
+                        <div className="bg-[#4A5D4E] h-full" style={{ width: '0%' }} title="Commercial & SMB (0%)" />
+                        <div className="bg-[#BFAB93] h-full" style={{ width: '0%' }} title="Strategic Government (0%)" />
                     </div>
                     <div className="flex flex-wrap items-center justify-between text-xs text-[#6E6862] pt-1">
                         <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#037F8C]" />
-                            <span>{isRtl ? 'كبار العملاء (Enterprise) — 45%' : 'Enterprise Accounts — 45% (22)'}</span>
+                            <span>{isRtl ? 'كبار العملاء (Enterprise) — 0%' : 'Enterprise Accounts — 0% (0)'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#4A5D4E]" />
-                            <span>{isRtl ? 'الشركات التجارية (Commercial) — 35%' : 'Commercial & SMB — 35% (17)'}</span>
+                            <span>{isRtl ? 'الشركات التجارية (Commercial) — 0%' : 'Commercial & SMB — 0% (0)'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-[#BFAB93]" />
-                            <span>{isRtl ? 'الشركاء الاستراتيجيون — 20%' : 'Strategic Partners — 20% (9)'}</span>
+                            <span>{isRtl ? 'الشركاء الاستراتيجيون — 0%' : 'Strategic Partners — 0% (0)'}</span>
                         </div>
                     </div>
                 </div>

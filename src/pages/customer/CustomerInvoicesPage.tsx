@@ -60,151 +60,12 @@ export interface CustomerInvoiceItem {
 
 const STORAGE_KEY = 'awn_customer_invoices_v1';
 
-const INITIAL_INVOICES: CustomerInvoiceItem[] = [
-    {
-        id: 'inv-1',
-        invoiceNumber: 'INV-2026-101',
-        titleEn: 'Q1 Enterprise Fleet Telematics Subscription',
-        titleAr: 'فاتورة الربع الأول لخدمات تتبع أسطول النقل',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        linkedContractId: 'cnt-1',
-        linkedContractNumber: 'CNT-2026-081',
-        issueDate: '2026-01-05',
-        dueDate: '2026-02-05',
-        subtotal: 100000,
-        discount: 5000,
-        taxAmount: 14250,
-        total: 109250,
-        paidAmount: 109250,
-        balanceDue: 0,
-        status: 'paid',
-        notes: 'Full payment settled via wire transfer Ref #TXN-88219.',
-        createdAt: '2026-01-05',
-    },
-    {
-        id: 'inv-2',
-        invoiceNumber: 'INV-2026-102',
-        titleEn: 'Cloud Infrastructure Setup & Monthly Fee',
-        titleAr: 'فاتورة تجهيز واستضافة البنية السحابية الشهرية',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Tech Solutions',
-        companyNameAr: 'شركة حلول الرياض التقنية',
-        linkedContractId: 'cnt-2',
-        linkedContractNumber: 'CNT-2026-082',
-        issueDate: '2026-03-05',
-        dueDate: '2026-04-05',
-        subtotal: 75000,
-        discount: 0,
-        taxAmount: 11250,
-        total: 86250,
-        paidAmount: 40000,
-        balanceDue: 46250,
-        status: 'partially_paid',
-        notes: 'Initial installment received. Remaining balance scheduled for month-end.',
-        createdAt: '2026-03-05',
-    },
-    {
-        id: 'inv-3',
-        invoiceNumber: 'INV-2026-103',
-        titleEn: 'Petrochemical Site Audit & Permitting',
-        titleAr: 'فاتورة التدقيق الميداني والتراخيص البتروكيماوية',
-        companyId: 'cmp-3',
-        companyNameEn: 'Gulf Energy Trading Corp',
-        companyNameAr: 'مؤسسة طاقة الخليج التجارية',
-        linkedContractId: 'cnt-3',
-        linkedContractNumber: 'CNT-2026-083',
-        issueDate: '2026-02-20',
-        dueDate: '2026-03-20',
-        subtotal: 45000,
-        discount: 2000,
-        taxAmount: 6450,
-        total: 49450,
-        paidAmount: 0,
-        balanceDue: 49450,
-        status: 'overdue',
-        notes: 'Payment notice reminder sent to finance coordinator.',
-        createdAt: '2026-02-20',
-    },
-    {
-        id: 'inv-4',
-        invoiceNumber: 'INV-2026-104',
-        titleEn: 'Zakat Filing & Financial Governance Retainer',
-        titleAr: 'أتعاب الربع الأول للاستشارات الزكوية والمالية',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Financial Advisory Group',
-        companyNameAr: 'مجموعة نجم للاستشارات المالية',
-        linkedContractId: 'cnt-4',
-        linkedContractNumber: 'CNT-2026-084',
-        issueDate: '2026-04-01',
-        dueDate: '2026-05-01',
-        subtotal: 135000,
-        discount: 5000,
-        taxAmount: 19500,
-        total: 149500,
-        paidAmount: 0,
-        balanceDue: 149500,
-        status: 'issued',
-        notes: 'Regular milestone tax invoice issued following phase sign-off.',
-        createdAt: '2026-04-01',
-    },
-    {
-        id: 'inv-5',
-        invoiceNumber: 'INV-2026-105',
-        titleEn: 'Workforce Permitting Draft Proforma',
-        titleAr: 'مسودة مطالبة رسوم ومعاملات الكوادر المهنية',
-        companyId: 'cmp-5',
-        companyNameEn: 'Arabian Horizon Contracting',
-        companyNameAr: 'شركة الأفق العربي للمقاولات',
-        linkedContractId: 'cnt-5',
-        linkedContractNumber: 'CNT-2026-085',
-        issueDate: '2026-04-05',
-        dueDate: '2026-05-05',
-        subtotal: 50000,
-        discount: 0,
-        taxAmount: 7500,
-        total: 57500,
-        paidAmount: 0,
-        balanceDue: 57500,
-        status: 'draft',
-        notes: 'Draft bill awaiting final verification of labor headcount.',
-        createdAt: '2026-04-05',
-    },
-    {
-        id: 'inv-6',
-        invoiceNumber: 'INV-2025-091',
-        titleEn: 'Site Supervision Milestone Voided Bill',
-        titleAr: 'فاتورة الإشراف الميداني الملغاة بالتراضي',
-        companyId: 'cmp-6',
-        companyNameEn: 'Modern Infrastructure LLC',
-        companyNameAr: 'شركة البنية التحتية الحديثة',
-        linkedContractId: 'cnt-6',
-        linkedContractNumber: 'CNT-2025-045',
-        issueDate: '2025-11-01',
-        dueDate: '2025-12-01',
-        subtotal: 30000,
-        discount: 0,
-        taxAmount: 4500,
-        total: 34500,
-        paidAmount: 0,
-        balanceDue: 0,
-        status: 'cancelled',
-        notes: 'Superseded by consolidated year-end settlement.',
-        createdAt: '2025-11-01',
-    },
-];
+const INITIAL_INVOICES: CustomerInvoiceItem[] = [];
 
 const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
 
 const AVAILABLE_CONTRACTS = [
     { id: 'none', number: '— None / Ad-hoc Invoice —', numberAr: '— بدون عقد / فاتورة مباشرة —', companyId: '' },
-    { id: 'cnt-1', number: 'CNT-2026-081 (Fleet Telematics)', numberAr: 'CNT-2026-081 (تتبع الأسطول)', companyId: 'cmp-1' },
-    { id: 'cnt-2', number: 'CNT-2026-082 (Cloud Infrastructure)', numberAr: 'CNT-2026-082 (البنية السحابية)', companyId: 'cmp-2' },
-    { id: 'cnt-3', number: 'CNT-2026-083 (Site Compliance)', numberAr: 'CNT-2026-083 (الامتثال التنظيمي)', companyId: 'cmp-3' },
-    { id: 'cnt-4', number: 'CNT-2026-084 (Financial Advisory)', numberAr: 'CNT-2026-084 (الاستشارات المالية)', companyId: 'cmp-4' },
-    { id: 'cnt-5', number: 'CNT-2026-085 (Workforce Permitting)', numberAr: 'CNT-2026-085 (رخص الكوادر)', companyId: 'cmp-5' },
-    { id: 'cnt-6', number: 'CNT-2025-045 (Site Supervision)', numberAr: 'CNT-2025-045 (الإشراف الميداني)', companyId: 'cmp-6' },
 ];
 
 export const CustomerInvoicesPage: React.FC = () => {
@@ -218,9 +79,10 @@ export const CustomerInvoicesPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -422,7 +284,8 @@ export const CustomerInvoicesPage: React.FC = () => {
     const handleSaveInvoice = (e: React.FormEvent) => {
         e.preventDefault();
         const selectedComp =
-            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
 
         const sub = Number(formData.subtotal) || 0;
         const disc = Number(formData.discount) || 0;

@@ -234,10 +234,10 @@ export const AssetApprovalTasksPage: React.FC = () => {
                 nameAr: tp.nameAr,
                 groupLabelEn: 'Asset Type',
                 groupLabelAr: 'نوع أصل',
-                customerNameEn: 'mohd',
-                customerNameAr: 'محمد (mohd)',
-                companyNameEn: 'dezen company',
-                companyNameAr: 'شركة ديزن (dezen company)',
+                customerNameEn: '—',
+                customerNameAr: '—',
+                companyNameEn: '—',
+                companyNameAr: '—',
                 categoryNameEn: tp.categoryNameEn,
                 categoryNameAr: tp.categoryNameAr,
                 serialNumber: '—',
@@ -251,10 +251,10 @@ export const AssetApprovalTasksPage: React.FC = () => {
                 nameAr: cat.nameAr,
                 groupLabelEn: 'Asset Category',
                 groupLabelAr: 'تصنيف أصل',
-                customerNameEn: 'mohd',
-                customerNameAr: 'محمد (mohd)',
-                companyNameEn: 'dezen company',
-                companyNameAr: 'شركة ديزن (dezen company)',
+                customerNameEn: '—',
+                customerNameAr: '—',
+                companyNameEn: '—',
+                companyNameAr: '—',
                 categoryNameEn: cat.nameEn,
                 categoryNameAr: cat.nameAr,
                 serialNumber: '—',
@@ -268,10 +268,10 @@ export const AssetApprovalTasksPage: React.FC = () => {
                 nameAr: st.nameAr,
                 groupLabelEn: 'Asset Status',
                 groupLabelAr: 'حالة أصل',
-                customerNameEn: 'mohd',
-                customerNameAr: 'محمد (mohd)',
-                companyNameEn: 'dezen company',
-                companyNameAr: 'شركة ديزن (dezen company)',
+                customerNameEn: '—',
+                customerNameAr: '—',
+                companyNameEn: '—',
+                companyNameAr: '—',
                 categoryNameEn: 'Category Asset',
                 categoryNameAr: 'تصنيف الأصل',
                 serialNumber: '—',
@@ -285,10 +285,10 @@ export const AssetApprovalTasksPage: React.FC = () => {
                 nameAr: tg.nameAr,
                 groupLabelEn: 'Asset Tag',
                 groupLabelAr: 'وسم أصل',
-                customerNameEn: 'mohd',
-                customerNameAr: 'محمد (mohd)',
-                companyNameEn: 'dezen company',
-                companyNameAr: 'شركة ديزن (dezen company)',
+                customerNameEn: '—',
+                customerNameAr: '—',
+                companyNameEn: '—',
+                companyNameAr: '—',
                 categoryNameEn: 'Category Asset',
                 categoryNameAr: 'تصنيف الأصل',
                 serialNumber: '—',
@@ -315,7 +315,7 @@ export const AssetApprovalTasksPage: React.FC = () => {
         return list;
     }, [assets, assetTypes, assetCategories, assetStatuses, assetTags, editingTask]);
 
-    const defaultAssetId = targetRecordOptions[0]?.id || 'ASTID002';
+    const defaultAssetId = targetRecordOptions[0]?.id || '';
 
     const [formState, setFormState] = useState<ApprovalTaskFormState>({
         taskTitleEn: '',
@@ -323,10 +323,10 @@ export const AssetApprovalTasksPage: React.FC = () => {
         requestTypeEn: ASSET_APPROVAL_REQUEST_TYPES[0].valueEn,
         stageNameEn: ASSET_APPROVAL_REQUEST_TYPES[0].defaultStageEn,
         priority: 'High',
-        assignedApproverEn: ASSET_APPROVER_OPTIONS[0].nameEn,
-        requestedByEn: 'Dezen Team',
-        requestedByEmail: 'abdul.basith@dezensolutions.org',
-        dueDate: '25.09.2026',
+        assignedApproverEn: ASSET_APPROVER_OPTIONS[0]?.nameEn || '',
+        requestedByEn: '',
+        requestedByEmail: '',
+        dueDate: '',
         status: 'Pending',
         remarksEn: '',
     });
@@ -655,14 +655,14 @@ export const AssetApprovalTasksPage: React.FC = () => {
             taskTitleEn: firstTarget
                 ? `${firstReqType.valueEn} Verification for ${firstTarget.nameEn} (${firstTarget.id})`
                 : '',
-            assetId: firstTarget?.id || 'ASTID002',
+            assetId: firstTarget?.id || '',
             requestTypeEn: firstReqType.valueEn,
             stageNameEn: firstReqType.defaultStageEn,
             priority: 'High',
-            assignedApproverEn: ASSET_APPROVER_OPTIONS[0].nameEn,
-            requestedByEn: 'Dezen Team',
-            requestedByEmail: 'abdul.basith@dezensolutions.org',
-            dueDate: '25.09.2026',
+            assignedApproverEn: ASSET_APPROVER_OPTIONS[0]?.nameEn || '',
+            requestedByEn: '',
+            requestedByEmail: '',
+            dueDate: '',
             status: 'Pending',
             remarksEn: '',
         });
@@ -743,19 +743,27 @@ export const AssetApprovalTasksPage: React.FC = () => {
         const matchedApprover =
             ASSET_APPROVER_OPTIONS.find(
                 (ap) => ap.nameEn.toLowerCase() === formState.assignedApproverEn.toLowerCase()
-            ) || ASSET_APPROVER_OPTIONS[0];
+            ) ||
+            ASSET_APPROVER_OPTIONS[0] || {
+                id: 'unassigned',
+                nameEn: formState.assignedApproverEn || editingTask?.assignedApproverEn || '—',
+                nameAr: editingTask?.assignedApproverAr || formState.assignedApproverEn || '—',
+                roleEn: editingTask?.approverRoleEn || 'Asset Governance Lead',
+                roleAr: editingTask?.approverRoleAr || 'قائد حوكمة الأصول',
+                email: '',
+            };
 
         const assetNameEn = matchedTarget?.nameEn || editingTask?.assetNameEn || 'New Type Asset';
         const assetNameAr = matchedTarget?.nameAr || editingTask?.assetNameAr || 'نوع أصل جديد';
-        const customerNameEn = matchedTarget?.customerNameEn || editingTask?.customerNameEn || 'mohd';
+        const customerNameEn = matchedTarget?.customerNameEn || editingTask?.customerNameEn || '—';
         const customerNameAr =
-            matchedTarget?.customerNameAr || editingTask?.customerNameAr || 'محمد (mohd)';
+            matchedTarget?.customerNameAr || editingTask?.customerNameAr || '—';
         const companyNameEn =
-            matchedTarget?.companyNameEn || editingTask?.companyNameEn || 'dezen company';
+            matchedTarget?.companyNameEn || editingTask?.companyNameEn || '—';
         const companyNameAr =
             matchedTarget?.companyNameAr ||
             editingTask?.companyNameAr ||
-            'شركة ديزن (dezen company)';
+            '—';
         const categoryNameEn =
             matchedTarget?.categoryNameEn || editingTask?.categoryNameEn || 'Category Asset';
         const categoryNameAr =
@@ -787,8 +795,6 @@ export const AssetApprovalTasksPage: React.FC = () => {
                 : trimmedRequestedBy;
             const requestedByAr = requesterUnchanged
                 ? editingTask.requestedByAr
-                : trimmedRequestedBy === 'Dezen Team'
-                ? 'فريق ديزن (Dezen Team)'
                 : trimmedRequestedBy;
 
             const remarksUnchanged =
@@ -895,10 +901,7 @@ export const AssetApprovalTasksPage: React.FC = () => {
                 requestTypeAr: matchedReqType.valueAr,
                 priority: formState.priority,
                 requestedByEn: trimmedRequestedBy,
-                requestedByAr:
-                    trimmedRequestedBy === 'Dezen Team'
-                        ? 'فريق ديزن (Dezen Team)'
-                        : trimmedRequestedBy,
+                requestedByAr: trimmedRequestedBy,
                 requestedByEmail: trimmedEmail,
                 assignedApproverEn: matchedApprover.nameEn,
                 assignedApproverAr: matchedApprover.nameAr,

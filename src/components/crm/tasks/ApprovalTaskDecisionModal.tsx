@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
     X,
     CheckCircle2,
@@ -8,7 +9,7 @@ import {
     FileCheck2,
     UserCheck,
 } from 'lucide-react';
-import { CRM_SALES_EMPLOYEES } from '../../../api/api';
+import { crmApi, CRM_SALES_EMPLOYEES } from '../../../api/api';
 import type {
     CrmApprovalTaskRecord,
     CrmApprovalTaskDecisionInput,
@@ -42,12 +43,17 @@ export const ApprovalTaskDecisionModal: React.FC<
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
     const activeKey = isOpen && task ? `${task.id}:${mode}` : '';
     const [lastKey, setLastKey] = useState(activeKey);
     const [rejectionReason, setRejectionReason] = useState('');
     const [decisionRemarks, setDecisionRemarks] = useState('');
     const [decidedBy, setDecidedBy] = useState(
-        task?.assignedApproverNameEn || 'Karim Wagdi'
+        task?.assignedApproverNameEn || ''
     );
     const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -55,7 +61,7 @@ export const ApprovalTaskDecisionModal: React.FC<
         setLastKey(activeKey);
         setRejectionReason('');
         setDecisionRemarks('');
-        setDecidedBy(task?.assignedApproverNameEn || 'Karim Wagdi');
+        setDecidedBy(task?.assignedApproverNameEn || '');
         setValidationError(null);
     }
 
@@ -86,14 +92,14 @@ export const ApprovalTaskDecisionModal: React.FC<
             }
         }
         setValidationError(null);
-        const matchedEmp = CRM_SALES_EMPLOYEES.find(
+        const matchedEmp = employees.find(
             (emp) => emp.nameEn === decidedBy
         );
         onConfirm(task.id, mode, {
             decidedBy:
                 decidedBy.trim() ||
                 task.assignedApproverNameEn ||
-                'Karim Wagdi',
+                '',
             decidedByAr: matchedEmp?.nameAr || task.assignedApproverNameAr,
             actorEmail: matchedEmp?.email,
             decisionRemarks: decisionRemarks.trim() || undefined,
@@ -253,7 +259,20 @@ export const ApprovalTaskDecisionModal: React.FC<
                             onChange={(e) => setDecidedBy(e.target.value)}
                             className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-medium text-[#0D0D0D] focus:outline-none focus:border-[#2D3F2C]"
                         >
-                            {CRM_SALES_EMPLOYEES.map((emp) => (
+                            {task.assignedApproverNameEn &&
+                                !employees.some(
+                                    (emp) =>
+                                        emp.nameEn ===
+                                        task.assignedApproverNameEn
+                                ) && (
+                                    <option value={task.assignedApproverNameEn}>
+                                        {isRtl
+                                            ? task.assignedApproverNameAr ||
+                                              task.assignedApproverNameEn
+                                            : task.assignedApproverNameEn}
+                                    </option>
+                                )}
+                            {employees.map((emp) => (
                                 <option key={emp.id} value={emp.nameEn}>
                                     {isRtl ? emp.nameAr : emp.nameEn} —{' '}
                                     {isRtl ? emp.roleAr : emp.roleEn}

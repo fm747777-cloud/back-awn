@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
     X,
     ShieldCheck,
@@ -10,7 +11,7 @@ import {
     Code2,
     Database,
 } from 'lucide-react';
-import { CRM_SALES_EMPLOYEES } from '../../../api/api';
+import { crmApi, CRM_SALES_EMPLOYEES } from '../../../api/api';
 import type {
     CrmAuditTrailEntry,
     CrmAuditAction,
@@ -41,6 +42,11 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
 
     useEffect(() => {
         if (!isOpen) return;
@@ -78,7 +84,7 @@ export const AuditTrailViewDrawer: React.FC<AuditTrailViewDrawerProps> = ({
         return iso.replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
     };
 
-    const matchedEmp = CRM_SALES_EMPLOYEES.find(
+    const matchedEmp = employees.find(
         (emp) => emp.nameEn.toLowerCase() === entry.actorName.toLowerCase()
     );
     const actorDisplayName = isRtl

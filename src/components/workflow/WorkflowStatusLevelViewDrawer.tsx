@@ -1,31 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    X,
-    Eye,
-    Pencil,
-    Power,
-    ShieldCheck,
-    Clock,
-    UserCheck,
-    Layers,
-    Database,
-    Calendar,
-    MessageSquare,
-} from 'lucide-react';
-import {
-    type WorkflowStatusLevelRecord,
-    type WorkflowSource,
-} from '../../pages/workflow/workflowMockData';
-
-const SOURCE_BADGE_STYLES: Record<WorkflowSource, string> = {
-    CRM: 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/25',
-    ASSET: 'bg-[#037F8C]/10 text-[#037F8C] border-[#037F8C]/25',
-    REQUEST: 'bg-[#8C6046]/12 text-[#8C6046] border-[#8C6046]/25',
-    SERVICE: 'bg-[#6A7358]/12 text-[#6A7358] border-[#6A7358]/25',
-    TICKETING: 'bg-[#BFAB93]/25 text-[#5C4938] border-[#BFAB93]/50',
-    EDMS: 'bg-[#857E74]/15 text-[#524D46] border-[#857E74]/30',
-};
+import { X, Pencil, Power } from 'lucide-react';
+import { type WorkflowStatusLevelRecord } from '../../pages/workflow/workflowMockData';
+import { WORKFLOW_SOURCE_BADGE_STYLES } from '../../pages/workflow/workflowUtils';
 
 interface WorkflowStatusLevelViewDrawerProps {
     record: WorkflowStatusLevelRecord | null;
@@ -99,7 +76,7 @@ export const WorkflowStatusLevelViewDrawer: React.FC<WorkflowStatusLevelViewDraw
                                 <div className="mt-1">
                                     <span
                                         className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
-                                            SOURCE_BADGE_STYLES[record.source]
+                                            WORKFLOW_SOURCE_BADGE_STYLES[record.source]
                                         }`}
                                     >
                                         {record.source}

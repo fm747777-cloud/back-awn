@@ -50,116 +50,7 @@ export interface CustomerQuotationItem {
 
 const STORAGE_KEY = 'awn_customer_quotations_v1';
 
-const INITIAL_QUOTATIONS: CustomerQuotationItem[] = [
-    {
-        id: 'qt-1',
-        quotationNumber: 'QT-2026-101',
-        titleEn: 'Enterprise Fleet Telematics & SLA Package',
-        titleAr: 'حزمة إدارة وتتبع أسطول النقل اللوجستي',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        issueDate: '2026-09-01',
-        expiryDate: '2026-10-31',
-        subtotal: 400000,
-        discount: 20000,
-        taxAmount: 57000,
-        total: 437000,
-        status: 'accepted',
-        notes: 'Includes 12-month tier-1 operational SLA and maintenance guarantees.',
-        createdAt: '2026-09-01',
-    },
-    {
-        id: 'qt-2',
-        quotationNumber: 'QT-2026-102',
-        titleEn: 'Cloud Data Center Infrastructure & Support',
-        titleAr: 'البنية التحتية لمركز البيانات السحابي والدعم',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Tech Solutions',
-        companyNameAr: 'شركة حلول الرياض التقنية',
-        issueDate: '2026-09-15',
-        expiryDate: '2026-11-15',
-        subtotal: 300000,
-        discount: 0,
-        taxAmount: 45000,
-        total: 345000,
-        status: 'sent',
-        notes: 'Dedicated virtual servers, 24/7 incident response, and failover site.',
-        createdAt: '2026-09-15',
-    },
-    {
-        id: 'qt-3',
-        quotationNumber: 'QT-2026-103',
-        titleEn: 'Petrochemical Logistics Branch Compliance',
-        titleAr: 'تراخيص وامتثال فرع الخدمات البتروكيماوية',
-        companyId: 'cmp-3',
-        companyNameEn: 'Gulf Energy Trading Corp',
-        companyNameAr: 'مؤسسة طاقة الخليج التجارية',
-        issueDate: '2026-09-20',
-        expiryDate: '2026-11-20',
-        subtotal: 170000,
-        discount: 5000,
-        taxAmount: 24750,
-        total: 189750,
-        status: 'sent',
-        notes: 'Environmental authority permitting and hazardous transport licenses.',
-        createdAt: '2026-09-20',
-    },
-    {
-        id: 'qt-4',
-        quotationNumber: 'QT-2026-104',
-        titleEn: 'Corporate Financial Regulatory Advisory',
-        titleAr: 'الاستشارات النظامية للحوكمة المالية المؤسسية',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Financial Advisory Group',
-        companyNameAr: 'مجموعة نجم للاستشارات المالية',
-        issueDate: '2026-08-10',
-        expiryDate: '2026-09-30',
-        subtotal: 550000,
-        discount: 25000,
-        taxAmount: 78750,
-        total: 603750,
-        status: 'accepted',
-        notes: 'Zakat and tax audit structuring advisory.',
-        createdAt: '2026-08-10',
-    },
-    {
-        id: 'qt-5',
-        quotationNumber: 'QT-2026-105',
-        titleEn: 'Comprehensive Workforce Residency Renewals',
-        titleAr: 'إدارة تجديد إقامات ورخص الكوادر المهنية',
-        companyId: 'cmp-5',
-        companyNameEn: 'Arabian Horizon Contracting',
-        companyNameAr: 'شركة الأفق العربي للمقاولات',
-        issueDate: '2026-10-01',
-        expiryDate: '2026-12-01',
-        subtotal: 210000,
-        discount: 10000,
-        taxAmount: 30000,
-        total: 230000,
-        status: 'draft',
-        notes: 'Covers 50 workforce permits and labor office documentation.',
-        createdAt: '2026-10-01',
-    },
-    {
-        id: 'qt-6',
-        quotationNumber: 'QT-2026-106',
-        titleEn: 'Industrial Site Civil Works Consultation',
-        titleAr: 'استشارات الأعمال المدنية للمنشآت الصناعية',
-        companyId: 'cmp-6',
-        companyNameEn: 'Modern Infrastructure LLC',
-        companyNameAr: 'شركة البنية التحتية الحديثة',
-        issueDate: '2026-07-01',
-        expiryDate: '2026-08-15',
-        subtotal: 160000,
-        discount: 0,
-        taxAmount: 24000,
-        total: 184000,
-        status: 'expired',
-        notes: 'Expired proposal without formal renewal request.',
-        createdAt: '2026-07-01',
-    },
-];
+const INITIAL_QUOTATIONS: CustomerQuotationItem[] = [];
 
 const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
 
@@ -174,9 +65,10 @@ export const CustomerQuotationsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -363,7 +255,9 @@ export const CustomerQuotationsPage: React.FC = () => {
     // Save (Add or Edit)
     const handleSaveQuotation = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedComp = AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+        const selectedComp =
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
 
         const sub = Number(formData.subtotal) || 0;
         const disc = Number(formData.discount) || 0;

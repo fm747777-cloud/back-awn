@@ -42,110 +42,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const INITIAL_DEPARTMENTS: CustomerDepartmentItem[] = [
-    {
-        id: 'dep-1',
-        code: 'DEP-101',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Supply Chain & Fleet Operations',
-        nameAr: 'إدارة سلاسل الإمداد وعمليات الأسطول',
-        managerNameEn: 'Saad Al-Ghamdi',
-        managerNameAr: 'سعد الغامدي',
-        headcount: 48,
-        budgetSar: 1250000,
-        status: 'active',
-        descriptionEn: 'Manages regional transportation hubs, logistics routes, and fleet dispatch.',
-        descriptionAr: 'مسؤولة عن إدارة المراكز اللوجستية الإقليمية ومسارات النقل وتشغيل الأسطول.',
-        createdAt: '2026-01-15',
-    },
-    {
-        id: 'dep-2',
-        code: 'DEP-102',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        nameEn: 'Plant Engineering & Production',
-        nameAr: 'الهندسة الصناعية وخطوط الإنتاج',
-        managerNameEn: 'Eng. Fahad Al-Mutairi',
-        managerNameAr: 'م. فهد المطيري',
-        headcount: 85,
-        budgetSar: 2800000,
-        status: 'active',
-        descriptionEn: 'Industrial maintenance, quality assurance, and manufacturing lines supervisory.',
-        descriptionAr: 'الصيانة الصناعية وضمان الجودة ومتابعة تشغيل خطوط الإنتاج بالمصانع.',
-        createdAt: '2026-01-20',
-    },
-    {
-        id: 'dep-3',
-        code: 'DEP-103',
-        companyId: 'cmp-3',
-        companyNameEn: 'Tamweel Capital Partners',
-        companyNameAr: 'تمويل كابيتال المالية',
-        nameEn: 'Corporate Finance & Risk Analysis',
-        nameAr: 'المالية العامة وإدارة المخاطر',
-        managerNameEn: 'Laila Al-Qahtani',
-        managerNameAr: 'ليلى القحطاني',
-        headcount: 22,
-        budgetSar: 950000,
-        status: 'active',
-        descriptionEn: 'Financial compliance, corporate accounting, credit evaluation, and audit.',
-        descriptionAr: 'الامتثال المالي والمحاسبة المؤسسية وتقييم الائتمان والمراجعة الداخلية.',
-        createdAt: '2026-02-01',
-    },
-    {
-        id: 'dep-4',
-        code: 'DEP-104',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        nameEn: 'Medical Compliance & Licensing',
-        nameAr: 'الامتثال الطبي والتراخيص الصحية',
-        managerNameEn: 'Dr. Tariq Al-Shehri',
-        managerNameAr: 'د. طارق الشهري',
-        headcount: 34,
-        budgetSar: 1450000,
-        status: 'active',
-        descriptionEn: 'Supervises MOH regulations, clinical credentials, and institutional accreditation.',
-        descriptionAr: 'الإشراف على اشتراطات وزارة الصحة وتراخيص الممارسين والاعتمادات المؤسسية.',
-        createdAt: '2026-02-10',
-    },
-    {
-        id: 'dep-5',
-        code: 'DEP-105',
-        companyId: 'cmp-5',
-        companyNameEn: 'Horizon Digital Technologies',
-        companyNameAr: 'تقنيات الأفق الرقمية',
-        nameEn: 'Cloud Engineering & Cybersecurity',
-        nameAr: 'هندسة السحابة والأمن السيبراني',
-        managerNameEn: 'Omar Al-Zahrani',
-        managerNameAr: 'عمر الزهراني',
-        headcount: 19,
-        budgetSar: 1100000,
-        status: 'active',
-        descriptionEn: 'Infrastructure automation, zero-trust cybersecurity, and enterprise cloud solutions.',
-        descriptionAr: 'أتمتة البنية التحتية وحلول الأمن السيبراني والأنظمة السحابية للشركات.',
-        createdAt: '2026-02-18',
-    },
-    {
-        id: 'dep-6',
-        code: 'DEP-106',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        nameEn: 'Guest Services & Facility Operations',
-        nameAr: 'خدمات النزلاء وتشغيل المرافق',
-        managerNameEn: 'Reem Al-Dossary',
-        managerNameAr: 'ريم الدوسري',
-        headcount: 62,
-        budgetSar: 1900000,
-        status: 'inactive',
-        descriptionEn: 'Hospitality logistics, customer relations, and resort facility maintenance.',
-        descriptionAr: 'اللوجستيات الفندقية وعلاقات النزلاء وصيانة المرافق السياحية والمنتجعات.',
-        createdAt: '2026-02-28',
-    },
-];
+const INITIAL_DEPARTMENTS: CustomerDepartmentItem[] = [];
 
 export const CustomerDepartmentsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -158,9 +55,10 @@ export const CustomerDepartmentsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -193,7 +91,7 @@ export const CustomerDepartmentsPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         nameEn: '',
         nameAr: '',
         managerNameEn: '',
@@ -278,7 +176,7 @@ export const CustomerDepartmentsPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: `DEP-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             nameEn: '',
             nameAr: '',
             managerNameEn: '',
@@ -333,7 +231,8 @@ export const CustomerDepartmentsPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingDepartmentId) {
             setDepartments((prev) =>

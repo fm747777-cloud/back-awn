@@ -53,161 +53,9 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const DEMO_DEPARTMENTS = [
-    { id: 'dep-1', companyId: 'cmp-1', nameEn: 'Supply Chain & Fleet Operations', nameAr: 'إدارة سلاسل الإمداد وعمليات الأسطول' },
-    { id: 'dep-2', companyId: 'cmp-2', nameEn: 'Plant Engineering & Production', nameAr: 'الهندسة الصناعية وخطوط الإنتاج' },
-    { id: 'dep-3', companyId: 'cmp-3', nameEn: 'Corporate Finance & Risk Analysis', nameAr: 'المالية العامة وإدارة المخاطر' },
-    { id: 'dep-4', companyId: 'cmp-4', nameEn: 'Medical Compliance & Licensing', nameAr: 'الامتثال الطبي والتراخيص الصحية' },
-    { id: 'dep-5', companyId: 'cmp-5', nameEn: 'Cloud Engineering & Cybersecurity', nameAr: 'هندسة السحابة والأمن السيبراني' },
-    { id: 'dep-6', companyId: 'cmp-6', nameEn: 'Guest Services & Facility Operations', nameAr: 'خدمات النزلاء وتشغيل المرافق' },
-];
+const DEMO_DEPARTMENTS: { id: string; companyId: string; nameEn: string; nameAr: string }[] = [];
 
-const INITIAL_EMPLOYEES: CustomerEmployeeItem[] = [
-    {
-        id: 'emp-1',
-        employeeCode: 'EMP-301',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        departmentId: 'dep-1',
-        departmentNameEn: 'Supply Chain & Fleet Operations',
-        departmentNameAr: 'إدارة سلاسل الإمداد وعمليات الأسطول',
-        nameEn: 'Bandar Al-Harbi',
-        nameAr: 'بندر الحربي',
-        jobTitleEn: 'Fleet Logistics Specialist',
-        jobTitleAr: 'أخصائي لوجستيات الأسطول',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودي',
-        nationalIdOrIqama: '1088492011',
-        gosiNumber: '90823411',
-        contractType: 'full_time',
-        phone: '+966 50 119 2831',
-        email: 'b.harbi@wataniya-logistics.sa',
-        status: 'active',
-        joinDate: '2024-03-01',
-        notes: 'Lead dispatcher for western province haulage routes.',
-    },
-    {
-        id: 'emp-2',
-        employeeCode: 'EMP-302',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        departmentId: 'dep-2',
-        departmentNameEn: 'Plant Engineering & Production',
-        departmentNameAr: 'الهندسة الصناعية وخطوط الإنتاج',
-        nameEn: 'Eng. Ahmed Mansour',
-        nameAr: 'م. أحمد منصور',
-        jobTitleEn: 'Senior Automation Engineer',
-        jobTitleAr: 'مهندس أول أتمتة صناعية',
-        nationalityEn: 'Egypt',
-        nationalityAr: 'مصري',
-        nationalIdOrIqama: '2349182044',
-        gosiNumber: '71928302',
-        contractType: 'full_time',
-        phone: '+966 54 991 4022',
-        email: 'a.mansour@riyadh-ind.sa',
-        status: 'active',
-        joinDate: '2023-08-15',
-        notes: 'Transferrable Iqama; certified Siemens PLC automation systems.',
-    },
-    {
-        id: 'emp-3',
-        employeeCode: 'EMP-303',
-        companyId: 'cmp-3',
-        companyNameEn: 'Tamweel Capital Partners',
-        companyNameAr: 'تمويل كابيتال المالية',
-        departmentId: 'dep-3',
-        departmentNameEn: 'Corporate Finance & Risk Analysis',
-        departmentNameAr: 'المالية العامة وإدارة المخاطر',
-        nameEn: 'Sara Al-Ghamdi',
-        nameAr: 'سارة الغامدي',
-        jobTitleEn: 'Financial Compliance Auditor',
-        jobTitleAr: 'مدقق امتثال مالي',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودية',
-        nationalIdOrIqama: '1099238192',
-        gosiNumber: '88192033',
-        contractType: 'full_time',
-        phone: '+966 55 421 8839',
-        email: 's.ghamdi@tamweel-capital.sa',
-        status: 'active',
-        joinDate: '2025-01-10',
-        notes: 'SOCPA certified; oversees corporate governance compliance.',
-    },
-    {
-        id: 'emp-4',
-        employeeCode: 'EMP-304',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        departmentId: 'dep-4',
-        departmentNameEn: 'Medical Compliance & Licensing',
-        departmentNameAr: 'الامتثال الطبي والتراخيص الصحية',
-        nameEn: 'Dr. Ziyad Al-Farhan',
-        nameAr: 'د. زياد الفرحان',
-        jobTitleEn: 'Clinical Quality Consultant',
-        jobTitleAr: 'استشاري جودة سريرية',
-        nationalityEn: 'Jordan',
-        nationalityAr: 'أردني',
-        nationalIdOrIqama: '2418902311',
-        gosiNumber: '66281944',
-        contractType: 'contractor',
-        phone: '+966 56 312 9011',
-        email: 'z.farhan@najm-health.sa',
-        status: 'active',
-        joinDate: '2024-11-01',
-        notes: 'SCFHS licensed medical consultant.',
-    },
-    {
-        id: 'emp-5',
-        employeeCode: 'EMP-305',
-        companyId: 'cmp-5',
-        companyNameEn: 'Horizon Digital Technologies',
-        companyNameAr: 'تقنيات الأفق الرقمية',
-        departmentId: 'dep-5',
-        departmentNameEn: 'Cloud Engineering & Cybersecurity',
-        departmentNameAr: 'هندسة السحابة والأمن السيبراني',
-        nameEn: 'Nasser Al-Subaie',
-        nameAr: 'ناصر السبيعي',
-        jobTitleEn: 'Senior SecOps Specialist',
-        jobTitleAr: 'أخصائي أول أمن المعلومات',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودي',
-        nationalIdOrIqama: '1072938101',
-        gosiNumber: '55192034',
-        contractType: 'full_time',
-        phone: '+966 53 881 2940',
-        email: 'n.subaie@horizon-tech.sa',
-        status: 'on_leave',
-        joinDate: '2024-05-15',
-        notes: 'On annual paternity leave until end of month.',
-    },
-    {
-        id: 'emp-6',
-        employeeCode: 'EMP-306',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        departmentId: 'dep-6',
-        departmentNameEn: 'Guest Services & Facility Operations',
-        departmentNameAr: 'خدمات النزلاء وتشغيل المرافق',
-        nameEn: 'Hassan Al-Baqami',
-        nameAr: 'حسن البقمي',
-        jobTitleEn: 'Site Operations Supervisor',
-        jobTitleAr: 'مشرف عمليات الموقع',
-        nationalityEn: 'Saudi Arabia',
-        nationalityAr: 'سعودي',
-        nationalIdOrIqama: '1061829032',
-        gosiNumber: '44819201',
-        contractType: 'full_time',
-        phone: '+966 59 123 7744',
-        email: 'h.baqami@redsea-hospitality.sa',
-        status: 'inactive',
-        joinDate: '2023-10-01',
-        notes: 'Resigned and cleared GOSI termination filing.',
-    },
-];
+const INITIAL_EMPLOYEES: CustomerEmployeeItem[] = [];
 
 export const CustomerEmployeesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -220,9 +68,10 @@ export const CustomerEmployeesPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -256,8 +105,8 @@ export const CustomerEmployeesPage: React.FC = () => {
     // Form state
     const [formData, setFormData] = useState({
         employeeCode: '',
-        companyId: DEMO_COMPANIES[0].id,
-        departmentId: DEMO_DEPARTMENTS[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
+        departmentId: DEMO_DEPARTMENTS[0]?.id || '',
         nameEn: '',
         nameAr: '',
         jobTitleEn: '',
@@ -358,8 +207,8 @@ export const CustomerEmployeesPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             employeeCode: `EMP-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
-            departmentId: DEMO_DEPARTMENTS[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
+            departmentId: DEMO_DEPARTMENTS[0]?.id || '',
             nameEn: '',
             nameAr: '',
             jobTitleEn: '',
@@ -428,8 +277,10 @@ export const CustomerEmployeesPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
-        const dept = DEMO_DEPARTMENTS.find((d) => d.id === formData.departmentId) || DEMO_DEPARTMENTS[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
+        const dept = DEMO_DEPARTMENTS.find((d) => d.id === formData.departmentId) ||
+            DEMO_DEPARTMENTS[0] || { id: formData.departmentId || '', companyId: comp.id, nameEn: '—', nameAr: '—' };
 
         if (editingEmployeeId) {
             setEmployees((prev) =>

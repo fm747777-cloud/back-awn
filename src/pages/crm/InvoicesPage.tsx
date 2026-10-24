@@ -156,6 +156,11 @@ export const InvoicesPage: React.FC = () => {
         queryFn: () => crmApi.quotations.getServiceCatalog(),
     });
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
     const invalidateAll = () => {
         queryClient.invalidateQueries({ queryKey: ['crm'] });
     };
@@ -677,7 +682,7 @@ export const InvoicesPage: React.FC = () => {
                         <option value="all">
                             {t('crm.commercial.common.allEmployees')}
                         </option>
-                        {CRM_SALES_EMPLOYEES.map((emp) => (
+                        {employees.map((emp) => (
                             <option key={emp.id} value={emp.id}>
                                 {isRtl ? emp.nameAr : emp.nameEn}
                             </option>
@@ -1065,7 +1070,7 @@ export const InvoicesPage: React.FC = () => {
                 deals={deals}
                 quotations={quotations}
                 contracts={contracts}
-                employees={CRM_SALES_EMPLOYEES}
+                employees={employees}
                 catalogItems={catalogItems}
                 taxes={taxesRes?.data || []}
                 isSubmitting={

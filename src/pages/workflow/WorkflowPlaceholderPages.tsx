@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-    FolderKanban,
     ListFilter,
     Mail,
     ShieldCheck,
@@ -110,15 +109,6 @@ const WorkflowSectionPlaceholder: React.FC<WorkflowSectionPlaceholderProps> = ({
         </div>
     );
 };
-
-export const WorkflowMastersPlaceholderPage: React.FC = () => (
-    <WorkflowSectionPlaceholder
-        titleKey="workflow.placeholders.mastersTitle"
-        descKey="workflow.placeholders.mastersDesc"
-        code="WFL-MST"
-        icon={FolderKanban}
-    />
-);
 
 export const WorkflowStatusLevelsPlaceholderPage: React.FC = () => (
     <WorkflowSectionPlaceholder

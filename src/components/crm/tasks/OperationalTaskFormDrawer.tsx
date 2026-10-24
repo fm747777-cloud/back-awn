@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { X, AlertCircle, ClipboardList } from 'lucide-react';
 import {
+    crmApi,
     CRM_SALES_EMPLOYEES,
     type CrmOperationalRelatedEntityOption,
 } from '../../../api/api';
@@ -47,6 +49,12 @@ export const OperationalTaskFormDrawer: React.FC<
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
+    const defaultEmp = employees[0];
     const defaultDueDate = DEFAULT_DUE_DATE;
 
     const {
@@ -70,15 +78,15 @@ export const OperationalTaskFormDrawer: React.FC<
             companyNameEn: '',
             companyNameAr: '',
             priority: 'High',
-            taskStatus: 'Assigned',
+            taskStatus: defaultEmp ? 'Assigned' : 'Pending',
             dueDate: defaultDueDate,
-            assignedSpecialistId: CRM_SALES_EMPLOYEES[0].id,
-            assignedSpecialistNameEn: CRM_SALES_EMPLOYEES[0].nameEn,
-            assignedSpecialistNameAr: CRM_SALES_EMPLOYEES[0].nameAr,
-            departmentEn: CRM_SALES_EMPLOYEES[0].departmentEn,
-            departmentAr: CRM_SALES_EMPLOYEES[0].departmentAr,
-            designationEn: CRM_SALES_EMPLOYEES[0].roleEn,
-            designationAr: CRM_SALES_EMPLOYEES[0].roleAr,
+            assignedSpecialistId: defaultEmp?.id || '',
+            assignedSpecialistNameEn: defaultEmp?.nameEn || '',
+            assignedSpecialistNameAr: defaultEmp?.nameAr || '',
+            departmentEn: defaultEmp?.departmentEn || '',
+            departmentAr: defaultEmp?.departmentAr || '',
+            designationEn: defaultEmp?.roleEn || '',
+            designationAr: defaultEmp?.roleAr || '',
             notes: '',
         },
     });
@@ -90,7 +98,7 @@ export const OperationalTaskFormDrawer: React.FC<
     const selectedSpecialistId =
         useWatch({ control, name: 'assignedSpecialistId' }) || '';
     const currentTaskStatus =
-        useWatch({ control, name: 'taskStatus' }) || 'Assigned';
+        useWatch({ control, name: 'taskStatus' }) || 'Pending';
 
     useEffect(() => {
         if (!isOpen) return;
@@ -122,7 +130,7 @@ export const OperationalTaskFormDrawer: React.FC<
             const firstDeal = relatedEntities.find(
                 (r) => r.entityType === 'Deal'
             );
-            const firstEmp = CRM_SALES_EMPLOYEES[0];
+            const firstEmp = employees[0];
             reset({
                 titleEn: '',
                 titleAr: '',
@@ -135,19 +143,19 @@ export const OperationalTaskFormDrawer: React.FC<
                 companyNameEn: firstDeal?.companyNameEn || '',
                 companyNameAr: firstDeal?.companyNameAr || '',
                 priority: 'High',
-                taskStatus: 'Assigned',
+                taskStatus: firstEmp ? 'Assigned' : 'Pending',
                 dueDate: defaultDueDate,
-                assignedSpecialistId: firstEmp.id,
-                assignedSpecialistNameEn: firstEmp.nameEn,
-                assignedSpecialistNameAr: firstEmp.nameAr,
-                departmentEn: firstEmp.departmentEn,
-                departmentAr: firstEmp.departmentAr,
-                designationEn: firstEmp.roleEn,
-                designationAr: firstEmp.roleAr,
+                assignedSpecialistId: firstEmp?.id || '',
+                assignedSpecialistNameEn: firstEmp?.nameEn || '',
+                assignedSpecialistNameAr: firstEmp?.nameAr || '',
+                departmentEn: firstEmp?.departmentEn || '',
+                departmentAr: firstEmp?.departmentAr || '',
+                designationEn: firstEmp?.roleEn || '',
+                designationAr: firstEmp?.roleAr || '',
                 notes: '',
             });
         }
-    }, [isOpen, mode, record, relatedEntities, reset, defaultDueDate]);
+    }, [isOpen, mode, record, relatedEntities, employees, reset, defaultDueDate]);
 
     const filteredRelatedOptions = relatedEntities.filter(
         (opt) => opt.entityType === selectedEntityType
@@ -205,7 +213,7 @@ export const OperationalTaskFormDrawer: React.FC<
             }
             return;
         }
-        const emp = CRM_SALES_EMPLOYEES.find((e) => e.id === empId);
+        const emp = employees.find((e) => e.id === empId);
         if (emp) {
             setValue('assignedSpecialistNameEn', emp.nameEn);
             setValue('assignedSpecialistNameAr', emp.nameAr);
@@ -455,7 +463,7 @@ export const OperationalTaskFormDrawer: React.FC<
                                         'crm.workflow.operationalTasks.filters.unassigned'
                                     )}
                                 </option>
-                                {CRM_SALES_EMPLOYEES.map((emp) => (
+                                {employees.map((emp) => (
                                     <option key={emp.id} value={emp.id}>
                                         {isRtl ? emp.nameAr : emp.nameEn} —{' '}
                                         {isRtl ? emp.roleAr : emp.roleEn}

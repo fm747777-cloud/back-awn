@@ -16,15 +16,29 @@ interface AuthState {
     logout: () => void;
 }
 
-export const DEMO_DEFAULT_TOKEN = 'demo-jwt-token';
-export const DEMO_DEFAULT_USER: UserProfile = {
-    id: 'demo-admin-1',
-    type: 'Super Admin',
-    fullName: 'Karim Wagdi',
-};
-
 export const AUTH_STORAGE_KEY = 'auth';
 export const AUTH_LOGOUT_FLAG_KEY = 'awn_logged_out';
+
+function isValidPersistedToken(token: unknown): token is string {
+    return (
+        typeof token === 'string' &&
+        token.trim().length > 0 &&
+        token !== 'null' &&
+        token !== 'demo-jwt-token'
+    );
+}
+
+function isValidPersistedUser(user: unknown): user is UserProfile {
+    if (!user || typeof user !== 'object') return false;
+    const candidate = user as Partial<UserProfile>;
+    return (
+        typeof candidate.id === 'string' &&
+        candidate.id.trim().length > 0 &&
+        candidate.id !== 'demo-admin-1' &&
+        typeof candidate.fullName === 'string' &&
+        candidate.fullName.trim().length > 0
+    );
+}
 
 export function getInitialAuthState(): {
     token: string | null;
@@ -33,9 +47,9 @@ export function getInitialAuthState(): {
 } {
     if (typeof window === 'undefined') {
         return {
-            token: DEMO_DEFAULT_TOKEN,
-            user: DEMO_DEFAULT_USER,
-            isLoggedOut: false,
+            token: null,
+            user: null,
+            isLoggedOut: true,
         };
     }
 
@@ -65,53 +79,25 @@ export function getInitialAuthState(): {
 
             if (
                 stateObj &&
-                (stateObj.isLoggedOut === true ||
-                    stateObj.token === null ||
-                    (typeof stateObj.token === 'string' && stateObj.token.trim() === ''))
-            ) {
-                return {
-                    token: null,
-                    user: null,
-                    isLoggedOut: true,
-                };
-            }
-
-            if (
-                stateObj &&
-                typeof stateObj.token === 'string' &&
-                stateObj.token.trim().length > 0
+                stateObj.isLoggedOut !== true &&
+                isValidPersistedToken(stateObj.token) &&
+                isValidPersistedUser(stateObj.user)
             ) {
                 return {
                     token: stateObj.token,
-                    user: stateObj.user ?? DEMO_DEFAULT_USER,
+                    user: stateObj.user,
                     isLoggedOut: false,
                 };
             }
         }
-
-        const legacyToken = window.localStorage.getItem('token');
-        if (legacyToken !== null) {
-            if (legacyToken.trim() === '' || legacyToken === 'null') {
-                return {
-                    token: null,
-                    user: null,
-                    isLoggedOut: true,
-                };
-            }
-            return {
-                token: legacyToken,
-                user: DEMO_DEFAULT_USER,
-                isLoggedOut: false,
-            };
-        }
     } catch {
-        // Fallback to initial demo session if localStorage is inaccessible or malformed
+        // Fallback to unauthenticated state if localStorage is inaccessible or malformed
     }
 
     return {
-        token: DEMO_DEFAULT_TOKEN,
-        user: DEMO_DEFAULT_USER,
-        isLoggedOut: false,
+        token: null,
+        user: null,
+        isLoggedOut: true,
     };
 }
 
@@ -162,8 +148,8 @@ export const useAuthStore = create<AuthState>()(
                     (typeof window !== 'undefined' &&
                         window.localStorage.getItem(AUTH_LOGOUT_FLAG_KEY) === 'true') ||
                     persisted.isLoggedOut === true ||
-                    persisted.token === null ||
-                    (typeof persisted.token === 'string' && persisted.token.trim() === '');
+                    !isValidPersistedToken(persisted.token) ||
+                    !isValidPersistedUser(persisted.user);
 
                 if (explicitLogout) {
                     return {
@@ -177,11 +163,8 @@ export const useAuthStore = create<AuthState>()(
                 return {
                     ...currentState,
                     ...persisted,
-                    token:
-                        typeof persisted.token === 'string' && persisted.token.trim().length > 0
-                            ? persisted.token
-                            : currentState.token,
-                    user: persisted.user ?? currentState.user,
+                    token: persisted.token as string,
+                    user: persisted.user as UserProfile,
                     isLoggedOut: false,
                 };
             },

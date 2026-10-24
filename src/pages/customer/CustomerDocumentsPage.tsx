@@ -62,128 +62,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const SEED_DOCUMENTS: CustomerDocumentItem[] = [
-    {
-        id: 'doc-1',
-        code: 'DOC-101',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Fursan Logistics Co.',
-        companyNameAr: 'شركة الفرسان اللوجستية',
-        titleEn: 'Commercial Registration Certificate',
-        titleAr: 'شهادة السجل التجاري الرئيسي',
-        documentType: 'commercial_registration',
-        linkedEntityType: 'company',
-        linkedEntityRef: 'CR-1010345678',
-        version: 'v2.0',
-        fileName: 'fursan_cr_2026.pdf',
-        fileSize: '1.8 MB',
-        uploadDate: '2025-11-15',
-        expiryDate: '2026-11-14',
-        status: 'active',
-        notesEn: 'Verified through Ministry of Commerce Wathq gateway.',
-        notesAr: 'تم التحقق والاعتماد عبر بوابة واثق التابعة لوزارة التجارة.',
-    },
-    {
-        id: 'doc-2',
-        code: 'DOC-102',
-        companyId: 'cmp-2',
-        companyNameEn: 'Rawabi Energy Services',
-        companyNameAr: 'خدمات الروابي للطاقة',
-        titleEn: 'Zakat, Tax & Customs Authority (ZATCA) Certificate',
-        titleAr: 'شهادة الزكاة والضريبة والجمارك (ZATCA)',
-        documentType: 'tax_certificate',
-        linkedEntityType: 'contract',
-        linkedEntityRef: 'CTR-2025-019',
-        version: 'v1.1',
-        fileName: 'rawabi_zatca_tax_2026.pdf',
-        fileSize: '2.4 MB',
-        uploadDate: '2026-01-10',
-        expiryDate: '2026-04-30',
-        status: 'expiring_soon',
-        notesEn: 'Zakat clearance renewal required before Q2 close.',
-        notesAr: 'يتطلب تجديد شهادة الزكاة قبل نهاية الربع المالي الثاني.',
-    },
-    {
-        id: 'doc-3',
-        code: 'DOC-103',
-        companyId: 'cmp-3',
-        companyNameEn: 'Madaen Real Estate Group',
-        companyNameAr: 'مجموعة مدائن العقارية',
-        titleEn: 'Master Service Level Agreement (SLA)',
-        titleAr: 'اتفاقية مستوى الخدمة الإطارية المعتمدة',
-        documentType: 'sla_contract',
-        linkedEntityType: 'contract',
-        linkedEntityRef: 'CTR-2024-88',
-        version: 'v3.2',
-        fileName: 'madaen_sla_master_v3.pdf',
-        fileSize: '4.6 MB',
-        uploadDate: '2025-08-01',
-        expiryDate: '2027-07-31',
-        status: 'active',
-        notesEn: 'Executed SLA agreement covering facility services.',
-        notesAr: 'عقد مستوى الخدمة التنفيذي لإدارة المرافق والتأجير.',
-    },
-    {
-        id: 'doc-4',
-        code: 'DOC-104',
-        companyId: 'cmp-4',
-        companyNameEn: 'Safwa Medical Healthcare',
-        companyNameAr: 'صفوة الرعاية الطبية',
-        titleEn: 'MOH Healthcare Operating License',
-        titleAr: 'ترخيص تشغيل المنشأة الطبية (وزارة الصحة)',
-        documentType: 'compliance_audit',
-        linkedEntityType: 'company',
-        linkedEntityRef: 'MOH-MED-4481',
-        version: 'v1.0',
-        fileName: 'safwa_moh_license.pdf',
-        fileSize: '3.1 MB',
-        uploadDate: '2025-03-12',
-        expiryDate: '2026-03-11',
-        status: 'expired',
-        notesEn: 'Annual operating inspection report pending renewal.',
-        notesAr: 'تقرير التفتيش السنوي منتهي الصلاحية ويتطلب التجديد.',
-    },
-    {
-        id: 'doc-5',
-        code: 'DOC-105',
-        companyId: 'cmp-5',
-        companyNameEn: 'Horizon Digital Technologies',
-        companyNameAr: 'تقنيات الأفق الرقمية',
-        titleEn: 'ISO/IEC 27001 Information Security Certification',
-        titleAr: 'شهادة الآيزو لأمن المعلومات ISO 27001',
-        documentType: 'iso_certificate',
-        linkedEntityType: 'request',
-        linkedEntityRef: 'REQ-2026-081',
-        version: 'v2.1',
-        fileName: 'horizon_iso27001_cert.pdf',
-        fileSize: '1.2 MB',
-        uploadDate: '2026-02-05',
-        expiryDate: '2028-02-04',
-        status: 'under_review',
-        notesEn: 'Submitted for annual compliance audit review.',
-        notesAr: 'تم الرفع للمراجعة السنوية للامتثال والحوكمة الرقمية.',
-    },
-    {
-        id: 'doc-6',
-        code: 'DOC-106',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        titleEn: 'Commercial Power of Attorney & Authorization',
-        titleAr: 'وكالة تجارية شرعية وتفويض معتمد',
-        documentType: 'power_of_attorney',
-        linkedEntityType: 'company',
-        linkedEntityRef: 'POA-99820-2025',
-        version: 'v1.0',
-        fileName: 'redsea_legal_poa.pdf',
-        fileSize: '0.9 MB',
-        uploadDate: '2025-09-20',
-        expiryDate: '2026-09-19',
-        status: 'active',
-        notesEn: 'Authorized signatory representation authenticated by Najiz.',
-        notesAr: 'توثيق رسمي للمفوض بالتوقيع صادر عبر منصة ناجز.',
-    },
-];
+const SEED_DOCUMENTS: CustomerDocumentItem[] = [];
 
 export const CustomerDocumentsPage: React.FC = () => {
     const { i18n } = useTranslation();
@@ -195,7 +74,10 @@ export const CustomerDocumentsPage: React.FC = () => {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
             }
         } catch {
             // fallback
@@ -226,7 +108,7 @@ export const CustomerDocumentsPage: React.FC = () => {
     // Form fields
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         titleEn: '',
         titleAr: '',
         documentType: 'commercial_registration' as DocumentType,
@@ -293,12 +175,12 @@ export const CustomerDocumentsPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: nextCode,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             titleEn: '',
             titleAr: '',
             documentType: 'commercial_registration',
             linkedEntityType: 'company',
-            linkedEntityRef: 'CR-1010345678',
+            linkedEntityRef: '',
             version: 'v1.0',
             expiryDate: '2027-12-31',
             status: 'active',
@@ -347,7 +229,8 @@ export const CustomerDocumentsPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingDocId) {
             setDocuments((prev) =>

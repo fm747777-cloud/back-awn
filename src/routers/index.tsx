@@ -39,7 +39,6 @@ const RequestAuditTrailPage = () => import('../pages/request/RequestAuditTrailPa
 const WorkflowPage = () => import('../pages/WorkflowPage').then((m) => ({ Component: m.WorkflowPage }));
 const WorkflowDashboardPage = () => import('../pages/workflow/WorkflowDashboardPage').then((m) => ({ Component: m.WorkflowDashboardPage }));
 const WorkflowsPage = () => import('../pages/workflow/WorkflowsPage').then((m) => ({ Component: m.WorkflowsPage }));
-const WorkflowMastersPage = () => import('../pages/workflow/WorkflowMastersPage').then((m) => ({ Component: m.WorkflowMastersPage }));
 const WorkflowStatusLevelsPage = () => import('../pages/workflow/WorkflowStatusLevelsPage').then((m) => ({ Component: m.WorkflowStatusLevelsPage }));
 const WorkflowEmailTemplatesPage = () => import('../pages/workflow/WorkflowEmailTemplatesPage').then((m) => ({ Component: m.WorkflowEmailTemplatesPage }));
 const WorkflowAuditTrailPage = () => import('../pages/workflow/WorkflowAuditTrailPage').then((m) => ({ Component: m.WorkflowAuditTrailPage }));
@@ -403,10 +402,6 @@ export const router = createBrowserRouter([
                             {
                                 path: 'workflows',
                                 lazy: WorkflowsPage,
-                            },
-                            {
-                                path: 'masters',
-                                lazy: WorkflowMastersPage,
                             },
                             {
                                 path: 'status-levels',

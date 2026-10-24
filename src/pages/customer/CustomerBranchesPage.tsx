@@ -52,140 +52,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const INITIAL_BRANCHES: CustomerBranchItem[] = [
-    {
-        id: 'brn-1',
-        branchCode: 'BRN-RYD-01',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Riyadh Central Logistics Headquarters',
-        nameAr: 'المقر الرئيسي اللوجستي بالرياض',
-        branchType: 'headquarters',
-        cityEn: 'Riyadh',
-        cityAr: 'الرياض',
-        addressEn: 'Al-Sulay Industrial District, Exit 18',
-        addressAr: 'حي السلي الصناعي، مخرج 18',
-        crNumber: '1010482910-001',
-        managerNameEn: 'Sami Al-Ghamdi',
-        managerNameAr: 'سامي الغامدي',
-        phone: '+966 11 209 8800',
-        email: 'riyadh.hq@alwataniya.sa',
-        status: 'active',
-        activeEmployeesCount: 185,
-        createdAt: '2026-01-10',
-    },
-    {
-        id: 'brn-2',
-        branchCode: 'BRN-JED-02',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Jeddah Islamic Port Freight Terminal',
-        nameAr: 'محطة الشحن بميناء جدة الإسلامي',
-        branchType: 'warehouse_logistics',
-        cityEn: 'Jeddah',
-        cityAr: 'جدة',
-        addressEn: 'Customs Bonded Zone, Jeddah Port Gate 4',
-        addressAr: 'المنطقة الجمركية المساندة، ميناء جدة بوابة 4',
-        crNumber: '1010482910-002',
-        managerNameEn: 'Hani Al-Harbi',
-        managerNameAr: 'هاني الحربي',
-        phone: '+966 12 645 2200',
-        email: 'jeddah.port@alwataniya.sa',
-        status: 'active',
-        activeEmployeesCount: 92,
-        createdAt: '2026-01-20',
-    },
-    {
-        id: 'brn-3',
-        branchCode: 'BRN-DMM-03',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        nameEn: 'Dammam 2nd Industrial City Plant',
-        nameAr: 'مصنع المدينة الصناعية الثانية بالدمام',
-        branchType: 'regional_branch',
-        cityEn: 'Dammam',
-        cityAr: 'الدمام',
-        addressEn: 'MODON 2nd Industrial Area, Street 64',
-        addressAr: 'المدينة الصناعية الثانية (مدن)، شارع 64',
-        crNumber: '2050192841-001',
-        managerNameEn: 'Eng. Majed Al-Khaldi',
-        managerNameAr: 'م. ماجد الخالدي',
-        phone: '+966 13 812 7700',
-        email: 'dammam.plant@riyadh-industrial.sa',
-        status: 'active',
-        activeEmployeesCount: 240,
-        createdAt: '2026-02-01',
-    },
-    {
-        id: 'brn-4',
-        branchCode: 'BRN-KHB-04',
-        companyId: 'cmp-3',
-        companyNameEn: 'Tamweel Capital Partners',
-        companyNameAr: 'تمويل كابيتال المالية',
-        nameEn: 'Al-Khobar Financial District Office',
-        nameAr: 'فرع مركز الخبر المالي',
-        branchType: 'regional_branch',
-        cityEn: 'Al-Khobar',
-        cityAr: 'الخبر',
-        addressEn: 'King Fahd Road, Al-Hizam Al-Thahabi',
-        addressAr: 'طريق الملك فهد، حي الحزام الذهبي',
-        crNumber: '2051928412-001',
-        managerNameEn: 'Waleed Al-Ghamdi',
-        managerNameAr: 'وليد الغامدي',
-        phone: '+966 13 898 4400',
-        email: 'khobar@tamweel-cap.sa',
-        status: 'active',
-        activeEmployeesCount: 28,
-        createdAt: '2026-02-10',
-    },
-    {
-        id: 'brn-5',
-        branchCode: 'BRN-MED-05',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        nameEn: 'Madinah Central Polyclinic & Diagnostic Hub',
-        nameAr: 'مركز ومجمع عيادات المدينة المنورة',
-        branchType: 'retail_service',
-        cityEn: 'Madinah',
-        cityAr: 'المدينة المنورة',
-        addressEn: 'Sultana Commercial Street, Opp. Islamic University',
-        addressAr: 'شارع سلطانة التجاري، مقابل الجامعة الإسلامية',
-        crNumber: '4650192841-001',
-        managerNameEn: 'Dr. Tariq Al-Juhani',
-        managerNameAr: 'د. طارق الجهني',
-        phone: '+966 14 840 9900',
-        email: 'madinah.clinic@najm-health.sa',
-        status: 'active',
-        activeEmployeesCount: 65,
-        createdAt: '2026-02-22',
-    },
-    {
-        id: 'brn-6',
-        branchCode: 'BRN-TBK-06',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        nameEn: 'Tabuk Regional Procurement Center',
-        nameAr: 'مركز الإمداد والتموين الإقليمي بتبوك',
-        branchType: 'warehouse_logistics',
-        cityEn: 'Tabuk',
-        cityAr: 'تبوك',
-        addressEn: 'Prince Fahd Bin Sultan Road, Warehouse City',
-        addressAr: 'طريق الأمير فهد بن سلطان، مدينة المستودعات',
-        crNumber: '3550192841-001',
-        managerNameEn: 'Saud Al-Anazi',
-        managerNameAr: 'سعود العنزي',
-        phone: '+966 14 428 1100',
-        email: 'tabuk.hub@redsea-hospitality.sa',
-        status: 'inactive',
-        activeEmployeesCount: 14,
-        createdAt: '2026-03-01',
-    },
-];
+const INITIAL_BRANCHES: CustomerBranchItem[] = [];
 
 export const CustomerBranchesPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -198,9 +65,10 @@ export const CustomerBranchesPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -234,7 +102,7 @@ export const CustomerBranchesPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         branchCode: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         nameEn: '',
         nameAr: '',
         branchType: 'regional_branch' as BranchType,
@@ -347,7 +215,7 @@ export const CustomerBranchesPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             branchCode: `BRN-CST-0${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             nameEn: '',
             nameAr: '',
             branchType: 'regional_branch',
@@ -412,7 +280,8 @@ export const CustomerBranchesPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingBranchId) {
             setBranches((prev) =>

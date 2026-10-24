@@ -38,7 +38,7 @@ export const WorkflowFormDrawer: React.FC<WorkflowFormDrawerProps> = ({
     onSubmit,
     formState,
     setFormState,
-    editingRecord,
+    editingRecord: _editingRecord,
 }) => {
     const { t } = useTranslation();
 
@@ -54,9 +54,7 @@ export const WorkflowFormDrawer: React.FC<WorkflowFormDrawerProps> = ({
                     <div className="px-6 py-5 bg-[#FAF8F5] border-b border-[#E5E0D8] flex items-center justify-between sticky top-0 z-10">
                         <div>
                             <h2 className="text-base font-bold text-[#0D0D0D]">
-                                {editingRecord
-                                    ? t('workflow.workflows.drawer.editTitle')
-                                    : t('workflow.workflows.drawer.createTitle')}
+                                {t('workflow.workflows.drawer.editTitle')}
                             </h2>
                             <p className="text-[11px] text-[#6E6862]">
                                 {t('workflow.workflows.drawer.formSubtitle')}
@@ -250,7 +248,7 @@ export const WorkflowFormDrawer: React.FC<WorkflowFormDrawerProps> = ({
                         type="submit"
                         className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] cursor-pointer"
                     >
-                        {editingRecord ? t('common.saveChanges') : t('common.save')}
+                        {t('common.saveChanges')}
                     </button>
                 </div>
             </form>

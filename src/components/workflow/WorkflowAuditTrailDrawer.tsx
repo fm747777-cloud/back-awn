@@ -7,40 +7,11 @@ import {
     ShieldCheck,
     ArrowUpRight,
 } from 'lucide-react';
+import { type WorkflowAuditEvent } from '../../pages/workflow/workflowMockData';
 import {
-    normalizeWorkflowAuditAction,
-    normalizeWorkflowAuditResource,
-    type WorkflowAuditEvent,
-    type WorkflowAuditAction,
-    type WorkflowAuditResource,
-} from '../../pages/workflow/workflowMockData';
-
-const ACTION_BADGE_STYLES: Record<WorkflowAuditAction, string> = {
-    CREATED: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
-    UPDATED: 'bg-[#FAF8F5] text-[#037F8C] border-[#037F8C]/25',
-    ENABLED: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
-    DISABLED: 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]',
-    ACTIVATED: 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/25',
-    DEACTIVATED: 'bg-[#F4F1EA] text-[#6E6862] border-[#E5E0D8]',
-    DELETED: 'bg-[#FDF2F2] text-[#A63A3A] border-[#A63A3A]/25',
-};
-
-const ACTION_DOT_STYLES: Record<WorkflowAuditAction, string> = {
-    CREATED: 'bg-[#037F8C]',
-    UPDATED: 'bg-[#037F8C]',
-    ENABLED: 'bg-[#037F8C]',
-    DISABLED: 'bg-[#857E74]',
-    ACTIVATED: 'bg-[#037F8C]',
-    DEACTIVATED: 'bg-[#857E74]',
-    DELETED: 'bg-[#A63A3A]',
-};
-
-const RESOURCE_BADGE_STYLES: Record<WorkflowAuditResource, string> = {
-    Workflow: 'bg-[#FAF8F5] text-[#037F8C] border-[#037F8C]/20',
-    'Workflow Master': 'bg-[#FDF7F2] text-[#8C6046] border-[#8C6046]/25',
-    'Status Level': 'bg-[#EAF3EC]/70 text-[#037F8C] border-[#037F8C]/20',
-    'Email Template': 'bg-[#F8F6F2] text-[#6A7358] border-[#6A7358]/25',
-};
+    WorkflowAuditActionBadge,
+    WorkflowAuditResourceBadge,
+} from './shared/WorkflowTableHelpers';
 
 export interface LiveEntitySnapshot {
     status: string;
@@ -55,7 +26,6 @@ interface WorkflowAuditTrailDrawerProps {
     liveEntitySnapshot: LiveEntitySnapshot | null;
     getActionLabel: (action: string) => string;
     getResourceLabel: (resource: string) => string;
-    renderResourceIcon: (resource: string) => React.ReactNode;
 }
 
 export const WorkflowAuditTrailDrawer: React.FC<WorkflowAuditTrailDrawerProps> = ({
@@ -65,15 +35,11 @@ export const WorkflowAuditTrailDrawer: React.FC<WorkflowAuditTrailDrawerProps> =
     liveEntitySnapshot,
     getActionLabel,
     getResourceLabel,
-    renderResourceIcon,
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language?.startsWith('ar') ?? false;
 
     if (!event) return null;
-
-    const normalizedAction = normalizeWorkflowAuditAction(event.action);
-    const normalizedResource = normalizeWorkflowAuditResource(event.resource);
 
     return (
         <div
@@ -98,27 +64,14 @@ export const WorkflowAuditTrailDrawer: React.FC<WorkflowAuditTrailDrawerProps> =
                             >
                                 {event.id}
                             </span>
-                            <span
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
-                                    ACTION_BADGE_STYLES[normalizedAction]
-                                }`}
-                            >
-                                <span
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                        ACTION_DOT_STYLES[normalizedAction]
-                                    }`}
-                                />
-                                <span>{getActionLabel(event.action)}</span>
-                            </span>
-                            <span
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
-                                    RESOURCE_BADGE_STYLES[normalizedResource] ||
-                                    RESOURCE_BADGE_STYLES.Workflow
-                                }`}
-                            >
-                                {renderResourceIcon(event.resource)}
-                                <span>{getResourceLabel(event.resource)}</span>
-                            </span>
+                            <WorkflowAuditActionBadge
+                                action={event.action}
+                                label={getActionLabel(event.action)}
+                            />
+                            <WorkflowAuditResourceBadge
+                                resource={event.resource}
+                                label={getResourceLabel(event.resource)}
+                            />
                         </div>
                         <h2 className="text-base font-bold text-[#0D0D0D] mt-2">
                             {t('workflow.auditTrail.drawer.title')}
@@ -175,18 +128,10 @@ export const WorkflowAuditTrailDrawer: React.FC<WorkflowAuditTrailDrawerProps> =
                                     {t('workflow.auditTrail.drawer.actionPerformed')}
                                 </p>
                                 <div className="mt-1">
-                                    <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold border ${
-                                            ACTION_BADGE_STYLES[normalizedAction]
-                                        }`}
-                                    >
-                                        <span
-                                            className={`w-1.5 h-1.5 rounded-full ${
-                                                ACTION_DOT_STYLES[normalizedAction]
-                                            }`}
-                                        />
-                                        <span>{getActionLabel(event.action)}</span>
-                                    </span>
+                                    <WorkflowAuditActionBadge
+                                        action={event.action}
+                                        label={getActionLabel(event.action)}
+                                    />
                                 </div>
                             </div>
 
@@ -195,15 +140,10 @@ export const WorkflowAuditTrailDrawer: React.FC<WorkflowAuditTrailDrawerProps> =
                                     {t('workflow.auditTrail.drawer.resourceType')}
                                 </p>
                                 <div className="mt-1">
-                                    <span
-                                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
-                                            RESOURCE_BADGE_STYLES[normalizedResource] ||
-                                            RESOURCE_BADGE_STYLES.Workflow
-                                        }`}
-                                    >
-                                        {renderResourceIcon(event.resource)}
-                                        <span>{getResourceLabel(event.resource)}</span>
-                                    </span>
+                                    <WorkflowAuditResourceBadge
+                                        resource={event.resource}
+                                        label={getResourceLabel(event.resource)}
+                                    />
                                 </div>
                             </div>
 

@@ -47,122 +47,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const INITIAL_CONTACTS: CustomerContactItem[] = [
-    {
-        id: 'ctc-1',
-        code: 'CTC-101',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Eng. Mansour Al-Qahtani',
-        nameAr: 'م. منصور القحطاني',
-        jobTitleEn: 'Chief Operations Officer (COO)',
-        jobTitleAr: 'المدير التنفيذي للعمليات',
-        departmentEn: 'Executive Management',
-        departmentAr: 'الإدارة التنفيذية',
-        phone: '+966 50 123 4567',
-        email: 'm.qahtani@alwataniya-log.sa',
-        isPrimary: true,
-        status: 'active',
-        notes: 'Primary executive signatory for logistics concessions and SLA contracts.',
-        createdAt: '2026-01-10',
-    },
-    {
-        id: 'ctc-2',
-        code: 'CTC-102',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        nameEn: 'Lama Al-Ghamdi',
-        nameAr: 'لمى الغامدي',
-        jobTitleEn: 'Government Relations Manager',
-        jobTitleAr: 'مديرة العلاقات الحكومية والتراخيص',
-        departmentEn: 'Government Affairs',
-        departmentAr: 'الشؤون الحكومية',
-        phone: '+966 54 881 2930',
-        email: 'l.ghamdi@alwataniya-log.sa',
-        isPrimary: false,
-        status: 'active',
-        notes: 'Authorised representative on WASL transport platform and chamber attestation portal.',
-        createdAt: '2026-01-15',
-    },
-    {
-        id: 'ctc-3',
-        code: 'CTC-103',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Industrial Holdings',
-        companyNameAr: 'القابضة الصناعية بالرياض',
-        nameEn: 'Dr. Fahad Al-Subaie',
-        nameAr: 'د. فهد السبيعي',
-        jobTitleEn: 'Head of Human Resources & Labor Quotas',
-        jobTitleAr: 'رئيس الموارد البشرية وتوطين الكوادر',
-        departmentEn: 'Human Resources',
-        departmentAr: 'الموارد البشرية',
-        phone: '+966 55 901 3412',
-        email: 'f.subaie@riyadh-industrial.sa',
-        isPrimary: true,
-        status: 'active',
-        notes: 'Lead liaison for Qiwa digital contracts and Nitaqat workforce audits.',
-        createdAt: '2026-01-20',
-    },
-    {
-        id: 'ctc-4',
-        code: 'CTC-104',
-        companyId: 'cmp-3',
-        companyNameEn: 'Tamweel Capital Partners',
-        companyNameAr: 'تمويل كابيتال المالية',
-        nameEn: 'Abdullah Al-Kaltham',
-        nameAr: 'عبدالله الكلثم',
-        jobTitleEn: 'Chief Financial Officer (CFO)',
-        jobTitleAr: 'المدير المالي التنفيذي',
-        departmentEn: 'Finance & Compliance',
-        departmentAr: 'المالية والامتثال',
-        phone: '+966 56 472 9018',
-        email: 'a.kaltham@tamweel-cap.sa',
-        isPrimary: true,
-        status: 'active',
-        notes: 'Authorised signatory for ZATCA Phase 2 clearance and quarterly financial declarations.',
-        createdAt: '2026-02-01',
-    },
-    {
-        id: 'ctc-5',
-        code: 'CTC-105',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Healthcare Network',
-        companyNameAr: 'شبكة نجم للرعاية الصحية',
-        nameEn: 'Dr. Reem Al-Dosari',
-        nameAr: 'د. ريم الدوسري',
-        jobTitleEn: 'Healthcare Facilities Director',
-        jobTitleAr: 'مديرة المنشآت الطبية والتراخيص',
-        departmentEn: 'Clinical Operations',
-        departmentAr: 'العمليات الطبية',
-        phone: '+966 53 610 8294',
-        email: 'r.dosari@najm-health.sa',
-        isPrimary: true,
-        status: 'active',
-        notes: 'Manages municipal Balady medical facility permits and civil defense safety audits.',
-        createdAt: '2026-02-10',
-    },
-    {
-        id: 'ctc-6',
-        code: 'CTC-106',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        nameEn: 'Sultan Al-Otaibi',
-        nameAr: 'سلطان العتيبي',
-        jobTitleEn: 'Senior Legal Counsel & Secretary',
-        jobTitleAr: 'المستشار القانوني وأمين مجلس الإدارة',
-        departmentEn: 'Legal & Governance',
-        departmentAr: 'الشؤون القانونية والحوكمة',
-        phone: '+966 59 341 5502',
-        email: 's.otaibi@redsea-hospitality.sa',
-        isPrimary: false,
-        status: 'inactive',
-        notes: 'Former primary signatory; transitioned to advisory role on corporate structure.',
-        createdAt: '2026-02-25',
-    },
-];
+const INITIAL_CONTACTS: CustomerContactItem[] = [];
 
 export const CustomerContactsPage: React.FC = () => {
     const { t, i18n } = useTranslation();
@@ -175,9 +60,10 @@ export const CustomerContactsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -211,7 +97,7 @@ export const CustomerContactsPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         nameEn: '',
         nameAr: '',
         jobTitleEn: '',
@@ -321,7 +207,7 @@ export const CustomerContactsPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: `CTC-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             nameEn: '',
             nameAr: '',
             jobTitleEn: '',
@@ -380,7 +266,8 @@ export const CustomerContactsPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingContactId) {
             setContacts((prev) =>

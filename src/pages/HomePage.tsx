@@ -38,7 +38,7 @@ export const HomePage = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">{t('home.availableServices')}</p>
-                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">130</p>
+                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">0</p>
                         <span className="text-[11px] text-[#037F8C] font-medium mt-1 inline-block">
                             {t('home.activeAcrossPortals')}
                         </span>
@@ -51,7 +51,7 @@ export const HomePage = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">{t('home.activePortals')}</p>
-                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">12</p>
+                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">0</p>
                         <span className="text-[11px] text-[#6E6862] font-medium mt-1 inline-block">
                             {t('home.portalsSample')}
                         </span>
@@ -64,7 +64,7 @@ export const HomePage = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">{t('home.pendingRequests')}</p>
-                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">24</p>
+                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">0</p>
                         <span className="text-[11px] text-[#B87D14] font-medium mt-1 inline-block">
                             {t('home.inProcessing')}
                         </span>
@@ -77,7 +77,7 @@ export const HomePage = () => {
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs flex items-center justify-between">
                     <div>
                         <p className="text-xs font-medium text-[#6E6862]">{t('home.documentTemplates')}</p>
-                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">48</p>
+                        <p className="text-2xl font-bold text-[#0D0D0D] mt-1">0</p>
                         <span className="text-[11px] text-[#037F8C] font-medium mt-1 inline-block">
                             {t('home.readyForIssuance')}
                         </span>

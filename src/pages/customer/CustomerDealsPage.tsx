@@ -53,104 +53,7 @@ export interface CustomerDealItem {
 
 const STORAGE_KEY = 'awn_customer_deals_v1';
 
-const INITIAL_DEALS: CustomerDealItem[] = [
-    {
-        id: 'dl-1',
-        code: 'DL-2026-001',
-        nameEn: 'Fleet Management Logistics Modernization',
-        nameAr: 'تحديث منظومة إدارة أسطول الخدمات اللوجستية',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Wataniya Logistics Co.',
-        companyNameAr: 'الشركة الوطنية للخدمات اللوجستية',
-        value: 480000,
-        stage: 'negotiation',
-        status: 'open',
-        expectedCloseDate: '2026-11-15',
-        probability: 80,
-        notes: 'Final contract terms under legal review.',
-        createdAt: '2026-08-10',
-    },
-    {
-        id: 'dl-2',
-        code: 'DL-2026-002',
-        nameEn: 'Cloud Infrastructure Enterprise SLA',
-        nameAr: 'عقد اتفاقية مستوى الخدمة السحابية المؤسسية',
-        companyId: 'cmp-2',
-        companyNameEn: 'Riyadh Tech Solutions',
-        companyNameAr: 'شركة حلول الرياض التقنية',
-        value: 350000,
-        stage: 'closed_won',
-        status: 'won',
-        expectedCloseDate: '2026-10-01',
-        probability: 100,
-        notes: 'Awarded and executed agreement for 12 months.',
-        createdAt: '2026-07-15',
-    },
-    {
-        id: 'dl-3',
-        code: 'DL-2026-003',
-        nameEn: 'Branch Statutory Licensing & Compliance',
-        nameAr: 'تراخيص الفروع والامتثال النظامي',
-        companyId: 'cmp-3',
-        companyNameEn: 'Gulf Energy Trading Corp',
-        companyNameAr: 'مؤسسة طاقة الخليج التجارية',
-        value: 195000,
-        stage: 'proposal',
-        status: 'open',
-        expectedCloseDate: '2026-12-05',
-        probability: 60,
-        notes: 'Quotation delivered; awaiting executive approval.',
-        createdAt: '2026-09-01',
-    },
-    {
-        id: 'dl-4',
-        code: 'DL-2026-004',
-        nameEn: 'Financial Operations Governance Advisory',
-        nameAr: 'استشارات حوكمة العمليات المالية',
-        companyId: 'cmp-4',
-        companyNameEn: 'Najm Financial Advisory Group',
-        companyNameAr: 'مجموعة نجم للاستشارات المالية',
-        value: 620000,
-        stage: 'closed_won',
-        status: 'won',
-        expectedCloseDate: '2026-09-20',
-        probability: 100,
-        notes: 'Contract signed and invoiced successfully.',
-        createdAt: '2026-06-12',
-    },
-    {
-        id: 'dl-5',
-        code: 'DL-2026-005',
-        nameEn: 'Workforce Residency & Legal Support',
-        nameAr: 'الدعم النظامي وتأشيرات الكوادر الوظيفية',
-        companyId: 'cmp-5',
-        companyNameEn: 'Arabian Horizon Contracting',
-        companyNameAr: 'شركة الأفق العربي للمقاولات',
-        value: 240000,
-        stage: 'discovery',
-        status: 'open',
-        expectedCloseDate: '2026-12-20',
-        probability: 40,
-        notes: 'Preliminary scope requirement gathering.',
-        createdAt: '2026-09-25',
-    },
-    {
-        id: 'dl-6',
-        code: 'DL-2026-006',
-        nameEn: 'Engineering Infrastructure Expansion',
-        nameAr: 'توسعة البنية التحتية الهندسية',
-        companyId: 'cmp-6',
-        companyNameEn: 'Modern Infrastructure LLC',
-        companyNameAr: 'شركة البنية التحتية الحديثة',
-        value: 180000,
-        stage: 'closed_lost',
-        status: 'lost',
-        expectedCloseDate: '2026-08-30',
-        probability: 0,
-        notes: 'Client postponed budget cycle.',
-        createdAt: '2026-05-18',
-    },
-];
+const INITIAL_DEALS: CustomerDealItem[] = [];
 
 import { CUSTOMER_COMPANIES_SIMPLE_OPTIONS } from './customerMockData';
 
@@ -168,9 +71,10 @@ export const CustomerDealsPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {
@@ -388,7 +292,9 @@ export const CustomerDealsPage: React.FC = () => {
     // Save (Add or Edit)
     const handleSaveDeal = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedComp = AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+        const selectedComp =
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
 
         if (editingDeal) {
             setCustomerDeals((prev) =>

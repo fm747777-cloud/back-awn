@@ -81,213 +81,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const SEED_TICKETS: CustomerTicketItem[] = [
-    {
-        id: 'tck-1',
-        code: 'TCK-801',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Fursan Logistics Co.',
-        companyNameAr: 'شركة الفرسان اللوجستية',
-        requesterNameEn: 'Bandar Al-Otaibi',
-        requesterNameAr: 'بندر العتيبي',
-        requesterEmail: 'b.otaibi@fursan.sa',
-        requesterPhone: '+966 50 123 4567',
-        titleEn: 'ERP Fleet Webhook Sync Timeout Error',
-        titleAr: 'خطأ مهلة في مزامنة خطافات الويب لنظام إدارة الأسطول',
-        descriptionEn: 'The real-time vehicle dispatch tracking webhook is returning 504 Gateway Timeout intermittently during peak dispatch hours (08:00 - 11:00 AM).',
-        descriptionAr: 'واجهة خطاف الويب الخاصة بتتبع حركة الشاحنات تعيد خطأ 504 Gateway Timeout بشكل متقطع خلال ساعات الذروة الصباحية (08:00 - 11:00 صباحاً).',
-        category: 'integration_api',
-        priority: 'high',
-        status: 'in_progress',
-        assignedAgentEn: 'Eng. Hisham Al-Ghamdi',
-        assignedAgentAr: 'م. هشام الغامدي',
-        createdAt: '2026-10-10 09:15',
-        slaTargetHours: 24,
-        slaDeadline: '2026-10-11 09:15',
-        internalNotesEn: 'DevOps team is inspecting the connection pool on the API gateway.',
-        internalNotesAr: 'فريق العمليات التقنية يتحقق من تجمع الاتصالات على بوابة الواجهات البرمجية.',
-        comments: [
-            {
-                id: 'cm-1',
-                authorNameEn: 'Eng. Hisham Al-Ghamdi',
-                authorNameAr: 'م. هشام الغامدي',
-                authorRoleEn: 'Senior Systems Engineer',
-                authorRoleAr: 'مهندس نظم أول',
-                timestamp: '2026-10-10 10:30',
-                messageEn: 'Log traces collected. Traffic burst caused database socket saturation.',
-                messageAr: 'تم جمع سجلات التتبع. التزايد المفاجئ في الطلبات تسبب في تشبع قنوات الربط.',
-                isInternal: true,
-            },
-            {
-                id: 'cm-2',
-                authorNameEn: 'Bandar Al-Otaibi',
-                authorNameAr: 'بندر العتيبي',
-                authorRoleEn: 'Fleet Operations Manager',
-                authorRoleAr: 'مدير العمليات اللوجستية',
-                timestamp: '2026-10-10 11:45',
-                messageEn: 'Thank you. We have delayed the batch sync until 12:00 PM as advised.',
-                messageAr: 'شكراً لكم. قمنا بتأجيل المزامنة الدفعية حتى الساعة 12:00 ظهراً حسب التوجيه.',
-                isInternal: false,
-            },
-        ],
-    },
-    {
-        id: 'tck-2',
-        code: 'TCK-802',
-        companyId: 'cmp-2',
-        companyNameEn: 'Rawabi Energy Services',
-        companyNameAr: 'خدمات الروابي للطاقة',
-        requesterNameEn: 'Mona Al-Shahrani',
-        requesterNameAr: 'منى الشهراني',
-        requesterEmail: 'm.shahrani@rawabi-energy.sa',
-        requesterPhone: '+966 55 987 6543',
-        titleEn: 'Discrepancy in Monthly Maintenance Invoice Calculation',
-        titleAr: 'اختلاف في احتساب ضريبة القيمة المضافة بفاتورة الصيانة الشهرية',
-        descriptionEn: 'The automated VAT line item in Invoice #INV-2026-088 shows a difference of SAR 420.50 compared to the approved contract rate schedule.',
-        descriptionAr: 'البند الضريبي التلقائي في الفاتورة رقم INV-2026-088 يظهر فرقاً قدره 420.50 ريال سعودي مقارنة بجدول الأسعار المعتمد في العقد.',
-        category: 'billing_and_invoicing',
-        priority: 'medium',
-        status: 'open',
-        assignedAgentEn: 'Layla Al-Amoudi',
-        assignedAgentAr: 'ليلى العمودي',
-        createdAt: '2026-10-11 13:20',
-        slaTargetHours: 48,
-        slaDeadline: '2026-10-13 13:20',
-        internalNotesEn: 'Billing ledger reconciled with contract annex B.',
-        internalNotesAr: 'جاري مطابقة قيود الفوترة مع الملحق ب من العقد.',
-        comments: [],
-    },
-    {
-        id: 'tck-3',
-        code: 'TCK-803',
-        companyId: 'cmp-4',
-        companyNameEn: 'Safwa Medical Healthcare',
-        companyNameAr: 'صفوة الرعاية الطبية',
-        requesterNameEn: 'Dr. Ziyad Al-Farhan',
-        requesterNameAr: 'د. زياد الفرحان',
-        requesterEmail: 'z.farhan@safwamed.sa',
-        requesterPhone: '+966 54 321 0987',
-        titleEn: 'Urgent: Clinic Laboratory Access Control Keycard Lockout',
-        titleAr: 'عاجل: توقف بطاقات التحكم في الدخول لمختبرات المجمع الطبي',
-        descriptionEn: 'Smart card readers at Central Diagnostic Wing B are failing to validate staff credentials following the weekend firmware patch.',
-        descriptionAr: 'أجهزة قراءة البطاقات الذكية في جناح التشخيص المركزي B لا تصادق على هويات الكوادر الطبية بعد التحديث البرمجي الأخير.',
-        category: 'service_interruption',
-        priority: 'critical',
-        status: 'escalated',
-        assignedAgentEn: 'Eng. Rayan Al-Harbi',
-        assignedAgentAr: 'م. ريان الحربي',
-        createdAt: '2026-10-12 06:40',
-        slaTargetHours: 4,
-        slaDeadline: '2026-10-12 10:40',
-        internalNotesEn: 'Escalated to On-Call Field Technical Support Team in Riyadh.',
-        internalNotesAr: 'تم التصعيد لفريق الدعم الفني الميداني المناوب في الرياض.',
-        comments: [
-            {
-                id: 'cm-3',
-                authorNameEn: 'Eng. Rayan Al-Harbi',
-                authorNameAr: 'م. ريان الحربي',
-                authorRoleEn: 'Infrastructure Lead',
-                authorRoleAr: 'مسؤول البنية التحتية',
-                timestamp: '2026-10-12 07:10',
-                messageEn: 'On-site technician dispatched. Temporary bypass credentials enabled.',
-                messageAr: 'تم توجيه فني للموقع. تم تفعيل تصاريح الدخول المؤقتة للطوارئ.',
-                isInternal: true,
-            },
-        ],
-    },
-    {
-        id: 'tck-4',
-        code: 'TCK-804',
-        companyId: 'cmp-3',
-        companyNameEn: 'Madaen Real Estate Group',
-        companyNameAr: 'مجموعة مدائن العقارية',
-        requesterNameEn: 'Khaled Al-Dossary',
-        requesterNameAr: 'خالد الدوسري',
-        requesterEmail: 'k.dossary@madaen.com.sa',
-        requesterPhone: '+966 56 444 3322',
-        titleEn: 'Request for Quarterly Tenant Occupancy Analytics Export',
-        titleAr: 'طلب تصدير بيانات تحليلات إشغال المستأجرين للربع الثالث',
-        descriptionEn: 'Requesting custom CSV / PowerBI data extract covering commercial lease renewals, delinquency rates, and property maintenance requests.',
-        descriptionAr: 'طلب استخراج بيانات مخصصة بصيغة CSV وPowerBI تشمل تجديد عقود الإيجار ونسب التعثر وبلاغات صيانة العقارات.',
-        category: 'technical_support',
-        priority: 'low',
-        status: 'resolved',
-        assignedAgentEn: 'Sara Al-Otaibi',
-        assignedAgentAr: 'سارة العتيبي',
-        createdAt: '2026-10-08 14:00',
-        slaTargetHours: 72,
-        slaDeadline: '2026-10-11 14:00',
-        resolvedAt: '2026-10-10 16:30',
-        internalNotesEn: 'Custom reporting query run and delivered via encrypted link.',
-        internalNotesAr: 'تم تنفيذ استعلام التقارير وإرسال الملف عبر رابط مشفر ومحمي.',
-        comments: [
-            {
-                id: 'cm-4',
-                authorNameEn: 'Sara Al-Otaibi',
-                authorNameAr: 'سارة العتيبي',
-                authorRoleEn: 'Data Analytics Specialist',
-                authorRoleAr: 'أخصائية تحليل البيانات',
-                timestamp: '2026-10-10 16:25',
-                messageEn: 'Dataset generated and uploaded to client portal secure files section.',
-                messageAr: 'تم تجهيز مجموعة البيانات ورفعها إلى قسم الملفات الآمنة في بوابة العميل.',
-                isInternal: false,
-            },
-        ],
-    },
-    {
-        id: 'tck-5',
-        code: 'TCK-805',
-        companyId: 'cmp-5',
-        companyNameEn: 'Horizon Digital Technologies',
-        companyNameAr: 'تقنيات الأفق الرقمية',
-        requesterNameEn: 'Nasser Al-Subaie',
-        requesterNameAr: 'ناصر السبيعي',
-        requesterEmail: 'nasser@horizondigital.sa',
-        requesterPhone: '+966 50 888 7766',
-        titleEn: 'SSO Corporate SAML Federation Certificate Renewal',
-        titleAr: 'تجديد شهادة الربط الأحادي SSO عبر بروتوكول SAML للشركات',
-        descriptionEn: 'The corporate identity provider certificate will expire in 14 days. Needs new metadata upload and signing key validation.',
-        descriptionAr: 'شهادة مزود الهوية المؤسسي ستنتهي خلال 14 يوماً. يتطلب رفع بيانات التعريف الجديدة والتحقق من مفتاح التوقيع.',
-        category: 'account_access',
-        priority: 'medium',
-        status: 'open',
-        assignedAgentEn: 'Waleed Al-Kaltham',
-        assignedAgentAr: 'وليد الكلثم',
-        createdAt: '2026-10-11 11:00',
-        slaTargetHours: 48,
-        slaDeadline: '2026-10-13 11:00',
-        internalNotesEn: 'Coordinating with customer SecOps team.',
-        internalNotesAr: 'جاري التنسيق مع فريق أمن المعلومات لدى العميل.',
-        comments: [],
-    },
-    {
-        id: 'tck-6',
-        code: 'TCK-806',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        requesterNameEn: 'Yara Al-Bishi',
-        requesterNameAr: 'يارا البيشي',
-        requesterEmail: 'yara.bishi@redseahospitality.sa',
-        requesterPhone: '+966 53 111 2233',
-        titleEn: 'Contract SLA Penalty Clause Clarification',
-        titleAr: 'استفسار وتوضيح بشأن بند الغرامات في اتفاقية مستوى الخدمة',
-        descriptionEn: 'Inquiry regarding the scheduled downtime maintenance allowance and compensation credit terms in section 4.2 of the master service contract.',
-        descriptionAr: 'استفسار حول ساعات التوقف المجدولة للصيانة الدورية وآلية احتساب رصيد التعويض في البند 4.2 من العقد الرئيسي.',
-        category: 'contract_inquiries',
-        priority: 'low',
-        status: 'closed',
-        assignedAgentEn: 'Fahad Al-Mansoor',
-        assignedAgentAr: 'فهد المنصور',
-        createdAt: '2026-10-05 10:15',
-        slaTargetHours: 72,
-        slaDeadline: '2026-10-08 10:15',
-        resolvedAt: '2026-10-07 14:00',
-        internalNotesEn: 'Legal advisory note sent and acknowledged by customer CFO.',
-        internalNotesAr: 'تم إرسال المذكرة القانونية التوضيحية واعتمادها من قبل المدير المالي للعميل.',
-        comments: [],
-    },
-];
+const SEED_TICKETS: CustomerTicketItem[] = [];
 
 export const CustomerTicketsPage: React.FC = () => {
     const { i18n } = useTranslation();
@@ -298,9 +92,10 @@ export const CustomerTicketsPage: React.FC = () => {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    return parsed;
-                }
+                if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
             }
         } catch {
             // fallback
@@ -335,7 +130,7 @@ export const CustomerTicketsPage: React.FC = () => {
     // Form State
     const [formData, setFormData] = useState({
         code: '',
-        companyId: 'cmp-1',
+        companyId: DEMO_COMPANIES[0]?.id || '',
         requesterNameEn: '',
         requesterNameAr: '',
         requesterEmail: '',
@@ -347,8 +142,8 @@ export const CustomerTicketsPage: React.FC = () => {
         category: 'technical_support' as TicketCategory,
         priority: 'medium' as TicketPriority,
         status: 'open' as TicketStatus,
-        assignedAgentEn: 'Layla Al-Amoudi',
-        assignedAgentAr: 'ليلى العمودي',
+        assignedAgentEn: '',
+        assignedAgentAr: '',
         slaTargetHours: 24,
         internalNotesEn: '',
         internalNotesAr: '',
@@ -416,7 +211,7 @@ export const CustomerTicketsPage: React.FC = () => {
         const nextNum = 801 + tickets.length;
         setFormData({
             code: `TCK-${nextNum}`,
-            companyId: 'cmp-1',
+            companyId: DEMO_COMPANIES[0]?.id || '',
             requesterNameEn: '',
             requesterNameAr: '',
             requesterEmail: '',
@@ -428,8 +223,8 @@ export const CustomerTicketsPage: React.FC = () => {
             category: 'technical_support',
             priority: 'medium',
             status: 'open',
-            assignedAgentEn: 'Layla Al-Amoudi',
-            assignedAgentAr: 'ليلى العمودي',
+            assignedAgentEn: '',
+            assignedAgentAr: '',
             slaTargetHours: 24,
             internalNotesEn: '',
             internalNotesAr: '',
@@ -486,7 +281,8 @@ export const CustomerTicketsPage: React.FC = () => {
             return;
         }
 
-        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
         const now = new Date();
         const dateStr = now.toISOString().slice(0, 16).replace('T', ' ');
 

@@ -41,86 +41,7 @@ export interface CustomerServiceItem {
 
 const STORAGE_KEY = 'awn_customer_services_v1';
 
-const INITIAL_SERVICES: CustomerServiceItem[] = [
-    {
-        id: 'srv-1',
-        code: 'SRV-GA-01',
-        nameEn: 'Commercial Registration Issuance & Renewal',
-        nameAr: 'إصدار وتجديد السجل التجاري والأنشطة',
-        category: 'government_affairs',
-        descriptionEn: 'Full-cycle commercial registration processing, activity amendments, and chamber attestation.',
-        descriptionAr: 'معالجة وتجديد السجل التجاري وتعديل الأنشطة الاقتصادية وتصديق الغرفة التجارية.',
-        slaHours: 24,
-        status: 'active',
-        defaultPrice: 3500,
-        createdAt: '2026-01-10',
-    },
-    {
-        id: 'srv-2',
-        code: 'SRV-WL-02',
-        nameEn: 'Workforce Iqama Renewal & Labor Quota',
-        nameAr: 'تجديد الإقامات المهنية وتدقيق نطاقات العمل',
-        category: 'workforce_licensing',
-        descriptionEn: 'Bulk processing of foreign worker residencies, Qiwa contract audits, and labor quota balancing.',
-        descriptionAr: 'معالجة تجديد إقامات الكوادر وتوثيق عقود منصة قوى وحساب نسب التوطين ونطاقات.',
-        slaHours: 48,
-        status: 'active',
-        defaultPrice: 1200,
-        createdAt: '2026-01-15',
-    },
-    {
-        id: 'srv-3',
-        code: 'SRV-TL-03',
-        nameEn: 'Fleet GPS Telematics & SLA Monitoring',
-        nameAr: 'تتبع أسطول النقل اللوجستي والربط مع وصل',
-        category: 'telematics_logistics',
-        descriptionEn: 'Live telemetry tracking, sensor diagnostics, and statutory integration with the WASL transport portal.',
-        descriptionAr: 'تتبع الشاحنات بالاستشعار الحي ومراقبة درجات الحرارة والربط الإلزامي مع منصة وصل.',
-        slaHours: 12,
-        status: 'active',
-        defaultPrice: 4500,
-        createdAt: '2026-02-01',
-    },
-    {
-        id: 'srv-4',
-        code: 'SRV-CA-04',
-        nameEn: 'Zakat, Tax & Customs Regulatory Compliance',
-        nameAr: 'الامتثال الضريبي والزكوي والفوترة الإلكترونية',
-        category: 'compliance_audit',
-        descriptionEn: 'Quarterly ZATCA filings, e-invoicing Phase 2 onboarding, and tax advisory clearance certificates.',
-        descriptionAr: 'تقديم الإقرارات الضريبية والزكوية والربط مع المرحلة الثانية لمنظومة الفاتورة الإلكترونية.',
-        slaHours: 72,
-        status: 'active',
-        defaultPrice: 8500,
-        createdAt: '2026-02-10',
-    },
-    {
-        id: 'srv-5',
-        code: 'SRV-IT-05',
-        nameEn: 'Cloud Infrastructure & 24/7 Server SLA',
-        nameAr: 'إدارة البنية السحابية ودعم الخوادم على مدار الساعة',
-        category: 'it_infrastructure',
-        descriptionEn: 'Private virtual datacenter hosting, redundant backups, and round-the-clock incident response.',
-        descriptionAr: 'استضافة مراكز البيانات الافتراضية والنسخ الاحتياطي المتكرر والدعم الفني الميداني المباشر.',
-        slaHours: 4,
-        status: 'active',
-        defaultPrice: 15000,
-        createdAt: '2026-02-20',
-    },
-    {
-        id: 'srv-6',
-        code: 'SRV-CA-06',
-        nameEn: 'Hazardous Chemicals Transportation Permitting',
-        nameAr: 'تصاريح نقل وتداول المواد البتروكيماوية والخطرة',
-        category: 'compliance_audit',
-        descriptionEn: 'Environmental safety permits, industrial waste protocols, and civil defense approvals.',
-        descriptionAr: 'استخراج تصاريح السلامة البيئية ونقل المواد الكيميائية واعتمادات الدفاع المدني.',
-        slaHours: 96,
-        status: 'inactive',
-        defaultPrice: 6200,
-        createdAt: '2026-03-01',
-    },
-];
+const INITIAL_SERVICES: CustomerServiceItem[] = [];
 
 const CATEGORIES: { id: CustomerServiceCategory; labelEn: string; labelAr: string }[] = [
     { id: 'government_affairs', labelEn: 'Government Affairs', labelAr: 'الشؤون الحكومية' },
@@ -141,9 +62,10 @@ export const CustomerServicesPage: React.FC = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
+                    if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
                 }
             }
         } catch {

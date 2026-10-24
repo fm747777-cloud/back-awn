@@ -78,6 +78,11 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
         queryFn: () => crmApi.getSectors({ limit: 200 }),
     });
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
     const companies = companiesRes?.data || [];
     const sectors = sectorsRes?.data || [];
 
@@ -381,7 +386,7 @@ export const SalesPerformanceDashboardPage: React.FC = () => {
                             <option value="all">
                                 {t('crm.salesPerformanceDashboard.filters.allReps')}
                             </option>
-                            {CRM_SALES_EMPLOYEES.map((emp) => (
+                            {employees.map((emp) => (
                                 <option key={emp.id} value={emp.id}>
                                     {isRtl ? emp.nameAr : emp.nameEn}
                                 </option>

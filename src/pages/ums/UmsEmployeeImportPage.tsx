@@ -91,7 +91,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
             branches,
             roles,
             customAddons,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
         });
     }, [
         csvRawContent,
@@ -285,8 +285,7 @@ export const UmsEmployeeImportPage: React.FC = () => {
         const result = commitEmployeeImportBatch({
             validationSummary,
             fileName: selectedFileName || 'batch_import.csv',
-            actorName: currentUser?.fullName || 'Karim Wagdi',
-            actorEmail: 'karim@awn.sa',
+            actorName: currentUser?.fullName || 'System',
         });
 
         setExistingEmployees(loadEmployees());

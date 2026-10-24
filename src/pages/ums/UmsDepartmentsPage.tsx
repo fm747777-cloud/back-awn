@@ -91,6 +91,10 @@ export const UmsDepartmentsPage: React.FC = () => {
         }),
         placeholderData: (previousData) => previousData,
     });
+    const designations = useMemo(
+        () => (Array.isArray(rawDesignations) ? rawDesignations : []),
+        [rawDesignations]
+    );
 
     const departments = useMemo<DepartmentRecord[]>(() => {
         return extractDepartments(departmentsResponse);

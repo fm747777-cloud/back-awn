@@ -60,139 +60,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const SEED_APPROVAL_TASKS: CustomerApprovalTaskItem[] = [
-    {
-        id: 'apr-1',
-        code: 'APR-201',
-        companyId: 'cmp-1',
-        companyNameEn: 'Al-Fursan Logistics Co.',
-        companyNameAr: 'شركة الفرسان اللوجستية',
-        titleEn: 'Annual Fleet Logistics Service Contract Approval',
-        titleAr: 'اعتماد عقد خدمات النقل اللوجستي السنوي للأسطول',
-        linkedEntityType: 'contract',
-        linkedEntityRef: 'CTR-2026-902',
-        requesterNameEn: 'Tariq Al-Ghamdi',
-        requesterNameAr: 'طارق الغامدي',
-        assignedApproverEn: 'Eng. Khalid Al-Otaibi',
-        assignedApproverAr: 'م. خالد العتيبي',
-        priority: 'high',
-        submissionDate: '2026-03-01',
-        dueDate: '2026-03-10',
-        status: 'pending',
-        reviewNotesEn: 'Pending procurement head sign-off for SAR 450,000 credit ceiling.',
-        reviewNotesAr: 'في انتظار توقيع رئيس المشتريات للسقف الائتماني البالغ 450,000 ريال.',
-    },
-    {
-        id: 'apr-2',
-        code: 'APR-202',
-        companyId: 'cmp-2',
-        companyNameEn: 'Rawabi Energy Services',
-        companyNameAr: 'خدمات الروابي للطاقة',
-        titleEn: 'Statutory ZATCA Tax Compliance File Certification',
-        titleAr: 'اعتماد ملف الامتثال الضريبي والزكوي (ZATCA)',
-        linkedEntityType: 'document',
-        linkedEntityRef: 'DOC-102',
-        requesterNameEn: 'Nasser Al-Subaie',
-        requesterNameAr: 'ناصر السبيعي',
-        assignedApproverEn: 'Sarah Al-Majed',
-        assignedApproverAr: 'سارة الماجد',
-        priority: 'urgent',
-        submissionDate: '2026-03-03',
-        dueDate: '2026-03-08',
-        status: 'in_review',
-        reviewNotesEn: 'Audit team cross-verifying clearance statements.',
-        reviewNotesAr: 'فريق المراجعة يدقق كشوف الإبراء والمطابقة الحسابية.',
-    },
-    {
-        id: 'apr-3',
-        code: 'APR-203',
-        companyId: 'cmp-3',
-        companyNameEn: 'Madaen Real Estate Group',
-        companyNameAr: 'مجموعة مدائن العقارية',
-        titleEn: 'Heavy Earthmoving Machinery Custody Transfer',
-        titleAr: 'اعتماد نقل عهدة معدات حفر ثقيلة للمشروع الشمالي',
-        linkedEntityType: 'asset',
-        linkedEntityRef: 'AST-401',
-        requesterNameEn: 'Fahad Al-Dosari',
-        requesterNameAr: 'فهد الدوسري',
-        assignedApproverEn: 'Majed Al-Harbi',
-        assignedApproverAr: 'ماجد الحربي',
-        priority: 'medium',
-        submissionDate: '2026-02-24',
-        dueDate: '2026-03-05',
-        status: 'approved',
-        reviewNotesEn: 'Approved after site safety supervisor inspection.',
-        reviewNotesAr: 'تم الاعتماد بعد فحص مشرف السلامة الميداني.',
-        actionTimestamp: '2026-03-04 11:30',
-    },
-    {
-        id: 'apr-4',
-        code: 'APR-204',
-        companyId: 'cmp-4',
-        companyNameEn: 'Safwa Medical Healthcare',
-        companyNameAr: 'صفوة الرعاية الطبية',
-        titleEn: 'Biomedical Cold Storage Equipment Expenditure',
-        titleAr: 'طلب صرف ميزانية أجهزة التبريد الطبي المعملي',
-        linkedEntityType: 'expenditure',
-        linkedEntityRef: 'REQ-2026-084',
-        requesterNameEn: 'Dr. Tareq Al-Shehri',
-        requesterNameAr: 'د. طارق الشهري',
-        assignedApproverEn: 'Huda Al-Mutairi',
-        assignedApproverAr: 'هدى المطيري',
-        priority: 'high',
-        submissionDate: '2026-02-28',
-        dueDate: '2026-03-07',
-        status: 'revision_requested',
-        reviewNotesEn: 'Price quotations require two additional local supplier bids.',
-        reviewNotesAr: 'عروض الأسعار تتطلب إرفاق عرضين إضافيين من موردين محليين معتمدين.',
-        rejectionReason: 'Missing secondary competitive supplier quotes.',
-        actionTimestamp: '2026-03-02 14:15',
-    },
-    {
-        id: 'apr-5',
-        code: 'APR-205',
-        companyId: 'cmp-5',
-        companyNameEn: 'Horizon Digital Technologies',
-        companyNameAr: 'تقنيات الأفق الرقمية',
-        titleEn: 'Cloud Infrastructure Capacity Expansion Request',
-        titleAr: 'اعتماد ترقية سعة الخوادم السحابية للمنصة المركزية',
-        linkedEntityType: 'request',
-        linkedEntityRef: 'REQ-2026-092',
-        requesterNameEn: 'Omar Al-Zahrani',
-        requesterNameAr: 'عمر الزهراني',
-        assignedApproverEn: 'Ahmed Al-Kaltham',
-        assignedApproverAr: 'أحمد الكلثم',
-        priority: 'medium',
-        submissionDate: '2026-03-04',
-        dueDate: '2026-03-12',
-        status: 'pending',
-        reviewNotesEn: 'Budget pre-approved under Q1 IT Infrastructure envelope.',
-        reviewNotesAr: 'الميزانية معتمدة مسبقاً ضمن مخصص الربع الأول لتقنية المعلومات.',
-    },
-    {
-        id: 'apr-6',
-        code: 'APR-206',
-        companyId: 'cmp-6',
-        companyNameEn: 'Red Sea Hospitality & Resorts',
-        companyNameAr: 'الضيافة والمنتجعات بالبحر الأحمر',
-        titleEn: 'Unscheduled Resort Maintenance Vendor Payment',
-        titleAr: 'اعتماد سداد مستحقات صيانة طارئة لمنتجع ينبع',
-        linkedEntityType: 'expenditure',
-        linkedEntityRef: 'EXP-901-2026',
-        requesterNameEn: 'Reem Al-Dossary',
-        requesterNameAr: 'ريم الدوسري',
-        assignedApproverEn: 'Eng. Khalid Al-Otaibi',
-        assignedApproverAr: 'م. خالد العتيبي',
-        priority: 'urgent',
-        submissionDate: '2026-02-20',
-        dueDate: '2026-02-25',
-        status: 'rejected',
-        reviewNotesEn: 'Rejected due to missing service sign-off sheet.',
-        reviewNotesAr: 'تم الرفض لعدم إرفاق محضر استلام الأعمال المعتمد.',
-        rejectionReason: 'Vendor invoices lack final facility manager sign-off stamp.',
-        actionTimestamp: '2026-02-24 16:45',
-    },
-];
+const SEED_APPROVAL_TASKS: CustomerApprovalTaskItem[] = [];
 
 export const CustomerApprovalTasksPage: React.FC = () => {
     const { i18n } = useTranslation();
@@ -204,7 +72,10 @@ export const CustomerApprovalTasksPage: React.FC = () => {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                if (Array.isArray(parsed)) {
+            const clean = parsed.filter((item: any) => item && typeof item === "object" && !(typeof item.id === "string" && /^cst-(dep|srv|deal|cnt|emp|pkg|ast|req|con|inv|own|opt|quo|brn|appr|adt|doc|tck|wfl)-/.test(item.id)));
+            return clean;
+        }
             }
         } catch {
             // fallback
@@ -249,7 +120,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         titleEn: '',
         titleAr: '',
         linkedEntityType: 'contract' as LinkedEntityType,
@@ -396,15 +267,15 @@ export const CustomerApprovalTasksPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: nextCode,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             titleEn: '',
             titleAr: '',
             linkedEntityType: 'contract',
-            linkedEntityRef: 'CTR-2026-101',
-            requesterNameEn: 'Sultan Al-Otaibi',
-            requesterNameAr: 'سلطان العتيبي',
-            assignedApproverEn: 'Eng. Khalid Al-Otaibi',
-            assignedApproverAr: 'م. خالد العتيبي',
+            linkedEntityRef: '',
+            requesterNameEn: '',
+            requesterNameAr: '',
+            assignedApproverEn: '',
+            assignedApproverAr: '',
             priority: 'high',
             dueDate: '2026-03-25',
             status: 'pending',
@@ -456,7 +327,8 @@ export const CustomerApprovalTasksPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingTaskId) {
             setTasks((prev) =>
