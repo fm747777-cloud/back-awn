@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck, Users, Lock, X, Check, Minus } from 'lucide-react';
 import { type SecurityGroupRecord, type EmployeeRecord } from '../../pages/ums/umsMockData';
-import { MODULE_INFO, MODULE_KEYS } from './SecurityGroupForm';
 
 interface SecurityGroupDetailsModalProps {
     group: SecurityGroupRecord | null;
@@ -120,7 +119,7 @@ export const SecurityGroupDetailsModal: React.FC<SecurityGroupDetailsModalProps>
                                         <th className="p-3 font-semibold text-center">{isRtl ? 'تصدير' : 'Export'}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[#EFECE6]">
+                                {/* <tbody className="divide-y divide-[#EFECE6]">
                                     {MODULE_KEYS.map((modKey) => {
                                         const modInfo = MODULE_INFO[modKey];
                                         const perms = group.permissions?.[modKey] || { read: false, write: false, delete: false, export: false };
@@ -144,7 +143,7 @@ export const SecurityGroupDetailsModal: React.FC<SecurityGroupDetailsModalProps>
                                             </tr>
                                         );
                                     })}
-                                </tbody>
+                                </tbody> */}
                             </table>
                         </div>
                     </div>

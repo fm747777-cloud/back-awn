@@ -140,6 +140,16 @@ export const authApi = {
         const response = await axiosClient.post('/auth/login', data);
         return response.data;
     },
+
+    createEmployee: async (data: any) => {
+        try {
+            // console.log('data', data);
+            const response = await axiosClient.post('/auth/register-employee', data);
+            return response.data;
+        } catch (error) {
+            console.log('Backend error:', error?.response?.data);
+        }
+    },
 };
 
 export const serviceApi = {
@@ -197,8 +207,12 @@ export const serviceApi = {
     },
 
     getServicePortals: async (data: any = {}) => {
-        const response = await axiosClient.get('/service-portal', { params: data });
-        return response.data || { data: [], count: 0, total: 0 };
+        try {
+            const response = await axiosClient.get('/service-portal', { params: data });
+            return response.data;
+        } catch {
+            // Fallback
+        }
     },
 
     createServicePortal: async (data: any) => {
@@ -376,9 +390,29 @@ export const companyUserApi = {
 export const userApi = {
     getUsers: async (params: any) => {
         const response = await axiosClient.get('/user', { params });
-        return response.data || [];
+        return response.data;
     },
-};
+
+    getEmployees: async (params: any) => {
+        const response = await axiosClient.get('/user/admin/employees', { params });
+        return response.data;
+    },
+
+    updateEmployee: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/user/${id}`, data);
+        return response.data;
+    },
+
+    deleteEmployee: async (id: string) => {
+        const response = await axiosClient.delete(`/user/${id}`);
+        return response.data;
+    },
+
+    getUser: async (id: string) => {
+        const response = await axiosClient.get(`/user/${id}`);
+        return response.data;
+    },
+}
 
 export const documentApi = {
     getDocuments: async (params: any) => {
@@ -543,6 +577,139 @@ export const assetApi = {
         return response.data;
     },
 };
+
+export const umsApi = {
+
+    getDesignations: async (params: any) => {
+        const response = await axiosClient.get('/designation', { params });
+        return response.data;
+    },
+
+    createDesignation: async (data: any) => {
+        const response = await axiosClient.post('/designation', data);
+        return response.data;
+    },
+
+    updateDesignation: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/designation/${id}`, data);
+        return response.data;
+    },
+
+    deleteDesignation: async (id: string) => {
+        const response = await axiosClient.delete(`/designation/${id}`);
+        return response.data;
+    },
+
+
+
+    getDepartments: async (params: any) => {
+        const response = await axiosClient.get('/department', { params });
+        return response.data;
+    },
+
+    createDepartment: async (data: any) => {
+        const response = await axiosClient.post('/department', data);
+        return response.data;
+    },
+
+    updateDepartment: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/department/${id}`, data);
+        return response.data;
+    },
+
+    deleteDepartment: async (id: string) => {
+        const response = await axiosClient.delete(`/department/${id}`);
+        return response.data;
+    },
+
+
+
+    getRoles: async (params: any) => {
+        const response = await axiosClient.get('/role', { params });
+        return response.data;
+    },
+
+    createRole: async (data: any) => {
+        const response = await axiosClient.post('/role', data);
+        return response.data;
+    },
+
+    updateRole: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/role/${id}`, data);
+        return response.data;
+    },
+
+    deleteRole: async (id: string) => {
+        const response = await axiosClient.delete(`/role/${id}`);
+        return response.data;
+    },
+
+
+
+    getBranchs: async (params: any) => {
+        const response = await axiosClient.get('/branch', { params });
+        return response.data;
+    },
+
+    createBranch: async (data: any) => {
+        const response = await axiosClient.post('/branch', data);
+        return response.data;
+    },
+
+    updateBranch: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/branch/${id}`, data);
+        return response.data;
+    },
+
+    deleteBranch: async (id: string) => {
+        const response = await axiosClient.delete(`/branch/${id}`);
+        return response.data;
+    },
+
+
+
+    getAddons: async (params: any) => {
+        const response = await axiosClient.get('/user-addons', { params });
+        return response.data;
+    },
+
+    createAddons: async (data: any) => {
+        const response = await axiosClient.post('/user-addons', data);
+        return response.data;
+    },
+
+    updateAddons: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/user-addons/${id}`, data);
+        return response.data;
+    },
+
+    deleteAddons: async (id: string) => {
+        const response = await axiosClient.delete(`/user-addons/${id}`);
+        return response.data;
+    },
+
+
+
+    getSecurityGroups: async (params: any) => {
+        const response = await axiosClient.get('/security-group', { params });
+        return response.data;
+    },
+
+    createSecurityGroup: async (data: any) => {
+        const response = await axiosClient.post('/security-group', data);
+        return response.data;
+    },
+
+    updateSecurityGroup: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/security-group/${id}`, data);
+        return response.data;
+    },
+
+    deleteSecurityGroup: async (id: string) => {
+        const response = await axiosClient.delete(`/security-group/${id}`);
+        return response.data;
+    },
+}
 
 // ============================================================================
 // CRM MODULE API LAYER
@@ -1125,6 +1292,476 @@ function createAuditEntryObject(params: {
                 ? params.newState
                 : sanitizeCrmAuditSnapshot(params.newState),
     };
+    const updated = [entry, ...list];
+    setLocal(CRM_STORAGE_KEYS.AUDIT_TRAILS, updated);
+    return entry;
+}
+
+function assertNoDuplicateCrmMasterName<
+    T extends { id: string; nameEn: string; nameAr: string }
+>(
+    list: T[],
+    nameEn: string,
+    nameAr: string,
+    entityLabel: string,
+    excludeId?: string
+): void {
+    const normalizedEn = nameEn.trim().toLowerCase();
+    const normalizedAr = nameAr.trim().toLowerCase();
+
+    const duplicateEn = list.find(
+        (item) =>
+            item.id !== excludeId &&
+            item.nameEn.trim().toLowerCase() === normalizedEn
+    );
+    if (duplicateEn) {
+        throw new CrmApiError({
+            message: `${entityLabel} English name "${nameEn.trim()}" already exists (${duplicateEn.id}).`,
+            statusCode: 409,
+            code: 'CRM_DUPLICATE_NAME',
+            details: [`nameEn: Duplicate English name "${nameEn.trim()}"`],
+        });
+    }
+
+    const duplicateAr = list.find(
+        (item) =>
+            item.id !== excludeId &&
+            item.nameAr.trim().toLowerCase() === normalizedAr
+    );
+    if (duplicateAr) {
+        throw new CrmApiError({
+            message: `${entityLabel} Arabic name "${nameAr.trim()}" already exists (${duplicateAr.id}).`,
+            statusCode: 409,
+            code: 'CRM_DUPLICATE_NAME',
+            details: [`nameAr: Duplicate Arabic name "${nameAr.trim()}"`],
+        });
+    }
+}
+
+function syncLeadsWithLeadSourceUpdate(updatedSource: CrmLeadSourceRecord): void {
+    const leads = readOrInitializeCrmCollection(CRM_STORAGE_KEYS.LEADS, initialCrmLeads);
+    let changed = false;
+    const nextLeads = leads.map((lead) => {
+        if (lead.leadSourceId !== updatedSource.id) return lead;
+        changed = true;
+        return {
+            ...lead,
+            leadSourceNameEn: updatedSource.nameEn,
+            leadSourceNameAr: updatedSource.nameAr,
+        };
+    });
+    if (changed) {
+        setLocal(CRM_STORAGE_KEYS.LEADS, nextLeads);
+    }
+}
+
+function syncLeadsWithLeadStatusUpdate(updatedStatus: CrmLeadStatusRecord): void {
+    const leads = readOrInitializeCrmCollection(CRM_STORAGE_KEYS.LEADS, initialCrmLeads);
+    let changed = false;
+    const nextLeads = leads.map((lead) => {
+        if (lead.leadStatusId !== updatedStatus.id) return lead;
+        changed = true;
+        return {
+            ...lead,
+            leadStatusNameEn: updatedStatus.nameEn,
+            leadStatusNameAr: updatedStatus.nameAr,
+        };
+    });
+    if (changed) {
+        setLocal(CRM_STORAGE_KEYS.LEADS, nextLeads);
+    }
+}
+
+function syncEntitiesWithSectorUpdate(updatedSector: CrmSectorRecord): void {
+    const leads = readOrInitializeCrmCollection(CRM_STORAGE_KEYS.LEADS, initialCrmLeads);
+    let leadsChanged = false;
+    const nextLeads = leads.map((lead) => {
+        if (lead.sectorId !== updatedSector.id) return lead;
+        leadsChanged = true;
+        return {
+            ...lead,
+            sectorNameEn: updatedSector.nameEn,
+            sectorNameAr: updatedSector.nameAr,
+        };
+    });
+    if (leadsChanged) {
+        setLocal(CRM_STORAGE_KEYS.LEADS, nextLeads);
+    }
+
+    const companies = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.COMPANIES,
+        initialCrmCompanies
+    );
+    let companiesChanged = false;
+    const nextCompanies = companies.map((company) => {
+        if (company.sectorId !== updatedSector.id) return company;
+        companiesChanged = true;
+        return {
+            ...company,
+            sectorNameEn: updatedSector.nameEn,
+            sectorNameAr: updatedSector.nameAr,
+        };
+    });
+    if (companiesChanged) {
+        setLocal(CRM_STORAGE_KEYS.COMPANIES, nextCompanies);
+    }
+}
+
+function syncCompaniesWithOrganizationalTypeUpdate(
+    updatedOrgType: CrmOrganizationalTypeRecord
+): void {
+    const companies = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.COMPANIES,
+        initialCrmCompanies
+    );
+    let changed = false;
+    const nextCompanies = companies.map((company) => {
+        if (company.organizationalTypeId !== updatedOrgType.id) return company;
+        changed = true;
+        return {
+            ...company,
+            organizationalTypeNameEn: updatedOrgType.nameEn,
+            organizationalTypeNameAr: updatedOrgType.nameAr,
+        };
+    });
+    if (changed) {
+        setLocal(CRM_STORAGE_KEYS.COMPANIES, nextCompanies);
+    }
+}
+
+function syncEntitiesWithOwnershipTypeUpdate(
+    updatedOwnType: CrmOwnershipTypeRecord
+): void {
+    const owners = readOrInitializeCrmCollection(CRM_STORAGE_KEYS.OWNERS, initialCrmOwners);
+    let ownersChanged = false;
+    const nextOwners = owners.map((owner) => {
+        if (owner.ownershipTypeId !== updatedOwnType.id) return owner;
+        ownersChanged = true;
+        return {
+            ...owner,
+            ownershipTypeNameEn: updatedOwnType.nameEn,
+            ownershipTypeNameAr: updatedOwnType.nameAr,
+        };
+    });
+    if (ownersChanged) {
+        setLocal(CRM_STORAGE_KEYS.OWNERS, nextOwners);
+    }
+
+    const companies = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.COMPANIES,
+        initialCrmCompanies
+    );
+    let companiesChanged = false;
+    const nextCompanies = companies.map((company) => {
+        if (!company.owners.some((o) => o.ownershipTypeId === updatedOwnType.id)) {
+            return company;
+        }
+        companiesChanged = true;
+        return {
+            ...company,
+            owners: company.owners.map((o) =>
+                o.ownershipTypeId === updatedOwnType.id
+                    ? {
+                        ...o,
+                        ownershipTypeNameEn: updatedOwnType.nameEn,
+                        ownershipTypeNameAr: updatedOwnType.nameAr,
+                    }
+                    : o
+            ),
+        };
+    });
+    if (companiesChanged) {
+        setLocal(CRM_STORAGE_KEYS.COMPANIES, nextCompanies);
+    }
+}
+
+function filterAndPaginateCrmList<
+    T extends {
+        nameEn: string;
+        nameAr: string;
+        code: string;
+        status: CrmRecordStatus;
+        descriptionEn?: string;
+        descriptionAr?: string;
+    }
+>(list: T[], params: CrmListQueryParams = {}): CrmPaginatedResponse<T> {
+    const search = (params.search || '').toLowerCase().trim();
+    const statusFilter = params.status;
+
+    const filtered = list.filter((item) => {
+        if (statusFilter && statusFilter !== 'all' && item.status !== statusFilter) {
+            return false;
+        }
+        if (!search) return true;
+        return (
+            item.nameEn.toLowerCase().includes(search) ||
+            item.nameAr.toLowerCase().includes(search) ||
+            item.code.toLowerCase().includes(search) ||
+            (item.descriptionEn || '').toLowerCase().includes(search) ||
+            (item.descriptionAr || '').toLowerCase().includes(search)
+        );
+    });
+
+    const page = Math.max(1, Number(params.page || 1));
+    const limit = Math.max(1, Number(params.limit || 10));
+    const start = (page - 1) * limit;
+    const paged = filtered.slice(start, start + limit);
+
+    return {
+        data: paged,
+        count: filtered.length,
+        total: filtered.length,
+        page,
+        limit,
+    };
+}
+
+function validateWithSchema<TOutput>(
+    schema: {
+        safeParse: (input: unknown) => {
+            success: boolean;
+            data?: TOutput;
+            error?: { issues: Array<{ path: PropertyKey[]; message: string }> };
+        };
+    },
+    payload: unknown,
+    entityLabel: string
+): TOutput {
+    const result = schema.safeParse(payload);
+    if (!result.success) {
+        const details = (result.error?.issues || []).map(
+            (issue) => `${issue.path.map(String).join('.') || entityLabel}: ${issue.message}`
+        );
+        throw new CrmApiError({
+            message: details[0] || `Invalid ${entityLabel} payload`,
+            statusCode: 400,
+            code: 'CRM_VALIDATION_FAILED',
+            details,
+        });
+    }
+    return result.data as TOutput;
+}
+
+export function checkCrmMasterDeletionEligibility(
+    entityType: CrmMasterEntityType,
+    id: string
+): CrmDeletionEligibilityResult {
+    const leads = readOrInitializeCrmCollection(CRM_STORAGE_KEYS.LEADS, initialCrmLeads);
+    const companies = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.COMPANIES,
+        initialCrmCompanies
+    );
+    const owners = readOrInitializeCrmCollection(CRM_STORAGE_KEYS.OWNERS, initialCrmOwners);
+    const quotations = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.QUOTATIONS,
+        initialCrmQuotations
+    );
+    const invoices = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.INVOICES,
+        initialCrmInvoices
+    );
+
+    const referencedBy: string[] = [];
+    let isSystemDefault = false;
+
+    if (entityType === 'leadSource') {
+        leads
+            .filter((l) => l.leadSourceId === id)
+            .forEach((l) => referencedBy.push(`Lead ${l.code} (${l.title})`));
+    } else if (entityType === 'leadStatus') {
+        const statuses = readNormalizedLeadStatuses();
+        const statusRecord = statuses.find((s) => s.id === id);
+        if (statusRecord?.isSystemDefault || statusRecord?.isDefault) {
+            isSystemDefault = true;
+        }
+        leads
+            .filter((l) => l.leadStatusId === id)
+            .forEach((l) => referencedBy.push(`Lead ${l.code} (${l.title})`));
+    } else if (entityType === 'sector') {
+        leads
+            .filter((l) => l.sectorId === id)
+            .forEach((l) => referencedBy.push(`Lead ${l.code} (${l.title})`));
+        companies
+            .filter((c) => c.sectorId === id)
+            .forEach((c) => referencedBy.push(`Company ${c.code} (${c.nameEn})`));
+    } else if (entityType === 'tax') {
+        quotations
+            .filter((q) =>
+                q.lineItems.some((li) => li.taxId === id || li.vatId === id)
+            )
+            .forEach((q) => referencedBy.push(`Quotation ${q.code} (${q.titleEn})`));
+        invoices
+            .filter((inv) => inv.taxId === id)
+            .forEach((inv) => referencedBy.push(`Invoice ${inv.code} (${inv.titleEn})`));
+    } else if (entityType === 'organizationalType') {
+        companies
+            .filter((c) => c.organizationalTypeId === id)
+            .forEach((c) => referencedBy.push(`Company ${c.code} (${c.nameEn})`));
+        leads
+            .filter((l) => l.organizationalTypeId === id)
+            .forEach((l) => referencedBy.push(`Lead ${l.code} (${l.title})`));
+    } else if (entityType === 'ownershipType') {
+        owners
+            .filter((o) => o.ownershipTypeId === id)
+            .forEach((o) => referencedBy.push(`Owner ${o.code} (${o.fullNameEn})`));
+        companies
+            .filter((c) => c.owners.some((o) => o.ownershipTypeId === id))
+            .forEach((c) => referencedBy.push(`Company ${c.code} (${c.nameEn})`));
+    }
+
+    if (isSystemDefault && referencedBy.length === 0) {
+        return {
+            canDelete: false,
+            referencedCount: 0,
+            referencedBy: [],
+            isSystemDefault: true,
+            reasonEn:
+                'Cannot delete a system-protected or default Lead Status stage. Core pipeline stages are required for lead lifecycle workflows.',
+            reasonAr:
+                'لا يمكن حذف حالة عميل أساسية أو افتراضية محمية من النظام، حيث تُعد ضرورية لسير عمل دورة حياة العملاء المحتملين.',
+        };
+    }
+
+    if (referencedBy.length > 0) {
+        return {
+            canDelete: false,
+            referencedCount: referencedBy.length,
+            referencedBy,
+            isSystemDefault,
+            reasonEn: `Cannot delete this master record because it is referenced by ${referencedBy.length} CRM record(s): ${referencedBy.join(', ')}. Please deactivate it instead.`,
+            reasonAr: `لا يمكن حذف هذا السجل الأساسي لارتباطه بـ ${referencedBy.length} سجل في نظام علاقات العملاء. يُرجى تعطيله بدلاً من الحذف.`,
+        };
+    }
+
+    return {
+        canDelete: true,
+        referencedCount: 0,
+        referencedBy: [],
+        isSystemDefault: false,
+    };
+}
+
+// ----------------------------------------------------------------------------
+// Reusable Lead Contact -> Primary Company Contact Synchronizer
+// ----------------------------------------------------------------------------
+export function syncLeadContactToCompany(
+    lead: {
+        id: string;
+        title: string;
+        contactName?: string;
+        contactEmail?: string;
+        contactPhone?: string;
+        contactJobTitle?: string;
+    },
+    company: {
+        id: string;
+        nameEn: string;
+        nameAr: string;
+    },
+    creatorName?: string,
+    existingContactsList?: CrmContactRecord[]
+): CrmContactRecord[] {
+    if (
+        !lead.contactName?.trim() ||
+        !lead.contactEmail?.trim() ||
+        !lead.contactPhone?.trim() ||
+        !company.id
+    ) {
+        return (
+            existingContactsList ||
+            readOrInitializeCrmCollection(
+                CRM_STORAGE_KEYS.CONTACTS,
+                initialCrmContacts
+            )
+        );
+    }
+
+    const currentContacts =
+        existingContactsList ||
+        readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+    let nextContactsList = [...currentContacts];
+    const leadEmailLower = lead.contactEmail.trim().toLowerCase();
+
+    const existingForThisCompany = nextContactsList.find(
+        (c) =>
+            c.companyId === company.id &&
+            c.email.trim().toLowerCase() === leadEmailLower
+    );
+
+    if (existingForThisCompany) {
+        nextContactsList = nextContactsList.map((item) =>
+            item.id === existingForThisCompany.id
+                ? {
+                    ...item,
+                    isPrimary: true,
+                    leadId: lead.id,
+                    leadTitle: lead.title,
+                    phone: lead.contactPhone || item.phone,
+                    jobTitle: lead.contactJobTitle || item.jobTitle,
+                }
+                : item.companyId === company.id
+                    ? { ...item, isPrimary: false }
+                    : item
+        );
+    } else {
+        const duplicateGlobal = nextContactsList.find(
+            (c) => c.email.trim().toLowerCase() === leadEmailLower
+        );
+        if (duplicateGlobal && !duplicateGlobal.companyId) {
+            nextContactsList = nextContactsList.map((item) =>
+                item.id === duplicateGlobal.id
+                    ? {
+                        ...item,
+                        companyId: company.id,
+                        companyNameEn: company.nameEn,
+                        companyNameAr: company.nameAr,
+                        leadId: lead.id,
+                        leadTitle: lead.title,
+                        isPrimary: true,
+                    }
+                    : item.companyId === company.id
+                        ? { ...item, isPrimary: false }
+                        : item
+            );
+        } else if (!duplicateGlobal) {
+            nextContactsList = nextContactsList.map((item) =>
+                item.companyId === company.id
+                    ? { ...item, isPrimary: false }
+                    : item
+            );
+            const newContactRecord: CrmContactRecord = validateWithSchema(
+                crmContactSchema,
+                {
+                    id: generateDeterministicCrmId(nextContactsList, 'crm-cnt'),
+                    code: generateNextCrmCode(nextContactsList, 'CNT'),
+                    fullNameEn: lead.contactName.trim(),
+                    fullNameAr: lead.contactName.trim(),
+                    contactType: 'decision_maker',
+                    jobTitle: lead.contactJobTitle?.trim() || 'Primary Contact',
+                    department: 'Management',
+                    phone: lead.contactPhone.trim(),
+                    email: lead.contactEmail.trim(),
+                    companyId: company.id,
+                    companyNameEn: company.nameEn,
+                    companyNameAr: company.nameAr,
+                    leadId: lead.id,
+                    leadTitle: lead.title,
+                    isPrimary: true,
+                    status: 'active',
+                    createdAt: new Date().toISOString().split('T')[0],
+                    createdBy: creatorName || 'Karim Wagdi',
+                },
+                'Contact'
+            );
+            nextContactsList.unshift(newContactRecord);
+        }
+    }
+
+    setLocal(CRM_STORAGE_KEYS.CONTACTS, nextContactsList);
+    return nextContactsList;
 }
 
 export const crmApi = {
@@ -1666,8 +2303,141 @@ export const crmApi = {
             data,
             'Contact'
         );
-        const response = await axiosClient.post('/crm/contacts', validated);
-        return response.data;
+        if (isCrmRemoteBackendActive()) {
+            const response = await axiosClient.post('/crm/contacts', validated);
+            return response.data;
+        }
+
+        const companies = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.COMPANIES,
+            initialCrmCompanies
+        );
+        let linkedCompany: CrmCompanyRecord | undefined;
+        if (validated.companyId && validated.companyId.trim() !== '') {
+            linkedCompany = companies.find((c) => c.id === validated.companyId);
+            if (!linkedCompany) {
+                throw new CrmApiError({
+                    message: `Company '${validated.companyId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+        }
+
+        const leads = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.LEADS,
+            initialCrmLeads
+        );
+        let linkedLead: CrmLeadRecord | undefined;
+        if (validated.leadId && validated.leadId.trim() !== '') {
+            linkedLead = leads.find((l) => l.id === validated.leadId);
+            if (!linkedLead) {
+                throw new CrmApiError({
+                    message: `Lead '${validated.leadId}' does not exist.`,
+                    statusCode: 400,
+                    code: 'CRM_VALIDATION_FAILED',
+                });
+            }
+        }
+
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+        const duplicateEmail = list.find(
+            (item) =>
+                item.email.trim().toLowerCase() ===
+                validated.email.trim().toLowerCase()
+        );
+        if (duplicateEmail) {
+            if (linkedCompany && duplicateEmail.companyId === linkedCompany.id) {
+                const updated = list.map((item) =>
+                    item.id === duplicateEmail.id
+                        ? validateWithSchema(
+                            crmContactSchema,
+                            {
+                                ...item,
+                                ...validated,
+                                id: item.id,
+                                code: item.code,
+                                companyId: linkedCompany.id,
+                                companyNameEn: linkedCompany.nameEn,
+                                companyNameAr: linkedCompany.nameAr,
+                                leadId: linkedLead?.id || item.leadId,
+                                leadTitle: linkedLead?.title || item.leadTitle,
+                                isPrimary: validated.isPrimary ?? item.isPrimary,
+                                updatedAt: new Date().toISOString().split('T')[0],
+                            },
+                            'Contact'
+                        )
+                        : (validated.isPrimary ?? true) && item.companyId === linkedCompany.id
+                            ? { ...item, isPrimary: false }
+                            : item
+                );
+                setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+                const enriched = updated.find((c) => c.id === duplicateEmail.id)!;
+                recordCrmAuditEvent({
+                    action: 'UPDATED',
+                    resourceType: 'Contact',
+                    resourceId: enriched.id,
+                    resourceCode: enriched.code,
+                    resourceNameEn: enriched.fullNameEn,
+                    resourceNameAr: enriched.fullNameAr || enriched.fullNameEn,
+                    detailsEn: `Updated Contact "${enriched.fullNameEn}" (${enriched.code}).`,
+                    detailsAr: `تم تحديث جهة الاتصال "${enriched.fullNameAr || enriched.fullNameEn}" (${enriched.code}).`,
+                    newState: enriched,
+                });
+                return enriched;
+            }
+
+            throw new CrmApiError({
+                message: `Contact with email "${validated.email}" already exists (${duplicateEmail.code}).`,
+                statusCode: 409,
+                code: 'CRM_DUPLICATE_NAME',
+            });
+        }
+
+        const newRecord: CrmContactRecord = validateWithSchema(
+            crmContactSchema,
+            {
+                ...validated,
+                companyId: linkedCompany?.id || undefined,
+                companyNameEn: linkedCompany?.nameEn || validated.companyNameEn,
+                companyNameAr: linkedCompany?.nameAr || validated.companyNameAr,
+                leadId: linkedLead?.id || undefined,
+                leadTitle: linkedLead?.title || validated.leadTitle,
+                id: generateDeterministicCrmId(list, 'crm-cnt'),
+                code: generateNextCrmCode(list, 'CNT'),
+                createdAt: new Date().toISOString().split('T')[0],
+                createdBy: 'Karim Wagdi',
+            },
+            'Contact'
+        );
+
+        const normalizedExisting =
+            newRecord.isPrimary && newRecord.companyId
+                ? list.map((item) =>
+                    item.companyId === newRecord.companyId
+                        ? { ...item, isPrimary: false }
+                        : item
+                )
+                : list;
+
+        setLocal(CRM_STORAGE_KEYS.CONTACTS, [newRecord, ...normalizedExisting]);
+
+        recordCrmAuditEvent({
+            action: 'CREATED',
+            resourceType: 'Contact',
+            resourceId: newRecord.id,
+            resourceCode: newRecord.code,
+            resourceNameEn: newRecord.fullNameEn,
+            resourceNameAr: newRecord.fullNameAr || newRecord.fullNameEn,
+            detailsEn: `Created Contact "${newRecord.fullNameEn}" (${newRecord.code}).`,
+            detailsAr: `تم إنشاء جهة الاتصال "${newRecord.fullNameAr || newRecord.fullNameEn}" (${newRecord.code}).`,
+            newState: newRecord,
+        });
+
+        return newRecord;
     },
 
     registerLeadContact: async (params: {
@@ -1685,18 +2455,106 @@ export const crmApi = {
         if (!params.companyId || !name || !phone || !email) {
             return null;
         }
-        return crmApi.createContact({
-            fullNameEn: name,
-            fullNameAr: name,
-            contactType: 'decision_maker',
-            jobTitle: (params.contactJobTitle || '').trim() || 'Primary Contact',
-            department: 'Management',
-            phone,
-            email,
-            companyId: params.companyId,
-            leadId: params.leadId,
-            isPrimary: params.isPrimary ?? true,
-            status: 'active',
+
+        const emailLower = contactEmail.trim().toLowerCase();
+        const list = readOrInitializeCrmCollection(
+            CRM_STORAGE_KEYS.CONTACTS,
+            initialCrmContacts
+        );
+
+        // Check if already registered for this company
+        const existingIdx = list.findIndex(
+            (c) => c.companyId === company.id && c.email.trim().toLowerCase() === emailLower
+        );
+        if (existingIdx !== -1) {
+            const updated = list.map((item, idx) =>
+                idx === existingIdx
+                    ? {
+                        ...item,
+                        isPrimary: params.isPrimary !== undefined ? params.isPrimary : item.isPrimary,
+                        phone: contactPhone || item.phone,
+                        jobTitle: contactJobTitle || item.jobTitle,
+                        leadId: params.leadId || item.leadId,
+                        leadTitle: leadTitle || item.leadTitle,
+                    }
+                    : (params.isPrimary ?? true) && item.companyId === company.id
+                        ? { ...item, isPrimary: false }
+                        : item
+            );
+            setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+            return updated[existingIdx];
+        }
+
+        // Check if contact with same email exists in system unlinked
+        const existingByEmail = list.find(
+            (c) => c.email.trim().toLowerCase() === emailLower
+        );
+        if (existingByEmail) {
+            if (!existingByEmail.companyId) {
+                const updated = list.map((item) =>
+                    item.id === existingByEmail.id
+                        ? {
+                            ...item,
+                            companyId: company.id,
+                            companyNameEn: company.nameEn,
+                            companyNameAr: company.nameAr,
+                            isPrimary: params.isPrimary !== undefined ? params.isPrimary : true,
+                            leadId: params.leadId || item.leadId,
+                            leadTitle: leadTitle || item.leadTitle,
+                        }
+                        : (params.isPrimary ?? true) && item.companyId === company.id
+                            ? { ...item, isPrimary: false }
+                            : item
+                );
+                setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
+                return updated.find((c) => c.id === existingByEmail.id)!;
+            }
+            return existingByEmail;
+        }
+
+        // Demote other contacts on this company if new contact is primary
+        const normalized = (params.isPrimary ?? true)
+            ? list.map((item) =>
+                item.companyId === company.id ? { ...item, isPrimary: false } : item
+            )
+            : list;
+
+        const newRecord: CrmContactRecord = validateWithSchema(
+            crmContactSchema,
+            {
+                id: generateDeterministicCrmId(list, 'crm-cnt'),
+                code: generateNextCrmCode(list, 'CNT'),
+                fullNameEn: contactName,
+                fullNameAr: contactName,
+                contactType: 'decision_maker',
+                jobTitle: contactJobTitle || 'Primary Contact',
+                department: 'Management',
+                phone: contactPhone,
+                email: contactEmail,
+                companyId: company.id,
+                companyNameEn: company.nameEn,
+                companyNameAr: company.nameAr,
+                leadId: params.leadId,
+                leadTitle,
+                isPrimary: params.isPrimary ?? true,
+                status: 'active',
+                createdAt: new Date().toISOString().split('T')[0],
+                createdBy: 'Karim Wagdi',
+            },
+            'Contact'
+        );
+
+        setLocal(CRM_STORAGE_KEYS.CONTACTS, [newRecord, ...normalized]);
+        recordCrmAuditEvent({
+            action: 'CREATED',
+            resourceType: 'Contact',
+            resourceId: newRecord.id,
+            resourceCode: newRecord.code,
+            resourceNameEn: newRecord.fullNameEn,
+            resourceNameAr: newRecord.fullNameAr || newRecord.fullNameEn,
+            detailsEn: `Registered primary Contact "${newRecord.fullNameEn}" (${newRecord.code}) for Company "${company.nameEn}" from Lead.`,
+            detailsAr: `تم تسجيل جهة الاتصال الرئيسية "${newRecord.fullNameAr || newRecord.fullNameEn}" (${newRecord.code}) لشركة "${company.nameAr}" من العميل المحتمل.`,
+            newState: newRecord,
         });
     },
 
@@ -3635,4 +4493,256 @@ export const crmApi = {
     },
 };
 
-export { umsApi } from './umsApi';
+export function checkCrmCommercialDeletionEligibility(
+    entityType: CrmCommercialEntityType,
+    id: string
+): CrmDeletionEligibilityResult {
+    const quotations = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.QUOTATIONS,
+        initialCrmQuotations
+    );
+    const contracts = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.CONTRACTS,
+        initialCrmContracts
+    );
+    const invoices = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.INVOICES,
+        initialCrmInvoices
+    );
+    const operationalTasks =
+        readOrInitializeCrmCollection<CrmOperationalTaskRecord>(
+            CRM_STORAGE_KEYS.OPERATIONAL_TASKS,
+            initialCrmOperationalTasks
+        );
+
+    const referencedBy: string[] = [];
+
+    if (entityType === 'deal') {
+        quotations
+            .filter((q) => q.dealId === id)
+            .forEach((q) =>
+                referencedBy.push(`Quotation ${q.code} (${q.titleEn})`)
+            );
+        contracts
+            .filter((c) => c.dealId === id)
+            .forEach((c) =>
+                referencedBy.push(`Contract ${c.code} (${c.titleEn})`)
+            );
+        invoices
+            .filter((inv) => inv.dealId === id)
+            .forEach((inv) =>
+                referencedBy.push(`Invoice ${inv.code} (${inv.titleEn})`)
+            );
+        operationalTasks
+            .filter(
+                (t) => t.relatedEntityType === 'Deal' && t.relatedEntityId === id
+            )
+            .forEach((t) => referencedBy.push(`Task ${t.code} (${t.titleEn})`));
+    } else if (entityType === 'quotation') {
+        contracts
+            .filter((c) => c.quotationId === id)
+            .forEach((c) =>
+                referencedBy.push(`Contract ${c.code} (${c.titleEn})`)
+            );
+        invoices
+            .filter((inv) => inv.quotationId === id)
+            .forEach((inv) =>
+                referencedBy.push(`Invoice ${inv.code} (${inv.titleEn})`)
+            );
+        operationalTasks
+            .filter(
+                (t) =>
+                    t.relatedEntityType === 'Quotation' &&
+                    t.relatedEntityId === id
+            )
+            .forEach((t) => referencedBy.push(`Task ${t.code} (${t.titleEn})`));
+    } else if (entityType === 'contract') {
+        const contractRecord = contracts.find((c) => c.id === id);
+        if (contractRecord?.contractStatus === 'active') {
+            referencedBy.push(`Active Contract Status (${contractRecord.code})`);
+        }
+        invoices
+            .filter((inv) => inv.contractId === id)
+            .forEach((inv) =>
+                referencedBy.push(`Invoice ${inv.code} (${inv.titleEn})`)
+            );
+        operationalTasks
+            .filter(
+                (t) =>
+                    t.relatedEntityType === 'Contract' &&
+                    t.relatedEntityId === id
+            )
+            .forEach((t) => referencedBy.push(`Task ${t.code} (${t.titleEn})`));
+    } else if (entityType === 'invoice') {
+        const invoiceRecord = invoices.find((inv) => inv.id === id);
+        if (
+            invoiceRecord &&
+            (invoiceRecord.paidAmount > 0 ||
+                invoiceRecord.invoiceStatus === 'paid' ||
+                invoiceRecord.invoiceStatus === 'partially_paid')
+        ) {
+            referencedBy.push(
+                `Recorded Payment SAR ${invoiceRecord.paidAmount.toLocaleString()} (${invoiceRecord.code})`
+            );
+        }
+        operationalTasks
+            .filter(
+                (t) =>
+                    t.relatedEntityType === 'Invoice' &&
+                    t.relatedEntityId === id
+            )
+            .forEach((t) => referencedBy.push(`Task ${t.code} (${t.titleEn})`));
+    }
+
+    if (referencedBy.length > 0) {
+        return {
+            canDelete: false,
+            referencedCount: referencedBy.length,
+            referencedBy,
+            reasonEn: `Cannot delete this commercial record because it is referenced by ${referencedBy.length} active record(s). Deactivate it instead.`,
+            reasonAr: `لا يمكن حذف هذا السجل التجاري لارتباطه بـ ${referencedBy.length} سجل نشط في النظام. يمكنك تعطيله بدلاً من ذلك.`,
+        };
+    }
+
+    return {
+        canDelete: true,
+        referencedCount: 0,
+        referencedBy: [],
+    };
+}
+
+export function checkCrmCustomerDeletionEligibility(
+    entityType: CrmCustomerEntityType,
+    id: string
+): CrmDeletionEligibilityResult {
+    const leads = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.LEADS,
+        initialCrmLeads
+    );
+    const companies = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.COMPANIES,
+        initialCrmCompanies
+    );
+    const contacts = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.CONTACTS,
+        initialCrmContacts
+    );
+    const owners = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.OWNERS,
+        initialCrmOwners
+    );
+    const deals = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.DEALS,
+        initialCrmDeals
+    );
+    const quotations = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.QUOTATIONS,
+        initialCrmQuotations
+    );
+    const contracts = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.CONTRACTS,
+        initialCrmContracts
+    );
+    const invoices = readOrInitializeCrmCollection(
+        CRM_STORAGE_KEYS.INVOICES,
+        initialCrmInvoices
+    );
+    const operationalTasks = readOrInitializeCrmCollection<CrmOperationalTaskRecord>(
+        CRM_STORAGE_KEYS.OPERATIONAL_TASKS,
+        initialCrmOperationalTasks
+    );
+
+    const referencedBy: string[] = [];
+
+    if (entityType === 'lead') {
+        const lead = leads.find((l) => l.id === id);
+        if (lead && lead.leadStatusId === 'crm-lst-4') {
+            referencedBy.push(`Converted Lead Stage (${lead.code})`);
+        }
+        contacts
+            .filter((c) => c.leadId === id)
+            .forEach((c) => referencedBy.push(`Contact ${c.code} (${c.fullNameEn})`));
+        deals
+            .filter((d) => d.leadId === id)
+            .forEach((d) => referencedBy.push(`Deal ${d.code} (${d.titleEn})`));
+        operationalTasks
+            .filter((t) => t.relatedEntityType === 'Lead' && t.relatedEntityId === id)
+            .forEach((t) => referencedBy.push(`Task ${t.code} (${t.titleEn})`));
+    } else if (entityType === 'company') {
+        leads
+            .filter((l) => l.companyId === id)
+            .forEach((l) => referencedBy.push(`Lead ${l.code} (${l.title})`));
+        contacts
+            .filter((c) => c.companyId === id)
+            .forEach((c) => referencedBy.push(`Contact ${c.code} (${c.fullNameEn})`));
+        owners
+            .filter((o) => o.companyId === id)
+            .forEach((o) => referencedBy.push(`Owner ${o.code} (${o.fullNameEn})`));
+        deals
+            .filter((d) => d.companyId === id)
+            .forEach((d) => referencedBy.push(`Deal ${d.code} (${d.titleEn})`));
+        quotations
+            .filter((q) => q.companyId === id)
+            .forEach((q) => referencedBy.push(`Quotation ${q.code} (${q.titleEn})`));
+        contracts
+            .filter((con) => con.companyId === id)
+            .forEach((con) => referencedBy.push(`Contract ${con.code} (${con.titleEn})`));
+        invoices
+            .filter((inv) => inv.companyId === id)
+            .forEach((inv) => referencedBy.push(`Invoice ${inv.code} (${inv.titleEn})`));
+        operationalTasks
+            .filter(
+                (t) =>
+                    (t.relatedEntityType === 'Company' &&
+                        t.relatedEntityId === id) ||
+                    t.companyId === id
+            )
+            .forEach((t) => referencedBy.push(`Task ${t.code} (${t.titleEn})`));
+    } else if (entityType === 'contact') {
+        deals
+            .filter((d) => d.contactId === id)
+            .forEach((d) => referencedBy.push(`Deal ${d.code} (${d.titleEn})`));
+        quotations
+            .filter((q) => q.contactId === id)
+            .forEach((q) => referencedBy.push(`Quotation ${q.code} (${q.titleEn})`));
+        contracts
+            .filter((con) => con.contactId === id)
+            .forEach((con) => referencedBy.push(`Contract ${con.code} (${con.titleEn})`));
+    } else if (entityType === 'owner') {
+        const ownerRecord = owners.find((o) => o.id === id);
+        if (ownerRecord?.companyId) {
+            const linkedCompany = companies.find(
+                (c) => c.id === ownerRecord.companyId
+            );
+            if (linkedCompany) {
+                referencedBy.push(
+                    `Company ${linkedCompany.code} (${linkedCompany.nameEn})`
+                );
+            }
+        }
+        companies
+            .filter((c) => c.owners.some((o) => o.ownerId === id))
+            .forEach((c) => {
+                const label = `Company ${c.code} (${c.nameEn})`;
+                if (!referencedBy.includes(label)) {
+                    referencedBy.push(label);
+                }
+            });
+    }
+
+    if (referencedBy.length > 0) {
+        return {
+            canDelete: false,
+            referencedCount: referencedBy.length,
+            referencedBy,
+            reasonEn: `Cannot delete this record because it is linked to ${referencedBy.length} active CRM record(s). Deactivate it instead.`,
+            reasonAr: `لا يمكن حذف هذا السجل لارتباطه بـ ${referencedBy.length} سجل نشط في النظام. يمكنك تعطيله بدلاً من ذلك.`,
+        };
+    }
+
+    return {
+        canDelete: true,
+        referencedCount: 0,
+        referencedBy: [],
+    };
+}

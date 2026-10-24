@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type ColumnDef } from '@tanstack/react-table';
 import {
     Users,
@@ -12,18 +12,10 @@ import {
     Clock,
     MailCheck,
     MailWarning,
-    Search,
-    X,
     RotateCcw,
-    Download,
-    Upload,
-    Plus,
     Eye,
     Pencil,
-    Power,
     Trash2,
-    ChevronLeft,
-    ChevronRight,
     ShieldAlert,
     ArrowLeft,
     ArrowRight,
@@ -35,7 +27,6 @@ import {
     Wallet,
     FileText,
     HeartHandshake,
-    Send,
     CheckCircle2,
     AlertTriangle,
     User,
@@ -46,38 +37,91 @@ import {
     Paperclip,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuthStore } from '../../store/useAuthStore';
 import { DataTable } from '../../components/DataTable';
-import { umsApi } from '../../api/api';
-import {
-    loadEmployees,
-    saveEmployees,
-    loadDepartments,
-    loadDesignations,
-    loadBranches,
-    loadRoles,
-    loadSecurityGroups,
-    loadCustomAddons,
-    loadUmsAuditTrail,
-    syncMasterEntityEmployeeCounts,
-    computeIqamaStatus,
-    computeEmployeeInvitationStatus,
-    computeEmployeeProfileCompletion,
-    computeEmployeeDirectoryKpis,
-    checkEmployeeDeletionEligibility,
-    recordUmsAuditEvent,
-    escapeSafeCsvCell,
-    UMS_PAGE_SIZE_OPTIONS,
-    type EmployeeRecord,
-    type EmployeeStatus,
-    type ContractType,
-    type DepartmentRecord,
-    type DesignationRecord,
-    type BranchRecord,
-    type RoleRecord,
-    type SecurityGroupRecord,
-    type CustomAddonRecord,
-} from './umsMockData';
+import { umsApi, userApi } from '../../api/api';
+// import { EmployeeForm } from './UmsEmployeeWizardPage';
+import EmployeeForm, { EmployeeFormMode } from '../../components/ums/EmployeeForm';
+
+type EmployeeStatus = 'Active' | 'Inactive' | 'Draft';
+type ContractType = 'Permanent' | 'Fixed Term' | 'Probation' | 'Seasonal' | 'Remote';
+type ApiEntity = { id: string; name?: string; description?: string; codeName?: string; status?: string;[key: string]: any };
+type DepartmentRecord = ApiEntity & { nameEn: string; nameAr: string; code: string };
+type DesignationRecord = ApiEntity & { titleEn: string; titleAr: string; code: string };
+type BranchRecord = ApiEntity & { nameEn: string; nameAr: string; cityEn: string; cityAr: string; code: string };
+type RoleRecord = ApiEntity & { nameEn: string; nameAr: string; code: string; securityGroupId: string };
+type SecurityGroupRecord = ApiEntity & { nameEn: string; nameAr: string; code: string };
+type CustomAddonRecord = ApiEntity & { nameEn: string; nameAr: string; code: string; type: string };
+type EmployeeRecord = { id: string; codeName?: string; email?: string; personal_email?: string; phone_number?: string; isActive?: boolean; branch?: ApiEntity | null; role?: ApiEntity | null; securityGroup?: ApiEntity | null; userAttach?: Record<string, any> | null; employeeContract?: Record<string, any> | null;[key: string]: any };
+
+const UMS_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+const extractItems = (response: any): any[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.results)) return response.results;
+    if (Array.isArray(response?.data?.items)) return response.data.items;
+    if (Array.isArray(response?.data?.results)) return response.data.results;
+    return [];
+};
+
+const extractCount = (response: any): number => Number(response?.count ?? response?.totalItems ?? response?.total ?? response?.data?.count ?? extractItems(response).length);
+const extractOne = (response: any): any => response?.data?.data ?? response?.data ?? response;
+
+const entityName = (entity: any): string => entity?.name ?? entity?.title ?? entity?.nameEn ?? entity?.nameAr ?? '';
+
+const fullName = (attach: any, language: 'en' | 'ar'): string => {
+    const fields = language === 'ar' ? [attach?.first_name_Ar, attach?.secend_name_Ar, attach?.third_name_Ar, attach?.last_name_Ar] : [attach?.first_name_En, attach?.secend_name_En, attach?.third_name_En, attach?.last_name_En];
+    return fields.filter(Boolean).join(' ').trim();
+};
+
+const computeEmployeeProfileCompletion = (employee: EmployeeRecord) => {
+    const attach = employee.userAttach;
+    const contract = employee.employeeContract;
+    const fields = [
+        { value: fullName(attach, 'en') || fullName(attach, 'ar'), en: 'Employee name', ar: 'اسم الموظف' },
+        { value: employee.email, en: 'Work email', ar: 'البريد الوظيفي' },
+        { value: employee.phone_number, en: 'Phone number', ar: 'رقم الهاتف' },
+        { value: contract?.department?.id, en: 'Department', ar: 'القسم' },
+        { value: contract?.designation?.id, en: 'Designation', ar: 'المسمى الوظيفي' },
+        { value: employee.role?.id, en: 'Role', ar: 'الدور' },
+        { value: contract?.joining_date, en: 'Joining date', ar: 'تاريخ الانضمام' },
+        { value: contract?.contract_type, en: 'Contract type', ar: 'نوع العقد' },
+        { value: contract?.job_title, en: 'Job title', ar: 'الوظيفة' },
+        { value: attach?.nationality, en: 'Nationality', ar: 'الجنسية' },
+        { value: contract?.iqama_ID, en: 'Iqama number', ar: 'رقم الإقامة' },
+        { value: contract?.bank_name, en: 'Bank details', ar: 'بيانات البنك' },
+    ];
+    const completedCount = fields.filter((field) => Boolean(field.value)).length;
+    const missing = fields.filter((field) => !field.value);
+    return { completedCount, totalCount: fields.length, percentage: Math.round((completedCount / fields.length) * 100), missingFieldsEn: missing.map((field) => field.en), missingFieldsAr: missing.map((field) => field.ar) };
+};
+
+const computeEmployeeInvitationStatus = (employee: EmployeeRecord): 'Not Sent' | 'Pending' | 'Accepted' => employee.invitationStatus ?? 'Not Sent';
+
+const computeIqamaStatus = (expiryDate?: string): 'Valid' | 'Warning' | 'Expired' | 'Missing' => {
+    if (!expiryDate) return 'Missing';
+    const expiry = new Date(expiryDate).getTime();
+    const now = Date.now();
+    if (Number.isNaN(expiry)) return 'Missing';
+    if (expiry < now) return 'Expired';
+    return expiry - now <= 90 * 24 * 60 * 60 * 1000 ? 'Warning' : 'Valid';
+};
+
+const computeEmployeeDirectoryKpis = (employees: EmployeeRecord[]) => {
+    const monthPrefix = new Date().toISOString().slice(0, 7);
+    return {
+        totalEmployees: employees.length,
+        activeEmployees: employees.filter((item) => item.isActive !== false).length,
+        inactiveEmployees: employees.filter((item) => item.isActive === false).length,
+        draftEmployees: 0,
+        joinedThisMonth: employees.filter((item) => String(item.employeeContract?.joining_date || '').startsWith(monthPrefix)).length,
+        underProbation: employees.filter((item) => Boolean(item.employeeContract?.probation_period)).length,
+        pendingInvitations: employees.filter((item) => computeEmployeeInvitationStatus(item) === 'Pending').length,
+        invitedEmployees: employees.filter((item) => computeEmployeeInvitationStatus(item) !== 'Not Sent').length,
+    };
+};
+
 
 const CONTRACT_TYPES: ContractType[] = [
     'Permanent',
@@ -124,54 +168,6 @@ export const UmsEmployeesPage: React.FC = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
-    const currentUser = useAuthStore((state) => state.user);
-
-    // Master & Employee Datasets loaded with TanStack Query + UMS localStorage helpers
-    const { data: queriedEmployees, isLoading: isEmployeesLoading } = useQuery({
-        queryKey: ['ums', 'employees'],
-        queryFn: async () => {
-            const res = await umsApi.listEmployees();
-            return res.ok && Array.isArray(res.data) ? res.data : loadEmployees();
-        },
-        initialData: () => loadEmployees(),
-    });
-
-    const { data: queriedDepartments } = useQuery({
-        queryKey: ['ums', 'departments'],
-        queryFn: async () => {
-            const res = await umsApi.listDepartments();
-            return res.ok && Array.isArray(res.data) ? res.data : loadDepartments();
-        },
-        initialData: () => loadDepartments(),
-    });
-
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() =>
-        Array.isArray(queriedEmployees) ? queriedEmployees : loadEmployees()
-    );
-    const [departments, setDepartments] = useState<DepartmentRecord[]>(() =>
-        Array.isArray(queriedDepartments) ? queriedDepartments : loadDepartments()
-    );
-    const [designations] = useState<DesignationRecord[]>(() => umsApi.listDesignations());
-    const [branches] = useState<BranchRecord[]>(() => umsApi.listBranches());
-    const [roles] = useState<RoleRecord[]>(() => umsApi.listRoles());
-    const [securityGroups] = useState<SecurityGroupRecord[]>(() => umsApi.listSecurityGroups());
-    const [customAddons] = useState<CustomAddonRecord[]>(() => umsApi.listCustomAddons());
-
-    useEffect(() => {
-        if (Array.isArray(queriedEmployees)) {
-            setEmployees(queriedEmployees);
-        } else if (Array.isArray((queriedEmployees as { data?: EmployeeRecord[] })?.data)) {
-            setEmployees((queriedEmployees as { data: EmployeeRecord[] }).data);
-        }
-    }, [queriedEmployees]);
-
-    useEffect(() => {
-        if (Array.isArray(queriedDepartments)) {
-            setDepartments(queriedDepartments);
-        } else if (Array.isArray((queriedDepartments as { data?: DepartmentRecord[] })?.data)) {
-            setDepartments((queriedDepartments as { data: DepartmentRecord[] }).data);
-        }
-    }, [queriedDepartments]);
 
     // Search & Debounced Search State
     const [searchInput, setSearchInput] = useState('');
@@ -184,17 +180,48 @@ export const UmsEmployeesPage: React.FC = () => {
     const [designationFilter, setDesignationFilter] = useState<string>('ALL');
     const [branchFilter, setBranchFilter] = useState<string>('ALL');
     const [contractTypeFilter, setContractTypeFilter] = useState<'ALL' | ContractType>('ALL');
-    const [probationFilter, setProbationFilter] = useState<
-        'ALL' | 'UNDER_PROBATION' | 'CONFIRMED'
-    >('ALL');
+    const [probationFilter, setProbationFilter] = useState<'ALL' | 'UNDER_PROBATION' | 'CONFIRMED'>('ALL');
 
     // Pagination & Selection State
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     // Deletion Dialog State
     const [deletingEmployee, setDeletingEmployee] = useState<EmployeeRecord | null>(null);
+    const [employeeForm, setEmployeeForm] = useState<{ isOpen: boolean; mode: EmployeeFormMode; employee: EmployeeRecord | null }>({ isOpen: false, mode: 'create', employee: null });
+
+    const openCreateEmployeeForm = useCallback(() => setEmployeeForm({ isOpen: true, mode: 'create', employee: null }), []);
+    const openViewEmployeeForm = useCallback((employee: EmployeeRecord) => setEmployeeForm({ isOpen: true, mode: 'view', employee }), []);
+    const openUpdateEmployeeForm = useCallback((employee: EmployeeRecord) => setEmployeeForm({ isOpen: true, mode: 'update', employee }), []);
+    const closeEmployeeForm = useCallback(() => setEmployeeForm({ isOpen: false, mode: 'create', employee: null }), []);
+
+    const employeeQueryParams = useMemo(() => ({
+        page: currentPage,
+        limit: pageSize,
+        ...(debouncedSearch.trim() && { search: debouncedSearch.trim() }),
+        ...(statusFilter !== 'ALL' && { status: statusFilter }),
+        ...(departmentFilter !== 'ALL' && { department_id: departmentFilter }),
+        ...(designationFilter !== 'ALL' && { designation_id: designationFilter }),
+        ...(branchFilter !== 'ALL' && { branch_id: branchFilter }),
+        ...(contractTypeFilter !== 'ALL' && { contract_type: contractTypeFilter }),
+        ...(probationFilter !== 'ALL' && { probation: probationFilter }),
+    }), [currentPage, pageSize, debouncedSearch, statusFilter, departmentFilter, designationFilter, branchFilter, contractTypeFilter, probationFilter]);
+
+    const { data: employeesResponse, isLoading: isEmployeesLoading, isFetching: isEmployeesFetching } = useQuery({
+        queryKey: ['ums', 'employees', employeeQueryParams],
+        queryFn: () => userApi.getEmployees(employeeQueryParams),
+        placeholderData: (previousData) => previousData,
+    });
+
+    const { data: departmentsResponse } = useQuery({ queryKey: ['ums', 'departments', 'options'], queryFn: () => umsApi.getDepartments({ page: 1, limit: 1000 }) });
+    const { data: designationsResponse } = useQuery({ queryKey: ['ums', 'designations', 'options'], queryFn: () => umsApi.getDesignations({ page: 1, limit: 1000 }) });
+    const { data: branchesResponse } = useQuery({ queryKey: ['ums', 'branches', 'options'], queryFn: () => umsApi.getBranchs({ page: 1, limit: 1000 }) });
+
+    const employeesCount = extractCount(employeesResponse);
+    const employees = useMemo(() => extractItems(employeesResponse) as EmployeeRecord[], [employeesResponse]);
+    const departments = useMemo(() => extractItems(departmentsResponse), [departmentsResponse]);
+    const designations = useMemo(() => extractItems(designationsResponse), [designationsResponse]);
+    const branches = useMemo(() => extractItems(branchesResponse), [branchesResponse]);
 
     // Debounce search input (250ms)
     useEffect(() => {
@@ -204,43 +231,6 @@ export const UmsEmployeesPage: React.FC = () => {
         }, 250);
         return () => window.clearTimeout(timer);
     }, [searchInput]);
-
-    // Lookup Maps for O(1) Master-Data Relationship Resolution
-    const departmentMap = useMemo(() => {
-        const map = new Map<string, DepartmentRecord>();
-        for (const d of departments) map.set(d.id, d);
-        return map;
-    }, [departments]);
-
-    const designationMap = useMemo(() => {
-        const map = new Map<string, DesignationRecord>();
-        for (const d of designations) map.set(d.id, d);
-        return map;
-    }, [designations]);
-
-    const branchMap = useMemo(() => {
-        const map = new Map<string, BranchRecord>();
-        for (const b of branches) map.set(b.id, b);
-        return map;
-    }, [branches]);
-
-    const roleMap = useMemo(() => {
-        const map = new Map<string, RoleRecord>();
-        for (const r of roles) map.set(r.id, r);
-        return map;
-    }, [roles]);
-
-    const securityGroupMap = useMemo(() => {
-        const map = new Map<string, SecurityGroupRecord>();
-        for (const sg of securityGroups) map.set(sg.id, sg);
-        return map;
-    }, [securityGroups]);
-
-    const customAddonMap = useMemo(() => {
-        const map = new Map<string, CustomAddonRecord>();
-        for (const addon of customAddons) map.set(addon.id, addon);
-        return map;
-    }, [customAddons]);
 
     // Profile completion map for all employees
     const completionByEmployeeId = useMemo(() => {
@@ -252,109 +242,59 @@ export const UmsEmployeesPage: React.FC = () => {
     }, [employees]);
 
     // Dynamic 8 KPI Cards derived from live employee dataset
-    const kpis = useMemo(() => computeEmployeeDirectoryKpis(employees), [employees]);
-
-    // Persist employees helper & TanStack Query mutation
-    const persistEmployeesMutation = useMutation({
-        mutationFn: async (updated: EmployeeRecord[]) => {
-            saveEmployees(updated);
-            syncMasterEntityEmployeeCounts(updated);
-            return updated;
-        },
-        onSuccess: (updated) => {
-            setEmployees(updated);
-            queryClient.setQueryData(['ums', 'employees'], updated);
-        },
-    });
-
-    const persistEmployees = (updated: EmployeeRecord[]) => {
-        setEmployees(updated);
-        saveEmployees(updated);
-        syncMasterEntityEmployeeCounts(updated);
-        persistEmployeesMutation.mutate(updated);
-    };
+    const kpis = useMemo(() => ({ ...computeEmployeeDirectoryKpis(employees), totalEmployees: employeesCount }), [employees, employeesCount]);
 
     // Filtered Employees
     const filteredEmployees = useMemo(() => {
         const query = debouncedSearch.trim().toLowerCase();
 
         return employees.filter((emp) => {
-            if (statusFilter !== 'ALL' && emp.status !== statusFilter) {
+            const status: EmployeeStatus = emp.isActive === false ? 'Inactive' : 'Active';
+            const attach = emp.userAttach;
+            const contract = emp.employeeContract;
+            const nameEn = fullName(attach, 'en');
+            const nameAr = fullName(attach, 'ar');
+
+            if (statusFilter !== 'ALL' && status !== statusFilter) {
                 return false;
             }
-            if (departmentFilter !== 'ALL' && emp.departmentId !== departmentFilter) {
+            if (departmentFilter !== 'ALL' && contract?.department?.id !== departmentFilter) {
                 return false;
             }
-            if (designationFilter !== 'ALL' && emp.designationId !== designationFilter) {
+            if (designationFilter !== 'ALL' && contract?.designation?.id !== designationFilter) {
                 return false;
             }
-            if (branchFilter !== 'ALL' && emp.branchId !== branchFilter) {
+            if (branchFilter !== 'ALL' && emp.branch?.id !== branchFilter) {
                 return false;
             }
-            if (contractTypeFilter !== 'ALL' && emp.contractType !== contractTypeFilter) {
+            if (contractTypeFilter !== 'ALL' && contract?.contract_type !== contractTypeFilter) {
                 return false;
             }
             if (probationFilter !== 'ALL') {
-                const isProbation =
-                    Boolean(emp.isUnderProbation) || emp.contractType === 'Probation';
+                const isProbation = Boolean(contract?.probation_period) || contract?.contract_type === 'Probation';
                 if (probationFilter === 'UNDER_PROBATION' && !isProbation) return false;
                 if (probationFilter === 'CONFIRMED' && isProbation) return false;
             }
 
             if (!query) return true;
 
-            const dept = departmentMap.get(emp.departmentId);
-            const desig = designationMap.get(emp.designationId);
-            const branch = branchMap.get(emp.branchId);
-            const role = roleMap.get(emp.roleId);
-            const sg = role
-                ? securityGroupMap.get(role.securityGroupId)
-                : emp.securityGroupId
-                ? securityGroupMap.get(emp.securityGroupId)
-                : undefined;
-            const jobTitle = emp.jobTitleId ? customAddonMap.get(emp.jobTitleId) : undefined;
-            const jobGrade = emp.jobGradeId ? customAddonMap.get(emp.jobGradeId) : undefined;
-            const bank = emp.bankId ? customAddonMap.get(emp.bankId) : undefined;
-            const religionAddon = emp.religionId ? customAddonMap.get(emp.religionId) : undefined;
-
             return (
-                (emp.code || '').toLowerCase().includes(query) ||
-                (emp.nameEn || '').toLowerCase().includes(query) ||
-                (emp.nameAr || '').toLowerCase().includes(query) ||
-                (emp.email || '').toLowerCase().includes(query) ||
-                (emp.workEmail || '').toLowerCase().includes(query) ||
-                (emp.phone || '').toLowerCase().includes(query) ||
-                (desig?.titleEn || emp.designationTitle || '').toLowerCase().includes(query) ||
-                (desig?.titleAr || emp.designationTitleAr || '').toLowerCase().includes(query) ||
-                (desig?.code || '').toLowerCase().includes(query) ||
-                (dept?.nameEn || emp.departmentName || '').toLowerCase().includes(query) ||
-                (dept?.nameAr || emp.departmentNameAr || '').toLowerCase().includes(query) ||
-                (dept?.code || '').toLowerCase().includes(query) ||
-                (branch?.nameEn || emp.branchName || '').toLowerCase().includes(query) ||
-                (branch?.nameAr || emp.branchNameAr || '').toLowerCase().includes(query) ||
-                (branch?.code || '').toLowerCase().includes(query) ||
-                (branch?.cityEn || '').toLowerCase().includes(query) ||
-                (branch?.cityAr || '').toLowerCase().includes(query) ||
-                (role?.nameEn || emp.roleName || '').toLowerCase().includes(query) ||
-                (role?.nameAr || emp.roleNameAr || '').toLowerCase().includes(query) ||
-                (role?.code || '').toLowerCase().includes(query) ||
-                (sg?.nameEn || emp.securityGroupName || '').toLowerCase().includes(query) ||
-                (sg?.nameAr || emp.securityGroupNameAr || '').toLowerCase().includes(query) ||
-                (sg?.code || '').toLowerCase().includes(query) ||
-                (jobTitle?.nameEn || emp.jobTitleName || '').toLowerCase().includes(query) ||
-                (jobTitle?.nameAr || emp.jobTitleNameAr || '').toLowerCase().includes(query) ||
-                (jobTitle?.code || '').toLowerCase().includes(query) ||
-                (jobGrade?.nameEn || emp.jobGradeName || '').toLowerCase().includes(query) ||
-                (jobGrade?.nameAr || emp.jobGradeNameAr || '').toLowerCase().includes(query) ||
-                (jobGrade?.code || '').toLowerCase().includes(query) ||
-                (bank?.nameEn || emp.bankName || '').toLowerCase().includes(query) ||
-                (bank?.nameAr || emp.bankNameAr || '').toLowerCase().includes(query) ||
-                (bank?.code || '').toLowerCase().includes(query) ||
-                (religionAddon?.nameEn || emp.religion || '').toLowerCase().includes(query) ||
-                (religionAddon?.nameAr || emp.religionAr || '').toLowerCase().includes(query) ||
-                (religionAddon?.code || '').toLowerCase().includes(query) ||
-                (emp.managerName || '').toLowerCase().includes(query) ||
-                (emp.managerNameAr || '').toLowerCase().includes(query)
+                String(emp.codeName || '').toLowerCase().includes(query) ||
+                nameEn.toLowerCase().includes(query) ||
+                nameAr.toLowerCase().includes(query) ||
+                String(emp.email || '').toLowerCase().includes(query) ||
+                String(emp.personal_email || '').toLowerCase().includes(query) ||
+                String(emp.phone_number || '').toLowerCase().includes(query) ||
+                entityName(contract?.designation).toLowerCase().includes(query) ||
+                entityName(contract?.department).toLowerCase().includes(query) ||
+                entityName(emp.branch).toLowerCase().includes(query) ||
+                entityName(emp.role).toLowerCase().includes(query) ||
+                String(contract?.job_title || '').toLowerCase().includes(query) ||
+                String(contract?.job_grade || '').toLowerCase().includes(query) ||
+                String(contract?.bank_name || '').toLowerCase().includes(query) ||
+                String(attach?.religion || '').toLowerCase().includes(query) ||
+                fullName(contract?.reportingTo?.userAttach, 'en').toLowerCase().includes(query) ||
+                fullName(contract?.reportingTo?.userAttach, 'ar').toLowerCase().includes(query)
             );
         });
     }, [
@@ -366,12 +306,6 @@ export const UmsEmployeesPage: React.FC = () => {
         branchFilter,
         contractTypeFilter,
         probationFilter,
-        departmentMap,
-        designationMap,
-        branchMap,
-        roleMap,
-        securityGroupMap,
-        customAddonMap,
     ]);
 
     const hasActiveFilters =
@@ -395,396 +329,123 @@ export const UmsEmployeesPage: React.FC = () => {
         setCurrentPage(1);
     };
 
-    // Pagination calculation
-    const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
+    // Server pagination calculation
+    const totalPages = Math.max(1, Math.ceil(employeesCount / pageSize));
     const safePage = Math.min(currentPage, totalPages);
-    const paginatedEmployees = useMemo(() => {
-        const start = (safePage - 1) * pageSize;
-        return filteredEmployees.slice(start, start + pageSize);
-    }, [filteredEmployees, safePage, pageSize]);
+    const paginatedEmployees = filteredEmployees;
 
-    // Select-all-visible logic
-    const visibleIds = useMemo(
-        () => paginatedEmployees.map((emp) => emp.id),
-        [paginatedEmployees]
-    );
-    const allVisibleSelected =
-        visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
-
-    const handleToggleSelectAllVisible = () => {
-        if (allVisibleSelected) {
-            setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
-        } else {
-            setSelectedIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+    const handleExport = useCallback(() => {
+        if (filteredEmployees.length === 0) {
+            toast.info(t('ums.employees.feedback.noDataToExport', { defaultValue: 'لا توجد بيانات للتصدير' }));
+            return;
         }
-    };
 
-    const handleToggleSelectRow = (id: string) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
-    };
+        const escapeCsvValue = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+        const headers = ['Code', 'English Name', 'Arabic Name', 'Work Email', 'Personal Email', 'Phone Number', 'Department', 'Designation', 'Role', 'Branch', 'Job Title', 'Contract Type', 'Joining Date', 'Nationality', 'Status'];
+        const rows = filteredEmployees.map((employee) => [
+            employee.codeName,
+            fullName(employee.userAttach, 'en'),
+            fullName(employee.userAttach, 'ar'),
+            employee.email,
+            employee.personal_email,
+            employee.phone_number,
+            entityName(employee.employeeContract?.department),
+            entityName(employee.employeeContract?.designation),
+            entityName(employee.role),
+            entityName(employee.branch),
+            employee.employeeContract?.job_title,
+            employee.employeeContract?.contract_type,
+            employee.employeeContract?.joining_date,
+            employee.userAttach?.nationality,
+            employee.isActive === false ? 'Inactive' : 'Active',
+        ]);
+        const csvContent = [headers, ...rows].map((row) => row.map(escapeCsvValue).join(',')).join('\r\n');
+        const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
 
-    // Single Employee Activate / Deactivate
-    const handleToggleStatus = (emp: EmployeeRecord) => {
-        const nextStatus: EmployeeStatus =
-            emp.status === 'Active' ? 'Inactive' : 'Active';
-        const todayIso = new Date().toISOString().slice(0, 10);
+        downloadLink.href = downloadUrl;
+        downloadLink.download = `employees-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(downloadUrl);
 
-        const updated = employees.map((item) =>
-            item.id === emp.id
-                ? {
-                      ...item,
-                      status: nextStatus,
-                      updatedAt: todayIso,
-                  }
-                : item
-        );
-        persistEmployees(updated);
+        toast.success(t('ums.employees.feedback.exported', { count: filteredEmployees.length, defaultValue: `تم تصدير ${filteredEmployees.length} موظف بنجاح` }));
+    }, [filteredEmployees, t]);
 
-        recordUmsAuditEvent({
-            action: nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-            resource: 'Employee',
-            resourceId: emp.id,
-            resourceName: emp.nameEn,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Changed employment status of ${emp.code} (${emp.nameEn}) from ${emp.status} to ${nextStatus}.`,
-            detailsAr: `تغيير الحالة الوظيفية للموظف ${emp.code} (${emp.nameAr}) إلى ${nextStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
-        });
+    useEffect(() => {
+        if (currentPage > totalPages) setCurrentPage(totalPages);
+    }, [currentPage, totalPages]);
 
-        const localizedStatus = t(`ums.employees.statuses.${nextStatus}`);
-        toast.success(
-            t('ums.employees.feedback.statusChanged', {
-                name: isRtl ? emp.nameAr || emp.nameEn : emp.nameEn,
-                status: localizedStatus,
-            })
-        );
-    };
+    const deleteEmployeeMutation = useMutation({
+        mutationFn: (id: string) => userApi.deleteEmployee(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+        },
+    });
 
-    // Bulk Activate / Deactivate
-    const handleBulkStatusChange = (targetStatus: 'Active' | 'Inactive') => {
-        if (selectedIds.length === 0) return;
-        const selectedSet = new Set(selectedIds);
-        const todayIso = new Date().toISOString().slice(0, 10);
-
-        const updated = employees.map((emp) =>
-            selectedSet.has(emp.id)
-                ? {
-                      ...emp,
-                      status: targetStatus,
-                      updatedAt: todayIso,
-                  }
-                : emp
-        );
-        persistEmployees(updated);
-
-        recordUmsAuditEvent({
-            action: targetStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-            resource: 'Employee',
-            resourceId: 'BULK',
-            resourceName: `Employees (${selectedIds.length})`,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Bulk updated ${selectedIds.length} employee record(s) to ${targetStatus}.`,
-            detailsAr: `تحديث جماعي لحالة ${selectedIds.length} موظف إلى ${targetStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
-        });
-
-        const localizedStatus = t(`ums.employees.statuses.${targetStatus}`);
-        toast.success(
-            t('ums.employees.feedback.bulkStatusChanged', {
-                count: selectedIds.length,
-                status: localizedStatus,
-            })
-        );
-        setSelectedIds([]);
-    };
-
-    // Send / Resend Portal Invitation
-    const handleSendInvitation = (emp: EmployeeRecord) => {
-        const todayIso = new Date().toISOString().slice(0, 10);
-        const updated = employees.map((item) =>
-            item.id === emp.id
-                ? {
-                      ...item,
-                      invitationStatus: 'Pending' as const,
-                      invitedAt: todayIso,
-                      updatedAt: todayIso,
-                  }
-                : item
-        );
-        persistEmployees(updated);
-
-        recordUmsAuditEvent({
-            action: 'UPDATED',
-            resource: 'Employee',
-            resourceId: emp.id,
-            resourceName: emp.nameEn,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Sent portal onboarding invitation to ${emp.code} (${emp.workEmail || emp.email}).`,
-            detailsAr: `إرسال دعوة الانضمام للبوابة الإلكترونية للموظف ${emp.code} (${emp.workEmail || emp.email}).`,
-        });
-
-        toast.success(
-            t('ums.employees.feedback.invitationSent', {
-                name: isRtl ? emp.nameAr || emp.nameEn : emp.nameEn,
-                email: emp.workEmail || emp.email,
-            })
-        );
-    };
-
-    // Delete Confirmation & Dependency Check
-    const deletionEligibility = useMemo(() => {
-        if (!deletingEmployee) return null;
-        return checkEmployeeDeletionEligibility(
-            deletingEmployee.id,
-            employees,
-            departments
-        );
-    }, [deletingEmployee, employees, departments]);
-
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (!deletingEmployee) return;
-        const eligibility = checkEmployeeDeletionEligibility(
-            deletingEmployee.id,
-            employees,
-            departments
-        );
-        if (!eligibility.canDelete) {
-            toast.error(isRtl ? eligibility.reasonAr : eligibility.reasonEn);
-            return;
+
+        try {
+            await deleteEmployeeMutation.mutateAsync(deletingEmployee.id);
+            toast.success(t('ums.employees.feedback.deleted', { name: fullName(deletingEmployee.userAttach, isRtl ? 'ar' : 'en') || deletingEmployee.email, code: deletingEmployee.codeName }));
+            setDeletingEmployee(null);
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message ?? error?.message ?? t('common.error', { defaultValue: 'Something went wrong' }));
         }
-
-        const updated = employees.filter((e) => e.id !== deletingEmployee.id);
-        persistEmployees(updated);
-        setSelectedIds((prev) => prev.filter((id) => id !== deletingEmployee.id));
-
-        recordUmsAuditEvent({
-            action: 'DELETED',
-            resource: 'Employee',
-            resourceId: deletingEmployee.id,
-            resourceName: deletingEmployee.nameEn,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Deleted employee record ${deletingEmployee.code} (${deletingEmployee.nameEn}).`,
-            detailsAr: `حذف سجل الموظف ${deletingEmployee.code} (${deletingEmployee.nameAr}).`,
-            previousState: `Code: ${deletingEmployee.code} | Name: ${deletingEmployee.nameEn} | Status: ${deletingEmployee.status}`,
-        });
-
-        toast.success(
-            t('ums.employees.feedback.deleted', {
-                name: isRtl
-                    ? deletingEmployee.nameAr || deletingEmployee.nameEn
-                    : deletingEmployee.nameEn,
-                code: deletingEmployee.code,
-            })
-        );
-        setDeletingEmployee(null);
-    };
-
-    // CSV Export with UTF-8 BOM
-    const handleExportCsv = (onlySelected = false) => {
-        const sourceRecords = onlySelected
-            ? employees.filter((e) => selectedIds.includes(e.id))
-            : filteredEmployees;
-
-        if (sourceRecords.length === 0) {
-            toast.error(t('common.noRecords', { defaultValue: 'No records found to export' }));
-            return;
-        }
-
-        const headers = [
-            'Employee ID',
-            'Name (EN)',
-            'Name (AR)',
-            'Work Email',
-            'Personal Email',
-            'Phone',
-            'Department (EN)',
-            'Department (AR)',
-            'Designation (EN)',
-            'Designation (AR)',
-            'Role (EN)',
-            'Role (AR)',
-            'Security Group (EN)',
-            'Security Group (AR)',
-            'Branch (EN)',
-            'Branch (AR)',
-            'Job Title (EN)',
-            'Job Title (AR)',
-            'Job Grade (EN)',
-            'Job Grade (AR)',
-            'Bank (EN)',
-            'Bank (AR)',
-            'Religion (EN)',
-            'Religion (AR)',
-            'Contract Type',
-            'Under Probation',
-            'Profile Completion (%)',
-            'Invitation Status',
-            'Employment Status',
-            'Joining Date',
-        ];
-
-        const rows = sourceRecords.map((emp) => {
-            const dept = departmentMap.get(emp.departmentId);
-            const desig = designationMap.get(emp.designationId);
-            const role = roleMap.get(emp.roleId);
-            const sg = role
-                ? securityGroupMap.get(role.securityGroupId)
-                : emp.securityGroupId
-                ? securityGroupMap.get(emp.securityGroupId)
-                : undefined;
-            const branch = branchMap.get(emp.branchId);
-            const jobTitle = emp.jobTitleId ? customAddonMap.get(emp.jobTitleId) : undefined;
-            const jobGrade = emp.jobGradeId ? customAddonMap.get(emp.jobGradeId) : undefined;
-            const bank = emp.bankId ? customAddonMap.get(emp.bankId) : undefined;
-            const religionAddon = emp.religionId ? customAddonMap.get(emp.religionId) : undefined;
-            const completion =
-                completionByEmployeeId[emp.id]?.percentage ??
-                computeEmployeeProfileCompletion(emp).percentage;
-            const inviteStatus = computeEmployeeInvitationStatus(emp);
-
-            return [
-                escapeSafeCsvCell(emp.code),
-                escapeSafeCsvCell(emp.nameEn || ''),
-                escapeSafeCsvCell(emp.nameAr || ''),
-                escapeSafeCsvCell(emp.workEmail || ''),
-                escapeSafeCsvCell(emp.email || ''),
-                escapeSafeCsvCell(emp.phone || ''),
-                escapeSafeCsvCell(dept?.nameEn || emp.departmentName || ''),
-                escapeSafeCsvCell(dept?.nameAr || emp.departmentNameAr || ''),
-                escapeSafeCsvCell(desig?.titleEn || emp.designationTitle || ''),
-                escapeSafeCsvCell(desig?.titleAr || emp.designationTitleAr || ''),
-                escapeSafeCsvCell(role?.nameEn || emp.roleName || ''),
-                escapeSafeCsvCell(role?.nameAr || emp.roleNameAr || ''),
-                escapeSafeCsvCell(sg?.nameEn || emp.securityGroupName || ''),
-                escapeSafeCsvCell(sg?.nameAr || emp.securityGroupNameAr || ''),
-                escapeSafeCsvCell(branch?.nameEn || emp.branchName || ''),
-                escapeSafeCsvCell(branch?.nameAr || emp.branchNameAr || ''),
-                escapeSafeCsvCell(jobTitle?.nameEn || emp.jobTitleName || ''),
-                escapeSafeCsvCell(jobTitle?.nameAr || emp.jobTitleNameAr || ''),
-                escapeSafeCsvCell(jobGrade?.nameEn || emp.jobGradeName || ''),
-                escapeSafeCsvCell(jobGrade?.nameAr || emp.jobGradeNameAr || ''),
-                escapeSafeCsvCell(bank?.nameEn || emp.bankName || ''),
-                escapeSafeCsvCell(bank?.nameAr || emp.bankNameAr || ''),
-                escapeSafeCsvCell(religionAddon?.nameEn || emp.religion || ''),
-                escapeSafeCsvCell(religionAddon?.nameAr || emp.religionAr || ''),
-                escapeSafeCsvCell(emp.contractType),
-                escapeSafeCsvCell(
-                    emp.isUnderProbation || emp.contractType === 'Probation' ? 'Yes' : 'No'
-                ),
-                escapeSafeCsvCell(`${completion}%`),
-                escapeSafeCsvCell(inviteStatus),
-                escapeSafeCsvCell(emp.status),
-                escapeSafeCsvCell(emp.joiningDate || ''),
-            ];
-        });
-
-        const csvContent =
-            '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute(
-            'download',
-            `awn-employees-directory-${new Date().toISOString().slice(0, 10)}.csv`
-        );
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        recordUmsAuditEvent({
-            action: 'EXPORTED',
-            resource: 'Employee',
-            resourceId: 'EXPORT-CSV',
-            resourceName: `Employees Directory (${sourceRecords.length})`,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Exported ${sourceRecords.length} employee record(s) to UTF-8 CSV.`,
-            detailsAr: `تصدير ${sourceRecords.length} سجل موظف إلى ملف CSV.`,
-        });
-
-        toast.success(
-            t('ums.employees.feedback.exported', {
-                count: sourceRecords.length,
-            })
-        );
     };
 
     // Columns for shared DataTable
     const columns: ColumnDef<any, any>[] = useMemo(
         () => [
             {
-                id: 'select',
-                header: () => (
-                    <input
-                        type="checkbox"
-                        checked={allVisibleSelected}
-                        onChange={handleToggleSelectAllVisible}
-                        aria-label={t('common.selectAll', {
-                            defaultValue: 'Select all visible rows',
-                        })}
-                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                    />
-                ),
-                cell: ({ row }) => {
-                    const emp = row.original;
-                    const isSelected = selectedIds.includes(emp.id);
-                    return (
-                        <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelectRow(emp.id)}
-                            aria-label={emp.code}
-                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                        />
-                    );
-                },
-            },
-            {
-                accessorKey: 'code',
+                accessorKey: 'codeName',
                 header: t('ums.employees.table.colCode'),
                 cell: ({ row }) => {
                     const emp = row.original;
                     return (
                         <button
                             type="button"
-                            onClick={() => navigate(`/ums/employees/${emp.id}`)}
+                            onClick={() => openViewEmployeeForm(emp)}
                             className="font-mono font-bold text-[#037F8C] hover:underline cursor-pointer"
-                            dir="ltr"
                         >
-                            {emp.code}
+                            {emp.codeName || '—'}
                         </button>
                     );
                 },
             },
             {
-                accessorKey: 'nameEn',
+                accessorKey: 'userAttach',
                 header: t('ums.employees.table.colEmployee'),
                 cell: ({ row }) => {
                     const emp = row.original;
+                    const nameEn = fullName(emp.userAttach, 'en');
+                    const nameAr = fullName(emp.userAttach, 'ar');
                     return (
                         <div className="flex items-center gap-3">
-                            {emp.avatarUrl ? (
+                            {emp.userAttach?.profile_picture ? (
                                 <img
-                                    src={emp.avatarUrl}
-                                    alt={isRtl ? emp.nameAr || emp.nameEn : emp.nameEn}
+                                    src={emp.userAttach.profile_picture}
+                                    alt={isRtl ? nameAr || nameEn : nameEn || nameAr}
                                     className="w-8 h-8 rounded-full object-cover border border-[#E5E0D8] shrink-0"
                                 />
                             ) : (
                                 <div className="w-8 h-8 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                                    {getInitials(emp.nameEn, emp.nameAr)}
+                                    {getInitials(nameEn, nameAr)}
                                 </div>
                             )}
                             <div className="min-w-0">
                                 <button
                                     type="button"
-                                    onClick={() => navigate(`/ums/employees/${emp.id}`)}
+                                    onClick={() => openViewEmployeeForm(emp)}
                                     className="font-bold text-[#0D0D0D] hover:text-[#037F8C] transition-colors text-start block truncate cursor-pointer"
                                 >
-                                    {isRtl ? emp.nameAr || emp.nameEn : emp.nameEn || emp.nameAr}
+                                    {isRtl ? nameAr || nameEn : nameEn || nameAr}
                                 </button>
                                 <span className="text-[11px] text-[#6E6862] block truncate">
-                                    {isRtl ? emp.nameEn : emp.nameAr} · {emp.nationality}
+                                    {isRtl ? nameEn : nameAr} · {emp.userAttach?.nationality || '—'}
                                 </span>
                             </div>
                         </div>
@@ -802,18 +463,18 @@ export const UmsEmployeesPage: React.FC = () => {
                                 className="font-mono text-[#0D0D0D] block truncate max-w-[190px]"
                                 dir="ltr"
                             >
-                                {emp.workEmail || emp.email || (
+                                {emp.email || (
                                     <span className="italic text-[#857E74]">
                                         {t('ums.employees.table.noEmail')}
                                     </span>
                                 )}
                             </span>
-                            {emp.workEmail && emp.email && emp.workEmail !== emp.email && (
+                            {emp.personal_email && emp.personal_email !== emp.email && (
                                 <span
                                     className="text-[11px] text-[#857E74] block truncate max-w-[190px]"
                                     dir="ltr"
                                 >
-                                    {emp.email}
+                                    {emp.personal_email}
                                 </span>
                             )}
                         </div>
@@ -821,18 +482,18 @@ export const UmsEmployeesPage: React.FC = () => {
                 },
             },
             {
-                accessorKey: 'designationId',
+                accessorKey: 'employeeContract.designation',
                 header: t('ums.employees.table.colDesignation'),
                 cell: ({ row }) => {
                     const emp = row.original;
-                    const desig = designationMap.get(emp.designationId);
+                    const desig = emp.employeeContract?.designation;
                     return desig ? (
                         <div>
                             <span className="font-semibold text-[#0D0D0D] block">
-                                {isRtl ? desig.titleAr : desig.titleEn}
+                                {entityName(desig)}
                             </span>
                             <span className="text-[11px] font-mono text-[#857E74]">
-                                {desig.code}
+                                {desig.codeName || '—'}
                             </span>
                         </div>
                     ) : (
@@ -843,20 +504,20 @@ export const UmsEmployeesPage: React.FC = () => {
                 },
             },
             {
-                accessorKey: 'roleId',
+                accessorKey: 'role',
                 header: t('ums.employees.table.colRole'),
                 cell: ({ row }) => {
                     const emp = row.original;
-                    const role = roleMap.get(emp.roleId);
-                    const secGroup = role ? securityGroupMap.get(role.securityGroupId) : undefined;
+                    const role = emp.role;
+                    const secGroup = emp.securityGroup || role?.securityGroup;
                     return role ? (
                         <div>
                             <span className="font-semibold text-[#037F8C] block">
-                                {isRtl ? role.nameAr : role.nameEn}
+                                {entityName(role)}
                             </span>
                             {secGroup && (
                                 <span className="text-[11px] text-[#6E6862] block truncate max-w-[160px]">
-                                    {isRtl ? secGroup.nameAr : secGroup.nameEn}
+                                    {entityName(secGroup)}
                                 </span>
                             )}
                         </div>
@@ -868,20 +529,20 @@ export const UmsEmployeesPage: React.FC = () => {
                 },
             },
             {
-                accessorKey: 'departmentId',
+                accessorKey: 'employeeContract.department',
                 header: t('ums.employees.table.colDepartment'),
                 cell: ({ row }) => {
                     const emp = row.original;
-                    const dept = departmentMap.get(emp.departmentId);
-                    const branch = branchMap.get(emp.branchId);
+                    const dept = emp.employeeContract?.department;
+                    const branch = emp.branch;
                     return dept ? (
                         <div>
                             <span className="font-semibold text-[#0D0D0D] block">
-                                {isRtl ? dept.nameAr : dept.nameEn}
+                                {entityName(dept)}
                             </span>
                             {branch && (
                                 <span className="text-[11px] text-[#6E6862] block">
-                                    {isRtl ? branch.cityAr : branch.cityEn}
+                                    {branch.city || entityName(branch)}
                                 </span>
                             )}
                         </div>
@@ -926,8 +587,8 @@ export const UmsEmployeesPage: React.FC = () => {
                                         completion.percentage === 100
                                             ? 'fill-[#037F8C]'
                                             : completion.percentage >= 75
-                                            ? 'fill-[#037F8C]'
-                                            : 'fill-[#C28E3A]'
+                                                ? 'fill-[#037F8C]'
+                                                : 'fill-[#C28E3A]'
                                     }
                                 />
                             </svg>
@@ -936,41 +597,32 @@ export const UmsEmployeesPage: React.FC = () => {
                 },
             },
             {
-                accessorKey: 'status',
+                accessorKey: 'isActive',
                 header: t('ums.employees.table.colStatus'),
                 cell: ({ row }) => {
                     const emp = row.original;
-                    const isProbation =
-                        Boolean(emp.isUnderProbation) || emp.contractType === 'Probation';
+                    const status: EmployeeStatus = emp.isActive === false ? 'Inactive' : 'Active';
+                    const isProbation = Boolean(emp.employeeContract?.probation_period) || emp.employeeContract?.contract_type === 'Probation';
                     return (
                         <div className="flex flex-col items-start gap-1">
-                            <button
-                                type="button"
-                                onClick={() => handleToggleStatus(emp)}
-                                className={`inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-colors ${
-                                    emp.status === 'Active'
-                                        ? 'text-[#037F8C] hover:text-[#1B4D3E]'
-                                        : emp.status === 'Draft'
+                            <span
+                                className={`inline-flex items-center gap-1.5 text-xs font-semibold ${status === 'Active'
+                                    ? 'text-[#037F8C] hover:text-[#1B4D3E]'
+                                    : status === 'Inactive'
                                         ? 'text-[#C28E3A] hover:text-[#0D0D0D]'
                                         : 'text-[#857E74] hover:text-[#0D0D0D]'
-                                }`}
-                                title={
-                                    emp.status === 'Active'
-                                        ? t('ums.employees.actions.deactivate')
-                                        : t('ums.employees.actions.activate')
-                                }
+                                    }`}
                             >
                                 <span
-                                    className={`w-2 h-2 rounded-full ${
-                                        emp.status === 'Active'
-                                            ? 'bg-[#037F8C]'
-                                            : emp.status === 'Draft'
+                                    className={`w-2 h-2 rounded-full ${status === 'Active'
+                                        ? 'bg-[#037F8C]'
+                                        : status === 'Inactive'
                                             ? 'bg-[#C28E3A]'
                                             : 'bg-[#857E74]'
-                                    }`}
+                                        }`}
                                 />
-                                <span>{t(`ums.employees.statuses.${emp.status}`)}</span>
-                            </button>
+                                <span>{t(`ums.employees.statuses.${status}`)}</span>
+                            </span>
                             {isProbation && (
                                 <span className="text-[10px] font-medium text-[#C28E3A]">
                                     {t('ums.employees.table.probationTag')}
@@ -989,7 +641,7 @@ export const UmsEmployeesPage: React.FC = () => {
                         <div className="flex items-center justify-end gap-1">
                             <button
                                 type="button"
-                                onClick={() => navigate(`/ums/employees/${emp.id}`)}
+                                onClick={() => openViewEmployeeForm(emp)}
                                 className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                                 title={t('ums.employees.actions.viewDetails')}
                             >
@@ -998,41 +650,11 @@ export const UmsEmployeesPage: React.FC = () => {
 
                             <button
                                 type="button"
-                                onClick={() => navigate(`/ums/employees/${emp.id}/edit`)}
+                                onClick={() => openUpdateEmployeeForm(emp)}
                                 className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
                                 title={t('ums.employees.actions.editEmployee')}
                             >
                                 <Pencil size={14} />
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleSendInvitation(emp)}
-                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                title={
-                                    computeEmployeeInvitationStatus(emp) === 'Not Sent'
-                                        ? t('ums.employees.actions.sendInvitation')
-                                        : t('ums.employees.actions.resendInvitation')
-                                }
-                            >
-                                <Send size={14} />
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => handleToggleStatus(emp)}
-                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                                    emp.status === 'Active'
-                                        ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
-                                        : 'text-[#857E74] hover:bg-[#FAF8F5]'
-                                }`}
-                                title={
-                                    emp.status === 'Active'
-                                        ? t('ums.employees.actions.deactivate')
-                                        : t('ums.employees.actions.activate')
-                                }
-                            >
-                                <Power size={14} />
                             </button>
 
                             <button
@@ -1049,16 +671,10 @@ export const UmsEmployeesPage: React.FC = () => {
             },
         ],
         [
-            allVisibleSelected,
-            selectedIds,
             t,
             isRtl,
-            navigate,
-            designationMap,
-            roleMap,
-            securityGroupMap,
-            departmentMap,
-            branchMap,
+            openViewEmployeeForm,
+            openUpdateEmployeeForm,
             completionByEmployeeId,
         ]
     );
@@ -1081,11 +697,10 @@ export const UmsEmployeesPage: React.FC = () => {
                                     setStatusFilter(statusOption);
                                     setCurrentPage(1);
                                 }}
-                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                                    isActive
-                                        ? 'bg-[#037F8C] text-white shadow-2xs'
-                                        : 'text-[#6E6862] hover:text-[#0D0D0D]'
-                                }`}
+                                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${isActive
+                                    ? 'bg-[#037F8C] text-white shadow-2xs'
+                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
+                                    }`}
                             >
                                 {label}
                             </button>
@@ -1124,7 +739,7 @@ export const UmsEmployeesPage: React.FC = () => {
                         <option value="ALL">{t('ums.employees.filters.allDepartments')}</option>
                         {departments.map((dept) => (
                             <option key={dept.id} value={dept.id}>
-                                {isRtl ? dept.nameAr : dept.nameEn}
+                                {entityName(dept)}
                                 {dept.status === 'Inactive'
                                     ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
                                     : ''}
@@ -1150,7 +765,7 @@ export const UmsEmployeesPage: React.FC = () => {
                         <option value="ALL">{t('ums.employees.filters.allDesignations')}</option>
                         {designations.map((desig) => (
                             <option key={desig.id} value={desig.id}>
-                                {isRtl ? desig.titleAr : desig.titleEn}
+                                {entityName(desig)}
                                 {desig.status === 'Inactive'
                                     ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
                                     : ''}
@@ -1176,59 +791,12 @@ export const UmsEmployeesPage: React.FC = () => {
                         <option value="ALL">{t('ums.employees.filters.allBranches')}</option>
                         {branches.map((branch) => (
                             <option key={branch.id} value={branch.id}>
-                                {isRtl ? branch.nameAr : branch.nameEn}
+                                {entityName(branch)}
                                 {branch.status === 'Inactive'
                                     ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
                                     : ''}
                             </option>
                         ))}
-                    </select>
-                </div>
-
-                {/* Contract Type Filter */}
-                <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                        {t('ums.employees.filters.contractTypeLabel')}
-                    </label>
-                    <select
-                        value={contractTypeFilter}
-                        onChange={(e) => {
-                            setContractTypeFilter(e.target.value as 'ALL' | ContractType);
-                            setCurrentPage(1);
-                        }}
-                        aria-label={t('ums.employees.filters.contractTypeLabel')}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
-                    >
-                        <option value="ALL">{t('ums.employees.filters.allContractTypes')}</option>
-                        {CONTRACT_TYPES.map((ct) => (
-                            <option key={ct} value={ct}>
-                                {t(`ums.employees.contractTypes.${ct}`)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Probation Status Filter */}
-                <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#857E74] mb-1">
-                        {t('ums.employees.filters.probationLabel')}
-                    </label>
-                    <select
-                        value={probationFilter}
-                        onChange={(e) => {
-                            setProbationFilter(
-                                e.target.value as 'ALL' | 'UNDER_PROBATION' | 'CONFIRMED'
-                            );
-                            setCurrentPage(1);
-                        }}
-                        aria-label={t('ums.employees.filters.probationLabel')}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:ring-1 focus:ring-[#037F8C] cursor-pointer"
-                    >
-                        <option value="ALL">{t('ums.employees.filters.allProbation')}</option>
-                        <option value="UNDER_PROBATION">
-                            {t('ums.employees.filters.underProbationOnly')}
-                        </option>
-                        <option value="CONFIRMED">{t('ums.employees.filters.confirmedOnly')}</option>
                     </select>
                 </div>
             </div>
@@ -1427,59 +995,14 @@ export const UmsEmployeesPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Bulk Operations Bar */}
-            {selectedIds.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#EAF3EC] border border-[#037F8C]/20 rounded-xl text-xs">
-                    <span className="font-semibold text-[#037F8C]">
-                        {t('ums.employees.table.selectedCount', {
-                            count: selectedIds.length,
-                        })}
-                    </span>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => handleBulkStatusChange('Active')}
-                            className="px-2.5 py-1 rounded bg-white text-[#037F8C] border border-[#037F8C]/30 font-semibold hover:bg-[#FAF8F5] cursor-pointer"
-                        >
-                            {t('ums.employees.actions.bulkActivate')}
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => handleBulkStatusChange('Inactive')}
-                            className="px-2.5 py-1 rounded bg-white text-[#6E6862] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
-                        >
-                            {t('ums.employees.actions.bulkDeactivate')}
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => handleExportCsv(true)}
-                            className="px-2.5 py-1 rounded bg-white text-[#037F8C] border border-[#E5E0D8] font-semibold hover:bg-[#FAF8F5] cursor-pointer"
-                        >
-                            {t('ums.employees.actions.bulkExport')}
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => setSelectedIds([])}
-                            className="px-2.5 py-1 text-[#6E6862] hover:text-[#0D0D0D] cursor-pointer"
-                        >
-                            {t('ums.employees.actions.clearSelection')}
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* ============================================================================ */}
             {/* SHARED DATATABLE WITH SEARCH, FILTERS & PAGINATION                           */}
             {/* ============================================================================ */}
             <DataTable
                 columns={columns}
                 data={paginatedEmployees}
-                count={filteredEmployees.length}
-                loading={isEmployeesLoading || persistEmployeesMutation.isPending}
+                count={employeesCount}
+                loading={isEmployeesLoading || isEmployeesFetching}
                 searchPlaceholder={t('ums.employees.filters.searchPlaceholder')}
                 pageIndex={safePage - 1}
                 pageSize={pageSize}
@@ -1490,9 +1013,9 @@ export const UmsEmployeesPage: React.FC = () => {
                 }}
                 searchValue={searchInput}
                 onSearchChange={(val) => setSearchInput(val)}
-                onAddNew={() => navigate('/ums/employees/new')}
+                onAddNew={openCreateEmployeeForm}
                 addNewLabel={t('ums.employees.actions.addEmployee')}
-                onExport={() => handleExportCsv(false)}
+                onExport={handleExport}
                 title={t('ums.employees.title')}
                 description={t('ums.employees.subtitle')}
                 onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
@@ -1504,133 +1027,35 @@ export const UmsEmployeesPage: React.FC = () => {
             {/* ============================================================================ */}
             {/* DELETE CONFIRMATION & DEPENDENCY PROTECTION DIALOG                           */}
             {/* ============================================================================ */}
-            {deletingEmployee && deletionEligibility && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs"
-                    role="dialog"
-                    aria-modal="true"
-                >
+            {deletingEmployee && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs" role="dialog" aria-modal="true">
                     <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-md p-6">
-                        {!deletionEligibility.canDelete ? (
-                            <div>
-                                <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center mx-auto mb-3">
-                                    <ShieldAlert size={20} />
-                                </div>
-                                <h2 className="text-base font-bold text-[#0D0D0D] text-center mb-1">
-                                    {t('ums.employees.deleteModal.blockedTitle')}
-                                </h2>
-                                <p className="text-xs text-[#6E6862] text-center mb-4 leading-relaxed">
-                                    {isRtl
-                                        ? deletionEligibility.reasonAr
-                                        : deletionEligibility.reasonEn}
-                                </p>
-
-                                {/* Referenced Departments & Direct Reports */}
-                                <div className="mb-4 p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] max-h-40 overflow-y-auto space-y-2 text-xs">
-                                    {deletionEligibility.headedDepartments.length > 0 && (
-                                        <div>
-                                            <p className="font-semibold text-[#0D0D0D] mb-1">
-                                                {t(
-                                                    'ums.employees.deleteModal.headedDepartmentsLabel'
-                                                )}
-                                            </p>
-                                            {deletionEligibility.headedDepartments.map((d) => (
-                                                <div
-                                                    key={d.id}
-                                                    className="flex items-center justify-between text-[11px] text-[#45413C] py-0.5"
-                                                >
-                                                    <span>{isRtl ? d.nameAr : d.nameEn}</span>
-                                                    <span className="font-mono text-[#857E74]">
-                                                        {d.code}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {deletionEligibility.directReports.length > 0 && (
-                                        <div>
-                                            <p className="font-semibold text-[#0D0D0D] mb-1">
-                                                {t('ums.employees.deleteModal.directReportsLabel')}
-                                            </p>
-                                            {deletionEligibility.directReports.map((rep) => (
-                                                <div
-                                                    key={rep.id}
-                                                    className="flex items-center justify-between text-[11px] text-[#45413C] py-0.5"
-                                                >
-                                                    <span>
-                                                        {isRtl ? rep.nameAr : rep.nameEn}
-                                                    </span>
-                                                    <span className="font-mono text-[#857E74]">
-                                                        {rep.code}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="flex items-center justify-center gap-2 pt-3 border-t border-[#E5E0D8]">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDeletingEmployee(null)}
-                                        className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                    >
-                                        {t('common.close', { defaultValue: 'Close' })}
-                                    </button>
-                                    {deletingEmployee.status === 'Active' && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                handleToggleStatus(deletingEmployee);
-                                                setDeletingEmployee(null);
-                                            }}
-                                            className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
-                                        >
-                                            {t('ums.employees.actions.deactivateInstead')}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center mx-auto mb-3">
-                                    <Trash2 size={20} />
-                                </div>
-                                <h2 className="text-base font-bold text-[#0D0D0D] text-center mb-1">
-                                    {t('ums.employees.deleteModal.title')}
-                                </h2>
-                                <p className="text-xs text-[#6E6862] text-center mb-4 leading-relaxed">
-                                    {t('ums.employees.deleteModal.confirmMessage')}
-                                    <span className="block font-bold text-[#0D0D0D] mt-2">
-                                        {deletingEmployee.code} —{' '}
-                                        {isRtl
-                                            ? deletingEmployee.nameAr || deletingEmployee.nameEn
-                                            : deletingEmployee.nameEn}
-                                    </span>
-                                </p>
-
-                                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5E0D8]">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDeletingEmployee(null)}
-                                        className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                    >
-                                        {t('common.cancel', { defaultValue: 'Cancel' })}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleConfirmDelete}
-                                        className="px-4 py-2 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold transition-colors cursor-pointer"
-                                    >
-                                        {t('common.delete', { defaultValue: 'Delete' })}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                        <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center mx-auto mb-3">
+                            <Trash2 size={20} />
+                        </div>
+                        <h2 className="text-base font-bold text-[#0D0D0D] text-center mb-1">{t('ums.employees.deleteModal.title')}</h2>
+                        <p className="text-xs text-[#6E6862] text-center mb-4 leading-relaxed">
+                            {t('ums.employees.deleteModal.confirmMessage')}
+                            <span className="block font-bold text-[#0D0D0D] mt-2">{deletingEmployee.codeName || '—'} — {fullName(deletingEmployee.userAttach, isRtl ? 'ar' : 'en') || deletingEmployee.email || '—'}</span>
+                        </p>
+                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5E0D8]">
+                            <button type="button" onClick={() => setDeletingEmployee(null)} disabled={deleteEmployeeMutation.isPending} className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-50">{t('common.cancel', { defaultValue: 'Cancel' })}</button>
+                            <button type="button" onClick={handleConfirmDelete} disabled={deleteEmployeeMutation.isPending} className="px-4 py-2 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50">{deleteEmployeeMutation.isPending ? t('common.loading', { defaultValue: 'Loading...' }) : t('common.delete', { defaultValue: 'Delete' })}</button>
+                        </div>
                     </div>
                 </div>
             )}
+
+            <EmployeeForm
+                isOpen={employeeForm.isOpen}
+                mode={employeeForm.mode}
+                employee={employeeForm.employee}
+                onClose={closeEmployeeForm}
+                onModeChange={(mode) => setEmployeeForm((current) => ({ ...current, mode }))}
+                onSuccess={async () => {
+                    await queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
+                }}
+            />
         </div>
     );
 };
@@ -1644,26 +1069,29 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
-    const currentUser = useAuthStore((state) => state.user);
 
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => loadEmployees());
-    const [departments] = useState<DepartmentRecord[]>(() => loadDepartments());
-    const [designations] = useState<DesignationRecord[]>(() => loadDesignations());
-    const [branches] = useState<BranchRecord[]>(() => loadBranches());
-    const [roles] = useState<RoleRecord[]>(() => loadRoles());
-    const [securityGroups] = useState<SecurityGroupRecord[]>(() => loadSecurityGroups());
-    const [customAddons] = useState<CustomAddonRecord[]>(() => loadCustomAddons());
+    const employeeResponse = null;
+    const isEmployeeLoading = false;
+    const apiEmployee = useMemo(() => {
+        const item = extractOne(employeeResponse);
+        return item?.id ? item as EmployeeRecord : null;
+    }, [employeeResponse]);
+    const [employee, setEmployee] = useState<EmployeeRecord | null>(null);
+    const employees = useMemo(() => employee ? [employee] : [], [employee]);
+    const departments = useMemo<DepartmentRecord[]>(() => employee?.employeeContract?.department ? [employee.employeeContract.department] : [], [employee]);
+    const designations = useMemo<DesignationRecord[]>(() => employee?.employeeContract?.designation ? [employee.employeeContract.designation] : [], [employee]);
+    const branches = useMemo<any[]>(() => employee?.branch ? [employee.branch] : [], [employee]);
+    const roles = useMemo<any[]>(() => employee?.role ? [employee.role] : [], [employee]);
+    const securityGroups = useMemo<SecurityGroupRecord[]>(() => [], []);
+    const customAddons = useMemo<CustomAddonRecord[]>(() => [], []);
 
-    const employee = useMemo(
-        () => employees.find((emp) => emp.id === id || emp.code === id) || null,
-        [employees, id]
-    );
+    useEffect(() => {
+        setEmployee(apiEmployee);
+    }, [apiEmployee]);
 
-    const persistEmployees = (updated: EmployeeRecord[]) => {
-        setEmployees(updated);
-        saveEmployees(updated);
-        syncMasterEntityEmployeeCounts(updated);
-    };
+    if (isEmployeeLoading) {
+        return <div className="py-16 text-center text-sm text-[#857E74]">{t('common.loading', { defaultValue: 'Loading...' })}</div>;
+    }
 
     if (!employee) {
         return (
@@ -1729,15 +1157,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
     const manager = employee.managerId
         ? employees.find((e) => e.id === employee.managerId)
         : undefined;
-    const employeeAuditEvents = loadUmsAuditTrail()
-        .filter(
-            (ev) =>
-                ev.resource === 'Employee' &&
-                (ev.resourceId === employee.id ||
-                    ev.resourceName.includes(employee.code) ||
-                    ev.detailsEn.includes(employee.code))
-        )
-        .slice(0, 6);
+    const employeeAuditEvents: any[] = [];
     const attachedDocumentsList = Object.entries(employee.documentAttachments || {}).filter(
         (entry): entry is [string, NonNullable<(typeof entry)[1]>] => Boolean(entry[1])
     );
@@ -1748,68 +1168,6 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
     const isProbation =
         Boolean(employee.isUnderProbation) || employee.contractType === 'Probation';
     const notProvidedText = t('ums.employees.details.fields.notProvided');
-
-    const handleToggleStatus = () => {
-        const nextStatus: EmployeeStatus =
-            employee.status === 'Active' ? 'Inactive' : 'Active';
-        const todayIso = new Date().toISOString().slice(0, 10);
-
-        const updated = employees.map((item) =>
-            item.id === employee.id
-                ? { ...item, status: nextStatus, updatedAt: todayIso }
-                : item
-        );
-        persistEmployees(updated);
-
-        recordUmsAuditEvent({
-            action: nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED',
-            resource: 'Employee',
-            resourceId: employee.id,
-            resourceName: employee.nameEn,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Changed employment status of ${employee.code} (${employee.nameEn}) to ${nextStatus}.`,
-            detailsAr: `تغيير الحالة الوظيفية للموظف ${employee.code} (${employee.nameAr}) إلى ${nextStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
-        });
-
-        toast.success(
-            t('ums.employees.feedback.statusChanged', {
-                name: isRtl ? employee.nameAr || employee.nameEn : employee.nameEn,
-                status: t(`ums.employees.statuses.${nextStatus}`),
-            })
-        );
-    };
-
-    const handleSendInvitation = () => {
-        const todayIso = new Date().toISOString().slice(0, 10);
-        const updated = employees.map((item) =>
-            item.id === employee.id
-                ? {
-                      ...item,
-                      invitationStatus: 'Pending' as const,
-                      invitedAt: todayIso,
-                      updatedAt: todayIso,
-                  }
-                : item
-        );
-        persistEmployees(updated);
-
-        recordUmsAuditEvent({
-            action: 'UPDATED',
-            resource: 'Employee',
-            resourceId: employee.id,
-            resourceName: employee.nameEn,
-            actorName: currentUser?.fullName || 'System',
-            detailsEn: `Sent portal onboarding invitation to ${employee.code} (${employee.workEmail || employee.email}).`,
-            detailsAr: `إرسال دعوة المنصة الإلكترونية للموظف ${employee.code} (${employee.workEmail || employee.email}).`,
-        });
-
-        toast.success(
-            t('ums.employees.feedback.invitationSent', {
-                name: isRtl ? employee.nameAr || employee.nameEn : employee.nameEn,
-                email: employee.workEmail || employee.email,
-            })
-        );
-    };
 
     return (
         <div className="space-y-6 text-start">
@@ -1858,32 +1216,6 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
-                        onClick={handleSendInvitation}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
-                    >
-                        <Send size={13} />
-                        <span>
-                            {invitationStatus === 'Not Sent'
-                                ? t('ums.employees.actions.sendInvitation')
-                                : t('ums.employees.actions.resendInvitation')}
-                        </span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={handleToggleStatus}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#45413C] transition-colors cursor-pointer"
-                    >
-                        <Power size={13} />
-                        <span>
-                            {employee.status === 'Active'
-                                ? t('ums.employees.actions.deactivate')
-                                : t('ums.employees.actions.activate')}
-                        </span>
-                    </button>
-
-                    <button
-                        type="button"
                         onClick={() => navigate(`/ums/employees/${employee.id}/edit`)}
                         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
@@ -1913,16 +1245,16 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 ? completion.missingFieldsAr
                                 : completion.missingFieldsEn
                             ).length > 0 && (
-                                <p className="text-[11px] text-[#45413C] mt-1.5">
-                                    <span className="font-semibold">
-                                        {t('ums.employees.details.incompleteHint')}{' '}
-                                    </span>
-                                    {(isRtl
-                                        ? completion.missingFieldsAr
-                                        : completion.missingFieldsEn
-                                    ).join(' · ')}
-                                </p>
-                            )}
+                                    <p className="text-[11px] text-[#45413C] mt-1.5">
+                                        <span className="font-semibold">
+                                            {t('ums.employees.details.incompleteHint')}{' '}
+                                        </span>
+                                        {(isRtl
+                                            ? completion.missingFieldsAr
+                                            : completion.missingFieldsEn
+                                        ).join(' · ')}
+                                    </p>
+                                )}
                         </div>
                     </div>
 
@@ -2238,7 +1570,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             {manager ? (
                                 <button
                                     type="button"
-                                    onClick={() => navigate(`/ums/employees/${manager.id}`)}
+                                    onClick={() => navigate(`/ums/employees/${manager.id}/view`)}
                                     className="font-semibold text-[#037F8C] hover:underline mt-0.5 block cursor-pointer"
                                 >
                                     {isRtl ? manager.nameAr : manager.nameEn} ({manager.code})
@@ -2457,13 +1789,12 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                     {employee.iqamaExpiryDate || notProvidedText}
                                 </span>
                                 <span
-                                    className={`font-semibold ${
-                                        iqamaStatus === 'Valid'
-                                            ? 'text-[#037F8C]'
-                                            : iqamaStatus === 'Warning'
+                                    className={`font-semibold ${iqamaStatus === 'Valid'
+                                        ? 'text-[#037F8C]'
+                                        : iqamaStatus === 'Warning'
                                             ? 'text-[#C28E3A]'
                                             : 'text-[#DC2626]'
-                                    }`}
+                                        }`}
                                 >
                                     · {t(`ums.employees.iqamaStatuses.${iqamaStatus}`)}
                                 </span>
@@ -2513,37 +1844,6 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             </span>
                         </div>
                     </div>
-
-                    {attachedDocumentsList.length > 0 && (
-                        <div className="pt-2 border-t border-[#E5E0D8] space-y-2">
-                            <span className="text-[11px] font-semibold text-[#45413C] flex items-center gap-1">
-                                <Paperclip size={11} />
-                                {t('ums.employees.wizard.documents.attachmentLabel')} (
-                                {attachedDocumentsList.length})
-                            </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {attachedDocumentsList.map(([category, doc]) => (
-                                    <div
-                                        key={`${category}-${doc.fileName}`}
-                                        className="p-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-between gap-2 text-xs"
-                                    >
-                                        <div className="truncate">
-                                            <span className="font-semibold text-[#0D0D0D] block truncate">
-                                                {doc.fileName}
-                                            </span>
-                                            <span className="text-[10px] font-mono text-[#6E6862]">
-                                                {category} ·{' '}
-                                                {Math.max(1, Math.round(doc.fileSize / 1024))} KB
-                                            </span>
-                                        </div>
-                                        <span className="text-[10px] font-mono text-[#037F8C] shrink-0">
-                                            {doc.uploadedAt.slice(0, 10)}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* SECTION 5: DEPENDENTS */}
@@ -2593,11 +1893,10 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                         </span>
                                     </div>
                                     <span
-                                        className={`text-[11px] font-semibold ${
-                                            dep.insuranceIncluded
-                                                ? 'text-[#037F8C]'
-                                                : 'text-[#857E74]'
-                                        }`}
+                                        className={`text-[11px] font-semibold ${dep.insuranceIncluded
+                                            ? 'text-[#037F8C]'
+                                            : 'text-[#857E74]'
+                                            }`}
                                     >
                                         {dep.insuranceIncluded
                                             ? t('ums.employees.details.fields.insured')
@@ -2626,18 +1925,6 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={handleSendInvitation}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
-                        >
-                            <Send size={12} />
-                            <span>
-                                {invitationStatus === 'Not Sent'
-                                    ? t('ums.employees.actions.sendInvitation')
-                                    : t('ums.employees.actions.resendInvitation')}
-                            </span>
-                        </button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -2663,13 +1950,12 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 {t('ums.employees.details.fields.invitationStatus')}
                             </span>
                             <span
-                                className={`font-bold mt-0.5 block ${
-                                    invitationStatus === 'Accepted'
-                                        ? 'text-[#037F8C]'
-                                        : invitationStatus === 'Pending'
+                                className={`font-bold mt-0.5 block ${invitationStatus === 'Accepted'
+                                    ? 'text-[#037F8C]'
+                                    : invitationStatus === 'Pending'
                                         ? 'text-[#C28E3A]'
                                         : 'text-[#6E6862]'
-                                }`}
+                                    }`}
                             >
                                 {t(
                                     `ums.employees.invitationStatuses.${invitationStatus}`
@@ -2738,14 +2024,6 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => navigate('/ums/audit-trail')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer shrink-0"
-                    >
-                        <History size={12} />
-                        <span>{t('ums.employees.auditHistory.viewFullAudit')}</span>
-                    </button>
                 </div>
 
                 {employeeAuditEvents.length === 0 ? (
