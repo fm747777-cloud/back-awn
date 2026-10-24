@@ -75,6 +75,11 @@ export const WonDealsPage: React.FC = () => {
         queryFn: () => crmApi.getSectors({ limit: 200 }),
     });
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
     const summaries = wonSummariesRes?.data || [];
     const totalRecords = wonSummariesRes?.total || 0;
     const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
@@ -386,7 +391,7 @@ export const WonDealsPage: React.FC = () => {
                         <option value="all">
                             {t('crm.commercial.common.allEmployees')}
                         </option>
-                        {CRM_SALES_EMPLOYEES.map((emp) => (
+                        {employees.map((emp) => (
                             <option key={emp.id} value={emp.id}>
                                 {isRtl ? emp.nameAr : emp.nameEn}
                             </option>

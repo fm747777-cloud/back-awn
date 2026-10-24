@@ -53,14 +53,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const DEMO_DEPARTMENTS = [
-    { id: 'dep-1', companyId: 'cmp-1', nameEn: 'Supply Chain & Fleet Operations', nameAr: 'إدارة سلاسل الإمداد وعمليات الأسطول' },
-    { id: 'dep-2', companyId: 'cmp-2', nameEn: 'Plant Engineering & Production', nameAr: 'الهندسة الصناعية وخطوط الإنتاج' },
-    { id: 'dep-3', companyId: 'cmp-3', nameEn: 'Corporate Finance & Risk Analysis', nameAr: 'المالية العامة وإدارة المخاطر' },
-    { id: 'dep-4', companyId: 'cmp-4', nameEn: 'Medical Compliance & Licensing', nameAr: 'الامتثال الطبي والتراخيص الصحية' },
-    { id: 'dep-5', companyId: 'cmp-5', nameEn: 'Cloud Engineering & Cybersecurity', nameAr: 'هندسة السحابة والأمن السيبراني' },
-    { id: 'dep-6', companyId: 'cmp-6', nameEn: 'Guest Services & Facility Operations', nameAr: 'خدمات النزلاء وتشغيل المرافق' },
-];
+const DEMO_DEPARTMENTS: { id: string; companyId: string; nameEn: string; nameAr: string }[] = [];
 
 const INITIAL_EMPLOYEES: CustomerEmployeeItem[] = [];
 
@@ -112,8 +105,8 @@ export const CustomerEmployeesPage: React.FC = () => {
     // Form state
     const [formData, setFormData] = useState({
         employeeCode: '',
-        companyId: DEMO_COMPANIES[0].id,
-        departmentId: DEMO_DEPARTMENTS[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
+        departmentId: DEMO_DEPARTMENTS[0]?.id || '',
         nameEn: '',
         nameAr: '',
         jobTitleEn: '',
@@ -214,8 +207,8 @@ export const CustomerEmployeesPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             employeeCode: `EMP-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
-            departmentId: DEMO_DEPARTMENTS[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
+            departmentId: DEMO_DEPARTMENTS[0]?.id || '',
             nameEn: '',
             nameAr: '',
             jobTitleEn: '',
@@ -284,8 +277,10 @@ export const CustomerEmployeesPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
-        const dept = DEMO_DEPARTMENTS.find((d) => d.id === formData.departmentId) || DEMO_DEPARTMENTS[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
+        const dept = DEMO_DEPARTMENTS.find((d) => d.id === formData.departmentId) ||
+            DEMO_DEPARTMENTS[0] || { id: formData.departmentId || '', companyId: comp.id, nameEn: '—', nameAr: '—' };
 
         if (editingEmployeeId) {
             setEmployees((prev) =>

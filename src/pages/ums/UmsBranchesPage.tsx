@@ -59,20 +59,33 @@ export const UmsBranchesPage: React.FC = () => {
     const queryClient = useQueryClient();
 
     // Server / Persisted State via TanStack Query & umsApi
-    const { data: branches = [] } = useQuery<BranchRecord[]>({
+    const { data: rawBranches = [] } = useQuery<BranchRecord[]>({
         queryKey: ['ums', 'branches'],
         queryFn: async () => umsApi.listBranches(),
         initialData: () => loadBranches(),
     });
+    const branches = useMemo<BranchRecord[]>(
+        () => (Array.isArray(rawBranches) ? rawBranches : []),
+        [rawBranches]
+    );
 
-    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
+    const { data: rawEmployees = [] } = useQuery<EmployeeRecord[]>({
         queryKey: ['ums', 'employees'],
         queryFn: async () => {
             const res = await umsApi.listEmployees();
-            return res.ok && res.data ? res.data : loadEmployees();
+            return res.ok && Array.isArray(res.data) ? res.data : loadEmployees();
         },
         initialData: () => loadEmployees(),
     });
+    const employees = useMemo<EmployeeRecord[]>(
+        () =>
+            Array.isArray(rawEmployees)
+                ? rawEmployees
+                : Array.isArray((rawEmployees as { data?: EmployeeRecord[] })?.data)
+                ? (rawEmployees as { data: EmployeeRecord[] }).data
+                : [],
+        [rawEmployees]
+    );
 
     //Filter & Pagination State
     const [searchQuery, setSearchQuery] = useState('');

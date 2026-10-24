@@ -17,7 +17,7 @@
 
 import type { CrmQuotationRecord, CrmQuotationStatus, CrmQuotationLineItem } from '../../schemas/crmSchema';
 import type { CustomerQuotationItem, CustomerQuotationStatus } from './CustomerQuotationsPage';
-import { crmApi, CRM_STORAGE_KEYS } from '../../api/api';
+import { crmApi } from '../../api/api';
 import { getCustomerCompanyById } from './customerMockData';
 import {
     DEMO_COMPANY_MAPPINGS,
@@ -175,42 +175,15 @@ export async function loadMappedCrmQuotations(
         const records = response?.data || [];
         return filterAndAdaptCrmQuotations(records, targetCustomerCompanyId);
     } catch {
-        // Fallback: inspect localStorage directly
-        if (typeof window !== 'undefined' && window.localStorage) {
-            try {
-                const raw = localStorage.getItem(CRM_STORAGE_KEYS.QUOTATIONS);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) {
-                        return filterAndAdaptCrmQuotations(parsed, targetCustomerCompanyId);
-                    }
-                }
-            } catch {
-                // ignore
-            }
-        }
         return [];
     }
 }
 
 /**
- * Synchronous client-side reader for initial state hydration from localStorage if available.
+ * Synchronous client-side reader for initial state hydration.
  */
 export function loadMappedCrmQuotationsSync(
-    targetCustomerCompanyId?: string
+    _targetCustomerCompanyId?: string
 ): UnifiedCustomerQuotationItem[] {
-    if (typeof window !== 'undefined' && window.localStorage) {
-        try {
-            const raw = localStorage.getItem(CRM_STORAGE_KEYS.QUOTATIONS);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) {
-                    return filterAndAdaptCrmQuotations(parsed, targetCustomerCompanyId);
-                }
-            }
-        } catch {
-            // ignore
-        }
-    }
     return [];
 }

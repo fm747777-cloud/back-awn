@@ -42,44 +42,7 @@ export interface CustomerServicePackageItem {
 
 const STORAGE_KEY = 'awn_customer_service_packages_v1';
 
-const CATALOG_SERVICES: LinkedServiceItem[] = [
-    {
-        id: 'srv-1',
-        code: 'SRV-GA-01',
-        nameEn: 'Commercial Registration Issuance & Renewal',
-        nameAr: 'إصدار وتجديد السجل التجاري والأنشطة',
-    },
-    {
-        id: 'srv-2',
-        code: 'SRV-WL-02',
-        nameEn: 'Workforce Iqama Renewal & Labor Quota',
-        nameAr: 'تجديد الإقامات المهنية وتدقيق نطاقات العمل',
-    },
-    {
-        id: 'srv-3',
-        code: 'SRV-TL-03',
-        nameEn: 'Fleet GPS Telematics & SLA Monitoring',
-        nameAr: 'تتبع أسطول النقل اللوجستي والربط مع وصل',
-    },
-    {
-        id: 'srv-4',
-        code: 'SRV-CA-04',
-        nameEn: 'Zakat, Tax & Customs Regulatory Compliance',
-        nameAr: 'الامتثال الضريبي والزكوي والفوترة الإلكترونية',
-    },
-    {
-        id: 'srv-5',
-        code: 'SRV-IT-05',
-        nameEn: 'Cloud Infrastructure & 24/7 Server SLA',
-        nameAr: 'البنية السحابية ودعم الخوادم على مدار الساعة',
-    },
-    {
-        id: 'srv-6',
-        code: 'SRV-LM-06',
-        nameEn: 'Executive Legal & Municipal Licensing',
-        nameAr: 'الاستشارات القانونية والتراخيص البلدية التنفيذية',
-    },
-];
+const CATALOG_SERVICES: LinkedServiceItem[] = [];
 
 const INITIAL_PACKAGES: CustomerServicePackageItem[] = [];
 
@@ -137,7 +100,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
         price: 15000,
         billingCycle: 'annual' as BillingCycle,
         status: 'active' as CustomerPackageStatus,
-        selectedServiceIds: [CATALOG_SERVICES[0].id] as string[],
+        selectedServiceIds: (CATALOG_SERVICES[0]?.id ? [CATALOG_SERVICES[0].id] : []) as string[],
     });
 
     const [formErrors, setFormErrors] = useState<{
@@ -251,7 +214,7 @@ export const CustomerServicePackagesPage: React.FC = () => {
             price: 15000,
             billingCycle: 'annual',
             status: 'active',
-            selectedServiceIds: [CATALOG_SERVICES[0].id],
+            selectedServiceIds: CATALOG_SERVICES[0]?.id ? [CATALOG_SERVICES[0].id] : [],
         });
         setIsFormModalOpen(true);
     };

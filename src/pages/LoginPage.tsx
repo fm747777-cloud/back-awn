@@ -4,10 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Lock, Mail, ArrowRight, Globe, Sun, Moon } from 'lucide-react';
+import axios from 'axios';
+import { Lock, Mail, ArrowRight, Globe, Sun, Moon, AlertCircle } from 'lucide-react';
 
 import { loginSchema, type LoginFormData } from '../schemas/authSchema';
 import { authApi } from '../api/api';
+import { IS_BACKEND_ENABLED } from '../api/axiosClient';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore, applyThemeToDom } from '../store/useThemeStore';
 import { translateError } from '../i18n';
@@ -44,26 +46,36 @@ export const LoginPage = () => {
     });
 
     const onSubmit = async (data: LoginFormData) => {
+        if (!IS_BACKEND_ENABLED) {
+            toast.error(
+                isAr
+                    ? 'خدمة المصادقة الخلفية غير مفعلة حالياً. يرجى تفعيل الخادم الخلفي لتسجيل الدخول.'
+                    : 'Backend authentication service is currently disabled. Please enable the backend server to sign in.'
+            );
+            return;
+        }
+
         try {
             setIsLoading(true);
             const response = await authApi.login(data);
             const token = response?.access_token;
 
-            if (!token) {
-                throw new Error('Authentication token missing from response');
+            if (!token || !response?.user) {
+                throw new Error('Authentication credentials missing from backend response');
             }
 
-            const emailPrefix = data.email.split('@')[0];
-            const userProfile = response?.user || {
-                id: data.email,
-                type: 'admin',
-                fullName: emailPrefix,
-            };
-            setAuth({ token, user: userProfile });
-            toast.success(t('login.welcomeBack', { name: userProfile.fullName }));
+            setAuth({ token, user: response.user });
+            toast.success(t('login.welcomeBack', { name: response.user.fullName }));
             navigate('/service');
         } catch (error: unknown) {
-            console.log('error', error);
+            if (axios.isCancel(error)) {
+                toast.error(
+                    isAr
+                        ? 'خدمة المصادقة الخلفية غير متاحة حالياً.'
+                        : 'Backend authentication service is currently unavailable.'
+                );
+                return;
+            }
 
             const err = error as { response?: { data?: { message?: string | string[] } } };
             const errorMessage =
@@ -174,6 +186,19 @@ export const LoginPage = () => {
 
                     {/* Form Body */}
                     <div className="p-8">
+                        {!IS_BACKEND_ENABLED && (
+                            <div
+                                role="status"
+                                className="mb-5 flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-3 text-xs text-amber-900"
+                            >
+                                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                                <span>
+                                    {isAr
+                                        ? 'الخادم الخلفي غير متصل حالياً (IS_BACKEND_ENABLED = false). لن يتم تسجيل الدخول الوهمي؛ يرجى تفعيل الخادم الخلفي للمصادقة.'
+                                        : 'Backend API is currently disabled (IS_BACKEND_ENABLED = false). Demo login has been removed; enable the backend server to authenticate.'}
+                                </span>
+                            </div>
+                        )}
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                             {/* Email Field */}
                             <div>

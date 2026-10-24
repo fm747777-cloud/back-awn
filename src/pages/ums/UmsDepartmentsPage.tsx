@@ -54,29 +54,51 @@ export const UmsDepartmentsPage: React.FC = () => {
     const queryClient = useQueryClient();
 
     // Server / Persisted State via TanStack Query & umsApi
-    const { data: departments = [] } = useQuery<DepartmentRecord[]>({
+    const { data: rawDepartments = [] } = useQuery<DepartmentRecord[]>({
         queryKey: ['ums', 'departments'],
         queryFn: async () => {
             const res = await umsApi.listDepartments();
-            return res.ok && res.data ? res.data : loadDepartments();
+            return res.ok && Array.isArray(res.data) ? res.data : loadDepartments();
         },
         initialData: () => loadDepartments(),
     });
+    const departments = useMemo<DepartmentRecord[]>(
+        () =>
+            Array.isArray(rawDepartments)
+                ? rawDepartments
+                : Array.isArray((rawDepartments as { data?: DepartmentRecord[] })?.data)
+                ? (rawDepartments as { data: DepartmentRecord[] }).data
+                : [],
+        [rawDepartments]
+    );
 
-    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
+    const { data: rawEmployees = [] } = useQuery<EmployeeRecord[]>({
         queryKey: ['ums', 'employees'],
         queryFn: async () => {
             const res = await umsApi.listEmployees();
-            return res.ok && res.data ? res.data : loadEmployees();
+            return res.ok && Array.isArray(res.data) ? res.data : loadEmployees();
         },
         initialData: () => loadEmployees(),
     });
+    const employees = useMemo<EmployeeRecord[]>(
+        () =>
+            Array.isArray(rawEmployees)
+                ? rawEmployees
+                : Array.isArray((rawEmployees as { data?: EmployeeRecord[] })?.data)
+                ? (rawEmployees as { data: EmployeeRecord[] }).data
+                : [],
+        [rawEmployees]
+    );
 
-    const { data: designations = [] } = useQuery({
+    const { data: rawDesignations = [] } = useQuery({
         queryKey: ['ums', 'designations'],
         queryFn: async () => umsApi.listDesignations(),
         initialData: () => loadDesignations(),
     });
+    const designations = useMemo(
+        () => (Array.isArray(rawDesignations) ? rawDesignations : []),
+        [rawDesignations]
+    );
 
     // Mutations via TanStack Mutation & umsApi
     const upsertDepartmentMutation = useMutation({

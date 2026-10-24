@@ -292,7 +292,9 @@ export const CustomerDealsPage: React.FC = () => {
     // Save (Add or Edit)
     const handleSaveDeal = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedComp = AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+        const selectedComp =
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
 
         if (editingDeal) {
             setCustomerDeals((prev) =>

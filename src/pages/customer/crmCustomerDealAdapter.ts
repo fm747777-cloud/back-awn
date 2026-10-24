@@ -17,7 +17,7 @@
 
 import type { CrmDealRecord, CrmDealStage } from '../../schemas/crmSchema';
 import type { CustomerDealItem, CustomerDealStage, CustomerDealStatus } from './CustomerDealsPage';
-import { crmApi, CRM_STORAGE_KEYS } from '../../api/api';
+import { crmApi } from '../../api/api';
 import { getCustomerCompanyById } from './customerMockData';
 import {
     DEMO_COMPANY_MAPPINGS,
@@ -183,42 +183,15 @@ export async function loadMappedCrmDeals(
         const records = response?.data || [];
         return filterAndAdaptCrmDeals(records, targetCustomerCompanyId);
     } catch {
-        // Fallback: inspect localStorage directly
-        if (typeof window !== 'undefined' && window.localStorage) {
-            try {
-                const raw = localStorage.getItem(CRM_STORAGE_KEYS.DEALS);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) {
-                        return filterAndAdaptCrmDeals(parsed, targetCustomerCompanyId);
-                    }
-                }
-            } catch {
-                // ignore
-            }
-        }
         return [];
     }
 }
 
 /**
- * Synchronous client-side reader for initial state hydration from localStorage if available.
+ * Synchronous client-side reader for initial state hydration.
  */
 export function loadMappedCrmDealsSync(
-    targetCustomerCompanyId?: string
+    _targetCustomerCompanyId?: string
 ): UnifiedCustomerDealItem[] {
-    if (typeof window !== 'undefined' && window.localStorage) {
-        try {
-            const raw = localStorage.getItem(CRM_STORAGE_KEYS.DEALS);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) {
-                    return filterAndAdaptCrmDeals(parsed, targetCustomerCompanyId);
-                }
-            }
-        } catch {
-            // ignore
-        }
-    }
     return [];
 }

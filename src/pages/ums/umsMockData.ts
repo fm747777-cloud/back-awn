@@ -510,7 +510,6 @@ function safeGet<T>(key: string, fallback: T[]): T[] {
     try {
         const raw = window.localStorage.getItem(key);
         if (raw === null) {
-            window.localStorage.setItem(key, JSON.stringify(fallback));
             return [...fallback];
         }
         const trimmed = raw.trim();
@@ -640,7 +639,7 @@ function safeSet<T>(key: string, items: T[]): void {
 function readRawEmployees(): EmployeeRecord[] {
     return safeGet<EmployeeRecord>(UMS_EMPLOYEES_STORAGE_KEY, INITIAL_EMPLOYEES)
         .filter((item): item is EmployeeRecord =>
-            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^emp-(legacy-)?\d+$/.test(item.id || ""))
+            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^emp-(legacy-)?\d{1,4}$/.test(item.id || ""))
         )
         .map((item, idx) => ({
             ...item,
@@ -661,7 +660,7 @@ function readRawEmployees(): EmployeeRecord[] {
 function readRawDepartments(): DepartmentRecord[] {
     return safeGet<DepartmentRecord>(UMS_DEPARTMENTS_STORAGE_KEY, INITIAL_DEPARTMENTS)
         .filter((item): item is DepartmentRecord =>
-            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^emp-(legacy-)?\d+$/.test(item.id || ""))
+            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^dep-(legacy-)?\d{1,4}$/.test(item.id || ""))
         )
         .map((item, idx) => ({
             ...item,
@@ -680,7 +679,7 @@ function readRawDepartments(): DepartmentRecord[] {
 function readRawDesignations(): DesignationRecord[] {
     return safeGet<DesignationRecord>(UMS_DESIGNATIONS_STORAGE_KEY, INITIAL_DESIGNATIONS)
         .filter((item): item is DesignationRecord =>
-            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^emp-(legacy-)?\d+$/.test(item.id || ""))
+            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^des-(legacy-)?\d{1,4}$/.test(item.id || ""))
         )
         .map((item, idx) => ({
             ...item,
@@ -740,7 +739,7 @@ function readRawRoles(): RoleRecord[] {
 function readRawBranches(): BranchRecord[] {
     return safeGet<BranchRecord>(UMS_BRANCHES_STORAGE_KEY, INITIAL_BRANCHES)
         .filter((item): item is BranchRecord =>
-            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^emp-(legacy-)?\d+$/.test(item.id || ""))
+            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^brn-(legacy-)?\d{1,4}$/.test(item.id || ""))
         )
         .map((item, idx) => ({
             ...item,
@@ -765,7 +764,7 @@ function readRawBranches(): BranchRecord[] {
 function readRawCustomAddons(): CustomAddonRecord[] {
     return safeGet<CustomAddonRecord>(UMS_CUSTOM_ADDONS_STORAGE_KEY, INITIAL_CUSTOM_ADDONS)
         .filter((item): item is CustomAddonRecord =>
-            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^emp-(legacy-)?\d+$/.test(item.id || ""))
+            Boolean(item && typeof item === "object" && !Array.isArray(item) && (item.id || item.code) && !/^add-(legacy-)?\d{1,4}$/.test(item.id || ""))
         )
         .map((item, idx) => ({
             ...item,
@@ -1070,7 +1069,7 @@ export function loadCustomAddons(): CustomAddonRecord[] {
         }
         return {
             ...item,
-            createdBy: item.createdBy || seed?.createdBy || 'Karim Wagdi',
+            createdBy: item.createdBy || seed?.createdBy || 'System',
             usageCount: getCustomAddonLinkedEmployees(item, resolvedEmployees).length,
             ...(item.type === 'job_grade' ? { gradeLevel: fallbackGradeLevel } : {}),
         };
@@ -1150,7 +1149,7 @@ export function escapeSafeCsvCell(value: unknown): string {
 }
 
 export function loadUmsAuditTrail(): UmsAuditEvent[] {
-    const raw = safeGet<UmsAuditEvent>(UMS_AUDIT_TRAIL_STORAGE_KEY, INITIAL_UMS_AUDIT_TRAIL).filter((item) => !/^aud-(legacy-)?\d+$/.test(item.id || "")).filter(
+    const raw = safeGet<UmsAuditEvent>(UMS_AUDIT_TRAIL_STORAGE_KEY, INITIAL_UMS_AUDIT_TRAIL).filter((item) => !/^aud-(legacy-)?\d{1,4}$/.test(item.id || "")).filter(
         (ev): ev is UmsAuditEvent => Boolean(ev && typeof ev === 'object' && !Array.isArray(ev) && ev.id)
     );
     return raw.map((ev) => ({
@@ -1186,9 +1185,9 @@ export function recordUmsAuditEvent(params: {
     const newEvent: UmsAuditEvent = {
         id: `UMSAUD-${nextSeq}`,
         timestamp: new Date().toISOString(),
-        actorId: params.actorId || 'demo-admin-1',
-        actorName: params.actorName || 'Karim Wagdi',
-        actorEmail: params.actorEmail || 'karim@awn.sa',
+        actorId: params.actorId || 'system',
+        actorName: params.actorName || 'System',
+        actorEmail: params.actorEmail || '',
         action: params.action,
         resource: params.resource,
         resourceId: params.resourceId,
@@ -1791,9 +1790,6 @@ export function computeEmployeeInvitationStatus(
     }
     if (employee.status === 'Draft') {
         return 'Not Sent';
-    }
-    if (employee.isUnderProbation && employee.id === 'emp-7') {
-        return 'Pending';
     }
     return 'Accepted';
 }
@@ -3008,7 +3004,7 @@ export function validateEmployeeImportBatch(
     const branches = masters?.branches ?? loadBranches();
     const roles = masters?.roles ?? loadRoles();
     const customAddons = masters?.customAddons ?? loadCustomAddons();
-    const actorName = masters?.actorName || 'Karim Wagdi';
+    const actorName = masters?.actorName || 'System';
 
     const religionAddons = customAddons.filter((a) => a.type === 'religion');
     const jobGradeAddons = customAddons
@@ -3598,17 +3594,15 @@ export function validateEmployeeImportBatch(
             bankId: defaultBank?.id,
             bankName: defaultBank?.nameEn,
             accountHolderName: nameEn,
-            iban: rawValues.iban || 'SA4480000000608010167519',
-            accountNumber: rawValues.accountNumber || '608010167519',
-            passportNumber: rawValues.passportNumber || 'V99887766',
-            passportExpiry: passportExpiry || '2030-06-30',
+            iban: rawValues.iban || '',
+            accountNumber: rawValues.accountNumber || '',
+            passportNumber: rawValues.passportNumber || '',
+            passportExpiry: passportExpiry || '',
             contractNumber: rawValues.contractNumber || `CNT-2026-${resolvedCode}`,
-            gosiSubscriptionNumber:
-                rawValues.gosiSubscriptionNumber || `GOSI-${resolvedCode.replace(/\D/g, '')}99`,
-            healthInsuranceProvider: 'Bupa Arabia',
-            healthInsurancePolicy:
-                rawValues.healthInsurancePolicy || `BUPA-${resolvedCode}-A`,
-            healthInsuranceExpiry: healthInsuranceExpiry || '2027-12-31',
+            gosiSubscriptionNumber: rawValues.gosiSubscriptionNumber || '',
+            healthInsuranceProvider: '',
+            healthInsurancePolicy: rawValues.healthInsurancePolicy || '',
+            healthInsuranceExpiry: healthInsuranceExpiry || '',
             dependents: [],
             invitationStatus: resolvedStatus === 'Draft' ? 'Not Sent' : 'Pending',
             ...(resolvedStatus !== 'Draft' ? { invitedAt: todayIso } : {}),
@@ -3663,8 +3657,8 @@ export function commitEmployeeImportBatch(params: {
     actorEmail?: string;
 }): EmployeeImportCommitResult {
     const { validationSummary, fileName } = params;
-    const actorName = params.actorName || 'Karim Wagdi';
-    const actorEmail = params.actorEmail || 'karim@awn.sa';
+    const actorName = params.actorName || 'System';
+    const actorEmail = params.actorEmail || '';
 
     const currentEmployees = loadEmployees();
     const existingIds = new Set<string>();
@@ -3788,94 +3782,7 @@ export function commitEmployeeImportBatch(params: {
 
 export function generateEmployeeSampleCsvContent(): string {
     const headers = [...EMPLOYEE_IMPORT_ALL_HEADERS];
-    const sampleRows: Array<Record<CanonicalEmployeeImportHeader, string>> = [
-        {
-            code: '',
-            nameEn: 'Nawaf Abdulrahman Al-Qahtani',
-            nameAr: 'نواف عبدالرحمن القحطاني',
-            email: 'nawaf.qahtani@gmail.com',
-            workEmail: 'nawaf.qahtani@awn.sa',
-            phone: '+966504411223',
-            dobGregorian: '1993-04-12',
-            dobHijri: '1413/10/20',
-            gender: 'Male',
-            maritalStatus: 'Married',
-            citizenship: 'Saudi',
-            nationality: 'Saudi Arabia',
-            religion: 'Muslim',
-            branch: 'BRN-001',
-            department: 'DEP-001',
-            designation: 'DES-001',
-            jobTitle: 'ADD-008',
-            role: 'ROL-003',
-            jobGrade: 'ADD-014',
-            manager: 'EMP-001',
-            joiningDate: '2026-10-01',
-            contractType: 'Permanent',
-            employmentType: 'Full-time',
-            probationPeriodDays: '90',
-            isUnderProbation: 'true',
-            status: 'Active',
-            basicSalary: '16500',
-            housingAllowance: '4125',
-            transportationAllowance: '1500',
-            otherAllowances: '500',
-            bank: 'ADD-001',
-            iban: 'SA4480000000608010998811',
-            accountNumber: '608010998811',
-            iqamaNumber: '1088442211',
-            iqamaExpiryDate: '2029-05-20',
-            passportNumber: 'V77441122',
-            passportExpiry: '2030-05-20',
-            contractNumber: 'CNT-2026-901',
-            gosiSubscriptionNumber: 'GOSI-90112233',
-            healthInsurancePolicy: 'BUPA-901122-A',
-            healthInsuranceExpiry: '2027-10-01',
-        },
-        {
-            code: '',
-            nameEn: 'Lina Mahmoud El-Sayed',
-            nameAr: 'لينا محمود السيد',
-            email: 'lina.elsayed@outlook.com',
-            workEmail: 'lina.elsayed@awn.sa',
-            phone: '0557788991',
-            dobGregorian: '1995-09-25',
-            dobHijri: '1416/04/29',
-            gender: 'Female',
-            maritalStatus: 'Single',
-            citizenship: 'Non-Saudi',
-            nationality: 'Egypt',
-            religion: 'Muslim',
-            branch: 'BRN-002',
-            department: 'DEP-002',
-            designation: 'DES-002',
-            jobTitle: 'ADD-009',
-            role: 'ROL-004',
-            jobGrade: 'ADD-015',
-            manager: 'EMP-002',
-            joiningDate: '2026-10-05',
-            contractType: 'Fixed Term',
-            employmentType: 'Full-time',
-            probationPeriodDays: '90',
-            isUnderProbation: 'true',
-            status: 'Active',
-            basicSalary: '14000',
-            housingAllowance: '3500',
-            transportationAllowance: '1200',
-            otherAllowances: '0',
-            bank: 'ADD-002',
-            iban: 'SA1210000000204000556677',
-            accountNumber: '204000556677',
-            iqamaNumber: '2499113355',
-            iqamaExpiryDate: '2028-04-15',
-            passportNumber: 'A33991122',
-            passportExpiry: '2029-11-10',
-            contractNumber: 'CNT-2026-902',
-            gosiSubscriptionNumber: 'GOSI-90224466',
-            healthInsurancePolicy: 'BUPA-902244-A',
-            healthInsuranceExpiry: '2027-10-05',
-        },
-    ];
+    const sampleRows: Array<Record<CanonicalEmployeeImportHeader, string>> = [];
 
     const escapeCsvField = (v: string): string => {
         const str = String(v ?? '');

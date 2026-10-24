@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { X, AlertCircle, ShieldCheck } from 'lucide-react';
 import {
+    crmApi,
     CRM_SALES_EMPLOYEES,
     type CrmApprovalTargetEntityOption,
 } from '../../../api/api';
@@ -39,8 +41,13 @@ export const ApprovalTaskFormDrawer: React.FC<ApprovalTaskFormDrawerProps> = ({
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
-    const defaultEmployee = CRM_SALES_EMPLOYEES[0];
-    const defaultRequester = CRM_SALES_EMPLOYEES[1] || defaultEmployee;
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
+    const defaultEmployee = employees[0];
+    const defaultRequester = employees[1] || defaultEmployee;
     const defaultDueDate = DEFAULT_DUE_DATE;
 
     const {
@@ -88,7 +95,9 @@ export const ApprovalTaskFormDrawer: React.FC<ApprovalTaskFormDrawerProps> = ({
     const selectedTargetId =
         useWatch({ control, name: 'targetEntityId' }) || '';
     const selectedApproverId =
-        useWatch({ control, name: 'assignedApproverId' }) || defaultEmployee.id;
+        useWatch({ control, name: 'assignedApproverId' }) ||
+        defaultEmployee?.id ||
+        '';
 
     useEffect(() => {
         if (isOpen) {
@@ -115,16 +124,16 @@ export const ApprovalTaskFormDrawer: React.FC<ApprovalTaskFormDrawerProps> = ({
                 stageNameAr: 'مراجعة الحوكمة التجارية',
                 priority: 'High',
                 approvalStatus: 'Pending',
-                assignedApproverId: defaultEmployee.id,
-                assignedApproverNameEn: defaultEmployee.nameEn,
-                assignedApproverNameAr: defaultEmployee.nameAr,
-                departmentEn: defaultEmployee.departmentEn,
-                departmentAr: defaultEmployee.departmentAr,
-                designationEn: defaultEmployee.roleEn,
-                designationAr: defaultEmployee.roleAr,
-                requestedByNameEn: defaultRequester.nameEn,
-                requestedByNameAr: defaultRequester.nameAr,
-                requestedByEmail: defaultRequester.email,
+                assignedApproverId: defaultEmployee?.id || '',
+                assignedApproverNameEn: defaultEmployee?.nameEn || '',
+                assignedApproverNameAr: defaultEmployee?.nameAr || '',
+                departmentEn: defaultEmployee?.departmentEn || '',
+                departmentAr: defaultEmployee?.departmentAr || '',
+                designationEn: defaultEmployee?.roleEn || '',
+                designationAr: defaultEmployee?.roleAr || '',
+                requestedByNameEn: defaultRequester?.nameEn || '',
+                requestedByNameAr: defaultRequester?.nameAr || '',
+                requestedByEmail: defaultRequester?.email || '',
                 dueDate: defaultDueDate,
                 decisionRemarks: '',
             });
@@ -196,7 +205,7 @@ export const ApprovalTaskFormDrawer: React.FC<ApprovalTaskFormDrawerProps> = ({
 
     const handleAssigneeChange = (empId: string) => {
         setValue('assignedApproverId', empId, { shouldValidate: true });
-        const emp = CRM_SALES_EMPLOYEES.find((e) => e.id === empId);
+        const emp = employees.find((e) => e.id === empId);
         if (emp) {
             setValue('assignedApproverNameEn', emp.nameEn);
             setValue('assignedApproverNameAr', emp.nameAr);
@@ -447,7 +456,12 @@ export const ApprovalTaskFormDrawer: React.FC<ApprovalTaskFormDrawerProps> = ({
                                 }
                                 className="w-full px-3.5 py-2.5 rounded-xl border border-[#E5E0D8] bg-white text-xs font-medium text-[#0D0D0D]"
                             >
-                                {CRM_SALES_EMPLOYEES.map((emp) => (
+                                <option value="">
+                                    {t(
+                                        'crm.workflow.operationalTasks.filters.unassigned'
+                                    )}
+                                </option>
+                                {employees.map((emp) => (
                                     <option key={emp.id} value={emp.id}>
                                         {isRtl ? emp.nameAr : emp.nameEn} —{' '}
                                         {isRtl ? emp.roleAr : emp.roleEn}

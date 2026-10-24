@@ -48,12 +48,6 @@ const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
 
 const AVAILABLE_QUOTATIONS = [
     { id: 'none', number: '— None / Direct Contract —', numberAr: '— بدون عرض سعر / عقد مباشر —', companyId: '' },
-    { id: 'qt-1', number: 'QT-2026-101 (Al-Wataniya Logistics)', numberAr: 'QT-2026-101 (الوطنية للخدمات اللوجستية)', companyId: 'cmp-1' },
-    { id: 'qt-2', number: 'QT-2026-102 (Riyadh Tech Solutions)', numberAr: 'QT-2026-102 (حلول الرياض التقنية)', companyId: 'cmp-2' },
-    { id: 'qt-3', number: 'QT-2026-103 (Gulf Energy Trading)', numberAr: 'QT-2026-103 (طاقة الخليج التجارية)', companyId: 'cmp-3' },
-    { id: 'qt-4', number: 'QT-2026-104 (Najm Financial Advisory)', numberAr: 'QT-2026-104 (نجم للاستشارات المالية)', companyId: 'cmp-4' },
-    { id: 'qt-5', number: 'QT-2026-105 (Arabian Horizon)', numberAr: 'QT-2026-105 (الأفق العربي للمقاولات)', companyId: 'cmp-5' },
-    { id: 'qt-6', number: 'QT-2026-106 (Modern Infrastructure)', numberAr: 'QT-2026-106 (البنية التحتية الحديثة)', companyId: 'cmp-6' },
 ];
 
 export const CustomerContractsPage: React.FC = () => {
@@ -206,7 +200,9 @@ export const CustomerContractsPage: React.FC = () => {
     // Save Contract (Add or Edit)
     const handleSaveContract = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedComp = AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+        const selectedComp =
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
         const val = Number(formData.contractValue) || 0;
 
         let linkedQuoteNum: string | undefined = undefined;

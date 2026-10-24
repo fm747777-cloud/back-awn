@@ -14,48 +14,7 @@ export interface AuditTrailItem {
     status: 'Success' | 'Warning' | 'Failed';
 }
 
-const defaultAudit: AuditTrailItem[] = [
-    {
-        id: "adt-1",
-        action: "Create Service",
-        entityType: "Service",
-        entityName: "تجديد رخصة القيادة للمركبات التجارية",
-        performedBy: "Karim Wagdi",
-        timestamp: "2026-03-20 14:32:10",
-        ipAddress: "192.168.1.45",
-        status: "Success",
-    },
-    {
-        id: "adt-2",
-        action: "Update Portal",
-        entityType: "Service Portal",
-        entityName: "Absher Business",
-        performedBy: "Karim Wagdi",
-        timestamp: "2026-03-20 11:15:02",
-        ipAddress: "192.168.1.45",
-        status: "Success",
-    },
-    {
-        id: "adt-3",
-        action: "Add Tag",
-        entityType: "Service Tag",
-        entityName: "Urgent",
-        performedBy: "Admin User",
-        timestamp: "2026-03-19 16:48:33",
-        ipAddress: "10.0.0.12",
-        status: "Success",
-    },
-    {
-        id: "adt-4",
-        action: "Create Service Category",
-        entityType: "Service Category",
-        entityName: "Labor & Employment",
-        performedBy: "Karim Wagdi",
-        timestamp: "2026-03-18 09:22:15",
-        ipAddress: "192.168.1.45",
-        status: "Success",
-    },
-];
+const defaultAudit: AuditTrailItem[] = [];
 
 export const ServiceAuditTrailTab: React.FC = () => {
     const { t } = useTranslation();

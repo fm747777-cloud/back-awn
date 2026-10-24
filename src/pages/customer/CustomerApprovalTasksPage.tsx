@@ -120,7 +120,7 @@ export const CustomerApprovalTasksPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         titleEn: '',
         titleAr: '',
         linkedEntityType: 'contract' as LinkedEntityType,
@@ -267,15 +267,15 @@ export const CustomerApprovalTasksPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: nextCode,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             titleEn: '',
             titleAr: '',
             linkedEntityType: 'contract',
-            linkedEntityRef: 'CTR-2026-101',
-            requesterNameEn: 'Sultan Al-Otaibi',
-            requesterNameAr: 'سلطان العتيبي',
-            assignedApproverEn: 'Eng. Khalid Al-Otaibi',
-            assignedApproverAr: 'م. خالد العتيبي',
+            linkedEntityRef: '',
+            requesterNameEn: '',
+            requesterNameAr: '',
+            assignedApproverEn: '',
+            assignedApproverAr: '',
             priority: 'high',
             dueDate: '2026-03-25',
             status: 'pending',
@@ -327,7 +327,8 @@ export const CustomerApprovalTasksPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingTaskId) {
             setTasks((prev) =>

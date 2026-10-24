@@ -95,7 +95,7 @@ export const EdmsDashboardPage: React.FC = () => {
         return CATEGORY_ORDER.map((catKey) => {
             const meta = EDMS_CATEGORY_META[catKey];
             const count = EDMS_DEMO_DOCUMENTS.filter((doc) => doc.categoryKey === catKey).length;
-            const percent = ((count / totalDocuments) * 100).toFixed(1);
+            const percent = totalDocuments > 0 ? ((count / totalDocuments) * 100).toFixed(1) : '0.0';
             return {
                 key: catKey,
                 name: isAr ? meta.ar : meta.en,
@@ -113,7 +113,7 @@ export const EdmsDashboardPage: React.FC = () => {
         return TYPE_ORDER.map((typeKey) => {
             const meta = EDMS_DOCUMENT_TYPE_META[typeKey];
             const count = EDMS_DEMO_DOCUMENTS.filter((doc) => doc.typeKey === typeKey).length;
-            const percent = ((count / totalDocuments) * 100).toFixed(1);
+            const percent = totalDocuments > 0 ? ((count / totalDocuments) * 100).toFixed(1) : '0.0';
             return {
                 key: typeKey,
                 name: isAr ? meta.ar : meta.en,

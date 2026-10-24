@@ -108,7 +108,7 @@ export const CustomerDocumentsPage: React.FC = () => {
     // Form fields
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         titleEn: '',
         titleAr: '',
         documentType: 'commercial_registration' as DocumentType,
@@ -175,12 +175,12 @@ export const CustomerDocumentsPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: nextCode,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             titleEn: '',
             titleAr: '',
             documentType: 'commercial_registration',
             linkedEntityType: 'company',
-            linkedEntityRef: 'CR-1010345678',
+            linkedEntityRef: '',
             version: 'v1.0',
             expiryDate: '2027-12-31',
             status: 'active',
@@ -229,7 +229,8 @@ export const CustomerDocumentsPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingDocId) {
             setDocuments((prev) =>

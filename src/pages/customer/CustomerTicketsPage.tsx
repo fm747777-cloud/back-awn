@@ -130,7 +130,7 @@ export const CustomerTicketsPage: React.FC = () => {
     // Form State
     const [formData, setFormData] = useState({
         code: '',
-        companyId: 'cmp-1',
+        companyId: DEMO_COMPANIES[0]?.id || '',
         requesterNameEn: '',
         requesterNameAr: '',
         requesterEmail: '',
@@ -142,8 +142,8 @@ export const CustomerTicketsPage: React.FC = () => {
         category: 'technical_support' as TicketCategory,
         priority: 'medium' as TicketPriority,
         status: 'open' as TicketStatus,
-        assignedAgentEn: 'Layla Al-Amoudi',
-        assignedAgentAr: 'ليلى العمودي',
+        assignedAgentEn: '',
+        assignedAgentAr: '',
         slaTargetHours: 24,
         internalNotesEn: '',
         internalNotesAr: '',
@@ -211,7 +211,7 @@ export const CustomerTicketsPage: React.FC = () => {
         const nextNum = 801 + tickets.length;
         setFormData({
             code: `TCK-${nextNum}`,
-            companyId: 'cmp-1',
+            companyId: DEMO_COMPANIES[0]?.id || '',
             requesterNameEn: '',
             requesterNameAr: '',
             requesterEmail: '',
@@ -223,8 +223,8 @@ export const CustomerTicketsPage: React.FC = () => {
             category: 'technical_support',
             priority: 'medium',
             status: 'open',
-            assignedAgentEn: 'Layla Al-Amoudi',
-            assignedAgentAr: 'ليلى العمودي',
+            assignedAgentEn: '',
+            assignedAgentAr: '',
             slaTargetHours: 24,
             internalNotesEn: '',
             internalNotesAr: '',
@@ -281,7 +281,8 @@ export const CustomerTicketsPage: React.FC = () => {
             return;
         }
 
-        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
         const now = new Date();
         const dateStr = now.toISOString().slice(0, 16).replace('T', ' ');
 

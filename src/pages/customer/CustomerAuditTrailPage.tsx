@@ -126,14 +126,14 @@ export const CustomerAuditTrailPage: React.FC = () => {
         actionType: 'create' as AuditActionType,
         entityType: 'document' as AuditEntityType,
         entityReference: '',
-        companyId: 'cmp-1',
+        companyId: DEMO_COMPANIES[0]?.id || '',
         severity: 'info' as AuditSeverity,
         summaryAr: '',
         summaryEn: '',
-        actorNameAr: 'د. طارق الغامدي',
-        actorNameEn: 'Dr. Tariq Al-Ghamdi',
-        actorRoleAr: 'مسؤول الامتثال',
-        actorRoleEn: 'Compliance Officer',
+        actorNameAr: '',
+        actorNameEn: '',
+        actorRoleAr: '',
+        actorRoleEn: '',
     });
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
 
@@ -217,7 +217,8 @@ export const CustomerAuditTrailPage: React.FC = () => {
             return;
         }
 
-        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === newLogData.companyId) || DEMO_COMPANIES[0];
+        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === newLogData.companyId) ||
+            DEMO_COMPANIES[0] || { id: newLogData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
         const now = new Date();
         const timestampStr = now.toISOString().slice(0, 19).replace('T', ' ');
 
@@ -229,11 +230,11 @@ export const CustomerAuditTrailPage: React.FC = () => {
             id: `aud-${Date.now()}`,
             eventCode: `CST-AUD-${nextNum}`,
             timestamp: timestampStr,
-            actorNameEn: newLogData.actorNameEn || newLogData.actorNameAr,
-            actorNameAr: newLogData.actorNameAr || newLogData.actorNameEn,
-            actorEmail: 'compliance.officer@awn.sa',
-            actorRoleEn: newLogData.actorRoleEn || 'Compliance Officer',
-            actorRoleAr: newLogData.actorRoleAr || 'مسؤول الامتثال',
+            actorNameEn: newLogData.actorNameEn || newLogData.actorNameAr || '—',
+            actorNameAr: newLogData.actorNameAr || newLogData.actorNameEn || '—',
+            actorEmail: '',
+            actorRoleEn: newLogData.actorRoleEn || '—',
+            actorRoleAr: newLogData.actorRoleAr || '—',
             actionType: newLogData.actionType,
             entityType: newLogData.entityType,
             entityReference: newLogData.entityReference,

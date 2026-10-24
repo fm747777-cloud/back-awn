@@ -1,7 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Search, X, RotateCcw } from 'lucide-react';
-import { CRM_SALES_EMPLOYEES } from '../../../api/api';
+import { crmApi, CRM_SALES_EMPLOYEES } from '../../../api/api';
 import {
     CRM_AUDIT_ACTION_VALUES,
     CRM_AUDIT_RESOURCE_TYPE_VALUES,
@@ -44,6 +45,11 @@ export const AuditTrailFilters: React.FC<AuditTrailFiltersProps> = ({
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
 
     return (
         <div className="bg-white rounded-2xl border border-[#E5E0D8] p-4 space-y-4 shadow-xs">
@@ -156,7 +162,7 @@ export const AuditTrailFilters: React.FC<AuditTrailFiltersProps> = ({
                     <option value="all">
                         {t('crm.workflow.auditTrails.filters.allActors')}
                     </option>
-                    {CRM_SALES_EMPLOYEES.map((emp) => (
+                    {employees.map((emp) => (
                         <option key={emp.id} value={emp.nameEn}>
                             {isRtl ? emp.nameAr : emp.nameEn}
                         </option>

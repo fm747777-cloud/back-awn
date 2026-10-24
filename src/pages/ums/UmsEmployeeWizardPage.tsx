@@ -65,22 +65,40 @@ export const UmsEmployeeWizardPage: React.FC = () => {
     const queryClient = useQueryClient();
 
     // Master datasets loaded via TanStack Query + umsApi with synchronous localStorage initialData
-    const { data: employees = [] } = useQuery({
+    const { data: rawEmployees = [] } = useQuery({
         queryKey: ['ums', 'employees'],
         queryFn: async () => {
             const res = await umsApi.listEmployees();
-            return res.ok && res.data ? res.data : loadEmployees();
+            return res.ok && Array.isArray(res.data) ? res.data : loadEmployees();
         },
         initialData: () => loadEmployees(),
     });
-    const { data: departments = [] } = useQuery({
+    const employees = useMemo(
+        () =>
+            Array.isArray(rawEmployees)
+                ? rawEmployees
+                : Array.isArray((rawEmployees as { data?: typeof rawEmployees })?.data)
+                ? (rawEmployees as { data: typeof rawEmployees }).data
+                : [],
+        [rawEmployees]
+    );
+    const { data: rawDepartments = [] } = useQuery({
         queryKey: ['ums', 'departments'],
         queryFn: async () => {
             const res = await umsApi.listDepartments();
-            return res.ok && res.data ? res.data : loadDepartments();
+            return res.ok && Array.isArray(res.data) ? res.data : loadDepartments();
         },
         initialData: () => loadDepartments(),
     });
+    const departments = useMemo(
+        () =>
+            Array.isArray(rawDepartments)
+                ? rawDepartments
+                : Array.isArray((rawDepartments as { data?: typeof rawDepartments })?.data)
+                ? (rawDepartments as { data: typeof rawDepartments }).data
+                : [],
+        [rawDepartments]
+    );
     const { data: designations = [] } = useQuery({
         queryKey: ['ums', 'designations'],
         queryFn: async () => umsApi.listDesignations(),
@@ -553,7 +571,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
             dependents: form.dependents,
             createdAt: existingEmployee?.createdAt || new Date().toISOString().slice(0, 10),
             updatedAt: new Date().toISOString().slice(0, 10),
-            createdBy: existingEmployee?.createdBy || currentUser?.fullName || 'Karim Wagdi',
+            createdBy: existingEmployee?.createdBy || currentUser?.fullName || 'System',
         };
         return synchronizeEmployeeRelationships(baseRecord, {
             departments,
@@ -1163,7 +1181,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                 : {}),
             createdAt: existingEmployee?.createdAt || todayIso,
             updatedAt: todayIso,
-            createdBy: existingEmployee?.createdBy || currentUser?.fullName || 'Karim Wagdi',
+            createdBy: existingEmployee?.createdBy || currentUser?.fullName || 'System',
         };
 
         const syncedRecord = synchronizeEmployeeRelationships(rawRecord, {
@@ -1196,8 +1214,7 @@ export const UmsEmployeeWizardPage: React.FC = () => {
                   }).`,
             previousState: existingEmployee ? `Status: ${existingEmployee.status}` : undefined,
             newState: `Status: ${syncedRecord.status}`,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
-            actorEmail: 'karim@awn.sa',
+            actorName: currentUser?.fullName || 'System',
         });
 
         navigate(`/ums/employees/${syncedRecord.id}`);

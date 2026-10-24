@@ -53,14 +53,7 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const DEMO_SERVICES = [
-    { id: 'srv-1', code: 'SRV-GA-01', nameEn: 'Commercial Registration Issuance & Renewal', nameAr: 'إصدار وتجديد السجل التجاري والأنشطة' },
-    { id: 'srv-2', code: 'SRV-WL-02', nameEn: 'Workforce Iqama Renewal & Labor Quota', nameAr: 'تجديد الإقامات المهنية وتدقيق نطاقات العمل' },
-    { id: 'srv-3', code: 'SRV-TL-03', nameEn: 'Fleet GPS Telematics & SLA Monitoring', nameAr: 'تتبع أسطول النقل اللوجستي والربط مع وصل' },
-    { id: 'srv-4', code: 'SRV-CA-04', nameEn: 'Zakat, Tax & Customs Regulatory Compliance', nameAr: 'الامتثال الضريبي والزكوي والفوترة الإلكترونية' },
-    { id: 'srv-5', code: 'SRV-IT-05', nameEn: 'Cloud Infrastructure & 24/7 Server SLA', nameAr: 'البنية السحابية ودعم الخوادم على مدار الساعة' },
-    { id: 'srv-6', code: 'SRV-LM-06', nameEn: 'Executive Legal & Municipal Licensing', nameAr: 'الاستشارات القانونية والتراخيص البلدية التنفيذية' },
-];
+const DEMO_SERVICES: { id: string; code: string; nameEn: string; nameAr: string }[] = [];
 
 const INITIAL_REQUESTS: CustomerRequestItem[] = [];
 
@@ -114,8 +107,8 @@ export const CustomerRequestsPage: React.FC = () => {
         code: '',
         titleEn: '',
         titleAr: '',
-        companyId: DEMO_COMPANIES[0].id,
-        serviceId: DEMO_SERVICES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
+        serviceId: DEMO_SERVICES[0]?.id || '',
         requestType: 'government' as RequestType,
         priority: 'medium' as RequestPriority,
         status: 'pending' as RequestStatus,
@@ -279,8 +272,8 @@ export const CustomerRequestsPage: React.FC = () => {
             code: generatedCode,
             titleEn: '',
             titleAr: '',
-            companyId: DEMO_COMPANIES[0].id,
-            serviceId: DEMO_SERVICES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
+            serviceId: DEMO_SERVICES[0]?.id || '',
             requestType: 'government',
             priority: 'medium',
             status: 'pending',
@@ -366,8 +359,10 @@ export const CustomerRequestsPage: React.FC = () => {
             return;
         }
 
-        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
-        const selectedService = DEMO_SERVICES.find((s) => s.id === formData.serviceId) || DEMO_SERVICES[0];
+        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
+        const selectedService = DEMO_SERVICES.find((s) => s.id === formData.serviceId) ||
+            DEMO_SERVICES[0] || { id: formData.serviceId || '', code: 'SRV', nameEn: '—', nameAr: '—' };
 
         if (editingRequestId) {
             setRequests((prev) =>

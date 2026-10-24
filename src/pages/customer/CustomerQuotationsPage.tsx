@@ -255,7 +255,9 @@ export const CustomerQuotationsPage: React.FC = () => {
     // Save (Add or Edit)
     const handleSaveQuotation = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedComp = AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+        const selectedComp =
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
 
         const sub = Number(formData.subtotal) || 0;
         const disc = Number(formData.discount) || 0;

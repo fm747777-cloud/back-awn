@@ -143,6 +143,11 @@ export const ContractsPage: React.FC = () => {
         queryFn: () => crmApi.contacts.getAll({ limit: 200 }),
     });
 
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
+
     const invalidateAll = () => {
         queryClient.invalidateQueries({ queryKey: ['crm'] });
     };
@@ -609,7 +614,7 @@ export const ContractsPage: React.FC = () => {
                         <option value="all">
                             {t('crm.commercial.common.allEmployees')}
                         </option>
-                        {CRM_SALES_EMPLOYEES.map((emp) => (
+                        {employees.map((emp) => (
                             <option key={emp.id} value={emp.id}>
                                 {isRtl ? emp.nameAr : emp.nameEn}
                             </option>
@@ -919,7 +924,7 @@ export const ContractsPage: React.FC = () => {
                 deals={deals}
                 quotations={quotations}
                 contacts={contacts}
-                employees={CRM_SALES_EMPLOYEES}
+                employees={employees}
                 isSubmitting={
                     createMutation.isPending || updateMutation.isPending
                 }

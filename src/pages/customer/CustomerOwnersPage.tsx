@@ -100,7 +100,7 @@ export const CustomerOwnersPage: React.FC = () => {
     // Form state
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         ownerNameEn: '',
         ownerNameAr: '',
         ownerType: 'individual' as OwnerType,
@@ -206,7 +206,7 @@ export const CustomerOwnersPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: `OWN-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             ownerNameEn: '',
             ownerNameAr: '',
             ownerType: 'individual',
@@ -268,7 +268,8 @@ export const CustomerOwnersPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingOwnerId) {
             setOwners((prev) =>

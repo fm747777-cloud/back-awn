@@ -673,7 +673,7 @@ export const RequestsPage = () => {
         setAssignTarget(rec);
         setAssignManagerId(
             rec.accountManagerId === 'unassigned'
-                ? REQUEST_ACCOUNT_MANAGERS[0].id
+                ? REQUEST_ACCOUNT_MANAGERS[0]?.id || 'unassigned'
                 : rec.accountManagerId
         );
         setAssignNextStatus(rec.status === 'Pending' ? 'Assigned' : rec.status);

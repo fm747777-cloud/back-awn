@@ -57,23 +57,9 @@ import { CUSTOMER_COMPANIES_DEMO_OPTIONS } from './customerMockData';
 const DEMO_COMPANIES = CUSTOMER_COMPANIES_DEMO_OPTIONS;
 
 
-const DEMO_REQUESTS = [
-    { id: 'req-1', code: 'REQ-2026-081', companyId: 'cmp-1', titleEn: 'Commercial Registration Renewal', titleAr: 'تجديد السجل التجاري السنوي' },
-    { id: 'req-2', code: 'REQ-2026-082', companyId: 'cmp-1', titleEn: 'Fleet WASL Platform Integration', titleAr: 'الربط المباشر مع منصة وصل' },
-    { id: 'req-3', code: 'REQ-2026-083', companyId: 'cmp-2', titleEn: 'Workforce Qiwa Contract Attestation', titleAr: 'توثيق عقود الكوادر عبر قوى' },
-    { id: 'req-4', code: 'REQ-2026-084', companyId: 'cmp-3', titleEn: 'ZATCA Phase 2 E-Invoicing Verification', titleAr: 'تدقيق منظومة الفوترة الإلكترونية' },
-    { id: 'req-5', code: 'REQ-2026-085', companyId: 'cmp-4', titleEn: 'Executive Municipal Health Licensing', titleAr: 'تجديد رخصة بلدي للأنشطة الصحية' },
-    { id: 'req-6', code: 'REQ-2026-086', companyId: 'cmp-6', titleEn: 'Enterprise Dedicated Cloud Server SLA', titleAr: 'تخصيص الخوادم السحابية للمشروع' },
-];
+const DEMO_REQUESTS: { id: string; code: string; companyId: string; titleEn: string; titleAr: string }[] = [];
 
-const DEMO_ASSIGNEES = [
-    { id: 'emp-1', nameEn: 'Tariq Al-Ghamdi', nameAr: 'طارق الغامدي', roleEn: 'Gov Relations Specialist', roleAr: 'أخصائي شؤون حكومية' },
-    { id: 'emp-2', nameEn: 'Sarah Al-Otaibi', nameAr: 'سارة العتيبي', roleEn: 'Workforce Compliance Lead', roleAr: 'مسؤولة الامتثال والعمل' },
-    { id: 'emp-3', nameEn: 'Faisal Al-Mutairi', nameAr: 'فيصل المطيري', roleEn: 'Telematics Systems Engineer', roleAr: 'مهندس أنظمة التتبع' },
-    { id: 'emp-4', nameEn: 'Reem Al-Shehri', nameAr: 'ريم الشهري', roleEn: 'Zakat & Tax Consultant', roleAr: 'مستشارة الزكاة والضرائب' },
-    { id: 'emp-5', nameEn: 'Khalid Al-Harbi', nameAr: 'خالد الحربي', roleEn: 'Municipal Licensing Officer', roleAr: 'مسؤول التراخيص البلدية' },
-    { id: 'emp-6', nameEn: 'Noura Al-Zahrani', nameAr: 'نورة الزهراني', roleEn: 'Cloud Infrastructure Lead', roleAr: 'مهندسة البنية السحابية' },
-];
+const DEMO_ASSIGNEES: { id: string; nameEn: string; nameAr: string; roleEn: string; roleAr: string }[] = [];
 
 const INITIAL_TASKS: CustomerOperationalTaskItem[] = [];
 
@@ -128,8 +114,8 @@ export const CustomerOperationalTasksPage: React.FC = () => {
         code: '',
         titleEn: '',
         titleAr: '',
-        requestId: DEMO_REQUESTS[0].id,
-        assigneeId: DEMO_ASSIGNEES[0].id,
+        requestId: DEMO_REQUESTS[0]?.id || '',
+        assigneeId: DEMO_ASSIGNEES[0]?.id || '',
         taskType: 'document_collection' as TaskType,
         priority: 'medium' as TaskPriority,
         status: 'pending' as TaskStatus,
@@ -311,8 +297,8 @@ export const CustomerOperationalTasksPage: React.FC = () => {
             code: generatedCode,
             titleEn: '',
             titleAr: '',
-            requestId: DEMO_REQUESTS[0].id,
-            assigneeId: DEMO_ASSIGNEES[0].id,
+            requestId: DEMO_REQUESTS[0]?.id || '',
+            assigneeId: DEMO_ASSIGNEES[0]?.id || '',
             taskType: 'document_collection',
             priority: 'medium',
             status: 'pending',
@@ -371,9 +357,12 @@ export const CustomerOperationalTasksPage: React.FC = () => {
             return;
         }
 
-        const selectedReq = DEMO_REQUESTS.find((r) => r.id === formData.requestId) || DEMO_REQUESTS[0];
-        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === selectedReq.companyId) || DEMO_COMPANIES[0];
-        const selectedAssignee = DEMO_ASSIGNEES.find((a) => a.id === formData.assigneeId) || DEMO_ASSIGNEES[0];
+        const selectedReq = DEMO_REQUESTS.find((r) => r.id === formData.requestId) ||
+            DEMO_REQUESTS[0] || { id: formData.requestId || '', code: 'REQ', companyId: '', titleEn: '—', titleAr: '—' };
+        const selectedCompany = DEMO_COMPANIES.find((c) => c.id === selectedReq.companyId) ||
+            DEMO_COMPANIES[0] || { id: selectedReq.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
+        const selectedAssignee = DEMO_ASSIGNEES.find((a) => a.id === formData.assigneeId) ||
+            DEMO_ASSIGNEES[0] || { id: formData.assigneeId || '', nameEn: '—', nameAr: '—', roleEn: '—', roleAr: '—' };
 
         if (editingTaskId) {
             setTasks((prev) =>

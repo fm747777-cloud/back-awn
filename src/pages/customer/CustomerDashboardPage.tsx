@@ -82,7 +82,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-accounts',
             titleKey: 'customer.pages.dashboard.kpis.activeAccounts',
-            value: '48',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.activeAccountsSub',
             isPositive: true,
             icon: Building2,
@@ -93,7 +93,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-contracts',
             titleKey: 'customer.pages.dashboard.kpis.activeContracts',
-            value: '112',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.activeContractsSub',
             isPositive: true,
             icon: FileCheck,
@@ -104,7 +104,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-requests',
             titleKey: 'customer.pages.dashboard.kpis.inflightRequests',
-            value: '27',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.inflightRequestsSub',
             isPositive: true,
             icon: ClipboardList,
@@ -115,7 +115,7 @@ export const CustomerDashboardPage: React.FC = () => {
         {
             id: 'kpi-governance',
             titleKey: 'customer.pages.dashboard.kpis.pendingGovernance',
-            value: '8',
+            value: '0',
             changeLabelKey: 'customer.pages.dashboard.kpis.pendingGovernanceSub',
             isPositive: false,
             icon: ShieldCheck,
@@ -343,11 +343,11 @@ export const CustomerDashboardPage: React.FC = () => {
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#037F8C]">
                             <Sparkles className="w-3.5 h-3.5 text-[#037F8C]" />
-                            <span>{isRtl ? '99.8% جاهزية الخدمات' : '99.8% Service Availability'}</span>
+                            <span>{isRtl ? 'جاهزية الخدمات: —' : 'Service Availability: —'}</span>
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-medium text-[#037F8C]">
                             <Clock className="w-3.5 h-3.5 text-[#8C6D3B]" />
-                            <span>{isRtl ? 'متوسط سرعة المعالجة: 1.4 ساعة' : 'Avg. Turnaround: 1.4h'}</span>
+                            <span>{isRtl ? 'متوسط سرعة المعالجة: —' : 'Avg. Turnaround: —'}</span>
                         </span>
                     </div>
                 </div>
@@ -355,9 +355,9 @@ export const CustomerDashboardPage: React.FC = () => {
                 {/* Tier Progress Bar */}
                 <div className="space-y-2">
                     <div className="w-full h-3 rounded-full bg-[#EFECE6] overflow-hidden flex">
-                        <div className="bg-[#037F8C] h-full" style={{ width: '45%' }} title="Enterprise (45%)" />
-                        <div className="bg-[#4A5D4E] h-full" style={{ width: '35%' }} title="Commercial & SMB (35%)" />
-                        <div className="bg-[#BFAB93] h-full" style={{ width: '20%' }} title="Strategic Government (20%)" />
+                        <div className="bg-[#037F8C] h-full" style={{ width: '0%' }} title="Enterprise (0%)" />
+                        <div className="bg-[#4A5D4E] h-full" style={{ width: '0%' }} title="Commercial & SMB (0%)" />
+                        <div className="bg-[#BFAB93] h-full" style={{ width: '0%' }} title="Strategic Government (0%)" />
                     </div>
                     <div className="flex flex-wrap items-center justify-between text-xs text-[#6E6862] pt-1">
                         <div className="flex items-center gap-2">

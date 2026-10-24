@@ -94,40 +94,7 @@ export interface AssetApproverOption {
     email: string;
 }
 
-export const ASSET_APPROVER_OPTIONS: AssetApproverOption[] = [
-    {
-        id: 'app-1',
-        nameEn: 'Khalifah Alsharabi',
-        nameAr: 'خليفة الشرعبي',
-        roleEn: 'Asset Governance Lead',
-        roleAr: 'قائد حوكمة الأصول',
-        email: 'k.alsharabi@awn.sa',
-    },
-    {
-        id: 'app-2',
-        nameEn: 'Noura Al-Shammari',
-        nameAr: 'نورة الشمري',
-        roleEn: 'Fleet & Assets Specialist',
-        roleAr: 'أخصائي الأصول والمركبات',
-        email: 'noura.shammari@tuwaiq.sa',
-    },
-    {
-        id: 'app-3',
-        nameEn: 'Tariq Al-Mansoor',
-        nameAr: 'طارق المنصور',
-        roleEn: 'Compliance Officer',
-        roleAr: 'مسؤول الامتثال',
-        email: 'tariq.mansoor@dezen.sa',
-    },
-    {
-        id: 'app-4',
-        nameEn: 'Khalid Al-Otaibi',
-        nameAr: 'خالد العتيبي',
-        roleEn: 'Operations Director',
-        roleAr: 'مدير العمليات',
-        email: 'khalid.otaibi@awn-ent.sa',
-    },
-];
+export const ASSET_APPROVER_OPTIONS: AssetApproverOption[] = [];
 
 export type AssetAuditAction =
     | 'CREATED'
@@ -674,93 +641,13 @@ export function generateNextAssetApprovalTaskId(records: AssetApprovalTaskRecord
 // INITIAL DEMO DATASETS
 // ============================================================================
 
-export const INITIAL_ASSET_STATUSES: AssetStatusRecord[] = [
-    {
-        id: 'AST001',
-        nameEn: 'New Assets',
-        nameAr: 'أصول جديدة',
-        descriptionEn: 'Default status assigned to newly registered enterprise assets.',
-        descriptionAr: 'الحالة الافتراضية المخصصة للأصول المؤسسية المسجلة حديثاً.',
-        color: '#2D3F2C',
-        creatorNameEn: 'Khalifah Alsharabi',
-        creatorNameAr: 'خليفة الشرعبي',
-        creatorEmail: 'k.alsharabi@awn.sa',
-        createDate: '15.09.2026',
-        status: 'Active',
-    },
-];
+export const INITIAL_ASSET_STATUSES: AssetStatusRecord[] = [];
 
-export const INITIAL_ASSET_CATEGORIES: AssetCategoryRecord[] = [
-    {
-        id: 'ASTCAT001',
-        nameEn: 'Category Asset',
-        nameAr: 'تصنيف الأصل',
-        descriptionEn: 'Primary enterprise asset classification for operational and vehicle assets.',
-        descriptionAr: 'التصنيف الرئيسي للأصول المؤسسية والتشغيلية والمركبات.',
-        creatorNameEn: 'Khalifah Alsharabi',
-        creatorNameAr: 'خليفة الشرعبي',
-        creatorEmail: 'k.alsharabi@awn.sa',
-        createDate: '15.09.2026',
-        status: 'Active',
-    },
-];
+export const INITIAL_ASSET_CATEGORIES: AssetCategoryRecord[] = [];
 
-export const INITIAL_ASSET_TAGS: AssetTagRecord[] = [
-    {
-        id: 'ASTTAG001',
-        nameEn: 'Tag Asset',
-        nameAr: 'وسم الأصل',
-        descriptionEn: 'Standard identification tag for tracked enterprise assets.',
-        descriptionAr: 'وسم تعريفي قياسي للأصول المؤسسية المتتبعة.',
-        color: '#8C6046',
-        creatorNameEn: 'Khalifah Alsharabi',
-        creatorNameAr: 'خليفة الشرعبي',
-        creatorEmail: 'k.alsharabi@awn.sa',
-        createDate: '15.09.2026',
-        status: 'Active',
-    },
-];
+export const INITIAL_ASSET_TAGS: AssetTagRecord[] = [];
 
-export const INITIAL_ASSET_TYPES: AssetTypeRecord[] = [
-    {
-        id: 'ASTTYP001',
-        nameEn: 'New Type Asset',
-        nameAr: 'نوع أصل جديد',
-        categoryId: 'ASTCAT001',
-        categoryNameEn: 'Category Asset',
-        categoryNameAr: 'تصنيف الأصل',
-        subTypeEn: 'General Asset',
-        subTypeAr: 'أصل عام',
-        templatesEn: ['Iqama'],
-        templatesAr: ['الإقامة'],
-        descriptionEn: 'Enterprise asset type linked to Category Asset and the Iqama document template.',
-        descriptionAr: 'نوع أصل مؤسسي مرتبط بتصنيف الأصل وقالب وثيقة الإقامة.',
-        creatorNameEn: 'Khalifah Alsharabi',
-        creatorNameAr: 'خليفة الشرعبي',
-        creatorEmail: 'k.alsharabi@awn.sa',
-        createDate: '15.09.2026',
-        status: 'Active',
-    },
-    {
-        id: 'ASTTYP002',
-        nameEn: 'New Asset Vehicle',
-        nameAr: 'أصل مركبة جديد',
-        categoryId: 'ASTCAT001',
-        categoryNameEn: 'Category Asset',
-        categoryNameAr: 'تصنيف الأصل',
-        subTypeEn: 'Vehicle',
-        subTypeAr: 'مركبة',
-        templatesEn: [],
-        templatesAr: [],
-        descriptionEn: 'Vehicle asset type under Category Asset configured without document templates.',
-        descriptionAr: 'نوع أصل مركبة ضمن تصنيف الأصل مهيأ بدون قوالب وثائق.',
-        creatorNameEn: 'Khalifah Alsharabi',
-        creatorNameAr: 'خليفة الشرعبي',
-        creatorEmail: 'k.alsharabi@awn.sa',
-        createDate: '15.09.2026',
-        status: 'Active',
-    },
-];
+export const INITIAL_ASSET_TYPES: AssetTypeRecord[] = [];
 
 export const INITIAL_ASSETS: AssetRecord[] = [];
 
@@ -833,9 +720,9 @@ export function loadAssetStatuses(): AssetStatusRecord[] {
         descriptionEn: item.descriptionEn ?? '',
         descriptionAr: item.descriptionAr ?? item.descriptionEn ?? '',
         color: item.color || '#2D3F2C',
-        creatorNameEn: item.creatorNameEn || 'Khalifah Alsharabi',
-        creatorNameAr: item.creatorNameAr || 'خليفة الشرعبي',
-        creatorEmail: item.creatorEmail || 'k.alsharabi@awn.sa',
+        creatorNameEn: item.creatorNameEn || '—',
+        creatorNameAr: item.creatorNameAr || '—',
+        creatorEmail: item.creatorEmail || '',
         createDate: item.createDate || '15.09.2026',
         status: normalizeLifecycleStatus(item.status),
     }));
@@ -856,9 +743,9 @@ export function loadAssetCategories(): AssetCategoryRecord[] {
         nameAr: item.nameAr || item.nameEn || 'تصنيف الأصل',
         descriptionEn: item.descriptionEn ?? '',
         descriptionAr: item.descriptionAr ?? item.descriptionEn ?? '',
-        creatorNameEn: item.creatorNameEn || 'Khalifah Alsharabi',
-        creatorNameAr: item.creatorNameAr || 'خليفة الشرعبي',
-        creatorEmail: item.creatorEmail || 'k.alsharabi@awn.sa',
+        creatorNameEn: item.creatorNameEn || '—',
+        creatorNameAr: item.creatorNameAr || '—',
+        creatorEmail: item.creatorEmail || '',
         createDate: item.createDate || '15.09.2026',
         status: normalizeLifecycleStatus(item.status),
     }));
@@ -880,9 +767,9 @@ export function loadAssetTags(): AssetTagRecord[] {
         descriptionEn: item.descriptionEn ?? '',
         descriptionAr: item.descriptionAr ?? item.descriptionEn ?? '',
         color: item.color || '#8C6046',
-        creatorNameEn: item.creatorNameEn || 'Khalifah Alsharabi',
-        creatorNameAr: item.creatorNameAr || 'خليفة الشرعبي',
-        creatorEmail: item.creatorEmail || 'k.alsharabi@awn.sa',
+        creatorNameEn: item.creatorNameEn || '—',
+        creatorNameAr: item.creatorNameAr || '—',
+        creatorEmail: item.creatorEmail || '',
         createDate: item.createDate || '15.09.2026',
         status: normalizeLifecycleStatus(item.status),
     }));
@@ -967,9 +854,9 @@ export function loadAssetTypes(): AssetTypeRecord[] {
             templatesAr,
             descriptionEn: item.descriptionEn ?? '',
             descriptionAr: item.descriptionAr ?? item.descriptionEn ?? '',
-            creatorNameEn: item.creatorNameEn || 'Khalifah Alsharabi',
-            creatorNameAr: item.creatorNameAr || 'خليفة الشرعبي',
-            creatorEmail: item.creatorEmail || 'k.alsharabi@awn.sa',
+            creatorNameEn: item.creatorNameEn || '—',
+            creatorNameAr: item.creatorNameAr || '—',
+            creatorEmail: item.creatorEmail || '',
             createDate: item.createDate || '15.09.2026',
             status: normalizeLifecycleStatus(item.status),
         };
@@ -1146,34 +1033,34 @@ export function loadAssets(): AssetRecord[] {
                 item.customerId ||
                 matchedCustomer?.id ||
                 seedMatch?.customerId ||
-                'cust-dezen',
+                '',
             customerNameEn:
                 item.customerNameEn ||
                 matchedCustomer?.nameEn ||
                 seedMatch?.customerNameEn ||
-                'mohd',
+                '—',
             customerNameAr:
                 item.customerNameAr ||
                 matchedCustomer?.nameAr ||
                 seedMatch?.customerNameAr ||
                 item.customerNameEn ||
-                'محمد (mohd)',
+                '—',
             companyId:
                 item.companyId ||
                 matchedCompany?.id ||
                 seedMatch?.companyId ||
-                'comp-dezen',
+                '',
             companyNameEn:
                 item.companyNameEn ||
                 matchedCompany?.nameEn ||
                 seedMatch?.companyNameEn ||
-                'dezen company',
+                '—',
             companyNameAr:
                 item.companyNameAr ||
                 matchedCompany?.nameAr ||
                 seedMatch?.companyNameAr ||
                 item.companyNameEn ||
-                'شركة ديزن (dezen company)',
+                '—',
             categoryId:
                 matchedCategory?.id ||
                 item.categoryId ||
@@ -1223,14 +1110,14 @@ export function loadAssets(): AssetRecord[] {
             templatesEn,
             templatesAr,
             assignedOwnerEn:
-                item.assignedOwnerEn || seedMatch?.assignedOwnerEn || 'dezen company',
+                item.assignedOwnerEn || seedMatch?.assignedOwnerEn || '—',
             assignedOwnerAr:
                 item.assignedOwnerAr ||
                 seedMatch?.assignedOwnerAr ||
                 item.assignedOwnerEn ||
-                'شركة ديزن (dezen company)',
-            brandEn: item.brandEn || seedMatch?.brandEn || 'nexus',
-            brandAr: item.brandAr || seedMatch?.brandAr || item.brandEn || 'نيكسس (nexus)',
+                '—',
+            brandEn: item.brandEn || seedMatch?.brandEn || '—',
+            brandAr: item.brandAr || seedMatch?.brandAr || item.brandEn || '—',
             serialNumber:
                 item.serialNumber ||
                 seedMatch?.serialNumber ||
@@ -1239,14 +1126,14 @@ export function loadAssets(): AssetRecord[] {
             registrationValidityDate:
                 item.registrationValidityDate || seedMatch?.registrationValidityDate || '10/10/2028',
             creatorNameEn:
-                item.creatorNameEn || seedMatch?.creatorNameEn || 'Dezen Team',
+                item.creatorNameEn || seedMatch?.creatorNameEn || '—',
             creatorNameAr:
                 item.creatorNameAr ||
                 seedMatch?.creatorNameAr ||
                 item.creatorNameEn ||
-                'فريق ديزن (Dezen Team)',
+                '—',
             creatorEmail:
-                item.creatorEmail || seedMatch?.creatorEmail || 'abdul.basith@dezensolutions.org',
+                item.creatorEmail || seedMatch?.creatorEmail || '',
             createDate: item.createDate || seedMatch?.createDate || '15.09.2026',
             status: normalizeLifecycleStatus(item.status ?? seedMatch?.status),
             notesEn: item.notesEn ?? seedMatch?.notesEn ?? '',
@@ -1357,7 +1244,7 @@ export function loadAssetApprovalTasks(): AssetApprovalTaskRecord[] {
         const assignedApproverEn =
             item.assignedApproverEn ||
             seedMatch?.assignedApproverEn ||
-            'Khalifah Alsharabi';
+            '—';
         const matchedApprover = ASSET_APPROVER_OPTIONS.find(
             (ap) => ap.nameEn.toLowerCase() === assignedApproverEn.toLowerCase()
         );
@@ -1399,22 +1286,22 @@ export function loadAssetApprovalTasks(): AssetApprovalTaskRecord[] {
                 item.customerNameEn ||
                 matchedAsset?.customerNameEn ||
                 seedMatch?.customerNameEn ||
-                'mohd',
+                '—',
             customerNameAr:
                 item.customerNameAr ||
                 matchedAsset?.customerNameAr ||
                 seedMatch?.customerNameAr ||
-                'محمد (mohd)',
+                '—',
             companyNameEn:
                 item.companyNameEn ||
                 matchedAsset?.companyNameEn ||
                 seedMatch?.companyNameEn ||
-                'dezen company',
+                '—',
             companyNameAr:
                 item.companyNameAr ||
                 matchedAsset?.companyNameAr ||
                 seedMatch?.companyNameAr ||
-                'شركة ديزن (dezen company)',
+                '—',
             categoryNameEn:
                 item.categoryNameEn ||
                 matchedAsset?.categoryNameEn ||
@@ -1440,16 +1327,16 @@ export function loadAssetApprovalTasks(): AssetApprovalTaskRecord[] {
             requestTypeAr,
             priority,
             requestedByEn:
-                item.requestedByEn || seedMatch?.requestedByEn || 'Dezen Team',
+                item.requestedByEn || seedMatch?.requestedByEn || '—',
             requestedByAr:
                 item.requestedByAr ||
                 seedMatch?.requestedByAr ||
                 item.requestedByEn ||
-                'فريق ديزن (Dezen Team)',
+                '—',
             requestedByEmail:
                 item.requestedByEmail ||
                 seedMatch?.requestedByEmail ||
-                'abdul.basith@dezensolutions.org',
+                '',
             assignedApproverEn,
             assignedApproverAr,
             approverRoleEn,
@@ -1545,8 +1432,8 @@ export function loadAssetAuditEvents(): AssetAuditEvent[] {
         const resource: AssetAuditResource = normalizeAssetAuditResource(item.resource, recordId);
         const resourceData = item.resourceData || recordId;
         const resourceDataAr = item.resourceDataAr || resourceData;
-        const performedBy = item.performedBy || 'Khalifah Alsharabi';
-        const performedByAr = item.performedByAr || 'خليفة الشرعبي';
+        const performedBy = item.performedBy || '—';
+        const performedByAr = item.performedByAr || '—';
         const remarks = item.remarks || '';
         const remarksAr = item.remarksAr || remarks;
 
@@ -1600,8 +1487,8 @@ export function recordAssetAuditEvent(input: RecordAssetAuditInput): AssetAuditE
         recordId: input.recordId,
         resourceData: input.resourceData,
         resourceDataAr: input.resourceDataAr || input.resourceData,
-        performedBy: input.performedBy || 'Khalifah Alsharabi',
-        performedByAr: input.performedByAr || 'خليفة الشرعبي',
+        performedBy: input.performedBy || '—',
+        performedByAr: input.performedByAr || '—',
         remarks: input.remarks,
         remarksAr: input.remarksAr || input.remarks,
     };

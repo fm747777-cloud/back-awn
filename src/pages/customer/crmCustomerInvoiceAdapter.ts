@@ -17,7 +17,7 @@
 
 import type { CrmInvoiceRecord, CrmInvoiceStatus } from '../../schemas/crmSchema';
 import type { CustomerInvoiceItem, CustomerInvoiceStatus } from './CustomerInvoicesPage';
-import { crmApi, CRM_STORAGE_KEYS } from '../../api/api';
+import { crmApi } from '../../api/api';
 import { getCustomerCompanyById } from './customerMockData';
 
 export type InvoiceOriginSource = 'customer' | 'crm';
@@ -36,32 +36,7 @@ export interface DemoCompanyMappingEntry {
  *
  * Maintained centrally and typed. All non-explicitly-assigned companies MUST have customerCompanyId: null.
  */
-export const DEMO_COMPANY_MAPPINGS: Record<string, DemoCompanyMappingEntry> = {
-    'crm-comp-1': {
-        crmCompanyId: 'crm-comp-1',
-        customerCompanyId: 'cmp-1',
-        status: 'mapped',
-        crmCompanyNameEn: 'Al-Wataniya Logistics Co.',
-        customerCompanyNameEn: 'Al-Wataniya Logistics Co.',
-        reason: 'Explicit demo-only project assignment for Micro-Phase 2E.4 cross-module invoice integration testing.',
-    },
-    'crm-comp-2': {
-        crmCompanyId: 'crm-comp-2',
-        customerCompanyId: null,
-        status: 'unmapped',
-        crmCompanyNameEn: 'Dar Al-Omran Contracting CJSC',
-        customerCompanyNameEn: null,
-        reason: 'Unmapped: Dar Al-Omran Contracting CJSC has no counterpart in canonical Customer Portal seed data.',
-    },
-    'crm-comp-3': {
-        crmCompanyId: 'crm-comp-3',
-        customerCompanyId: null,
-        status: 'unmapped',
-        crmCompanyNameEn: 'Afaq Digital Cloud Solutions',
-        customerCompanyNameEn: null,
-        reason: 'Unmapped: Afaq Digital Cloud Solutions has no counterpart in canonical Customer Portal seed data.',
-    },
-};
+export const DEMO_COMPANY_MAPPINGS: Record<string, DemoCompanyMappingEntry> = {};
 
 /**
  * Composite display model that wraps customer and CRM invoices without schema mutation.
@@ -209,42 +184,15 @@ export async function loadMappedCrmInvoices(
         const records = response?.data || [];
         return filterAndAdaptCrmInvoices(records, targetCustomerCompanyId);
     } catch {
-        // Fallback: inspect localStorage directly
-        if (typeof window !== 'undefined' && window.localStorage) {
-            try {
-                const raw = localStorage.getItem(CRM_STORAGE_KEYS.INVOICES);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) {
-                        return filterAndAdaptCrmInvoices(parsed, targetCustomerCompanyId);
-                    }
-                }
-            } catch {
-                // ignore
-            }
-        }
         return [];
     }
 }
 
 /**
- * Synchronous client-side reader for initial state hydration from localStorage if available.
+ * Synchronous client-side reader for initial state hydration.
  */
 export function loadMappedCrmInvoicesSync(
-    targetCustomerCompanyId?: string
+    _targetCustomerCompanyId?: string
 ): UnifiedCustomerInvoiceItem[] {
-    if (typeof window !== 'undefined' && window.localStorage) {
-        try {
-            const raw = localStorage.getItem(CRM_STORAGE_KEYS.INVOICES);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) {
-                    return filterAndAdaptCrmInvoices(parsed, targetCustomerCompanyId);
-                }
-            }
-        } catch {
-            // ignore
-        }
-    }
     return [];
 }

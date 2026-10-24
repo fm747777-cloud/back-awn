@@ -79,186 +79,15 @@ export interface InitiatedRequestPayload {
 // Interconnected Business Owners & Companies Catalog
 // ============================================================================
 
-export const REQUEST_BUSINESS_OWNERS: RequestBusinessOwnerOption[] = [
-    {
-        id: 'owner-1',
-        nameEn: 'Njoud Al-Qahtani',
-        nameAr: 'نجود القحطاني',
-        email: 'njoud.qahtani@awn.sa',
-        companyIds: ['comp-njoud-ar', 'comp-njoud-en'],
-    },
-    {
-        id: 'owner-2',
-        nameEn: 'Tariq Al-Mansoor',
-        nameAr: 'طارق المنصور',
-        email: 'tariq.mansoor@dezen.sa',
-        companyIds: ['comp-dezen', 'comp-spring'],
-    },
-    {
-        id: 'owner-3',
-        nameEn: 'Abdullah Al-Ghamdi',
-        nameAr: 'عبدالله الغامدي',
-        email: 'a.ghamdi@coffee7.sa',
-        companyIds: ['comp-coffee7', 'comp-faisaliah'],
-    },
-    {
-        id: 'owner-4',
-        nameEn: 'Sultan Al-Harbi',
-        nameAr: 'سلطان الحربي',
-        email: 'sultan.harbi@najd.sa',
-        companyIds: ['comp-najd', 'comp-yamamah'],
-    },
-    {
-        id: 'owner-5',
-        nameEn: 'Noura Al-Shammari',
-        nameAr: 'نورة الشمري',
-        email: 'noura.shammari@tuwaiq.sa',
-        companyIds: ['comp-tuwaiq', 'comp-gulf'],
-    },
-    {
-        id: 'owner-6',
-        nameEn: 'Khalid Al-Otaibi',
-        nameAr: 'خالد العتيبي',
-        email: 'khalid.otaibi@awn-ent.sa',
-        companyIds: ['comp-awn', 'comp-riyadh-tech'],
-    },
-];
+export const REQUEST_BUSINESS_OWNERS: RequestBusinessOwnerOption[] = [];
 
-export const REQUEST_COMPANIES: RequestCompanyOption[] = [
-    {
-        id: 'comp-dezen',
-        name: 'dezen company',
-        nameEn: 'dezen company',
-        nameAr: 'شركة ديزن (dezen company)',
-        ownerId: 'owner-2',
-        ownerNameEn: 'Tariq Al-Mansoor',
-        ownerNameAr: 'طارق المنصور',
-        crNumber: '1010845120',
-    },
-    {
-        id: 'comp-spring',
-        name: 'Testing Spring 1',
-        nameEn: 'Testing Spring 1',
-        nameAr: 'Testing Spring 1',
-        ownerId: 'owner-2',
-        ownerNameEn: 'Tariq Al-Mansoor',
-        ownerNameAr: 'طارق المنصور',
-        crNumber: '1010912340',
-    },
-    {
-        id: 'comp-njoud-ar',
-        name: 'نجود تيست',
-        nameEn: 'نجود تيست',
-        nameAr: 'نجود تيست',
-        ownerId: 'owner-1',
-        ownerNameEn: 'Njoud Al-Qahtani',
-        ownerNameAr: 'نجود القحطاني',
-        crNumber: '1010734891',
-    },
-    {
-        id: 'comp-njoud-en',
-        name: 'njoud test com',
-        nameEn: 'njoud test com',
-        nameAr: 'njoud test com',
-        ownerId: 'owner-1',
-        ownerNameEn: 'Njoud Al-Qahtani',
-        ownerNameAr: 'نجود القحطاني',
-        crNumber: '1010734892',
-    },
-    {
-        id: 'comp-coffee7',
-        name: 'مؤسسة قهوة السابعة',
-        nameEn: 'مؤسسة قهوة السابعة (Seventh Coffee Est.)',
-        nameAr: 'مؤسسة قهوة السابعة',
-        ownerId: 'owner-3',
-        ownerNameEn: 'Abdullah Al-Ghamdi',
-        ownerNameAr: 'عبدالله الغامدي',
-        crNumber: '1010621984',
-    },
-    {
-        id: 'comp-faisaliah',
-        name: 'Al Faisaliah Holding Group',
-        nameEn: 'Al Faisaliah Holding Group',
-        nameAr: 'مجموعة الفيصلية القابضة',
-        ownerId: 'owner-3',
-        ownerNameEn: 'Abdullah Al-Ghamdi',
-        ownerNameAr: 'عبدالله الغامدي',
-        crNumber: '1010411209',
-    },
-    {
-        id: 'comp-najd',
-        name: 'Najd Integrated Solutions',
-        nameEn: 'Najd Integrated Solutions',
-        nameAr: 'شركة نجد للحلول المتكاملة',
-        ownerId: 'owner-4',
-        ownerNameEn: 'Sultan Al-Harbi',
-        ownerNameAr: 'سلطان الحربي',
-        crNumber: '1010539812',
-    },
-    {
-        id: 'comp-yamamah',
-        name: 'Al Yamamah Contracting Est.',
-        nameEn: 'Al Yamamah Contracting Est.',
-        nameAr: 'مؤسسة اليمامة للمقاولات',
-        ownerId: 'owner-4',
-        ownerNameEn: 'Sultan Al-Harbi',
-        ownerNameAr: 'سلطان الحربي',
-        crNumber: '1010389214',
-    },
-    {
-        id: 'comp-tuwaiq',
-        name: 'Tuwaiq Logistics Co.',
-        nameEn: 'Tuwaiq Logistics Co.',
-        nameAr: 'شركة طويق للخدمات اللوجستية',
-        ownerId: 'owner-5',
-        ownerNameEn: 'Noura Al-Shammari',
-        ownerNameAr: 'نورة الشمري',
-        crNumber: '1010678341',
-    },
-    {
-        id: 'comp-gulf',
-        name: 'Gulf Industrial Supplies',
-        nameEn: 'Gulf Industrial Supplies',
-        nameAr: 'شركة الخليج للتوريدات الصناعية',
-        ownerId: 'owner-5',
-        ownerNameEn: 'Noura Al-Shammari',
-        ownerNameAr: 'نورة الشمري',
-        crNumber: '1010592103',
-    },
-    {
-        id: 'comp-awn',
-        name: 'AWN Administrative Services',
-        nameEn: 'AWN Administrative Services',
-        nameAr: 'شركة عون للخدمات الإدارية',
-        ownerId: 'owner-6',
-        ownerNameEn: 'Khalid Al-Otaibi',
-        ownerNameAr: 'خالد العتيبي',
-        crNumber: '1010200145',
-    },
-    {
-        id: 'comp-riyadh-tech',
-        name: 'Riyadh Tech Solutions',
-        nameEn: 'Riyadh Tech Solutions',
-        nameAr: 'مؤسسة الرياض للحلول التقنية',
-        ownerId: 'owner-6',
-        ownerNameEn: 'Khalid Al-Otaibi',
-        ownerNameAr: 'خالد العتيبي',
-        crNumber: '1010884310',
-    },
-];
+export const REQUEST_COMPANIES: RequestCompanyOption[] = [];
 
 // ============================================================================
 // Packages, Service Groups & Selected Services Options
 // ============================================================================
 
-export const REQUEST_PACKAGE_PRESETS: Array<{ nameEn: string; nameAr: string }> = [
-    { nameEn: 'موظفين باقة اساسية', nameAr: 'موظفين باقة اساسية' },
-    { nameEn: 'Asset Onboarding', nameAr: 'تأهيل وتسجيل الأصول (Asset Onboarding)' },
-    { nameEn: 'Business onboarding', nameAr: 'تأسيس وتأهيل المنشآت (Business onboarding)' },
-    { nameEn: 'موظف غير سعودي باقة مخفضة', nameAr: 'موظف غير سعودي باقة مخفضة' },
-    { nameEn: 'ادارة السجل التجاري باقة اساسية', nameAr: 'ادارة السجل التجاري باقة اساسية' },
-    { nameEn: 'موظف سعودي باقة عادية', nameAr: 'موظف سعودي باقة عادية' },
-];
+export const REQUEST_PACKAGE_PRESETS: Array<{ nameEn: string; nameAr: string }> = [];
 
 export const REQUEST_SERVICE_GROUPS: RequestServiceGroupOption[] = [
     {
@@ -476,10 +305,6 @@ export function loadRequestServices(): RequestServiceRecord[] {
     try {
         const raw = window.localStorage.getItem(REQUEST_SERVICES_STORAGE_KEY);
         if (raw === null) {
-            window.localStorage.setItem(
-                REQUEST_SERVICES_STORAGE_KEY,
-                JSON.stringify(INITIAL_REQUEST_SERVICES)
-            );
             return [...INITIAL_REQUEST_SERVICES];
         }
         const parsed = JSON.parse(raw);

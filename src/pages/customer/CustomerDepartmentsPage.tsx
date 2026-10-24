@@ -91,7 +91,7 @@ export const CustomerDepartmentsPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         code: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         nameEn: '',
         nameAr: '',
         managerNameEn: '',
@@ -176,7 +176,7 @@ export const CustomerDepartmentsPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             code: `DEP-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             nameEn: '',
             nameAr: '',
             managerNameEn: '',
@@ -231,7 +231,8 @@ export const CustomerDepartmentsPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingDepartmentId) {
             setDepartments((prev) =>

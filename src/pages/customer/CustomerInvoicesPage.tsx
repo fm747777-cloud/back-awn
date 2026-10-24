@@ -66,12 +66,6 @@ const AVAILABLE_COMPANIES = CUSTOMER_COMPANIES_SIMPLE_OPTIONS;
 
 const AVAILABLE_CONTRACTS = [
     { id: 'none', number: '— None / Ad-hoc Invoice —', numberAr: '— بدون عقد / فاتورة مباشرة —', companyId: '' },
-    { id: 'cnt-1', number: 'CNT-2026-081 (Fleet Telematics)', numberAr: 'CNT-2026-081 (تتبع الأسطول)', companyId: 'cmp-1' },
-    { id: 'cnt-2', number: 'CNT-2026-082 (Cloud Infrastructure)', numberAr: 'CNT-2026-082 (البنية السحابية)', companyId: 'cmp-2' },
-    { id: 'cnt-3', number: 'CNT-2026-083 (Site Compliance)', numberAr: 'CNT-2026-083 (الامتثال التنظيمي)', companyId: 'cmp-3' },
-    { id: 'cnt-4', number: 'CNT-2026-084 (Financial Advisory)', numberAr: 'CNT-2026-084 (الاستشارات المالية)', companyId: 'cmp-4' },
-    { id: 'cnt-5', number: 'CNT-2026-085 (Workforce Permitting)', numberAr: 'CNT-2026-085 (رخص الكوادر)', companyId: 'cmp-5' },
-    { id: 'cnt-6', number: 'CNT-2025-045 (Site Supervision)', numberAr: 'CNT-2025-045 (الإشراف الميداني)', companyId: 'cmp-6' },
 ];
 
 export const CustomerInvoicesPage: React.FC = () => {
@@ -290,7 +284,8 @@ export const CustomerInvoicesPage: React.FC = () => {
     const handleSaveInvoice = (e: React.FormEvent) => {
         e.preventDefault();
         const selectedComp =
-            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) || AVAILABLE_COMPANIES[0];
+            AVAILABLE_COMPANIES.find((c) => c.id === formData.companyId) ||
+            AVAILABLE_COMPANIES[0] || { id: formData.companyId || '', en: '—', ar: '—' };
 
         const sub = Number(formData.subtotal) || 0;
         const disc = Number(formData.discount) || 0;

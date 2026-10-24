@@ -367,7 +367,7 @@ export function buildOperationalTaskFromRequest(
 
     if (useDemoEnrichment && req.status === 'Pending' && req.accountManagerId === 'unassigned') {
         status = DEMO_TASK_STATUS_ROTATION[index % DEMO_TASK_STATUS_ROTATION.length];
-        if (status !== 'Pending') {
+        if (status !== 'Pending' && REQUEST_ACCOUNT_MANAGERS.length > 0) {
             managerObj = REQUEST_ACCOUNT_MANAGERS[index % REQUEST_ACCOUNT_MANAGERS.length];
         }
     } else {
@@ -554,15 +554,6 @@ export function loadOperationalTasks(): OperationalTaskRecord[] {
         if (raw === null) {
             const initialNormalized = INITIAL_OPERATIONAL_TASKS.map((t, idx) =>
                 normalizeOperationalTaskRecord(t, idx)
-            );
-            window.localStorage.setItem(
-                OPERATIONAL_TASKS_STORAGE_KEY,
-                JSON.stringify(initialNormalized)
-            );
-            const initialReqIds = initialNormalized.map((t) => t.requestId).filter(Boolean);
-            window.localStorage.setItem(
-                OPERATIONAL_TASKS_SYNCED_REQUESTS_KEY,
-                JSON.stringify(initialReqIds)
             );
             return syncRequestsIntoOperationalTasks(initialNormalized);
         }

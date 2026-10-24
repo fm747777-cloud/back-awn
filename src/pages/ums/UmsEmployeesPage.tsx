@@ -131,7 +131,7 @@ export const UmsEmployeesPage: React.FC = () => {
         queryKey: ['ums', 'employees'],
         queryFn: async () => {
             const res = await umsApi.listEmployees();
-            return res.ok && res.data ? res.data : loadEmployees();
+            return res.ok && Array.isArray(res.data) ? res.data : loadEmployees();
         },
         initialData: () => loadEmployees(),
     });
@@ -140,13 +140,17 @@ export const UmsEmployeesPage: React.FC = () => {
         queryKey: ['ums', 'departments'],
         queryFn: async () => {
             const res = await umsApi.listDepartments();
-            return res.ok && res.data ? res.data : loadDepartments();
+            return res.ok && Array.isArray(res.data) ? res.data : loadDepartments();
         },
         initialData: () => loadDepartments(),
     });
 
-    const [employees, setEmployees] = useState<EmployeeRecord[]>(() => queriedEmployees || loadEmployees());
-    const [departments, setDepartments] = useState<DepartmentRecord[]>(() => queriedDepartments || loadDepartments());
+    const [employees, setEmployees] = useState<EmployeeRecord[]>(() =>
+        Array.isArray(queriedEmployees) ? queriedEmployees : loadEmployees()
+    );
+    const [departments, setDepartments] = useState<DepartmentRecord[]>(() =>
+        Array.isArray(queriedDepartments) ? queriedDepartments : loadDepartments()
+    );
     const [designations] = useState<DesignationRecord[]>(() => umsApi.listDesignations());
     const [branches] = useState<BranchRecord[]>(() => umsApi.listBranches());
     const [roles] = useState<RoleRecord[]>(() => umsApi.listRoles());
@@ -154,14 +158,18 @@ export const UmsEmployeesPage: React.FC = () => {
     const [customAddons] = useState<CustomAddonRecord[]>(() => umsApi.listCustomAddons());
 
     useEffect(() => {
-        if (queriedEmployees) {
+        if (Array.isArray(queriedEmployees)) {
             setEmployees(queriedEmployees);
+        } else if (Array.isArray((queriedEmployees as { data?: EmployeeRecord[] })?.data)) {
+            setEmployees((queriedEmployees as { data: EmployeeRecord[] }).data);
         }
     }, [queriedEmployees]);
 
     useEffect(() => {
-        if (queriedDepartments) {
+        if (Array.isArray(queriedDepartments)) {
             setDepartments(queriedDepartments);
+        } else if (Array.isArray((queriedDepartments as { data?: DepartmentRecord[] })?.data)) {
+            setDepartments((queriedDepartments as { data: DepartmentRecord[] }).data);
         }
     }, [queriedDepartments]);
 
@@ -439,7 +447,7 @@ export const UmsEmployeesPage: React.FC = () => {
             resource: 'Employee',
             resourceId: emp.id,
             resourceName: emp.nameEn,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Changed employment status of ${emp.code} (${emp.nameEn}) from ${emp.status} to ${nextStatus}.`,
             detailsAr: `تغيير الحالة الوظيفية للموظف ${emp.code} (${emp.nameAr}) إلى ${nextStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
         });
@@ -475,7 +483,7 @@ export const UmsEmployeesPage: React.FC = () => {
             resource: 'Employee',
             resourceId: 'BULK',
             resourceName: `Employees (${selectedIds.length})`,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Bulk updated ${selectedIds.length} employee record(s) to ${targetStatus}.`,
             detailsAr: `تحديث جماعي لحالة ${selectedIds.length} موظف إلى ${targetStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
         });
@@ -510,7 +518,7 @@ export const UmsEmployeesPage: React.FC = () => {
             resource: 'Employee',
             resourceId: emp.id,
             resourceName: emp.nameEn,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Sent portal onboarding invitation to ${emp.code} (${emp.workEmail || emp.email}).`,
             detailsAr: `إرسال دعوة الانضمام للبوابة الإلكترونية للموظف ${emp.code} (${emp.workEmail || emp.email}).`,
         });
@@ -554,7 +562,7 @@ export const UmsEmployeesPage: React.FC = () => {
             resource: 'Employee',
             resourceId: deletingEmployee.id,
             resourceName: deletingEmployee.nameEn,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Deleted employee record ${deletingEmployee.code} (${deletingEmployee.nameEn}).`,
             detailsAr: `حذف سجل الموظف ${deletingEmployee.code} (${deletingEmployee.nameAr}).`,
             previousState: `Code: ${deletingEmployee.code} | Name: ${deletingEmployee.nameEn} | Status: ${deletingEmployee.status}`,
@@ -690,7 +698,7 @@ export const UmsEmployeesPage: React.FC = () => {
             resource: 'Employee',
             resourceId: 'EXPORT-CSV',
             resourceName: `Employees Directory (${sourceRecords.length})`,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Exported ${sourceRecords.length} employee record(s) to UTF-8 CSV.`,
             detailsAr: `تصدير ${sourceRecords.length} سجل موظف إلى ملف CSV.`,
         });
@@ -1758,7 +1766,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
             resource: 'Employee',
             resourceId: employee.id,
             resourceName: employee.nameEn,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Changed employment status of ${employee.code} (${employee.nameEn}) to ${nextStatus}.`,
             detailsAr: `تغيير الحالة الوظيفية للموظف ${employee.code} (${employee.nameAr}) إلى ${nextStatus === 'Active' ? 'نشط' : 'غير نشط'}.`,
         });
@@ -1790,7 +1798,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
             resource: 'Employee',
             resourceId: employee.id,
             resourceName: employee.nameEn,
-            actorName: currentUser?.fullName || 'Karim Wagdi',
+            actorName: currentUser?.fullName || 'System',
             detailsEn: `Sent portal onboarding invitation to ${employee.code} (${employee.workEmail || employee.email}).`,
             detailsAr: `إرسال دعوة المنصة الإلكترونية للموظف ${employee.code} (${employee.workEmail || employee.email}).`,
         });
@@ -2696,7 +2704,7 @@ export const UmsEmployeeDetailsPage: React.FC = () => {
                                 {t('ums.employees.details.fields.createdBy')}
                             </span>
                             <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
-                                {employee.createdBy || 'Karim Wagdi'}
+                                {employee.createdBy || notProvidedText}
                             </span>
                         </div>
 

@@ -40,6 +40,7 @@ import {
     recordUmsAuditEvent,
     escapeSafeCsvCell,
     syncMasterEntityEmployeeCounts,
+    loadEmployees,
     type CustomAddonRecord,
     type CustomAddonType,
     type EmployeeRecord,
@@ -65,19 +66,33 @@ export const UmsCustomAddonsPage: React.FC = () => {
     const queryClient = useQueryClient();
 
     // TanStack Query — Custom Addons & Employees via existing umsApi
-    const { data: addons = [] } = useQuery<CustomAddonRecord[]>({
+    const { data: rawAddons = [] } = useQuery<CustomAddonRecord[]>({
         queryKey: ['ums', 'custom-addons'],
         queryFn: () => umsApi.listCustomAddons(),
     });
 
-    const { data: employeesResult } = useQuery({
+    const addons = useMemo<CustomAddonRecord[]>(
+        () => (Array.isArray(rawAddons) ? rawAddons : []),
+        [rawAddons]
+    );
+
+    const { data: rawEmployees = [] } = useQuery<EmployeeRecord[]>({
         queryKey: ['ums', 'employees'],
-        queryFn: () => umsApi.listEmployees(),
+        queryFn: async () => {
+            const res = await umsApi.listEmployees();
+            return Array.isArray(res.data) ? res.data : loadEmployees();
+        },
+        initialData: () => loadEmployees(),
     });
 
     const employees = useMemo<EmployeeRecord[]>(
-        () => employeesResult?.data ?? [],
-        [employeesResult]
+        () =>
+            Array.isArray(rawEmployees)
+                ? rawEmployees
+                : Array.isArray((rawEmployees as { data?: EmployeeRecord[] })?.data)
+                ? (rawEmployees as { data: EmployeeRecord[] }).data
+                : [],
+        [rawEmployees]
     );
 
     const saveAddonsMutation = useMutation({
@@ -518,7 +533,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
         const categoryType = formData.type;
         const resolvedNameEn = formData.nameEn.trim() || formData.nameAr.trim();
         const resolvedNameAr = formData.nameAr.trim() || formData.nameEn.trim();
-        const actorName = currentUser?.fullName || 'Karim Wagdi';
+        const actorName = currentUser?.fullName || 'System';
         const todayIso = new Date().toISOString().slice(0, 10);
 
         const newRecord: CustomAddonRecord = {
@@ -789,7 +804,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                 escapeSafeCsvCell(r.descriptionEn || ''),
                 escapeSafeCsvCell(r.descriptionAr || ''),
                 (linkedEmployeesByAddonId[r.id] || []).length,
-                escapeSafeCsvCell(r.createdBy || 'Karim Wagdi'),
+                escapeSafeCsvCell(r.createdBy || '—'),
                 escapeSafeCsvCell(r.createdAt),
                 escapeSafeCsvCell(r.status),
             ]);
@@ -1162,7 +1177,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                     cell: ({ row }) => (
                         <div className="inline-flex items-center gap-1.5 text-xs text-[#45413C] whitespace-nowrap">
                             <User size={12} className="text-[#857E74]" />
-                            <span>{row.original.createdBy || 'Karim Wagdi'}</span>
+                            <span>{row.original.createdBy || '—'}</span>
                         </div>
                     ),
                 },
@@ -1714,7 +1729,7 @@ export const UmsCustomAddonsPage: React.FC = () => {
                                         {t('ums.customAddons.details.createdBy')}
                                     </span>
                                     <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
-                                        {viewingAddon.createdBy || 'Karim Wagdi'}
+                                        {viewingAddon.createdBy || '—'}
                                     </span>
                                 </div>
 

@@ -98,7 +98,7 @@ export const CustomerAssetsPage: React.FC = () => {
     // Form state
     const [formData, setFormData] = useState({
         assetCode: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         nameEn: '',
         nameAr: '',
         category: 'heavy_equipment' as AssetCategory,
@@ -196,7 +196,7 @@ export const CustomerAssetsPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             assetCode: `AST-${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             nameEn: '',
             nameAr: '',
             category: 'heavy_equipment',
@@ -253,7 +253,8 @@ export const CustomerAssetsPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingAssetId) {
             setAssets((prev) =>

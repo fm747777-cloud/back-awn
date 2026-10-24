@@ -56,23 +56,40 @@ export const UmsRolesPage: React.FC = () => {
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
     // Server / Repository State via TanStack Query & umsApi
-    const { data: roles = [] } = useQuery<RoleRecord[]>({
+    const { data: rawRoles = [] } = useQuery<RoleRecord[]>({
         queryKey: ['ums', 'roles'],
         queryFn: async () => umsApi.listRoles(),
     });
+    const roles = useMemo<RoleRecord[]>(
+        () => (Array.isArray(rawRoles) ? rawRoles : []),
+        [rawRoles]
+    );
 
-    const { data: securityGroups = [] } = useQuery<SecurityGroupRecord[]>({
+    const { data: rawSecurityGroups = [] } = useQuery<SecurityGroupRecord[]>({
         queryKey: ['ums', 'security-groups'],
         queryFn: async () => umsApi.listSecurityGroups(),
     });
+    const securityGroups = useMemo<SecurityGroupRecord[]>(
+        () => (Array.isArray(rawSecurityGroups) ? rawSecurityGroups : []),
+        [rawSecurityGroups]
+    );
 
-    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
+    const { data: rawEmployees = [] } = useQuery<EmployeeRecord[]>({
         queryKey: ['ums', 'employees'],
         queryFn: async () => {
             const res = await umsApi.listEmployees();
-            return res.data ?? loadEmployees();
+            return Array.isArray(res.data) ? res.data : loadEmployees();
         },
     });
+    const employees = useMemo<EmployeeRecord[]>(
+        () =>
+            Array.isArray(rawEmployees)
+                ? rawEmployees
+                : Array.isArray((rawEmployees as { data?: EmployeeRecord[] })?.data)
+                ? (rawEmployees as { data: EmployeeRecord[] }).data
+                : [],
+        [rawEmployees]
+    );
 
     const upsertRoleMutation = useMutation({
         mutationFn: async (role: RoleRecord) => {

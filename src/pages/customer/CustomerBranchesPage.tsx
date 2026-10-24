@@ -102,7 +102,7 @@ export const CustomerBranchesPage: React.FC = () => {
     // Form data
     const [formData, setFormData] = useState({
         branchCode: '',
-        companyId: DEMO_COMPANIES[0].id,
+        companyId: DEMO_COMPANIES[0]?.id || '',
         nameEn: '',
         nameAr: '',
         branchType: 'regional_branch' as BranchType,
@@ -215,7 +215,7 @@ export const CustomerBranchesPage: React.FC = () => {
         setFormErrors({});
         setFormData({
             branchCode: `BRN-CST-0${nextNum}`,
-            companyId: DEMO_COMPANIES[0].id,
+            companyId: DEMO_COMPANIES[0]?.id || '',
             nameEn: '',
             nameAr: '',
             branchType: 'regional_branch',
@@ -280,7 +280,8 @@ export const CustomerBranchesPage: React.FC = () => {
             return;
         }
 
-        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) || DEMO_COMPANIES[0];
+        const comp = DEMO_COMPANIES.find((c) => c.id === formData.companyId) ||
+            DEMO_COMPANIES[0] || { id: formData.companyId || '', nameEn: '—', nameAr: '—', code: 'CMP' };
 
         if (editingBranchId) {
             setBranches((prev) =>

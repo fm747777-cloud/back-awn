@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
     X,
     Edit3,
@@ -12,7 +13,7 @@ import {
     AlertTriangle,
     CheckCircle2,
 } from 'lucide-react';
-import { CRM_SALES_EMPLOYEES } from '../../../api/api';
+import { crmApi, CRM_SALES_EMPLOYEES } from '../../../api/api';
 import {
     CRM_OPERATIONAL_TASK_STATUS_VALUES,
     type CrmOperationalTaskRecord,
@@ -45,6 +46,11 @@ export const OperationalTaskViewDrawer: React.FC<
 }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
+
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
 
     useEffect(() => {
         if (!isOpen) return;
@@ -235,7 +241,7 @@ export const OperationalTaskViewDrawer: React.FC<
                                             'crm.workflow.operationalTasks.filters.unassigned'
                                         )}
                                     </option>
-                                    {CRM_SALES_EMPLOYEES.map((emp) => (
+                                    {employees.map((emp) => (
                                         <option key={emp.id} value={emp.id}>
                                             {isRtl ? emp.nameAr : emp.nameEn}
                                         </option>

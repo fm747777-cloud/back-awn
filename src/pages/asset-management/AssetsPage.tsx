@@ -158,23 +158,23 @@ export const AssetsPage: React.FC = () => {
         'AST001';
 
     const [formState, setFormState] = useState<AssetFormState>({
-        customerNameEn: 'mohd',
-        customerNameAr: 'محمد (mohd)',
-        companyNameEn: 'dezen company',
-        companyNameAr: 'شركة ديزن (dezen company)',
+        customerNameEn: '',
+        customerNameAr: '',
+        companyNameEn: '',
+        companyNameAr: '',
         categoryId: defaultCategoryId,
         typeId: defaultTypeId,
         assetStatusId: defaultAssetStatusId,
-        assignedOwnerEn: 'dezen company',
-        assignedOwnerAr: 'شركة ديزن (dezen company)',
-        brandEn: 'nexus',
-        brandAr: 'نيكسس (nexus)',
+        assignedOwnerEn: '',
+        assignedOwnerAr: '',
+        brandEn: '',
+        brandAr: '',
         serialNumber: '',
-        manufacturerYear: '2025',
-        registrationValidityDate: '10/10/2028',
-        creatorNameEn: 'Dezen Team',
-        creatorNameAr: 'فريق ديزن (Dezen Team)',
-        creatorEmail: 'abdul.basith@dezensolutions.org',
+        manufacturerYear: String(new Date().getFullYear()),
+        registrationValidityDate: '',
+        creatorNameEn: '',
+        creatorNameAr: '',
+        creatorEmail: '',
         notesEn: '',
         status: 'Active',
     });
@@ -553,8 +553,8 @@ export const AssetsPage: React.FC = () => {
             recordId: record.id,
             resourceData: `${record.typeNameEn} — ${record.brandEn} (${record.id})`,
             resourceDataAr: `${record.typeNameAr} — ${record.brandAr} (${record.id})`,
-            performedBy: record.creatorNameEn || 'Dezen Team',
-            performedByAr: record.creatorNameAr || 'فريق ديزن',
+            performedBy: record.creatorNameEn || '—',
+            performedByAr: record.creatorNameAr || '—',
             remarks: `${nextStatus === 'Active' ? 'Activated' : 'Deactivated'} asset "${record.id}" (Serial: ${record.serialNumber}).`,
             remarksAr: `تم ${nextStatus === 'Active' ? 'تفعيل' : 'تعطيل'} الأصل "${record.id}" (الرقم التسلسلي: ${record.serialNumber}).`,
         });
@@ -589,8 +589,8 @@ export const AssetsPage: React.FC = () => {
                 recordId: item.id,
                 resourceData: `${item.typeNameEn} — ${item.brandEn} (${item.id})`,
                 resourceDataAr: `${item.typeNameAr} — ${item.brandAr} (${item.id})`,
-                performedBy: item.creatorNameEn || 'Dezen Team',
-                performedByAr: item.creatorNameAr || 'فريق ديزن',
+                performedBy: item.creatorNameEn || '—',
+                performedByAr: item.creatorNameAr || '—',
                 remarks: `Bulk ${targetStatus === 'Active' ? 'activated' : 'deactivated'} asset "${item.id}" (Serial: ${item.serialNumber}).`,
                 remarksAr: `تم ${targetStatus === 'Active' ? 'تفعيل' : 'تعطيل'} الأصل "${item.id}" (الرقم التسلسلي: ${item.serialNumber}) ضمن إجراء جماعي.`,
             });
@@ -634,23 +634,23 @@ export const AssetsPage: React.FC = () => {
 
         setEditingRecord(null);
         setFormState({
-            customerNameEn: 'mohd',
-            customerNameAr: 'محمد (mohd)',
-            companyNameEn: 'dezen company',
-            companyNameAr: 'شركة ديزن (dezen company)',
+            customerNameEn: '',
+            customerNameAr: '',
+            companyNameEn: '',
+            companyNameAr: '',
             categoryId: catId,
             typeId: preferredType?.id || 'ASTTYP001',
             assetStatusId: preferredStatus?.id || 'AST001',
-            assignedOwnerEn: 'dezen company',
-            assignedOwnerAr: 'شركة ديزن (dezen company)',
-            brandEn: 'nexus',
-            brandAr: 'نيكسس (nexus)',
+            assignedOwnerEn: '',
+            assignedOwnerAr: '',
+            brandEn: '',
+            brandAr: '',
             serialNumber: '',
-            manufacturerYear: '2025',
-            registrationValidityDate: '10/10/2028',
-            creatorNameEn: 'Dezen Team',
-            creatorNameAr: 'فريق ديزن (Dezen Team)',
-            creatorEmail: 'abdul.basith@dezensolutions.org',
+            manufacturerYear: String(new Date().getFullYear()),
+            registrationValidityDate: '',
+            creatorNameEn: '',
+            creatorNameAr: '',
+            creatorEmail: '',
             notesEn: '',
             status: 'Active',
         });
@@ -680,7 +680,7 @@ export const AssetsPage: React.FC = () => {
             registrationValidityDate: record.registrationValidityDate,
             creatorNameEn: record.creatorNameEn,
             creatorNameAr: record.creatorNameAr,
-            creatorEmail: record.creatorEmail || 'abdul.basith@dezensolutions.org',
+            creatorEmail: record.creatorEmail || '',
             notesEn: record.notesEn || '',
             status: record.status === 'Inactive' ? 'Inactive' : 'Active',
         });
@@ -895,20 +895,14 @@ export const AssetsPage: React.FC = () => {
                 : trimmedOwnerEn);
 
         const resolvedBrandAr =
-            trimmedBrandEn.toLowerCase() === 'nexus'
-                ? 'نيكسس (nexus)'
-                : editingRecord &&
-                  editingRecord.brandEn.toLowerCase() === trimmedBrandEn.toLowerCase()
+            editingRecord &&
+            editingRecord.brandEn.toLowerCase() === trimmedBrandEn.toLowerCase()
                 ? editingRecord.brandAr
                 : trimmedBrandEn;
 
         const resolvedCreatorAr =
-            trimmedCreatorEn.toLowerCase() === 'dezen team'
-                ? 'فريق ديزن (Dezen Team)'
-                : trimmedCreatorEn.toLowerCase() === 'khalifah alsharabi'
-                ? 'خليفة الشرعبي'
-                : editingRecord &&
-                  editingRecord.creatorNameEn.toLowerCase() === trimmedCreatorEn.toLowerCase()
+            editingRecord &&
+            editingRecord.creatorNameEn.toLowerCase() === trimmedCreatorEn.toLowerCase()
                 ? editingRecord.creatorNameAr
                 : trimmedCreatorEn;
 
@@ -917,10 +911,10 @@ export const AssetsPage: React.FC = () => {
                 ...editingRecord,
                 assetNameEn: typeNameEn,
                 assetNameAr: typeNameAr,
-                customerId: matchedCustomerOpt?.id || editingRecord.customerId || 'cust-dezen',
+                customerId: matchedCustomerOpt?.id || editingRecord.customerId || '',
                 customerNameEn: trimmedCustomerEn,
                 customerNameAr: resolvedCustomerAr,
-                companyId: matchedCompanyOpt?.id || editingRecord.companyId || 'comp-dezen',
+                companyId: matchedCompanyOpt?.id || editingRecord.companyId || '',
                 companyNameEn: trimmedCompanyEn,
                 companyNameAr: resolvedCompanyAr,
                 categoryId: formState.categoryId,
@@ -977,10 +971,10 @@ export const AssetsPage: React.FC = () => {
                 id: newId,
                 assetNameEn: typeNameEn,
                 assetNameAr: typeNameAr,
-                customerId: matchedCustomerOpt?.id || 'cust-dezen',
+                customerId: matchedCustomerOpt?.id || '',
                 customerNameEn: trimmedCustomerEn,
                 customerNameAr: resolvedCustomerAr,
-                companyId: matchedCompanyOpt?.id || 'comp-dezen',
+                companyId: matchedCompanyOpt?.id || '',
                 companyNameEn: trimmedCompanyEn,
                 companyNameAr: resolvedCompanyAr,
                 categoryId: formState.categoryId,
@@ -1057,8 +1051,8 @@ export const AssetsPage: React.FC = () => {
             recordId: target.id,
             resourceData: `${target.typeNameEn} — ${target.brandEn} (${target.id})`,
             resourceDataAr: `${target.typeNameAr} — ${target.brandAr} (${target.id})`,
-            performedBy: target.creatorNameEn || 'Dezen Team',
-            performedByAr: target.creatorNameAr || 'فريق ديزن',
+            performedBy: target.creatorNameEn || '—',
+            performedByAr: target.creatorNameAr || '—',
             remarks: `Deleted asset "${target.id}" (Serial: ${target.serialNumber}, Customer: ${target.customerNameEn}).`,
             remarksAr: `تم حذف الأصل "${target.id}" (الرقم التسلسلي: ${target.serialNumber}، العميل: ${target.customerNameAr}).`,
         });

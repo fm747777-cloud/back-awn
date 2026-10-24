@@ -156,10 +156,6 @@ export function loadWorkflowRecords(): WorkflowRecord[] {
     try {
         const raw = window.localStorage.getItem(WORKFLOW_STORAGE_KEY);
         if (!raw) {
-            window.localStorage.setItem(
-                WORKFLOW_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_RECORDS)
-            );
             return INITIAL_WORKFLOW_RECORDS;
         }
         const parsed = JSON.parse(raw);
@@ -223,10 +219,6 @@ export function loadWorkflowMasters(): WorkflowMasterRecord[] {
     try {
         const raw = window.localStorage.getItem(WORKFLOW_MASTERS_STORAGE_KEY);
         if (!raw) {
-            window.localStorage.setItem(
-                WORKFLOW_MASTERS_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_MASTERS)
-            );
             return INITIAL_WORKFLOW_MASTERS;
         }
         const parsed = JSON.parse(raw);
@@ -294,10 +286,6 @@ export function loadWorkflowStatusLevels(): WorkflowStatusLevelRecord[] {
     try {
         const raw = window.localStorage.getItem(WORKFLOW_STATUS_LEVELS_STORAGE_KEY);
         if (!raw) {
-            window.localStorage.setItem(
-                WORKFLOW_STATUS_LEVELS_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_STATUS_LEVELS)
-            );
             return INITIAL_WORKFLOW_STATUS_LEVELS;
         }
         const parsed = JSON.parse(raw);
@@ -624,17 +612,17 @@ export function normalizeWorkflowAuditEvent(
         (typeof obj.performedByEn === 'string' && obj.performedByEn.trim()) ||
         (typeof obj.actorEn === 'string' && obj.actorEn.trim()) ||
         (typeof obj.user === 'string' && obj.user.trim()) ||
-        'Khalifah Alsharabi';
+        '—';
 
     const performedByAr =
         (typeof obj.performedByAr === 'string' && obj.performedByAr.trim()) ||
         (typeof obj.actorAr === 'string' && obj.actorAr.trim()) ||
-        (performedBy === 'Khalifah Alsharabi' ? 'خليفة الشرعبي' : performedBy);
+        performedBy;
 
     const actorEmail =
         (typeof obj.actorEmail === 'string' && obj.actorEmail.trim()) ||
         (typeof obj.email === 'string' && obj.email.trim()) ||
-        'k.alsharabi@awn.sa';
+        '';
 
     const remarks =
         rawRemarksEn || `${action} ${resource}: ${resourceData}`;
@@ -689,18 +677,10 @@ export function loadWorkflowAuditEvents(): WorkflowAuditEvent[] {
     try {
         const raw = window.localStorage.getItem(WORKFLOW_AUDIT_STORAGE_KEY);
         if (!raw) {
-            window.localStorage.setItem(
-                WORKFLOW_AUDIT_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_AUDIT_EVENTS)
-            );
             return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
         }
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed) || parsed.length === 0) {
-            window.localStorage.setItem(
-                WORKFLOW_AUDIT_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_AUDIT_EVENTS)
-            );
             return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
         }
 
@@ -709,10 +689,6 @@ export function loadWorkflowAuditEvents(): WorkflowAuditEvent[] {
             .filter((item): item is WorkflowAuditEvent => item !== null);
 
         if (normalizedList.length === 0) {
-            window.localStorage.setItem(
-                WORKFLOW_AUDIT_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_AUDIT_EVENTS)
-            );
             return [...INITIAL_WORKFLOW_AUDIT_EVENTS];
         }
 
@@ -1055,15 +1031,15 @@ export function normalizeEmailTemplateRecord(
         creatorNameEn:
             typeof raw.creatorNameEn === 'string' && raw.creatorNameEn.trim()
                 ? raw.creatorNameEn.trim()
-                : 'Khalifah Alsharabi',
+                : '—',
         creatorNameAr:
             typeof raw.creatorNameAr === 'string' && raw.creatorNameAr.trim()
                 ? raw.creatorNameAr.trim()
-                : 'خليفة الشرعبي',
+                : '—',
         email:
             typeof raw.email === 'string' && raw.email.trim()
                 ? raw.email.trim()
-                : 'k.alsharabi@awn.sa',
+                : '',
         createDate:
             typeof raw.createDate === 'string' && raw.createDate.trim()
                 ? raw.createDate.trim()
@@ -1096,10 +1072,6 @@ export function loadWorkflowEmailTemplates(): WorkflowEmailTemplateRecord[] {
     try {
         const raw = window.localStorage.getItem(WORKFLOW_EMAIL_TEMPLATES_STORAGE_KEY);
         if (!raw) {
-            window.localStorage.setItem(
-                WORKFLOW_EMAIL_TEMPLATES_STORAGE_KEY,
-                JSON.stringify(INITIAL_WORKFLOW_EMAIL_TEMPLATES)
-            );
             return INITIAL_WORKFLOW_EMAIL_TEMPLATES;
         }
         const parsed = JSON.parse(raw);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
     ShieldCheck,
     Plus,
@@ -17,7 +18,7 @@ import {
     ChevronRight,
     ListFilter,
 } from 'lucide-react';
-import { CRM_SALES_EMPLOYEES } from '../../api/api';
+import { crmApi, CRM_SALES_EMPLOYEES } from '../../api/api';
 import {
     CRM_APPROVAL_TASK_STATUS_VALUES,
     CRM_APPROVAL_TARGET_ENTITY_TYPE_VALUES,
@@ -83,6 +84,11 @@ export const CrmApprovalTasksPage: React.FC = () => {
         setToast({ message, type });
         window.setTimeout(() => setToast(null), 3500);
     };
+
+    const { data: employees = CRM_SALES_EMPLOYEES } = useQuery({
+        queryKey: ['crm', 'employees'],
+        queryFn: () => crmApi.getSalesEmployees(),
+    });
 
     const {
         data: tasksResponse,
@@ -591,7 +597,7 @@ export const CrmApprovalTasksPage: React.FC = () => {
                                 'crm.workflow.approvalTasks.filters.allAssignees'
                             )}
                         </option>
-                        {CRM_SALES_EMPLOYEES.map((emp) => (
+                        {employees.map((emp) => (
                             <option key={emp.id} value={emp.id}>
                                 {isRtl ? emp.nameAr : emp.nameEn}
                             </option>

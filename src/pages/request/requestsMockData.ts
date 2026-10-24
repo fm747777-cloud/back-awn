@@ -118,78 +118,16 @@ export interface RequestAuditEntry {
 // Account Managers / Operational Resources Catalog
 // ============================================================================
 
-export const REQUEST_ACCOUNT_MANAGERS: RequestAccountManagerOption[] = [
-    {
-        id: 'mgr-fahad',
-        nameEn: 'Fahad Al-Dosari',
-        nameAr: 'فهد الدوسري',
-        roleEn: 'Senior Account Manager',
-        roleAr: 'مدير حسابات أول',
-        email: 'f.aldosari@awn.sa',
-    },
-    {
-        id: 'mgr-reem',
-        nameEn: 'Reem Al-Sudairi',
-        nameAr: 'ريم السديري',
-        roleEn: 'Enterprise Relations Lead',
-        roleAr: 'قائد علاقات المنشآت',
-        email: 'r.alsudairi@awn.sa',
-    },
-    {
-        id: 'mgr-yasser',
-        nameEn: 'Yasser Al-Qahtani',
-        nameAr: 'ياسر القحطاني',
-        roleEn: 'Government Services Specialist',
-        roleAr: 'أخصائي الخدمات الحكومية',
-        email: 'y.alqahtani@awn.sa',
-    },
-    {
-        id: 'mgr-maha',
-        nameEn: 'Maha Al-Subaie',
-        nameAr: 'مها السبيعي',
-        roleEn: 'HR & GOSI Operations Lead',
-        roleAr: 'قائد عمليات الموارد البشرية والتأمينات',
-        email: 'm.alsubaie@awn.sa',
-    },
-    {
-        id: 'mgr-salman',
-        nameEn: 'Salman Al-Mutairi',
-        nameAr: 'سلمان المطيري',
-        roleEn: 'Commercial & Baladi Specialist',
-        roleAr: 'أخصائي التراخيص والسجلات التجارية',
-        email: 's.almutairi@awn.sa',
-    },
-    {
-        id: 'mgr-lina',
-        nameEn: 'Lina Al-Shehri',
-        nameAr: 'لينا الشهري',
-        roleEn: 'Fleet & Assets Account Manager',
-        roleAr: 'مديرة حسابات الأصول والمركبات',
-        email: 'l.alshehri@awn.sa',
-    },
-];
+export const REQUEST_ACCOUNT_MANAGERS: RequestAccountManagerOption[] = [];
 
 // ============================================================================
 // Company Unified Numbers Lookup
 // ============================================================================
 
-export const COMPANY_UNIFIED_NUMBERS: Record<string, string> = {
-    'comp-dezen': '7008451201',
-    'comp-spring': '7009123402',
-    'comp-njoud-ar': '7007348913',
-    'comp-njoud-en': '7007348924',
-    'comp-coffee7': '7006219845',
-    'comp-faisaliah': '7004112096',
-    'comp-najd': '7005398127',
-    'comp-yamamah': '7003892148',
-    'comp-tuwaiq': '7006783419',
-    'comp-gulf': '7005921030',
-    'comp-awn': '7002001451',
-    'comp-riyadh-tech': '7008843102',
-};
+export const COMPANY_UNIFIED_NUMBERS: Record<string, string> = {};
 
 export function getCompanyUnifiedNumber(companyId: string): string {
-    return COMPANY_UNIFIED_NUMBERS[companyId] || '7009001000';
+    return COMPANY_UNIFIED_NUMBERS[companyId] || '';
 }
 
 // ============================================================================
@@ -389,7 +327,7 @@ function syncInitiatedRequestsIntoList(currentList: RequestRecord[]): RequestRec
                 companyId: payload.companyId,
                 businessName: compObj?.name || payload.companyName,
                 businessNameAr: compObj?.nameAr || compObj?.name || payload.companyName,
-                crNumber: compObj?.crNumber || '1010845120',
+                crNumber: compObj?.crNumber || '',
                 unifiedNumber: getCompanyUnifiedNumber(payload.companyId),
                 accountManagerId: 'unassigned',
                 accountManager: 'Unassigned',
@@ -446,10 +384,6 @@ export function loadRequests(): RequestRecord[] {
         if (raw === null) {
             const initialNormalized = INITIAL_REQUEST_RECORDS.map((r, idx) =>
                 normalizeRequestRecord(r, idx)
-            );
-            window.localStorage.setItem(
-                REQUEST_RECORDS_STORAGE_KEY,
-                JSON.stringify(initialNormalized)
             );
             return syncInitiatedRequestsIntoList(initialNormalized);
         }
@@ -589,18 +523,10 @@ export function loadRequestAuditTrail(): RequestAuditEntry[] {
     try {
         const raw = window.localStorage.getItem(REQUEST_AUDIT_STORAGE_KEY);
         if (!raw) {
-            window.localStorage.setItem(
-                REQUEST_AUDIT_STORAGE_KEY,
-                JSON.stringify(normalizedSeed)
-            );
             return normalizedSeed;
         }
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) {
-            window.localStorage.setItem(
-                REQUEST_AUDIT_STORAGE_KEY,
-                JSON.stringify(normalizedSeed)
-            );
             return normalizedSeed;
         }
         const existingNormalized = parsed
@@ -846,7 +772,7 @@ export function createRequestFromInitiatedPayload(
         companyId: payload.companyId,
         businessName: compObj?.name || payload.companyName,
         businessNameAr: compObj?.nameAr || compObj?.name || payload.companyName,
-        crNumber: compObj?.crNumber || '1010845120',
+        crNumber: compObj?.crNumber || '',
         unifiedNumber: getCompanyUnifiedNumber(payload.companyId),
         accountManagerId: 'unassigned',
         accountManager: 'Unassigned',

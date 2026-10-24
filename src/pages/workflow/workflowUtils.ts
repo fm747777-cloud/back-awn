@@ -28,9 +28,9 @@ import type {
 import type { LiveEntitySnapshot } from '../../components/workflow/WorkflowAuditTrailDrawer';
 
 export const DEFAULT_WORKFLOW_ACTOR = {
-    nameEn: 'Khalifah Alsharabi',
-    nameAr: 'خليفة الشرعبي',
-    email: 'k.alsharabi@awn.sa',
+    nameEn: '—',
+    nameAr: '—',
+    email: '',
 } as const;
 
 export const STAGE_CATEGORIES: WorkflowStageCategory[] = [

@@ -580,9 +580,19 @@ export const OperationalTasksPage = () => {
 
         const ownerObj =
             REQUEST_BUSINESS_OWNERS.find((o) => o.id === editDraft.ownerId) ||
-            REQUEST_BUSINESS_OWNERS[0];
+            REQUEST_BUSINESS_OWNERS[0] || {
+                id: editDraft.ownerId || viewingTask.ownerId,
+                nameEn: viewingTask.ownerNameEn,
+                nameAr: viewingTask.ownerNameAr,
+            };
         const companyObj =
-            REQUEST_COMPANIES.find((c) => c.id === editDraft.companyId) || REQUEST_COMPANIES[0];
+            REQUEST_COMPANIES.find((c) => c.id === editDraft.companyId) ||
+            REQUEST_COMPANIES[0] || {
+                id: editDraft.companyId || viewingTask.companyId,
+                nameEn: viewingTask.businessName,
+                nameAr: viewingTask.businessNameAr,
+                crNumber: viewingTask.crNumber,
+            };
         const serviceObj =
             availableServices.find((s) => s.id === editDraft.serviceRecordId) ||
             availableServices[0];
