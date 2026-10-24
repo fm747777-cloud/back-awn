@@ -566,7 +566,7 @@ const initialPackages = [
 
 // Temporary flag to disable runtime backend API requests and use local demo/mock data.
 // Set USE_DEMO_MODE to false to re-enable live backend API requests immediately.
-export const USE_DEMO_MODE = true;
+export const USE_DEMO_MODE = false;
 
 const initialServices = [
     {
@@ -878,6 +878,16 @@ export const authApi = {
         const response = await axiosClient.post('/auth/login', data);
         return response.data;
     },
+
+    createEmployee: async (data: any) => {
+        try {
+            // console.log('data', data);
+            const response = await axiosClient.post('/auth/register-employee', data);
+            return response.data;
+        } catch (error) {
+            console.log('Backend error:', error?.response?.data);
+        }
+    },
 };
 
 export const serviceApi = {
@@ -954,36 +964,12 @@ export const serviceApi = {
     },
 
     getServicePortals: async (data: any = {}) => {
-        if (!USE_DEMO_MODE && import.meta.env.VITE_BASE_URL) {
-            try {
-                const response = await axiosClient.get('/service-portal', { params: data });
-                return response.data;
-            } catch {
-                // Fallback
-            }
+        try {
+            const response = await axiosClient.get('/service-portal', { params: data });
+            return response.data;
+        } catch {
+            // Fallback
         }
-
-        const list = getLocal('portals', initialPortals);
-        const search = (data?.search || '').toLowerCase().trim();
-        const filtered = search
-            ? list.filter(
-                (item) =>
-                    item.name.toLowerCase().includes(search) ||
-                    item.tagCode.toLowerCase().includes(search) ||
-                    item.url.toLowerCase().includes(search)
-            )
-            : list;
-
-        const page = Number(data?.page || 1);
-        const limit = Number(data?.limit || 10);
-        const start = (page - 1) * limit;
-        const paged = filtered.slice(start, start + limit);
-
-        return {
-            data: paged,
-            count: filtered.length,
-            total: filtered.length,
-        };
     },
 
     createServicePortal: async (data: any) => {
@@ -1241,7 +1227,27 @@ export const userApi = {
     getUsers: async (params: any) => {
         const response = await axiosClient.get('/user', { params });
         return response.data;
-    }
+    },
+
+    getEmployees: async (params: any) => {
+        const response = await axiosClient.get('/user/admin/employees', { params });
+        return response.data;
+    },
+
+    updateEmployee: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/user/${id}`, data);
+        return response.data;
+    },
+
+    deleteEmployee: async (id: string) => {
+        const response = await axiosClient.delete(`/user/${id}`);
+        return response.data;
+    },
+
+    getUser: async (id: string) => {
+        const response = await axiosClient.get(`/user/${id}`);
+        return response.data;
+    },
 }
 
 export const documentApi = {
@@ -1413,6 +1419,139 @@ export const assetApi = {
 
     deleteAssetType: async (id: string) => {
         const response = await axiosClient.delete(`/asset-type/${id}`);
+        return response.data;
+    },
+}
+
+export const umsApi = {
+
+    getDesignations: async (params: any) => {
+        const response = await axiosClient.get('/designation', { params });
+        return response.data;
+    },
+
+    createDesignation: async (data: any) => {
+        const response = await axiosClient.post('/designation', data);
+        return response.data;
+    },
+
+    updateDesignation: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/designation/${id}`, data);
+        return response.data;
+    },
+
+    deleteDesignation: async (id: string) => {
+        const response = await axiosClient.delete(`/designation/${id}`);
+        return response.data;
+    },
+
+
+
+    getDepartments: async (params: any) => {
+        const response = await axiosClient.get('/department', { params });
+        return response.data;
+    },
+
+    createDepartment: async (data: any) => {
+        const response = await axiosClient.post('/department', data);
+        return response.data;
+    },
+
+    updateDepartment: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/department/${id}`, data);
+        return response.data;
+    },
+
+    deleteDepartment: async (id: string) => {
+        const response = await axiosClient.delete(`/department/${id}`);
+        return response.data;
+    },
+
+
+
+    getRoles: async (params: any) => {
+        const response = await axiosClient.get('/role', { params });
+        return response.data;
+    },
+
+    createRole: async (data: any) => {
+        const response = await axiosClient.post('/role', data);
+        return response.data;
+    },
+
+    updateRole: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/role/${id}`, data);
+        return response.data;
+    },
+
+    deleteRole: async (id: string) => {
+        const response = await axiosClient.delete(`/role/${id}`);
+        return response.data;
+    },
+
+
+
+    getBranchs: async (params: any) => {
+        const response = await axiosClient.get('/branch', { params });
+        return response.data;
+    },
+
+    createBranch: async (data: any) => {
+        const response = await axiosClient.post('/branch', data);
+        return response.data;
+    },
+
+    updateBranch: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/branch/${id}`, data);
+        return response.data;
+    },
+
+    deleteBranch: async (id: string) => {
+        const response = await axiosClient.delete(`/branch/${id}`);
+        return response.data;
+    },
+
+
+
+    getAddons: async (params: any) => {
+        const response = await axiosClient.get('/user-addons', { params });
+        return response.data;
+    },
+
+    createAddons: async (data: any) => {
+        const response = await axiosClient.post('/user-addons', data);
+        return response.data;
+    },
+
+    updateAddons: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/user-addons/${id}`, data);
+        return response.data;
+    },
+
+    deleteAddons: async (id: string) => {
+        const response = await axiosClient.delete(`/user-addons/${id}`);
+        return response.data;
+    },
+
+
+
+    getSecurityGroups: async (params: any) => {
+        const response = await axiosClient.get('/security-group', { params });
+        return response.data;
+    },
+
+    createSecurityGroup: async (data: any) => {
+        const response = await axiosClient.post('/security-group', data);
+        return response.data;
+    },
+
+    updateSecurityGroup: async (id: string, data: any) => {
+        const response = await axiosClient.patch(`/security-group/${id}`, data);
+        return response.data;
+    },
+
+    deleteSecurityGroup: async (id: string) => {
+        const response = await axiosClient.delete(`/security-group/${id}`);
         return response.data;
     },
 }
@@ -4515,16 +4654,16 @@ export function syncLeadContactToCompany(
         nextContactsList = nextContactsList.map((item) =>
             item.id === existingForThisCompany.id
                 ? {
-                      ...item,
-                      isPrimary: true,
-                      leadId: lead.id,
-                      leadTitle: lead.title,
-                      phone: lead.contactPhone || item.phone,
-                      jobTitle: lead.contactJobTitle || item.jobTitle,
-                  }
+                    ...item,
+                    isPrimary: true,
+                    leadId: lead.id,
+                    leadTitle: lead.title,
+                    phone: lead.contactPhone || item.phone,
+                    jobTitle: lead.contactJobTitle || item.jobTitle,
+                }
                 : item.companyId === company.id
-                  ? { ...item, isPrimary: false }
-                  : item
+                    ? { ...item, isPrimary: false }
+                    : item
         );
     } else {
         const duplicateGlobal = nextContactsList.find(
@@ -4534,17 +4673,17 @@ export function syncLeadContactToCompany(
             nextContactsList = nextContactsList.map((item) =>
                 item.id === duplicateGlobal.id
                     ? {
-                          ...item,
-                          companyId: company.id,
-                          companyNameEn: company.nameEn,
-                          companyNameAr: company.nameAr,
-                          leadId: lead.id,
-                          leadTitle: lead.title,
-                          isPrimary: true,
-                      }
+                        ...item,
+                        companyId: company.id,
+                        companyNameEn: company.nameEn,
+                        companyNameAr: company.nameAr,
+                        leadId: lead.id,
+                        leadTitle: lead.title,
+                        isPrimary: true,
+                    }
                     : item.companyId === company.id
-                      ? { ...item, isPrimary: false }
-                      : item
+                        ? { ...item, isPrimary: false }
+                        : item
             );
         } else if (!duplicateGlobal) {
             nextContactsList = nextContactsList.map((item) =>
@@ -7675,25 +7814,25 @@ export const crmApi = {
                 const updated = list.map((item) =>
                     item.id === duplicateEmail.id
                         ? validateWithSchema(
-                              crmContactSchema,
-                              {
-                                  ...item,
-                                  ...validated,
-                                  id: item.id,
-                                  code: item.code,
-                                  companyId: linkedCompany.id,
-                                  companyNameEn: linkedCompany.nameEn,
-                                  companyNameAr: linkedCompany.nameAr,
-                                  leadId: linkedLead?.id || item.leadId,
-                                  leadTitle: linkedLead?.title || item.leadTitle,
-                                  isPrimary: validated.isPrimary ?? item.isPrimary,
-                                  updatedAt: new Date().toISOString().split('T')[0],
-                              },
-                              'Contact'
-                          )
+                            crmContactSchema,
+                            {
+                                ...item,
+                                ...validated,
+                                id: item.id,
+                                code: item.code,
+                                companyId: linkedCompany.id,
+                                companyNameEn: linkedCompany.nameEn,
+                                companyNameAr: linkedCompany.nameAr,
+                                leadId: linkedLead?.id || item.leadId,
+                                leadTitle: linkedLead?.title || item.leadTitle,
+                                isPrimary: validated.isPrimary ?? item.isPrimary,
+                                updatedAt: new Date().toISOString().split('T')[0],
+                            },
+                            'Contact'
+                        )
                         : (validated.isPrimary ?? true) && item.companyId === linkedCompany.id
-                          ? { ...item, isPrimary: false }
-                          : item
+                            ? { ...item, isPrimary: false }
+                            : item
                 );
                 setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
                 const enriched = updated.find((c) => c.id === duplicateEmail.id)!;
@@ -7822,16 +7961,16 @@ export const crmApi = {
             const updated = list.map((item, idx) =>
                 idx === existingIdx
                     ? {
-                          ...item,
-                          isPrimary: params.isPrimary !== undefined ? params.isPrimary : item.isPrimary,
-                          phone: contactPhone || item.phone,
-                          jobTitle: contactJobTitle || item.jobTitle,
-                          leadId: params.leadId || item.leadId,
-                          leadTitle: leadTitle || item.leadTitle,
-                      }
+                        ...item,
+                        isPrimary: params.isPrimary !== undefined ? params.isPrimary : item.isPrimary,
+                        phone: contactPhone || item.phone,
+                        jobTitle: contactJobTitle || item.jobTitle,
+                        leadId: params.leadId || item.leadId,
+                        leadTitle: leadTitle || item.leadTitle,
+                    }
                     : (params.isPrimary ?? true) && item.companyId === company.id
-                      ? { ...item, isPrimary: false }
-                      : item
+                        ? { ...item, isPrimary: false }
+                        : item
             );
             setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
             return updated[existingIdx];
@@ -7846,17 +7985,17 @@ export const crmApi = {
                 const updated = list.map((item) =>
                     item.id === existingByEmail.id
                         ? {
-                              ...item,
-                              companyId: company.id,
-                              companyNameEn: company.nameEn,
-                              companyNameAr: company.nameAr,
-                              isPrimary: params.isPrimary !== undefined ? params.isPrimary : true,
-                              leadId: params.leadId || item.leadId,
-                              leadTitle: leadTitle || item.leadTitle,
-                          }
+                            ...item,
+                            companyId: company.id,
+                            companyNameEn: company.nameEn,
+                            companyNameAr: company.nameAr,
+                            isPrimary: params.isPrimary !== undefined ? params.isPrimary : true,
+                            leadId: params.leadId || item.leadId,
+                            leadTitle: leadTitle || item.leadTitle,
+                        }
                         : (params.isPrimary ?? true) && item.companyId === company.id
-                          ? { ...item, isPrimary: false }
-                          : item
+                            ? { ...item, isPrimary: false }
+                            : item
                 );
                 setLocal(CRM_STORAGE_KEYS.CONTACTS, updated);
                 return updated.find((c) => c.id === existingByEmail.id)!;
@@ -7867,8 +8006,8 @@ export const crmApi = {
         // Demote other contacts on this company if new contact is primary
         const normalized = (params.isPrimary ?? true)
             ? list.map((item) =>
-                  item.companyId === company.id ? { ...item, isPrimary: false } : item
-              )
+                item.companyId === company.id ? { ...item, isPrimary: false } : item
+            )
             : list;
 
         const newRecord: CrmContactRecord = validateWithSchema(
@@ -14574,5 +14713,3 @@ export function checkCrmCustomerDeletionEligibility(
         referencedBy: [],
     };
 }
-
-export { umsApi } from './umsApi';

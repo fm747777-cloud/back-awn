@@ -58,7 +58,7 @@ const AssetAuditTrailPage = () => import('../pages/asset-management/AssetAuditTr
 const UmsPage = () => import('../pages/UmsPage').then((m) => ({ Component: m.UmsPage }));
 const UmsDashboardPage = () => import('../pages/ums/UmsDashboardPage').then((m) => ({ Component: m.UmsDashboardPage }));
 const UmsEmployeesPage = () => import('../pages/ums/UmsEmployeesPage').then((m) => ({ Component: m.UmsEmployeesPage }));
-const UmsEmployeeNewPage = () => import('../pages/ums/UmsEmployeeWizardPage').then((m) => ({ Component: m.UmsEmployeeWizardPage }));
+// const UmsEmployeeNewPage = () => import('../pages/ums/UmsEmployeeWizardPage').then((m) => ({ Component: m.UmsEmployeeWizardPage }));
 const UmsEmployeeDetailsPage = () => import('../pages/ums/UmsEmployeesPage').then((m) => ({ Component: m.UmsEmployeeDetailsPage }));
 const UmsEmployeeImportPage = () => import('../pages/ums/UmsEmployeeImportPage').then((m) => ({ Component: m.UmsEmployeeImportPage }));
 const UmsDesignationsPage = () => import('../pages/ums/UmsDesignationsPage').then((m) => ({ Component: m.UmsDesignationsPage }));
@@ -188,10 +188,10 @@ export const router = createBrowserRouter([
                                 path: 'employees',
                                 lazy: UmsEmployeesPage,
                             },
-                            {
-                                path: 'employees/new',
-                                lazy: UmsEmployeeNewPage,
-                            },
+                            // {
+                            //     path: 'employees/new',
+                            //     lazy: UmsEmployeeNewPage,
+                            // },
                             {
                                 path: 'employees/import',
                                 lazy: UmsEmployeeImportPage,
@@ -200,10 +200,10 @@ export const router = createBrowserRouter([
                                 path: 'employees/:id',
                                 lazy: UmsEmployeeDetailsPage,
                             },
-                            {
-                                path: 'employees/:id/edit',
-                                lazy: UmsEmployeeNewPage,
-                            },
+                            // {
+                            //     path: 'employees/:id/edit',
+                            //     lazy: UmsEmployeeNewPage,
+                            // },
                             {
                                 path: 'designations',
                                 lazy: UmsDesignationsPage,

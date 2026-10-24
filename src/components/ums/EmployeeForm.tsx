@@ -1,3298 +1,1026 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-    User,
-    Briefcase,
-    FileText,
-    HeartHandshake,
-    ArrowLeft,
-    ArrowRight,
-    Check,
-    CheckCircle2,
-    AlertTriangle,
-    Upload,
-    Trash2,
-    Plus,
-    Save,
-    Sparkles,
-    Landmark,
-    ShieldCheck,
-    Paperclip,
-    FileCheck2,
-    X,
-} from 'lucide-react';
-import {
-    NATIONALITY_OPTIONS,
-    gregorianToApproximateHijri,
-    type EmployeeRecord,
-    type EmployeeStatus,
-    type ContractType,
-    type EmploymentType,
-    type Gender,
-    type MaritalStatus,
-    type Citizenship,
-    type EmployeeDependent,
-    type EmployeeDocumentCategory,
-    type EmployeeDocumentAttachment,
-    type DepartmentRecord,
-    type DesignationRecord,
-    type BranchRecord,
-    type RoleRecord,
-    type SecurityGroupRecord,
-    type CustomAddonRecord,
-    type SalaryDetails,
-    type IqamaStatus,
-    type EmployeeProfileCompletionResult,
-} from '../../pages/ums/umsMockData';
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { ArrowLeft, ArrowRight, Briefcase, Check, FileText, HeartHandshake, Save, User } from "lucide-react";
+import { toast } from "sonner";
 
-export type WizardStepIndex = 0 | 1 | 2 | 3;
+import { authApi, umsApi, userApi } from "../../api/api";
 
-export type DocumentSubTab =
-    | 'all'
-    | 'salary'
-    | 'iqama'
-    | 'account'
-    | 'bank'
-    | 'health_insurance'
-    | 'health_card'
-    | 'passport'
-    | 'visa'
-    | 'contract'
-    | 'driving_license'
-    | 'subscription';
+const emptyToUndefined = (value: unknown) => {
+    if (value === "" || value === null || value === undefined) return undefined;
+    return value;
+};
 
-export interface EmployeeWizardFormState {
-    code: string;
-    status: EmployeeStatus;
+const optionalString = z.preprocess(emptyToUndefined, z.string().trim().optional());
 
-    // Step 1: Personal Info
-    firstNameEn: string;
-    secondNameEn: string;
-    thirdNameEn: string;
-    lastNameEn: string;
-    firstNameAr: string;
-    secondNameAr: string;
-    thirdNameAr: string;
-    lastNameAr: string;
-    email: string;
-    workEmail: string;
-    phone: string;
-    dobGregorian: string;
-    dobHijri: string;
-    religionId: string;
-    religion: string;
-    maritalStatus: MaritalStatus;
-    gender: Gender;
-    citizenship: Citizenship;
-    nationality: string;
-    avatarUrl: string;
-    avatarMeta?: EmployeeDocumentAttachment;
+const optionalEmail = z.preprocess(emptyToUndefined, z.string().trim().email("البريد الإلكتروني غير صالح").optional());
 
-    // Step 2: Employment Info
-    branchId: string;
-    departmentId: string;
-    designationId: string;
-    jobTitleId: string;
-    jobTitleName: string;
-    roleId: string;
-    jobGradeId: string;
-    managerId: string;
-    joiningDate: string;
-    contractType: ContractType;
-    employmentType: EmploymentType;
-    isUnderProbation: boolean;
-    probationPeriodDays: number;
+const optionalUuid = (message: string) => {
+    return z.preprocess(emptyToUndefined, z.string().uuid(message).optional());
+};
 
-    // Step 3: Documents (Salary Details, Iqama, Account, Health Insurance, Health Card, Passport, Visa, Contract, Driving License, Subscription)
-    basicSalary: number;
-    housingAllowance: number;
-    transportationAllowance: number;
-    foodAllowance: number;
-    otherAllowances: number;
+const optionalDate = (message: string) => {
+    return z.preprocess(emptyToUndefined, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, message).optional());
+};
 
-    iqamaNumber: string;
-    iqamaProfession: string;
-    iqamaExpiryDate: string;
-    workPermitNumber: string;
-    workPermitExpiryDate: string;
+const optionalNumber = (message: string) => {
+    return z.preprocess((value) => {
+        if (value === "" || value === null || value === undefined) return undefined;
+        return Number(value);
+    }, z.number({ message }).finite(message).optional());
+};
 
-    bankId: string;
-    bankName: string;
-    accountHolderName: string;
-    iban: string;
-    accountNumber: string;
+const optionalBoolean = z.preprocess((value) => {
+    if (value === "" || value === null || value === undefined) return undefined;
+    if (value === true || value === "true") return true;
+    if (value === false || value === "false") return false;
+    return value;
+}, z.boolean({ message: "القيمة غير صالحة" }).optional());
 
-    healthInsuranceProvider: string;
-    healthInsurancePolicy: string;
-    healthInsuranceClass: string;
-    healthInsuranceExpiry: string;
+export const createEmployeeContractSchema = z.object({
+    department_id: optionalUuid("معرف القسم غير صالح"),
+    designation_id: optionalUuid("معرف المسمى الوظيفي غير صالح"),
+    reportingTo_id: optionalUuid("معرف المدير المباشر غير صالح"),
+    branch_id: optionalUuid("معرف الفرع غير صالح"),
+    role_id: optionalUuid("معرف الدور غير صالح"),
 
-    healthCardNumber: string;
-    healthCardAuthority: string;
-    healthCardIssueDate: string;
-    healthCardExpiryDate: string;
+    email: optionalEmail,
+    personal_email: optionalEmail,
+    phone_number: optionalString,
 
-    passportNumber: string;
-    passportIssueCountry: string;
-    passportIssueDate: string;
-    passportExpiry: string;
+    first_name_Ar: optionalString,
+    first_name_En: optionalString,
+    last_name_Ar: optionalString,
+    last_name_En: optionalString,
+    secend_name_Ar: optionalString,
+    secend_name_En: optionalString,
 
-    visaNumber: string;
-    visaType: string;
-    visaBorderNumber: string;
-    visaIssueDate: string;
-    visaExpiry: string;
+    job_title: optionalString,
+    joining_date: optionalDate("تاريخ الانضمام غير صالح"),
+    job_grade: optionalString,
+    contract_type: optionalString,
+    probation_period: optionalString,
+    employment_type: optionalString,
 
-    contractNumber: string;
-    contractStartDate: string;
-    contractEndDate: string;
+    basic_pay: optionalNumber("الراتب الأساسي يجب أن يكون رقمًا"),
+    housing_allows: optionalNumber("بدل السكن يجب أن يكون رقمًا"),
+    transport_allows: optionalNumber("بدل المواصلات يجب أن يكون رقمًا"),
+    food_allows: optionalNumber("بدل الطعام يجب أن يكون رقمًا"),
+    other_allows: optionalNumber("البدلات الأخرى يجب أن تكون رقمًا"),
+    gross_salary: optionalNumber("إجمالي الراتب يجب أن يكون رقمًا"),
+    net_salary: optionalNumber("صافي الراتب يجب أن يكون رقمًا"),
 
-    drivingLicenseNumber: string;
-    drivingLicenseType: string;
-    drivingLicenseIssueDate: string;
-    drivingLicenseExpiry: string;
+    iqama_profession: optionalString,
+    iqama_ID: optionalString,
+    iqama_ID_expiry: optionalDate("تاريخ انتهاء الإقامة غير صالح"),
+    work_permit_no: optionalNumber("رقم تصريح العمل يجب أن يكون رقمًا"),
+    work_permit_expiry: optionalDate("تاريخ انتهاء تصريح العمل غير صالح"),
+    iqama_url_front: optionalString,
+    iqama_url_back: optionalString,
 
-    gosiSubscriptionNumber: string;
-    professionalSubscriptionNumber: string;
-    subscriptionIssueDate: string;
-    subscriptionExpiryDate: string;
+    bank_name: optionalString,
+    account_holder_name: optionalString,
+    IBAN_number: optionalNumber("رقم IBAN يجب أن يكون رقمًا"),
+    IFSC_code: optionalString,
 
-    documentAttachments: Partial<Record<EmployeeDocumentCategory, EmployeeDocumentAttachment>>;
+    health_insurance: optionalString,
+    health_insurance_number: optionalString,
+    insurance_expiry: optionalDate("تاريخ انتهاء التأمين غير صالح"),
+    health_card: optionalBoolean,
+    health_card_number: optionalString,
+    health_card_expiry: optionalDate("تاريخ انتهاء البطاقة الصحية غير صالح"),
 
-    // Step 4: Dependents Info & Options
-    dependents: EmployeeDependent[];
-    sendInviteOnSave: boolean;
+    passport_number: optionalString,
+    passport_expiry: optionalDate("تاريخ انتهاء جواز السفر غير صالح"),
+    passport_issue: optionalDate("تاريخ إصدار جواز السفر غير صالح"),
+    place_of_issue: optionalString,
+
+    visa_number: optionalString,
+    visa_expiry: optionalDate("تاريخ انتهاء التأشيرة غير صالح"),
+    visa_issue: optionalDate("تاريخ إصدار التأشيرة غير صالح"),
+    visa_type: optionalString,
+
+    contract_number: optionalString,
+    contract_end: optionalDate("تاريخ انتهاء العقد غير صالح"),
+
+    driving_license_number: optionalString,
+    driving_license_validity: optionalString,
+
+    GOSI_registration: optionalBoolean,
+    GOSI_registration_number: optionalNumber("رقم تسجيل GOSI يجب أن يكون رقمًا"),
+    mudad_registration: optionalBoolean,
+    mudad_registration_number: optionalNumber("رقم تسجيل مدد يجب أن يكون رقمًا"),
+
+    nationality: optionalString,
+    religion: optionalString,
+    gender: optionalString,
+    maritalStatus: optionalString,
+    dependents: optionalBoolean,
+});
+
+export type CreateEmployeeContractInput = z.input<typeof createEmployeeContractSchema>;
+export type CreateEmployeeContractPayload = z.output<typeof createEmployeeContractSchema>;
+
+type WizardStepIndex = 0 | 1 | 2 | 3;
+
+type DocumentTab =
+    | "salary"
+    | "iqama"
+    | "bank"
+    | "health"
+    | "passport"
+    | "visa"
+    | "contract"
+    | "driving"
+    | "subscription";
+
+interface FieldConfig {
+    name: keyof CreateEmployeeContractInput;
+    label: string;
+    type?: "text" | "email" | "number" | "date" | "boolean";
+    placeholder?: string;
+    step?: string;
 }
 
-export const CONTRACT_TYPES: ContractType[] = [
-    'Permanent',
-    'Fixed Term',
-    'Probation',
-    'Seasonal',
-    'Remote',
-];
-
-export const EMPLOYMENT_TYPES: EmploymentType[] = ['Full-time', 'Part-time', 'Contractor'];
-export const MARITAL_STATUSES: MaritalStatus[] = ['Single', 'Married', 'Divorced', 'Widowed'];
-export const GENDERS: Gender[] = ['Male', 'Female'];
-export const CITIZENSHIPS: Citizenship[] = ['Saudi', 'Non-Saudi'];
-export const DEPENDENT_RELATIONSHIPS: EmployeeDependent['relationship'][] = [
-    'Spouse',
-    'Child',
-    'Parent',
-    'Other',
-];
-
-export const DOCUMENT_SUB_TABS: DocumentSubTab[] = [
-    'all',
-    'salary',
-    'iqama',
-    'account',
-    'health_insurance',
-    'health_card',
-    'passport',
-    'visa',
-    'contract',
-    'driving_license',
-    'subscription',
-];
-
-function formatFileSize(bytes: number): string {
-    if (!bytes || bytes <= 0) return '0 KB';
-    if (bytes < 1024 * 1024) {
-        return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-    }
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+interface FormInputProps {
+    field: FieldConfig;
+    register: UseFormRegister<any>;
+    errors: FieldErrors<any>;
+    disabled: boolean;
 }
 
-function getInitials(nameEn: string, nameAr?: string): string {
-    const source = (nameEn || nameAr || '').trim();
-    if (!source) return 'EM';
-    const parts = source.split(/\s+/).filter(Boolean);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
-}
+export type EmployeeFormMode = "create" | "view" | "update";
 
 export interface EmployeeFormProps {
-    isEditMode: boolean;
-    form: EmployeeWizardFormState;
-    errors: Record<string, string>;
-    currentStep: WizardStepIndex;
-    highestVisitedStep: WizardStepIndex;
-    activeDocSubTab: DocumentSubTab;
-    uploadFeedback: { type: 'success' | 'error'; message: string } | null;
-    composedNameEn: string;
-    composedNameAr: string;
-    calculatedSalary: SalaryDetails;
-    calculatedIqamaStatus: IqamaStatus;
-    liveCompletionPercentage: number;
-    liveCompletion?: EmployeeProfileCompletionResult;
-    departments: DepartmentRecord[];
-    designations: DesignationRecord[];
-    branches: BranchRecord[];
-    roles: RoleRecord[];
-    linkedSecurityGroup?: SecurityGroupRecord;
-    eligibleManagers: EmployeeRecord[];
-    religionAddons: CustomAddonRecord[];
-    jobTitleAddons: CustomAddonRecord[];
-    jobGradeAddons: CustomAddonRecord[];
-    bankAddons: CustomAddonRecord[];
-    isSubmitting?: boolean;
-    onUpdateField: <K extends keyof EmployeeWizardFormState>(
-        key: K,
-        value: EmployeeWizardFormState[K]
-    ) => void;
-    onStepClick: (targetStep: WizardStepIndex) => void;
-    onNextStep: () => void;
-    onPrevStep: () => void;
-    onActiveDocSubTabChange: (tab: DocumentSubTab) => void;
-    onClearUploadFeedback: () => void;
-    onAvatarUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onDocumentUpload: (
-        category: EmployeeDocumentCategory,
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => void;
-    onRemoveDocument: (category: EmployeeDocumentCategory) => void;
-    onFormatIban: () => void;
-    onAddDependent: () => void;
-    onUpdateDependent: <K extends keyof EmployeeDependent>(
-        index: number,
-        key: K,
-        value: EmployeeDependent[K]
-    ) => void;
-    onDependentDocUpload: (index: number, e: React.ChangeEvent<HTMLInputElement>) => void;
-    onRemoveDependentDoc: (index: number) => void;
-    onRemoveDependent: (index: number) => void;
-    onSave: (saveAsDraft: boolean) => void;
-    onCancel: () => void;
+    isOpen: boolean;
+    mode: EmployeeFormMode;
+    employee?: any | null;
+    onClose: () => void;
+    onSuccess?: () => void;
+    onModeChange?: (mode: EmployeeFormMode) => void;
 }
 
-export const EmployeeForm: React.FC<EmployeeFormProps> = ({
-    isEditMode,
-    form,
-    errors,
-    currentStep,
-    highestVisitedStep,
-    activeDocSubTab,
-    uploadFeedback,
-    composedNameEn,
-    composedNameAr,
-    calculatedSalary,
-    calculatedIqamaStatus,
-    liveCompletionPercentage,
-    liveCompletion,
-    departments,
-    designations,
-    branches,
-    roles,
-    linkedSecurityGroup,
-    eligibleManagers,
-    religionAddons,
-    jobTitleAddons,
-    jobGradeAddons,
-    bankAddons,
-    isSubmitting = false,
-    onUpdateField,
-    onStepClick,
-    onNextStep,
-    onPrevStep,
-    onActiveDocSubTabChange,
-    onClearUploadFeedback,
-    onAvatarUpload,
-    onDocumentUpload,
-    onRemoveDocument,
-    onFormatIban,
-    onAddDependent,
-    onUpdateDependent,
-    onDependentDocUpload,
-    onRemoveDependentDoc,
-    onRemoveDependent,
-    onSave,
-    onCancel,
-}) => {
-    const { t, i18n } = useTranslation();
-    const isRtl = i18n.dir() === 'rtl' || i18n.language?.startsWith('ar');
+const extractItems = (response: any): any[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.results)) return response.results;
+    if (Array.isArray(response?.data?.items)) return response.data.items;
+    if (Array.isArray(response?.data?.results)) return response.data.results;
+    return [];
+};
 
-    const stepsMeta: Array<{
-        index: WizardStepIndex;
-        key: 'personal' | 'employment' | 'documents' | 'dependents';
-        title: string;
-        desc: string;
-        icon: React.ElementType;
-        complete: boolean;
-    }> = [
+const toDateInput = (value: unknown): string | undefined => {
+    if (!value) return undefined;
+    const dateValue = String(value);
+    return dateValue.length >= 10 ? dateValue.slice(0, 10) : undefined;
+};
+
+const getErrorMessage = (error: any, fallback: string): string => {
+    const message = error?.response?.data?.message || error?.message;
+    return Array.isArray(message) ? message.join(", ") : message || fallback;
+};
+
+const getUserName = (item: any): string => {
+    const englishName = [
+        item?.userAttach?.first_name_En,
+        item?.userAttach?.secend_name_En,
+        item?.userAttach?.last_name_En,
+    ].filter(Boolean).join(" ");
+
+    const arabicName = [
+        item?.userAttach?.first_name_Ar,
+        item?.userAttach?.secend_name_Ar,
+        item?.userAttach?.last_name_Ar,
+    ].filter(Boolean).join(" ");
+
+    return englishName || arabicName || item?.email || item?.personal_email || String(item?.id || "");
+};
+
+const FormInput: React.FC<FormInputProps> = ({ field, register, errors, disabled }) => {
+    const fieldError = errors[field.name];
+    const errorMessage = typeof fieldError?.message === "string" ? fieldError.message : undefined;
+
+    if (field.type === "boolean") {
+        return (
+            <div>
+                <label htmlFor={String(field.name)} className="mb-1 block text-xs font-semibold text-[#0D0D0D]">
+                    {field.label}
+                </label>
+
+                <select
+                    id={String(field.name)}
+                    disabled={disabled}
+                    {...register(field.name)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-xs text-[#0D0D0D] outline-none focus:border-[#037F8C] focus:ring-1 focus:ring-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50 ${errorMessage ? "border-[#DC2626]" : "border-[#E5E0D8]"}`}
+                >
+                    <option value="">غير محدد</option>
+                    <option value="true">نعم</option>
+                    <option value="false">لا</option>
+                </select>
+
+                {errorMessage && <p className="mt-1 text-[11px] font-medium text-[#DC2626]">{errorMessage}</p>}
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <label htmlFor={String(field.name)} className="mb-1 block text-xs font-semibold text-[#0D0D0D]">
+                {field.label}
+            </label>
+
+            <input
+                id={String(field.name)}
+                type={field.type || "text"}
+                step={field.step}
+                disabled={disabled}
+                placeholder={field.placeholder}
+                {...register(field.name)}
+                className={`w-full rounded-lg border bg-white px-3 py-2 text-xs text-[#0D0D0D] placeholder-[#857E74] outline-none focus:border-[#037F8C] focus:ring-1 focus:ring-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50 ${errorMessage ? "border-[#DC2626]" : "border-[#E5E0D8]"}`}
+            />
+
+            {errorMessage && <p className="mt-1 text-[11px] font-medium text-[#DC2626]">{errorMessage}</p>}
+        </div>
+    );
+};
+
+const PERSONAL_FIELDS: FieldConfig[] = [
+    { name: "first_name_En", label: "الاسم الأول بالإنجليزية" },
+    { name: "secend_name_En", label: "الاسم الثاني بالإنجليزية" },
+    { name: "last_name_En", label: "اسم العائلة بالإنجليزية" },
+    { name: "first_name_Ar", label: "الاسم الأول بالعربية" },
+    { name: "secend_name_Ar", label: "الاسم الثاني بالعربية" },
+    { name: "last_name_Ar", label: "اسم العائلة بالعربية" },
+    { name: "email", label: "البريد الإلكتروني للعمل", type: "email", placeholder: "employee@company.com" },
+    { name: "personal_email", label: "البريد الإلكتروني الشخصي", type: "email", placeholder: "personal@example.com" },
+    { name: "phone_number", label: "رقم الهاتف", placeholder: "05xxxxxxxx" },
+    { name: "nationality", label: "الجنسية" },
+    { name: "religion", label: "الديانة" },
+];
+
+const EMPLOYMENT_FIELDS: FieldConfig[] = [
+    { name: "job_title", label: "المسمى الوظيفي النصي" },
+    { name: "joining_date", label: "تاريخ الانضمام", type: "date" },
+    { name: "job_grade", label: "الدرجة الوظيفية" },
+    { name: "contract_type", label: "نوع العقد" },
+    { name: "probation_period", label: "فترة التجربة" },
+    { name: "employment_type", label: "نوع التوظيف" },
+];
+
+const SALARY_FIELDS: FieldConfig[] = [
+    { name: "basic_pay", label: "الراتب الأساسي", type: "number", step: "0.01" },
+    { name: "housing_allows", label: "بدل السكن", type: "number", step: "0.01" },
+    { name: "transport_allows", label: "بدل المواصلات", type: "number", step: "0.01" },
+    { name: "food_allows", label: "بدل الطعام", type: "number", step: "0.01" },
+    { name: "other_allows", label: "البدلات الأخرى", type: "number", step: "0.01" },
+    { name: "gross_salary", label: "إجمالي الراتب", type: "number", step: "0.01" },
+    { name: "net_salary", label: "صافي الراتب", type: "number", step: "0.01" },
+];
+
+const IQAMA_FIELDS: FieldConfig[] = [
+    { name: "iqama_ID", label: "رقم الإقامة" },
+    { name: "iqama_profession", label: "مهنة الإقامة" },
+    { name: "iqama_ID_expiry", label: "تاريخ انتهاء الإقامة", type: "date" },
+    { name: "work_permit_no", label: "رقم تصريح العمل", type: "number" },
+    { name: "work_permit_expiry", label: "تاريخ انتهاء تصريح العمل", type: "date" },
+    { name: "iqama_url_front", label: "رابط صورة الإقامة الأمامية" },
+    { name: "iqama_url_back", label: "رابط صورة الإقامة الخلفية" },
+];
+
+const BANK_FIELDS: FieldConfig[] = [
+    { name: "bank_name", label: "اسم البنك" },
+    { name: "account_holder_name", label: "اسم صاحب الحساب" },
+    { name: "IBAN_number", label: "رقم IBAN", type: "number" },
+    { name: "IFSC_code", label: "كود IFSC" },
+];
+
+const HEALTH_FIELDS: FieldConfig[] = [
+    { name: "health_insurance", label: "فئة أو شركة التأمين الصحي" },
+    { name: "health_insurance_number", label: "رقم التأمين الصحي" },
+    { name: "insurance_expiry", label: "تاريخ انتهاء التأمين", type: "date" },
+    { name: "health_card", label: "يمتلك بطاقة صحية", type: "boolean" },
+    { name: "health_card_number", label: "رقم البطاقة الصحية" },
+    { name: "health_card_expiry", label: "تاريخ انتهاء البطاقة الصحية", type: "date" },
+];
+
+const PASSPORT_FIELDS: FieldConfig[] = [
+    { name: "passport_number", label: "رقم جواز السفر" },
+    { name: "passport_issue", label: "تاريخ إصدار جواز السفر", type: "date" },
+    { name: "passport_expiry", label: "تاريخ انتهاء جواز السفر", type: "date" },
+    { name: "place_of_issue", label: "مكان الإصدار" },
+];
+
+const VISA_FIELDS: FieldConfig[] = [
+    { name: "visa_number", label: "رقم التأشيرة" },
+    { name: "visa_type", label: "نوع التأشيرة" },
+    { name: "visa_issue", label: "تاريخ إصدار التأشيرة", type: "date" },
+    { name: "visa_expiry", label: "تاريخ انتهاء التأشيرة", type: "date" },
+];
+
+const CONTRACT_FIELDS: FieldConfig[] = [
+    { name: "contract_number", label: "رقم العقد" },
+    { name: "contract_end", label: "تاريخ انتهاء العقد", type: "date" },
+];
+
+const DRIVING_FIELDS: FieldConfig[] = [
+    { name: "driving_license_number", label: "رقم رخصة القيادة" },
+    { name: "driving_license_validity", label: "صلاحية رخصة القيادة" },
+];
+
+const SUBSCRIPTION_FIELDS: FieldConfig[] = [
+    { name: "GOSI_registration", label: "مسجل في GOSI", type: "boolean" },
+    { name: "GOSI_registration_number", label: "رقم تسجيل GOSI", type: "number" },
+    { name: "mudad_registration", label: "مسجل في مدد", type: "boolean" },
+    { name: "mudad_registration_number", label: "رقم تسجيل مدد", type: "number" },
+];
+
+const DOCUMENT_TABS: Array<{ id: DocumentTab; label: string }> = [
+    { id: "salary", label: "الراتب" },
+    { id: "iqama", label: "الإقامة" },
+    { id: "bank", label: "البنك" },
+    { id: "health", label: "التأمين الصحي" },
+    { id: "passport", label: "جواز السفر" },
+    { id: "visa", label: "التأشيرة" },
+    { id: "contract", label: "العقد" },
+    { id: "driving", label: "رخصة القيادة" },
+    { id: "subscription", label: "الاشتراكات" },
+];
+
+export const EmployeeForm: React.FC<EmployeeFormProps> = ({ isOpen, mode, employee = null, onClose, onSuccess, onModeChange }) => {
+    const { t, i18n } = useTranslation();
+    const queryClient = useQueryClient();
+    const id = employee?.id ? String(employee.id) : undefined;
+    // console.log('employee', employee);
+
+    const isRtl = i18n.dir() === "rtl" || i18n.language?.startsWith("ar");
+    const isViewMode = mode === "view";
+    const isUpdateMode = mode === "update";
+
+    const [currentStep, setCurrentStep] = useState<WizardStepIndex>(0);
+    const [highestVisitedStep, setHighestVisitedStep] = useState<WizardStepIndex>(mode === "create" ? 0 : 3);
+    const [activeDocumentTab, setActiveDocumentTab] = useState<DocumentTab>("salary");
+
+    const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<CreateEmployeeContractInput, any, CreateEmployeeContractPayload>({
+        resolver: zodResolver(createEmployeeContractSchema),
+        defaultValues: {
+            gender: "",
+            maritalStatus: "",
+            dependents: false,
+            GOSI_registration: false,
+            mudad_registration: false,
+            health_card: false,
+        },
+    });
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        setCurrentStep(0);
+        setActiveDocumentTab("salary");
+
+        if (mode === "create") {
+            reset({ gender: "", maritalStatus: "", dependents: false, GOSI_registration: false, mudad_registration: false, health_card: false });
+            setHighestVisitedStep(0);
+            return;
+        }
+
+        reset({});
+
+        setValue("department_id", employee?.employeeContract?.department?.id ?? "");
+        setValue("designation_id", employee?.employeeContract?.designation?.id ?? "");
+        setValue("reportingTo_id", employee?.employeeContract?.reportingTo?.id ?? "");
+        setValue("branch_id", employee?.branch?.id ?? "");
+        setValue("role_id", employee?.role?.id ?? "");
+
+        setValue("email", employee?.email ?? "");
+        setValue("personal_email", employee?.personal_email ?? "");
+        setValue("phone_number", employee?.phone_number ?? "");
+
+        setValue("first_name_Ar", employee?.userAttach?.first_name_Ar ?? "");
+        setValue("first_name_En", employee?.userAttach?.first_name_En ?? "");
+        setValue("last_name_Ar", employee?.userAttach?.last_name_Ar ?? "");
+        setValue("last_name_En", employee?.userAttach?.last_name_En ?? "");
+        setValue("secend_name_Ar", employee?.userAttach?.secend_name_Ar ?? "");
+        setValue("secend_name_En", employee?.userAttach?.secend_name_En ?? "");
+        setValue("nationality", employee?.userAttach?.nationality ?? "");
+        setValue("religion", employee?.userAttach?.religion ?? "");
+        setValue("gender", employee?.userAttach?.gender ?? "");
+        setValue("maritalStatus", employee?.userAttach?.marital_status ?? "");
+        setValue("dependents", Boolean(employee?.employeeContract?.dependents ?? employee?.dependents ?? false));
+
+        setValue("job_title", employee?.employeeContract?.job_title ?? "");
+        setValue("joining_date", toDateInput(employee?.employeeContract?.joining_date) ?? "");
+        setValue("job_grade", employee?.employeeContract?.job_grade ?? "");
+        setValue("contract_type", employee?.employeeContract?.contract_type ?? "");
+        setValue("probation_period", employee?.employeeContract?.probation_period ?? "");
+        setValue("employment_type", employee?.employeeContract?.employment_type ?? "");
+
+        setValue("basic_pay", employee?.employeeContract?.basic_pay ?? "");
+        setValue("housing_allows", employee?.employeeContract?.housing_allows ?? "");
+        setValue("transport_allows", employee?.employeeContract?.transport_allows ?? "");
+        setValue("food_allows", employee?.employeeContract?.food_allows ?? "");
+        setValue("other_allows", employee?.employeeContract?.other_allows ?? "");
+        setValue("gross_salary", employee?.employeeContract?.gross_salary ?? "");
+        setValue("net_salary", employee?.employeeContract?.net_salary ?? "");
+
+        setValue("iqama_profession", employee?.employeeContract?.iqama_profession ?? "");
+        setValue("iqama_ID", employee?.employeeContract?.iqama_ID ?? "");
+        setValue("iqama_ID_expiry", toDateInput(employee?.employeeContract?.iqama_ID_expiry) ?? "");
+        setValue("work_permit_no", employee?.employeeContract?.work_permit_no ?? "");
+        setValue("work_permit_expiry", toDateInput(employee?.employeeContract?.work_permit_expiry) ?? "");
+        setValue("iqama_url_front", employee?.employeeContract?.iqama_url_front ?? "");
+        setValue("iqama_url_back", employee?.employeeContract?.iqama_url_back ?? "");
+
+        setValue("bank_name", employee?.employeeContract?.bank_name ?? "");
+        setValue("account_holder_name", employee?.employeeContract?.account_holder_name ?? "");
+        setValue("IBAN_number", employee?.employeeContract?.IBAN_number ?? "");
+        setValue("IFSC_code", employee?.employeeContract?.IFSC_code ?? "");
+
+        setValue("health_insurance", employee?.employeeContract?.health_insurance ?? "");
+        setValue("health_insurance_number", employee?.employeeContract?.health_insurance_number ?? "");
+        setValue("insurance_expiry", toDateInput(employee?.employeeContract?.insurance_expiry) ?? "");
+        setValue("health_card", Boolean(employee?.employeeContract?.health_card));
+        setValue("health_card_number", employee?.employeeContract?.health_card_number ?? "");
+        setValue("health_card_expiry", toDateInput(employee?.employeeContract?.health_card_expiry) ?? "");
+
+        setValue("passport_number", employee?.employeeContract?.passport_number ?? "");
+        setValue("passport_expiry", toDateInput(employee?.employeeContract?.passport_expiry) ?? "");
+        setValue("passport_issue", toDateInput(employee?.employeeContract?.passport_issue) ?? "");
+        setValue("place_of_issue", employee?.employeeContract?.place_of_issue ?? "");
+
+        setValue("visa_number", employee?.employeeContract?.visa_number ?? "");
+        setValue("visa_expiry", toDateInput(employee?.employeeContract?.visa_expiry) ?? "");
+        setValue("visa_issue", toDateInput(employee?.employeeContract?.visa_issue) ?? "");
+        setValue("visa_type", employee?.employeeContract?.visa_type ?? "");
+
+        setValue("contract_number", employee?.employeeContract?.contract_number ?? "");
+        setValue("contract_end", toDateInput(employee?.employeeContract?.contract_end) ?? "");
+        setValue("driving_license_number", employee?.employeeContract?.driving_license_number ?? "");
+        setValue("driving_license_validity", employee?.employeeContract?.driving_license_validity ?? "");
+
+        setValue("GOSI_registration", Boolean(employee?.employeeContract?.GOSI_registration));
+        setValue("GOSI_registration_number", employee?.employeeContract?.GOSI_registration_number ?? "");
+        setValue("mudad_registration", Boolean(employee?.employeeContract?.mudad_registration));
+        setValue("mudad_registration_number", employee?.employeeContract?.mudad_registration_number ?? "");
+        setHighestVisitedStep(3);
+    }, [isOpen, mode, employee, reset, setValue]);
+
+    const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery({
+        queryKey: ["employee-form", "departments"],
+        queryFn: () => umsApi.getDepartments({ page: 1, limit: 100 }),
+    });
+
+    const { data: designationsResponse, isLoading: isLoadingDesignations } = useQuery({
+        queryKey: ["employee-form", "designations"],
+        queryFn: () => umsApi.getDesignations({ page: 1, limit: 100 }),
+    });
+
+    const { data: rolesResponse, isLoading: isLoadingRoles } = useQuery({
+        queryKey: ["employee-form", "roles"],
+        queryFn: () => umsApi.getRoles({ page: 1, limit: 100 }),
+    });
+
+    const { data: branchesResponse, isLoading: isLoadingBranches } = useQuery({
+        queryKey: ["employee-form", "branches"],
+        queryFn: () => umsApi.getBranchs({ page: 1, limit: 100 }),
+    });
+
+    const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
+        queryKey: ["employee-form", "users"],
+        queryFn: () => userApi.getUsers({ page: 1, limit: 100 }),
+    });
+
+    const departments = useMemo(() => extractItems(departmentsResponse), [departmentsResponse]);
+    const designations = useMemo(() => extractItems(designationsResponse), [designationsResponse]);
+    const roles = useMemo(() => extractItems(rolesResponse), [rolesResponse]);
+    const branches = useMemo(() => extractItems(branchesResponse), [branchesResponse]);
+    const reportingUsers = useMemo(() => extractItems(usersResponse), [usersResponse]);
+
+    const basicPay = Number(watch("basic_pay") || 0);
+    const housingAllowance = Number(watch("housing_allows") || 0);
+    const transportAllowance = Number(watch("transport_allows") || 0);
+    const foodAllowance = Number(watch("food_allows") || 0);
+    const otherAllowance = Number(watch("other_allows") || 0);
+
+    const calculatedGrossSalary = basicPay + housingAllowance + transportAllowance + foodAllowance + otherAllowance;
+
+    const createMutation = useMutation({
+        mutationFn: (data: CreateEmployeeContractPayload) => authApi.createEmployee(data),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["ums", "employees"] });
+            await queryClient.invalidateQueries({ queryKey: ["employee-form", "users"] });
+
+            toast.success(t("ums.employees.feedback.created", { defaultValue: "تم إنشاء الموظف بنجاح" }));
+            onSuccess?.();
+            onClose();
+        },
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error, t("common.somethingWentWrong", { defaultValue: "حدث خطأ أثناء إنشاء الموظف" })));
+        },
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: async (data: CreateEmployeeContractPayload) => {
+            if (!id) throw new Error("معرف الموظف غير موجود");
+            return userApi.updateEmployee(id, data);
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["ums", "employees"] });
+            await queryClient.invalidateQueries({ queryKey: ["employee-form", "employee", id] });
+            await queryClient.invalidateQueries({ queryKey: ["ums", "employee", id] });
+
+            toast.success(t("ums.employees.feedback.updated", { defaultValue: "تم تحديث بيانات الموظف بنجاح" }));
+            onSuccess?.();
+            onClose();
+        },
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error, t("common.somethingWentWrong", { defaultValue: "حدث خطأ أثناء تحديث الموظف" })));
+        },
+    });
+
+    const isSaving = createMutation.isPending || updateMutation.isPending;
+    const isFormDisabled = isViewMode || isSaving;
+    const pageTitle = mode === "create" ? "إضافة موظف جديد" : mode === "update" ? "تعديل بيانات الموظف" : "عرض بيانات الموظف";
+    const pageDescription = mode === "create" ? "أدخل بيانات الموظف والعقد ثم راجع البيانات قبل الحفظ." : mode === "update" ? "عدّل بيانات الموظف والعقد ثم احفظ التغييرات." : "عرض بيانات الموظف والعقد دون إمكانية التعديل.";
+
+    const steps = [
         {
-            index: 0,
-            key: 'personal',
-            title: isRtl ? t('ums.employees.wizard.steps.personal.title') : 'Personal Info',
-            desc: t('ums.employees.wizard.steps.personal.subtitle'),
+            index: 0 as WizardStepIndex,
+            title: "البيانات الشخصية",
+            description: "بيانات الموظف الأساسية وبيانات التواصل",
             icon: User,
-            complete: Boolean(liveCompletion?.personalComplete),
         },
         {
-            index: 1,
-            key: 'employment',
-            title: isRtl ? t('ums.employees.wizard.steps.employment.title') : 'Employment Info',
-            desc: t('ums.employees.wizard.steps.employment.subtitle'),
+            index: 1 as WizardStepIndex,
+            title: "البيانات الوظيفية",
+            description: "القسم والمسمى والفرع والعقد",
             icon: Briefcase,
-            complete: Boolean(liveCompletion?.employmentComplete),
         },
         {
-            index: 2,
-            key: 'documents',
-            title: isRtl ? t('ums.employees.wizard.steps.documents.title') : 'Documents',
-            desc: t('ums.employees.wizard.steps.documents.subtitle'),
+            index: 2 as WizardStepIndex,
+            title: "الوثائق والبيانات المالية",
+            description: "الراتب والإقامة والبنك والتأمين",
             icon: FileText,
-            complete: Boolean(
-                liveCompletion?.salaryComplete && liveCompletion?.documentsComplete
-            ),
         },
         {
-            index: 3,
-            key: 'dependents',
-            title: isRtl ? t('ums.employees.wizard.steps.dependents.title') : 'Dependents Info',
-            desc: t('ums.employees.wizard.steps.dependents.subtitle'),
+            index: 3 as WizardStepIndex,
+            title: "المراجعة والخيارات",
+            description: "مراجعة البيانات وحفظ الموظف",
             icon: HeartHandshake,
-            complete: form.dependents.length > 0,
         },
     ];
 
-    const shouldShowDocSection = (section: Exclude<DocumentSubTab, 'all'>): boolean => {
-        if (activeDocSubTab === 'all') return true;
-        if (
-            (section === 'account' || section === 'bank') &&
-            (activeDocSubTab === 'account' || activeDocSubTab === 'bank')
-        ) {
-            return true;
+    const handleStepClick = (step: WizardStepIndex) => {
+        if (step <= highestVisitedStep) {
+            setCurrentStep(step);
         }
-        return activeDocSubTab === section;
     };
 
-    const renderDocumentAttachmentControl = (category: EmployeeDocumentCategory) => {
-        const currentAttachment = form.documentAttachments[category];
-        const inputId = `doc-upload-${category}`;
+    const handleNext = (event?: React.MouseEvent<HTMLButtonElement>) => {
+        event?.preventDefault();
+        event?.stopPropagation();
 
+        if (currentStep >= 3) return;
+
+        const nextStep = (currentStep + 1) as WizardStepIndex;
+
+        setCurrentStep(nextStep);
+        setHighestVisitedStep((previous) => Math.max(previous, nextStep) as WizardStepIndex);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handlePrevious = () => {
+        if (currentStep <= 0) return;
+
+        setCurrentStep((currentStep - 1) as WizardStepIndex);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const renderFields = (fields: FieldConfig[]) => {
         return (
-            <div className="pt-3 mt-3 border-t border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2 text-xs text-[#6E6862]">
-                    <Paperclip size={13} className="text-[#857E74] shrink-0" />
-                    {currentAttachment ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EAF3EC] text-[#037F8C] font-medium border border-[#037F8C]/20">
-                                <FileCheck2 size={12} />
-                                <span>{currentAttachment.fileName}</span>
-                            </span>
-                            <span className="text-[11px] font-mono text-[#857E74]" dir="ltr">
-                                ({formatFileSize(currentAttachment.fileSize)} ·{' '}
-                                {currentAttachment.uploadedAt})
-                            </span>
-                        </div>
-                    ) : (
-                        <span>
-                            {t('ums.employees.wizard.documents.attachmentLabel')}
-                        </span>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <label
-                        htmlFor={inputId}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
-                    >
-                        <Upload size={13} />
-                        <span>
-                            {currentAttachment
-                                ? t('ums.employees.wizard.documents.replaceDocument')
-                                : t('ums.employees.wizard.documents.uploadDocument')}
-                        </span>
-                    </label>
-                    <input
-                        id={inputId}
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                        onChange={(e) => onDocumentUpload(category, e)}
-                        className="hidden"
-                    />
-                    {currentAttachment && (
-                        <button
-                            type="button"
-                            onClick={() => onRemoveDocument(category)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#DC2626] hover:bg-[#FEF2F2] transition-colors cursor-pointer"
-                        >
-                            <Trash2 size={13} />
-                            <span>{t('ums.employees.wizard.documents.removeDocument')}</span>
-                        </button>
-                    )}
-                </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {fields.map((field) => (
+                    <FormInput key={String(field.name)} field={field} register={register} errors={errors} disabled={isFormDisabled} />
+                ))}
             </div>
         );
     };
 
-    const getDocTabLabel = (tab: DocumentSubTab): string => {
-        if (!isRtl) {
-            return tab === 'all'
-                ? 'All Sections'
-                : tab === 'salary'
-                ? 'Salary Details'
-                : tab === 'iqama'
-                ? 'Iqama'
-                : tab === 'account' || tab === 'bank'
-                ? 'Account'
-                : tab === 'health_insurance'
-                ? 'Health Insurance'
-                : tab === 'health_card'
-                ? 'Health Card'
-                : tab === 'passport'
-                ? 'Passport'
-                : tab === 'visa'
-                ? 'Visa'
-                : tab === 'contract'
-                ? 'Contract'
-                : tab === 'driving_license'
-                ? 'Driving License'
-                : 'Subscription';
-        }
-        const i18nTabKey = tab === 'account' ? 'bank' : tab;
-        return t(`ums.employees.wizard.documents.subTabs.${i18nTabKey}`);
+    const renderApiSelect = (
+        name: "department_id" | "designation_id" | "reportingTo_id" | "branch_id" | "role_id",
+        label: string,
+        options: any[],
+        loading: boolean,
+    ) => {
+        const error = errors[name];
+        const errorMessage = typeof error?.message === "string" ? error.message : undefined;
+
+        return (
+            <div>
+                <label htmlFor={name} className="mb-1 block text-xs font-semibold text-[#0D0D0D]">
+                    {label}
+                </label>
+
+                <select
+                    id={name}
+                    disabled={loading || isFormDisabled}
+                    {...register(name)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-xs text-[#0D0D0D] outline-none focus:border-[#037F8C] focus:ring-1 focus:ring-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50 ${errorMessage ? "border-[#DC2626]" : "border-[#E5E0D8]"}`}
+                >
+                    <option value="">{loading ? "جارٍ التحميل..." : `اختر ${label}`}</option>
+
+                    {options.map((option) => (
+                        <option key={option.id} value={option.id}>
+                            {name === "reportingTo_id" ? getUserName(option) : option.name || option.nameEn || option.titleEn || option.email || option.codeName || String(option.id)}
+                        </option>
+                    ))}
+                </select>
+
+                {errorMessage && <p className="mt-1 text-[11px] font-medium text-[#DC2626]">{errorMessage}</p>}
+            </div>
+        );
     };
 
+    const renderDocumentFields = () => {
+        if (activeDocumentTab === "salary") return renderFields(SALARY_FIELDS);
+        if (activeDocumentTab === "iqama") return renderFields(IQAMA_FIELDS);
+        if (activeDocumentTab === "bank") return renderFields(BANK_FIELDS);
+        if (activeDocumentTab === "health") return renderFields(HEALTH_FIELDS);
+        if (activeDocumentTab === "passport") return renderFields(PASSPORT_FIELDS);
+        if (activeDocumentTab === "visa") return renderFields(VISA_FIELDS);
+        if (activeDocumentTab === "contract") return renderFields(CONTRACT_FIELDS);
+        if (activeDocumentTab === "driving") return renderFields(DRIVING_FIELDS);
+        return renderFields(SUBSCRIPTION_FIELDS);
+    };
+
+    const onSubmit = (data: CreateEmployeeContractPayload) => {
+        const payload: CreateEmployeeContractPayload = {
+            ...data,
+            gross_salary: data.gross_salary ?? calculatedGrossSalary,
+            net_salary: data.net_salary ?? data.gross_salary ?? calculatedGrossSalary,
+        };
+
+        if (isUpdateMode) {
+            updateMutation.mutate(payload);
+            return;
+        }
+
+        if (mode === "create") createMutation.mutate(payload);
+    };
+
+    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        if (currentStep < 3) {
+            event.preventDefault();
+            event.stopPropagation();
+            handleNext();
+            return;
+        }
+
+        handleSubmit(onSubmit)(event);
+    };
+
+    if (!isOpen) return null;
+
     return (
-        <div className="space-y-6 text-start">
-            {/* Upload or Validation Feedback Banner */}
-            {uploadFeedback && (
-                <div
-                    className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
-                        uploadFeedback.type === 'error'
-                            ? 'bg-[#FEF2F2] border-[#FECACA] text-[#DC2626]'
-                            : 'bg-[#EAF3EC] border-[#037F8C]/20 text-[#037F8C]'
-                    }`}
-                >
-                    <div className="flex items-center gap-2 text-xs font-medium">
-                        {uploadFeedback.type === 'error' ? (
-                            <AlertTriangle size={15} />
-                        ) : (
-                            <CheckCircle2 size={15} />
-                        )}
-                        <span>{uploadFeedback.message}</span>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClearUploadFeedback}
-                        className="p-1 rounded hover:bg-black/5 cursor-pointer"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
-
-            {Object.keys(errors).length > 0 && (
-                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#FEF2F2] border border-[#DC2626]/30 text-xs text-[#DC2626]">
-                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                        <p className="font-bold">
-                            {t('ums.employees.wizard.validation.fixErrorsBanner')}
-                        </p>
-                        <ul className="list-disc list-inside space-y-0.5 text-[11px]">
-                            {Object.values(errors).map((err, i) => (
-                                <li key={i}>{err}</li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-            )}
-
-            {/* 4-Step Stepper Navigation Bar */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {stepsMeta.map((s) => {
-                        const StepIcon = s.icon;
-                        const isActive = currentStep === s.index;
-                        const isCompleted = currentStep > s.index;
-                        const isAccessible = isEditMode || s.index <= highestVisitedStep + 1;
-
-                        return (
-                            <button
-                                key={s.index}
-                                type="button"
-                                disabled={!isAccessible}
-                                onClick={() => onStepClick(s.index)}
-                                className={`flex items-start gap-3 p-3 rounded-xl border text-start transition-all ${
-                                    isActive
-                                        ? 'bg-[#037F8C] text-white border-[#037F8C] shadow-xs'
-                                        : isCompleted
-                                        ? 'bg-[#EAF3EC]/60 text-[#0D0D0D] border-[#037F8C]/30 hover:bg-[#EAF3EC]'
-                                        : 'bg-[#FAF8F5] text-[#6E6862] border-[#E5E0D8] hover:text-[#0D0D0D]'
-                                } ${isAccessible ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'}`}
-                            >
-                                <div
-                                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-mono text-xs font-bold ${
-                                        isActive
-                                            ? 'bg-white/15 text-white'
-                                            : isCompleted
-                                            ? 'bg-[#037F8C] text-white'
-                                            : 'bg-white border border-[#E5E0D8] text-[#857E74]'
-                                    }`}
-                                >
-                                    {isCompleted ? <Check size={14} /> : <StepIcon size={15} />}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-2xs" role="dialog" aria-modal="true">
+            <div className="max-h-[95vh] w-full max-w-7xl overflow-y-auto rounded-2xl bg-[#FAF8F5] p-4 shadow-2xl sm:p-6">
+                <form onSubmit={handleFormSubmit} className="space-y-6 text-start" noValidate>
+                    <div className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h1 className="text-xl font-bold text-[#0D0D0D]">{pageTitle}</h1>
+                                    {mode !== "create" && employee?.codeName && <span className="rounded-md border border-[#E5E0D8] bg-[#FAF8F5] px-2 py-0.5 font-mono text-[11px] font-bold text-[#037F8C]">{employee.codeName}</span>}
                                 </div>
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                        <span
-                                            className={`text-[10px] font-mono uppercase tracking-wider ${
-                                                isActive ? 'text-white/75' : 'text-[#857E74]'
-                                            }`}
-                                        >
-                                            0{s.index + 1}
-                                        </span>
-                                    </div>
-                                    <p
-                                        className={`text-xs font-bold truncate ${
-                                            isActive ? 'text-white' : 'text-[#0D0D0D]'
-                                        }`}
-                                    >
-                                        {s.title}
-                                    </p>
-                                    <p
-                                        className={`text-[11px] truncate mt-0.5 ${
-                                            isActive ? 'text-white/80' : 'text-[#6E6862]'
-                                        }`}
-                                    >
-                                        {s.desc}
-                                    </p>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
 
-            {/* =================================================================== */}
-            {/* 1. PERSONAL INFO                                                    */}
-            {/* =================================================================== */}
-            {currentStep === 0 && (
-                <div className="space-y-6">
-                    {/* Profile Picture Upload Card */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                {form.avatarUrl ? (
-                                    <img
-                                        src={form.avatarUrl}
-                                        alt={composedNameEn || form.code}
-                                        className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E0D8] shrink-0"
-                                    />
-                                ) : (
-                                    <div className="w-16 h-16 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-lg shrink-0">
-                                        {getInitials(composedNameEn, composedNameAr)}
-                                    </div>
-                                )}
-                                <div>
-                                    <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                        {t('ums.employees.wizard.personal.photoSectionTitle')}
-                                    </h3>
-                                    <p className="text-xs text-[#6E6862] mt-0.5">
-                                        {t('ums.employees.wizard.personal.photoSectionDesc')}
-                                    </p>
-                                    {form.avatarMeta && (
-                                        <p className="text-[11px] font-mono text-[#037F8C] mt-1">
-                                            {form.avatarMeta.fileName} (
-                                            {formatFileSize(form.avatarMeta.fileSize)})
-                                        </p>
-                                    )}
-                                </div>
+                                <p className="mt-1 text-xs text-[#6E6862]">
+                                    {pageDescription}
+                                </p>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                                <label
-                                    htmlFor="employee-avatar-upload"
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer"
-                                >
-                                    <Upload size={14} />
-                                    <span>
-                                        {form.avatarUrl
-                                            ? t('ums.employees.wizard.personal.changePhoto')
-                                            : t('ums.employees.wizard.personal.uploadPhoto')}
-                                    </span>
-                                </label>
-                                <input
-                                    id="employee-avatar-upload"
-                                    type="file"
-                                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                                    onChange={onAvatarUpload}
-                                    className="hidden"
-                                />
-                                {form.avatarUrl && (
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="font-semibold text-[#037F8C]">
+                                    الخطوة {currentStep + 1} من 4
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            {steps.map((step) => {
+                                const Icon = step.icon;
+                                const isActive = currentStep === step.index;
+                                const isComplete = highestVisitedStep > step.index;
+                                const canOpen = step.index <= highestVisitedStep;
+
+                                return (
                                     <button
+                                        key={step.index}
                                         type="button"
-                                        onClick={() => {
-                                            onUpdateField('avatarUrl', '');
-                                            onUpdateField('avatarMeta', undefined);
-                                        }}
-                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold text-[#DC2626] hover:bg-[#FEF2F2] transition-colors cursor-pointer"
+                                        disabled={!canOpen || isSaving}
+                                        onClick={() => handleStepClick(step.index)}
+                                        className={`rounded-xl border p-3 text-start transition ${isActive ? "border-[#037F8C] bg-[#EAF3EC]" : isComplete ? "border-[#037F8C]/30 bg-white" : "border-[#E5E0D8] bg-[#FAF8F5]"} disabled:cursor-not-allowed disabled:opacity-60`}
                                     >
-                                        <Trash2 size={14} />
-                                        <span>
-                                            {t('ums.employees.wizard.personal.removePhoto')}
-                                        </span>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bilingual 4-Part Name Card */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-6">
-                        {/* English 4-part Name */}
-                        <div className="space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E0D8]">
-                                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                    {t('ums.employees.wizard.personal.englishNamesTitle')}
-                                </h3>
-                                {composedNameEn && (
-                                    <div className="text-xs text-[#6E6862]">
-                                        <span>
-                                            {t('ums.employees.wizard.personal.composedFullNameEn')}
-                                        </span>{' '}
-                                        <span className="font-bold text-[#037F8C]" dir="ltr">
-                                            {composedNameEn}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.firstNameEn')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.firstNameEn}
-                                        onChange={(e) =>
-                                            onUpdateField('firstNameEn', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.firstNameEnPlaceholder',
-                                            { defaultValue: 'Enter First Name (EN)' }
-                                        )}
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.firstNameEn
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.firstNameEn && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.firstNameEn}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.secondNameEn')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.secondNameEn}
-                                        onChange={(e) =>
-                                            onUpdateField('secondNameEn', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.secondNameEnPlaceholder',
-                                            { defaultValue: 'Enter Second Name (EN)' }
-                                        )}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.thirdNameEn')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.thirdNameEn}
-                                        onChange={(e) =>
-                                            onUpdateField('thirdNameEn', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.thirdNameEnPlaceholder',
-                                            { defaultValue: 'Enter Third Name (EN)' }
-                                        )}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.lastNameEn')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.lastNameEn}
-                                        onChange={(e) =>
-                                            onUpdateField('lastNameEn', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.lastNameEnPlaceholder',
-                                            { defaultValue: 'Enter Last Name (EN)' }
-                                        )}
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.lastNameEn
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.lastNameEn && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.lastNameEn}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Arabic 4-part Name */}
-                        <div className="space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E0D8]">
-                                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                    {t('ums.employees.wizard.personal.arabicNamesTitle')}
-                                </h3>
-                                {composedNameAr && (
-                                    <div className="text-xs text-[#6E6862]">
-                                        <span>
-                                            {t('ums.employees.wizard.personal.composedFullNameAr')}
-                                        </span>{' '}
-                                        <span className="font-bold text-[#037F8C]" dir="rtl">
-                                            {composedNameAr}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.firstNameAr')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="rtl"
-                                        value={form.firstNameAr}
-                                        onChange={(e) =>
-                                            onUpdateField('firstNameAr', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.firstNameArPlaceholder',
-                                            { defaultValue: 'أدخل الاسم الأول بالعربية' }
-                                        )}
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.firstNameAr
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.firstNameAr && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.firstNameAr}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.secondNameAr')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="rtl"
-                                        value={form.secondNameAr}
-                                        onChange={(e) =>
-                                            onUpdateField('secondNameAr', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.secondNameArPlaceholder',
-                                            { defaultValue: 'أدخل الاسم الثاني بالعربية' }
-                                        )}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.thirdNameAr')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="rtl"
-                                        value={form.thirdNameAr}
-                                        onChange={(e) =>
-                                            onUpdateField('thirdNameAr', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.thirdNameArPlaceholder',
-                                            { defaultValue: 'أدخل الاسم الثالث بالعربية' }
-                                        )}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.personal.lastNameAr')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="rtl"
-                                        value={form.lastNameAr}
-                                        onChange={(e) =>
-                                            onUpdateField('lastNameAr', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'ums.employees.wizard.lastNameArPlaceholder',
-                                            { defaultValue: 'أدخل اسم العائلة بالعربية' }
-                                        )}
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.lastNameAr
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.lastNameAr && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.lastNameAr}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Contact Coordinates & Demographic Attributes */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                        <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                            {t('ums.employees.wizard.personal.contactDemographicsTitle')}
-                        </h3>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Personal Email */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.personalEmail')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <input
-                                    type="email"
-                                    dir="ltr"
-                                    value={form.email}
-                                    onChange={(e) => onUpdateField('email', e.target.value)}
-                                    placeholder={t(
-                                        'ums.employees.wizard.personalEmailPlaceholder',
-                                        { defaultValue: 'Enter Personal Email' }
-                                    )}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                        errors.email
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                />
-                                {errors.email && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.email}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Work Email */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.workEmail')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <input
-                                    type="email"
-                                    dir="ltr"
-                                    value={form.workEmail}
-                                    onChange={(e) => onUpdateField('workEmail', e.target.value)}
-                                    placeholder={t('ums.employees.wizard.workEmailPlaceholder', {
-                                        defaultValue: 'Enter Official Work Email',
-                                    })}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                        errors.workEmail
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                />
-                                {errors.workEmail && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.workEmail}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Saudi Mobile Number */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.phone')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    dir="ltr"
-                                    value={form.phone}
-                                    onChange={(e) => onUpdateField('phone', e.target.value)}
-                                    placeholder={t('ums.employees.wizard.phonePlaceholder', {
-                                        defaultValue: 'Enter Phone Number (+966 5X XXX XXXX)',
-                                    })}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                        errors.phone
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                />
-                                <p className="text-[10px] text-[#857E74] mt-1">
-                                    {t('ums.employees.wizard.personal.phoneHint')}
-                                </p>
-                                {errors.phone && (
-                                    <p className="text-[11px] text-[#DC2626] mt-0.5">
-                                        {errors.phone}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Date of Birth (Gregorian) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.dobGregorian')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    dir="ltr"
-                                    value={form.dobGregorian}
-                                    onChange={(e) => {
-                                        const greg = e.target.value;
-                                        onUpdateField('dobGregorian', greg);
-                                        const approxHijri = gregorianToApproximateHijri(greg);
-                                        if (approxHijri) {
-                                            onUpdateField('dobHijri', approxHijri);
-                                        }
-                                    }}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                        errors.dobGregorian
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                />
-                                {errors.dobGregorian && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.dobGregorian}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Date of Birth (Hijri) */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1">
-                                    <label className="block text-xs font-semibold text-[#0D0D0D]">
-                                        {t('ums.employees.wizard.personal.dobHijri')}
-                                    </label>
-                                    {form.dobGregorian && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                onUpdateField(
-                                                    'dobHijri',
-                                                    gregorianToApproximateHijri(form.dobGregorian)
-                                                )
-                                            }
-                                            className="text-[10px] font-semibold text-[#037F8C] hover:underline inline-flex items-center gap-1 cursor-pointer"
-                                        >
-                                            <Sparkles size={10} />
-                                            <span>
-                                                {t('ums.employees.wizard.personal.syncHijri')}
-                                            </span>
-                                        </button>
-                                    )}
-                                </div>
-                                <input
-                                    type="text"
-                                    dir="ltr"
-                                    value={form.dobHijri}
-                                    onChange={(e) => onUpdateField('dobHijri', e.target.value)}
-                                    placeholder={t('ums.employees.wizard.dobHijriPlaceholder', {
-                                        defaultValue: '1412/08/15',
-                                    })}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                />
-                            </div>
-
-                            {/* Religion (Custom Addons) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.religion')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.religionId}
-                                    onChange={(e) => {
-                                        const selectedId = e.target.value;
-                                        const addon = religionAddons.find(
-                                            (r) => r.id === selectedId
-                                        );
-                                        onUpdateField('religionId', selectedId);
-                                        onUpdateField('religion', addon?.nameEn || '');
-                                    }}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.religionId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.personal.selectReligion')}
-                                    </option>
-                                    {religionAddons
-                                        .filter(
-                                            (r) =>
-                                                r.status === 'Active' || r.id === form.religionId
-                                        )
-                                        .map((rel) => (
-                                            <option key={rel.id} value={rel.id}>
-                                                {isRtl ? rel.nameAr : rel.nameEn}
-                                                {rel.status === 'Inactive'
-                                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.religionId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.religionId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Gender */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.gender')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.gender}
-                                    onChange={(e) =>
-                                        onUpdateField('gender', e.target.value as Gender)
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    {GENDERS.map((g) => (
-                                        <option key={g} value={g}>
-                                            {t(`ums.employees.genders.${g}`)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Marital Status */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.maritalStatus')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.maritalStatus}
-                                    onChange={(e) =>
-                                        onUpdateField(
-                                            'maritalStatus',
-                                            e.target.value as MaritalStatus
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    {MARITAL_STATUSES.map((ms) => (
-                                        <option key={ms} value={ms}>
-                                            {t(`ums.employees.maritalStatuses.${ms}`)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Citizenship */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.citizenship')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.citizenship}
-                                    onChange={(e) => {
-                                        const nextCit = e.target.value as Citizenship;
-                                        onUpdateField('citizenship', nextCit);
-                                        if (nextCit === 'Saudi') {
-                                            onUpdateField('nationality', 'Saudi Arabia');
-                                        } else if (form.nationality === 'Saudi Arabia') {
-                                            onUpdateField('nationality', 'Egypt');
-                                        }
-                                    }}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    {CITIZENSHIPS.map((cit) => (
-                                        <option key={cit} value={cit}>
-                                            {t(`ums.employees.citizenships.${cit}`)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Nationality */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.personal.nationality')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.nationality}
-                                    onChange={(e) => {
-                                        const nat = e.target.value;
-                                        onUpdateField('nationality', nat);
-                                        onUpdateField(
-                                            'citizenship',
-                                            nat === 'Saudi Arabia' ? 'Saudi' : 'Non-Saudi'
-                                        );
-                                    }}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.nationality
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.personal.selectNationality')}
-                                    </option>
-                                    {NATIONALITY_OPTIONS.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {isRtl ? opt.labelAr : opt.labelEn}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.nationality && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.nationality}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* =================================================================== */}
-            {/* 2. EMPLOYMENT INFO                                                  */}
-            {/* =================================================================== */}
-            {currentStep === 1 && (
-                <div className="space-y-6">
-                    {/* Organizational Placement */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                        <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                            {t('ums.employees.wizard.employment.orgPlacementTitle')}
-                        </h3>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Employee Code */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.employeeCode')}
-                                </label>
-                                <input
-                                    type="text"
-                                    dir="ltr"
-                                    value={form.code}
-                                    readOnly
-                                    className="w-full px-3 py-2 rounded-lg bg-[#EFECE6]/60 border border-[#E5E0D8] text-xs font-mono font-bold text-[#037F8C] cursor-not-allowed"
-                                />
-                            </div>
-
-                            {/* Employment Status */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.employmentStatus')}
-                                </label>
-                                <select
-                                    value={form.status}
-                                    onChange={(e) =>
-                                        onUpdateField('status', e.target.value as EmployeeStatus)
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    {(['Active', 'Inactive', 'Draft'] as EmployeeStatus[]).map(
-                                        (st) => (
-                                            <option key={st} value={st}>
-                                                {t(`ums.employees.statuses.${st}`)}
-                                            </option>
-                                        )
-                                    )}
-                                </select>
-                            </div>
-
-                            {/* Branch */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.branch')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.branchId}
-                                    onChange={(e) => onUpdateField('branchId', e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.branchId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.selectBranch')}
-                                    </option>
-                                    {branches
-                                        .filter(
-                                            (b) => b.status === 'Active' || b.id === form.branchId
-                                        )
-                                        .map((branch) => (
-                                            <option key={branch.id} value={branch.id}>
-                                                {isRtl ? branch.nameAr : branch.nameEn} (
-                                                {branch.code})
-                                                {branch.status === 'Inactive'
-                                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.branchId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.branchId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Department */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.department')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.departmentId}
-                                    onChange={(e) =>
-                                        onUpdateField('departmentId', e.target.value)
-                                    }
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.departmentId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.selectDepartment')}
-                                    </option>
-                                    {departments
-                                        .filter(
-                                            (d) =>
-                                                d.status === 'Active' || d.id === form.departmentId
-                                        )
-                                        .map((dept) => (
-                                            <option key={dept.id} value={dept.id}>
-                                                {isRtl ? dept.nameAr : dept.nameEn} ({dept.code})
-                                                {dept.status === 'Inactive'
-                                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.departmentId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.departmentId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Designation */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.designation')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.designationId}
-                                    onChange={(e) =>
-                                        onUpdateField('designationId', e.target.value)
-                                    }
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.designationId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.selectDesignation')}
-                                    </option>
-                                    {designations
-                                        .filter(
-                                            (d) =>
-                                                d.status === 'Active' ||
-                                                d.id === form.designationId
-                                        )
-                                        .map((desig) => (
-                                            <option key={desig.id} value={desig.id}>
-                                                {isRtl ? desig.titleAr : desig.titleEn} (
-                                                {desig.code})
-                                                {desig.status === 'Inactive'
-                                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.designationId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.designationId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Job Title (Custom Addons) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.jobTitle')}
-                                </label>
-                                <select
-                                    value={form.jobTitleId}
-                                    onChange={(e) => {
-                                        const jtId = e.target.value;
-                                        const jt = jobTitleAddons.find((a) => a.id === jtId);
-                                        onUpdateField('jobTitleId', jtId);
-                                        onUpdateField('jobTitleName', jt?.nameEn || '');
-                                    }}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.selectJobTitle')}
-                                    </option>
-                                    {jobTitleAddons
-                                        .filter(
-                                            (jt) =>
-                                                jt.status === 'Active' || jt.id === form.jobTitleId
-                                        )
-                                        .map((jt) => (
-                                            <option key={jt.id} value={jt.id}>
-                                                {isRtl ? jt.nameAr : jt.nameEn} ({jt.code})
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-
-                            {/* System Role */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.role')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.roleId}
-                                    onChange={(e) => onUpdateField('roleId', e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.roleId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.selectRole')}
-                                    </option>
-                                    {roles
-                                        .filter(
-                                            (r) => r.status === 'Active' || r.id === form.roleId
-                                        )
-                                        .map((role) => (
-                                            <option key={role.id} value={role.id}>
-                                                {isRtl ? role.nameAr : role.nameEn} ({role.code})
-                                                {role.status === 'Inactive'
-                                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.roleId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.roleId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Security Group (Derived from Role) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.securityGroupDerived', {
-                                        defaultValue: 'Security Group (Derived from Role)',
-                                    })}
-                                </label>
-                                <div className="w-full px-3 py-2 rounded-lg bg-[#EFECE6]/60 border border-[#E5E0D8] text-xs font-medium text-[#0D0D0D] flex items-center gap-1.5 min-h-[34px]">
-                                    <ShieldCheck size={14} className="text-[#037F8C] shrink-0" />
-                                    {linkedSecurityGroup ? (
-                                        <span className="truncate">
-                                            {isRtl
-                                                ? linkedSecurityGroup.nameAr
-                                                : linkedSecurityGroup.nameEn}{' '}
-                                            <span
-                                                className="font-mono text-[#037F8C]"
-                                                dir="ltr"
-                                            >
-                                                ({linkedSecurityGroup.code})
-                                            </span>
-                                        </span>
-                                    ) : (
-                                        <span className="text-[#857E74]">
-                                            {t('ums.employees.wizard.employment.selectRole')}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Job Grade (Custom Addons) */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.jobGrade')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.jobGradeId}
-                                    onChange={(e) => onUpdateField('jobGradeId', e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.jobGradeId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.selectJobGrade')}
-                                    </option>
-                                    {jobGradeAddons
-                                        .filter(
-                                            (g) =>
-                                                g.status === 'Active' || g.id === form.jobGradeId
-                                        )
-                                        .map((grade) => (
-                                            <option key={grade.id} value={grade.id}>
-                                                {isRtl ? grade.nameAr : grade.nameEn} ({grade.code}
-                                                )
-                                                {grade.status === 'Inactive'
-                                                    ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                    : ''}
-                                            </option>
-                                        ))}
-                                </select>
-                                {errors.jobGradeId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.jobGradeId}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Direct Manager */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.directManager')}
-                                </label>
-                                <select
-                                    value={form.managerId}
-                                    onChange={(e) => onUpdateField('managerId', e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                        errors.managerId
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                >
-                                    <option value="">
-                                        {t('ums.employees.wizard.employment.noDirectManager')}
-                                    </option>
-                                    {eligibleManagers.map((mgr) => (
-                                        <option key={mgr.id} value={mgr.id}>
-                                            {isRtl ? mgr.nameAr : mgr.nameEn} ({mgr.code})
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.managerId && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.managerId}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Contract Terms & Probation Schedule */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                        <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                            {t('ums.employees.wizard.employment.contractProbationTitle')}
-                        </h3>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* Joining Date */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.joiningDate')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    dir="ltr"
-                                    value={form.joiningDate}
-                                    onChange={(e) =>
-                                        onUpdateField('joiningDate', e.target.value)
-                                    }
-                                    className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                        errors.joiningDate
-                                            ? 'border-[#DC2626]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                />
-                                {errors.joiningDate && (
-                                    <p className="text-[11px] text-[#DC2626] mt-1">
-                                        {errors.joiningDate}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Contract Type */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.contractType')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.contractType}
-                                    onChange={(e) => {
-                                        const ct = e.target.value as ContractType;
-                                        onUpdateField('contractType', ct);
-                                        if (ct === 'Probation') {
-                                            onUpdateField('isUnderProbation', true);
-                                        }
-                                    }}
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    {CONTRACT_TYPES.map((ct) => (
-                                        <option key={ct} value={ct}>
-                                            {t(`ums.employees.contractTypes.${ct}`)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Employment Type */}
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                    {t('ums.employees.wizard.employment.employmentType')}{' '}
-                                    <span className="text-[#DC2626]">*</span>
-                                </label>
-                                <select
-                                    value={form.employmentType}
-                                    onChange={(e) =>
-                                        onUpdateField(
-                                            'employmentType',
-                                            e.target.value as EmploymentType
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                >
-                                    {EMPLOYMENT_TYPES.map((et) => (
-                                        <option key={et} value={et}>
-                                            {t(`ums.employees.employmentTypes.${et}`)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Probation Period Controls */}
-                        <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <label className="inline-flex items-center gap-2.5 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={form.isUnderProbation}
-                                    onChange={(e) =>
-                                        onUpdateField('isUnderProbation', e.target.checked)
-                                    }
-                                    className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                                />
-                                <span className="text-xs font-bold text-[#0D0D0D]">
-                                    {t('ums.employees.wizard.employment.isUnderProbation')}
-                                </span>
-                            </label>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs text-[#6E6862]">
-                                    {t('ums.employees.wizard.employment.probationPeriodDays')}:
-                                </span>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={365}
-                                    dir="ltr"
-                                    value={form.probationPeriodDays}
-                                    onChange={(e) =>
-                                        onUpdateField(
-                                            'probationPeriodDays',
-                                            Math.max(0, Number(e.target.value) || 0)
-                                        )
-                                    }
-                                    className="w-24 px-2.5 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:border-[#037F8C]"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => onUpdateField('probationPeriodDays', 90)}
-                                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-pointer ${
-                                        form.probationPeriodDays === 90
-                                            ? 'bg-[#037F8C] text-white border-[#037F8C]'
-                                            : 'bg-white text-[#6E6862] border-[#E5E0D8] hover:text-[#0D0D0D]'
-                                    }`}
-                                >
-                                    {t('ums.employees.wizard.employment.probationPreset90')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onUpdateField('probationPeriodDays', 180)}
-                                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border cursor-pointer ${
-                                        form.probationPeriodDays === 180
-                                            ? 'bg-[#037F8C] text-white border-[#037F8C]'
-                                            : 'bg-white text-[#6E6862] border-[#E5E0D8] hover:text-[#0D0D0D]'
-                                    }`}
-                                >
-                                    {t('ums.employees.wizard.employment.probationPreset180')}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* =================================================================== */}
-            {/* 3. DOCUMENTS (10 SUB-SECTIONS IN EXACT ORDER)                       */}
-            {/* =================================================================== */}
-            {currentStep === 2 && (
-                <div className="space-y-6">
-                    {/* Sub-Section Segmented Filter Bar */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-2 shadow-2xs overflow-x-auto">
-                        <div className="flex items-center gap-1 min-w-max">
-                            {DOCUMENT_SUB_TABS.map((tab) => (
-                                <button
-                                    key={tab}
-                                    type="button"
-                                    onClick={() => onActiveDocSubTabChange(tab)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                                        activeDocSubTab === tab
-                                            ? 'bg-[#037F8C] text-white shadow-2xs'
-                                            : 'text-[#6E6862] hover:text-[#0D0D0D] hover:bg-[#FAF8F5]'
-                                    }`}
-                                >
-                                    {getDocTabLabel(tab)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* 3.1 SALARY DETAILS */}
-                    {shouldShowDocSection('salary') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E0D8]">
-                                <div className="flex items-center gap-2">
-                                    <Landmark size={16} className="text-[#037F8C]" />
-                                    <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                        {isRtl
-                                            ? t('ums.employees.wizard.documents.salaryTitle')
-                                            : 'Salary Details'}
-                                    </h3>
-                                </div>
-                                <div className="flex items-center gap-3 text-xs">
-                                    <span className="text-[#6E6862]">
-                                        {t('ums.employees.wizard.documents.calculatedGross')}:
-                                    </span>
-                                    <span
-                                        className="font-mono font-bold text-sm text-[#037F8C]"
-                                        dir="ltr"
-                                    >
-                                        {calculatedSalary.grossSalary.toLocaleString('en-US')} SAR
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.basicSalary')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        step={100}
-                                        dir="ltr"
-                                        value={form.basicSalary}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'basicSalary',
-                                                Math.max(0, Number(e.target.value) || 0)
-                                            )
-                                        }
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.basicSalary
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.basicSalary && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.basicSalary}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.housingAllowance')}
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        step={100}
-                                        dir="ltr"
-                                        value={form.housingAllowance}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'housingAllowance',
-                                                Math.max(0, Number(e.target.value) || 0)
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.transportationAllowance'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        step={50}
-                                        dir="ltr"
-                                        value={form.transportationAllowance}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'transportationAllowance',
-                                                Math.max(0, Number(e.target.value) || 0)
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.foodAllowance')}
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        step={50}
-                                        dir="ltr"
-                                        value={form.foodAllowance}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'foodAllowance',
-                                                Math.max(0, Number(e.target.value) || 0)
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.otherAllowances')}
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        step={50}
-                                        dir="ltr"
-                                        value={form.otherAllowances}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'otherAllowances',
-                                                Math.max(0, Number(e.target.value) || 0)
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.grossSalary', {
-                                            defaultValue: 'Gross Monthly Salary (SAR)',
-                                        })}
-                                    </label>
-                                    <input
-                                        type="number"
-                                        dir="ltr"
-                                        readOnly
-                                        value={calculatedSalary.grossSalary}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#EFECE6]/60 border border-[#E5E0D8] text-xs font-mono font-bold text-[#037F8C] cursor-not-allowed"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 3.2 IQAMA */}
-                    {shouldShowDocSection('iqama') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#E5E0D8]">
-                                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                    {isRtl
-                                        ? t('ums.employees.wizard.documents.iqamaTitle')
-                                        : 'Iqama'}
-                                </h3>
-                                <div className="text-xs flex items-center gap-2">
-                                    <span className="text-[#6E6862]">
-                                        {t(
-                                            'ums.employees.wizard.documents.iqamaCalculatedStatus'
-                                        )}
-                                        :
-                                    </span>
-                                    <span
-                                        className={`font-bold ${
-                                            calculatedIqamaStatus === 'Valid'
-                                                ? 'text-[#037F8C]'
-                                                : calculatedIqamaStatus === 'Warning'
-                                                ? 'text-[#C28E3A]'
-                                                : 'text-[#DC2626]'
-                                        }`}
-                                    >
-                                        {t(
-                                            `ums.employees.iqamaStatuses.${calculatedIqamaStatus}`
-                                        )}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.iqamaNumber')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.iqamaNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('iqamaNumber', e.target.value)
-                                        }
-                                        placeholder="10XXXXXXXX / 24XXXXXXXX"
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.iqamaNumber
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.iqamaNumber && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.iqamaNumber}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.iqamaProfession')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.iqamaProfession}
-                                        onChange={(e) =>
-                                            onUpdateField('iqamaProfession', e.target.value)
-                                        }
-                                        placeholder="e.g. Software Engineer"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.iqamaExpiryDate')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.iqamaExpiryDate}
-                                        onChange={(e) =>
-                                            onUpdateField('iqamaExpiryDate', e.target.value)
-                                        }
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.iqamaExpiryDate
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.iqamaExpiryDate && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.iqamaExpiryDate}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.workPermitNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.workPermitNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('workPermitNumber', e.target.value)
-                                        }
-                                        placeholder="WP-2026-XXXX"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.workPermitExpiryDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.workPermitExpiryDate}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'workPermitExpiryDate',
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('iqama')}
-                        </div>
-                    )}
-
-                    {/* 3.3 ACCOUNT */}
-                    {shouldShowDocSection('account') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.bankTitle')
-                                    : 'Account'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {/* Bank (Custom Addons) */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.bank')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <select
-                                        value={form.bankId}
-                                        onChange={(e) => {
-                                            const bId = e.target.value;
-                                            const bank = bankAddons.find((b) => b.id === bId);
-                                            onUpdateField('bankId', bId);
-                                            onUpdateField('bankName', bank?.nameEn || '');
-                                        }}
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs text-[#0D0D0D] focus:outline-none focus:bg-white cursor-pointer ${
-                                            errors.bankId
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    >
-                                        <option value="">
-                                            {t('ums.employees.wizard.documents.selectBank')}
-                                        </option>
-                                        {bankAddons
-                                            .filter(
-                                                (b) =>
-                                                    b.status === 'Active' || b.id === form.bankId
-                                            )
-                                            .map((bank) => (
-                                                <option key={bank.id} value={bank.id}>
-                                                    {isRtl ? bank.nameAr : bank.nameEn}
-                                                    {bank.status === 'Inactive'
-                                                        ? ` ${t('ums.employees.filters.inactiveRecordSuffix')}`
-                                                        : ''}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    {errors.bankId && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.bankId}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Account Holder Name */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.accountHolderName')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.accountHolderName}
-                                        onChange={(e) =>
-                                            onUpdateField('accountHolderName', e.target.value)
-                                        }
-                                        placeholder={composedNameEn || 'Full Name on Bank Account'}
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                {/* Saudi IBAN */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                        <label className="block text-xs font-semibold text-[#0D0D0D]">
-                                            {t('ums.employees.wizard.documents.iban')}{' '}
-                                            <span className="text-[#DC2626]">*</span>
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={onFormatIban}
-                                            className="text-[10px] font-semibold text-[#037F8C] hover:underline cursor-pointer"
-                                        >
-                                            {t('ums.employees.wizard.documents.formatIban')}
-                                        </button>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.iban}
-                                        onChange={(e) =>
-                                            onUpdateField('iban', e.target.value.toUpperCase())
-                                        }
-                                        placeholder="SA44 8000 0400 6080 1016 7519"
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.iban
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.iban && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.iban}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Bank Account Number */}
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.accountNumber')}{' '}
-                                        <span className="text-[#DC2626]">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.accountNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('accountNumber', e.target.value)
-                                        }
-                                        placeholder="400608010167519"
-                                        className={`w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white ${
-                                            errors.accountNumber
-                                                ? 'border-[#DC2626]'
-                                                : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                        }`}
-                                    />
-                                    {errors.accountNumber && (
-                                        <p className="text-[11px] text-[#DC2626] mt-1">
-                                            {errors.accountNumber}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('account')}
-                        </div>
-                    )}
-
-                    {/* 3.4 HEALTH INSURANCE */}
-                    {shouldShowDocSection('health_insurance') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.healthInsuranceTitle')
-                                    : 'Health Insurance'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.healthInsuranceProvider'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.healthInsuranceProvider}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'healthInsuranceProvider',
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder="e.g. Bupa Arabia / Tawuniya"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.healthInsurancePolicy'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.healthInsurancePolicy}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'healthInsurancePolicy',
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder="POL-2026-8840"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.healthInsuranceClass')}
-                                    </label>
-                                    <select
-                                        value={form.healthInsuranceClass}
-                                        onChange={(e) =>
-                                            onUpdateField('healthInsuranceClass', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C] cursor-pointer"
-                                    >
-                                        <option value="VIP">VIP</option>
-                                        <option value="Class A+">Class A+</option>
-                                        <option value="Class A">Class A</option>
-                                        <option value="Class B">Class B</option>
-                                        <option value="Class C">Class C</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.healthInsuranceExpiry'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.healthInsuranceExpiry}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'healthInsuranceExpiry',
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('health_insurance')}
-                        </div>
-                    )}
-
-                    {/* 3.5 HEALTH CARD */}
-                    {shouldShowDocSection('health_card') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.healthCardTitle')
-                                    : 'Health Card'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.healthCardNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.healthCardNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('healthCardNumber', e.target.value)
-                                        }
-                                        placeholder="HC-9920184"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.healthCardAuthority')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.healthCardAuthority}
-                                        onChange={(e) =>
-                                            onUpdateField('healthCardAuthority', e.target.value)
-                                        }
-                                        placeholder="Balady / MOH"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.healthCardIssueDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.healthCardIssueDate}
-                                        onChange={(e) =>
-                                            onUpdateField('healthCardIssueDate', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.healthCardExpiryDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.healthCardExpiryDate}
-                                        onChange={(e) =>
-                                            onUpdateField('healthCardExpiryDate', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('health_card')}
-                        </div>
-                    )}
-
-                    {/* 3.6 PASSPORT */}
-                    {shouldShowDocSection('passport') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.passportTitle')
-                                    : 'Passport'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.passportNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.passportNumber}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'passportNumber',
-                                                e.target.value.toUpperCase()
-                                            )
-                                        }
-                                        placeholder="V8839201"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.passportIssueCountry')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.passportIssueCountry}
-                                        onChange={(e) =>
-                                            onUpdateField('passportIssueCountry', e.target.value)
-                                        }
-                                        placeholder="Saudi Arabia"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.passportIssueDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.passportIssueDate}
-                                        onChange={(e) =>
-                                            onUpdateField('passportIssueDate', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.passportExpiry')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.passportExpiry}
-                                        onChange={(e) =>
-                                            onUpdateField('passportExpiry', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('passport')}
-                        </div>
-                    )}
-
-                    {/* 3.7 VISA */}
-                    {shouldShowDocSection('visa') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.visaTitle')
-                                    : 'Visa'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.visaNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.visaNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('visaNumber', e.target.value)
-                                        }
-                                        placeholder="6092837411"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.visaType')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.visaType}
-                                        onChange={(e) =>
-                                            onUpdateField('visaType', e.target.value)
-                                        }
-                                        placeholder="Work / Exit Re-Entry"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.visaBorderNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.visaBorderNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('visaBorderNumber', e.target.value)
-                                        }
-                                        placeholder="3099281726"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.visaIssueDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.visaIssueDate}
-                                        onChange={(e) =>
-                                            onUpdateField('visaIssueDate', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.visaExpiry')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.visaExpiry}
-                                        onChange={(e) =>
-                                            onUpdateField('visaExpiry', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('visa')}
-                        </div>
-                    )}
-
-                    {/* 3.8 CONTRACT */}
-                    {shouldShowDocSection('contract') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.contractTitle')
-                                    : 'Contract'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.contractNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.contractNumber}
-                                        onChange={(e) =>
-                                            onUpdateField('contractNumber', e.target.value)
-                                        }
-                                        placeholder="CNT-2026-001"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.contractStartDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.contractStartDate}
-                                        onChange={(e) =>
-                                            onUpdateField('contractStartDate', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.contractEndDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.contractEndDate}
-                                        onChange={(e) =>
-                                            onUpdateField('contractEndDate', e.target.value)
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('contract')}
-                        </div>
-                    )}
-
-                    {/* 3.9 DRIVING LICENSE */}
-                    {shouldShowDocSection('driving_license') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.drivingLicenseTitle')
-                                    : 'Driving License'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.drivingLicenseNumber')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.drivingLicenseNumber}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'drivingLicenseNumber',
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder="DL-10293847"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.drivingLicenseType')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={form.drivingLicenseType}
-                                        onChange={(e) =>
-                                            onUpdateField('drivingLicenseType', e.target.value)
-                                        }
-                                        placeholder="Private / Public"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.drivingLicenseIssueDate'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.drivingLicenseIssueDate}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'drivingLicenseIssueDate',
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.drivingLicenseExpiry')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.drivingLicenseExpiry}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'drivingLicenseExpiry',
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('driving_license')}
-                        </div>
-                    )}
-
-                    {/* 3.10 SUBSCRIPTION */}
-                    {shouldShowDocSection('subscription') && (
-                        <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                            <h3 className="text-sm font-bold text-[#0D0D0D] pb-2 border-b border-[#E5E0D8]">
-                                {isRtl
-                                    ? t('ums.employees.wizard.documents.subscriptionTitle')
-                                    : 'Subscription'}
-                            </h3>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.gosiSubscriptionNumber'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.gosiSubscriptionNumber}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'gosiSubscriptionNumber',
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder="GOSI-88492011"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.professionalSubscriptionNumber'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        dir="ltr"
-                                        value={form.professionalSubscriptionNumber}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'professionalSubscriptionNumber',
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder="SCE-554019"
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t('ums.employees.wizard.documents.subscriptionIssueDate')}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.subscriptionIssueDate}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'subscriptionIssueDate',
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                        {t(
-                                            'ums.employees.wizard.documents.subscriptionExpiryDate'
-                                        )}
-                                    </label>
-                                    <input
-                                        type="date"
-                                        dir="ltr"
-                                        value={form.subscriptionExpiryDate}
-                                        onChange={(e) =>
-                                            onUpdateField(
-                                                'subscriptionExpiryDate',
-                                                e.target.value
-                                            )
-                                        }
-                                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D] focus:outline-none focus:bg-white focus:border-[#037F8C]"
-                                    />
-                                </div>
-                            </div>
-
-                            {renderDocumentAttachmentControl('subscription')}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* =================================================================== */}
-            {/* 4. DEPENDENTS INFO                                                  */}
-            {/* =================================================================== */}
-            {currentStep === 3 && (
-                <div className="space-y-6">
-                    {/* Dependents Section */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0D8]">
-                            <div>
-                                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                    {t('ums.employees.wizard.dependents.headerTitle')} (
-                                    {form.dependents.length})
-                                </h3>
-                                <p className="text-xs text-[#6E6862] mt-0.5">
-                                    {t('ums.employees.wizard.dependents.headerDesc')}
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={onAddDependent}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
-                            >
-                                <Plus size={14} />
-                                <span>{t('ums.employees.wizard.dependents.addDependent')}</span>
-                            </button>
-                        </div>
-
-                        {form.dependents.length === 0 ? (
-                            <div className="p-8 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] text-center space-y-2">
-                                <HeartHandshake size={24} className="mx-auto text-[#857E74]" />
-                                <p className="text-xs font-bold text-[#0D0D0D]">
-                                    {t('ums.employees.details.fields.noDependentsTitle')}
-                                </p>
-                                <p className="text-[11px] text-[#6E6862]">
-                                    {t('ums.employees.details.fields.noDependentsDesc')}
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {form.dependents.map((dep, idx) => {
-                                    const depDocId = `dep-doc-${idx}`;
-                                    return (
-                                        <div
-                                            key={dep.id}
-                                            className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E5E0D8] space-y-4"
-                                        >
-                                            <div className="flex items-center justify-between pb-2 border-b border-[#E5E0D8]">
-                                                <span className="text-xs font-bold text-[#037F8C]">
-                                                    {t(
-                                                        'ums.employees.wizard.dependents.dependentCardTitle',
-                                                        { index: idx + 1 }
-                                                    )}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onRemoveDependent(idx)}
-                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#DC2626] hover:underline cursor-pointer"
-                                                >
-                                                    <Trash2 size={13} />
-                                                    <span>
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.removeDependent'
-                                                        )}
-                                                    </span>
-                                                </button>
+                                        <div className="flex items-start gap-3">
+                                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isActive || isComplete ? "bg-[#037F8C] text-white" : "bg-white text-[#857E74]"}`}>
+                                                {isComplete ? <Check size={15} /> : <Icon size={15} />}
                                             </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                                {/* Dependent Name EN */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.nameEn'
-                                                        )}{' '}
-                                                        <span className="text-[#DC2626]">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        dir="ltr"
-                                                        value={dep.nameEn}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'nameEn',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="Full Name (EN)"
-                                                        className={`w-full px-3 py-1.5 rounded-lg bg-white border text-xs text-[#0D0D0D] ${
-                                                            errors[`dep_${idx}_nameEn`]
-                                                                ? 'border-[#DC2626]'
-                                                                : 'border-[#E5E0D8]'
-                                                        }`}
-                                                    />
-                                                </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-[#0D0D0D]">
+                                                    {step.title}
+                                                </p>
 
-                                                {/* Dependent Name AR */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.nameAr'
-                                                        )}{' '}
-                                                        <span className="text-[#DC2626]">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        dir="rtl"
-                                                        value={dep.nameAr}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'nameAr',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="الاسم الكامل بالعربية"
-                                                        className={`w-full px-3 py-1.5 rounded-lg bg-white border text-xs text-[#0D0D0D] ${
-                                                            errors[`dep_${idx}_nameAr`]
-                                                                ? 'border-[#DC2626]'
-                                                                : 'border-[#E5E0D8]'
-                                                        }`}
-                                                    />
-                                                </div>
-
-                                                {/* Relationship */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.relationship'
-                                                        )}
-                                                    </label>
-                                                    <select
-                                                        value={dep.relationship}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'relationship',
-                                                                e.target
-                                                                    .value as EmployeeDependent['relationship']
-                                                            )
-                                                        }
-                                                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] cursor-pointer"
-                                                    >
-                                                        {DEPENDENT_RELATIONSHIPS.map((rel) => (
-                                                            <option key={rel} value={rel}>
-                                                                {t(
-                                                                    `ums.employees.relationships.${rel}`
-                                                                )}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-
-                                                {/* Gender */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.gender'
-                                                        )}
-                                                    </label>
-                                                    <select
-                                                        value={dep.gender}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'gender',
-                                                                e.target.value as Gender
-                                                            )
-                                                        }
-                                                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] cursor-pointer"
-                                                    >
-                                                        {GENDERS.map((g) => (
-                                                            <option key={g} value={g}>
-                                                                {t(`ums.employees.genders.${g}`)}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-
-                                                {/* Date of Birth */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t('ums.employees.wizard.dependents.dob')}{' '}
-                                                        <span className="text-[#DC2626]">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="date"
-                                                        dir="ltr"
-                                                        value={dep.dob}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'dob',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className={`w-full px-3 py-1.5 rounded-lg bg-white border text-xs font-mono text-[#0D0D0D] ${
-                                                            errors[`dep_${idx}_dob`]
-                                                                ? 'border-[#DC2626]'
-                                                                : 'border-[#E5E0D8]'
-                                                        }`}
-                                                    />
-                                                </div>
-
-                                                {/* National ID / Iqama */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.nationalIdOrIqama'
-                                                        )}{' '}
-                                                        <span className="text-[#DC2626]">*</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        dir="ltr"
-                                                        value={dep.nationalIdOrIqama}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'nationalIdOrIqama',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        placeholder="10XXXXXXXX / 24XXXXXXXX"
-                                                        className={`w-full px-3 py-1.5 rounded-lg bg-white border text-xs font-mono text-[#0D0D0D] ${
-                                                            errors[`dep_${idx}_nationalIdOrIqama`]
-                                                                ? 'border-[#DC2626]'
-                                                                : 'border-[#E5E0D8]'
-                                                        }`}
-                                                    />
-                                                </div>
-
-                                                {/* ID Expiry Date */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.idExpiryDate'
-                                                        )}
-                                                    </label>
-                                                    <input
-                                                        type="date"
-                                                        dir="ltr"
-                                                        value={dep.idExpiryDate || ''}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'idExpiryDate',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D]"
-                                                    />
-                                                </div>
-
-                                                {/* Nationality */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.nationality'
-                                                        )}
-                                                    </label>
-                                                    <select
-                                                        value={dep.nationality || 'Saudi Arabia'}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'nationality',
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs text-[#0D0D0D] cursor-pointer"
-                                                    >
-                                                        {NATIONALITY_OPTIONS.map((opt) => (
-                                                            <option
-                                                                key={opt.value}
-                                                                value={opt.value}
-                                                            >
-                                                                {isRtl
-                                                                    ? opt.labelAr
-                                                                    : opt.labelEn}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-
-                                                {/* Passport Number */}
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1">
-                                                        {t(
-                                                            'ums.employees.wizard.dependents.passportNumber'
-                                                        )}
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        dir="ltr"
-                                                        value={dep.passportNumber || ''}
-                                                        onChange={(e) =>
-                                                            onUpdateDependent(
-                                                                idx,
-                                                                'passportNumber',
-                                                                e.target.value.toUpperCase()
-                                                            )
-                                                        }
-                                                        placeholder="V1234567"
-                                                        className="w-full px-3 py-1.5 rounded-lg bg-white border border-[#E5E0D8] text-xs font-mono text-[#0D0D0D]"
-                                                    />
-                                                </div>
-
-                                                {/* Insurance Included Checkbox */}
-                                                <div className="sm:col-span-2 lg:col-span-3 flex items-end pb-1">
-                                                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={dep.insuranceIncluded}
-                                                            onChange={(e) =>
-                                                                onUpdateDependent(
-                                                                    idx,
-                                                                    'insuranceIncluded',
-                                                                    e.target.checked
-                                                                )
-                                                            }
-                                                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                                                        />
-                                                        <span className="text-xs font-semibold text-[#0D0D0D]">
-                                                            {t(
-                                                                'ums.employees.wizard.dependents.insuranceIncluded'
-                                                            )}
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                            {/* Dependent Identity Document Attachment */}
-                                            <div className="pt-2 border-t border-[#E5E0D8] flex flex-wrap items-center justify-between gap-2">
-                                                <div className="text-xs text-[#6E6862] flex items-center gap-2">
-                                                    <Paperclip size={12} />
-                                                    {dep.documentAttachment ? (
-                                                        <span className="font-medium text-[#037F8C]">
-                                                            {dep.documentAttachment.fileName} (
-                                                            {formatFileSize(
-                                                                dep.documentAttachment.fileSize
-                                                            )}
-                                                            )
-                                                        </span>
-                                                    ) : (
-                                                        <span>
-                                                            {t(
-                                                                'ums.employees.wizard.dependents.attachment'
-                                                            )}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <label
-                                                        htmlFor={depDocId}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-semibold text-[#037F8C] hover:bg-[#EFECE6] cursor-pointer"
-                                                    >
-                                                        <Upload size={12} />
-                                                        <span>
-                                                            {dep.documentAttachment
-                                                                ? t(
-                                                                      'ums.employees.wizard.documents.replaceDocument'
-                                                                  )
-                                                                : t(
-                                                                      'ums.employees.wizard.documents.uploadDocument'
-                                                                  )}
-                                                        </span>
-                                                    </label>
-                                                    <input
-                                                        id={depDocId}
-                                                        type="file"
-                                                        accept=".pdf,.jpg,.jpeg,.png"
-                                                        onChange={(e) =>
-                                                            onDependentDocUpload(idx, e)
-                                                        }
-                                                        className="hidden"
-                                                    />
-                                                    {dep.documentAttachment && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                onRemoveDependentDoc(idx)
-                                                            }
-                                                            className="text-[11px] text-[#DC2626] hover:underline cursor-pointer"
-                                                        >
-                                                            {t(
-                                                                'ums.employees.wizard.documents.removeDocument'
-                                                            )}
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                <p className="mt-0.5 text-[11px] text-[#6E6862]">
+                                                    {step.description}
+                                                </p>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    {/* Onboarding Summary & Portal Invitation Card */}
-                    <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-2xs space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#E5E0D8]">
-                            <div>
-                                <h3 className="text-sm font-bold text-[#0D0D0D]">
-                                    {t('ums.employees.wizard.dependents.summaryTitle')}
-                                </h3>
-                                <p className="text-xs text-[#6E6862]">
-                                    {t('ums.employees.wizard.dependents.summaryDesc')}
-                                </p>
-                            </div>
-                            <span className="font-mono text-sm font-bold text-[#037F8C]">
-                                {liveCompletionPercentage}%
-                                {liveCompletion
-                                    ? ` (${liveCompletion.completedCount}/${liveCompletion.totalCount})`
-                                    : ''}
-                            </span>
-                        </div>
+                    {currentStep === 0 && (
+                        <div className="space-y-5">
+                            <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                                <div className="mb-4 border-b border-[#E5E0D8] pb-3">
+                                    <h2 className="text-sm font-bold text-[#0D0D0D]">
+                                        البيانات الشخصية
+                                    </h2>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                            <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                                <p className="text-[11px] text-[#857E74]">
-                                    {t('ums.employees.details.fields.fullNameEn')}
-                                </p>
-                                <p className="font-bold text-[#0D0D0D] mt-0.5">
-                                    {composedNameEn || '—'}
-                                </p>
-                                <p className="text-[11px] text-[#6E6862] mt-0.5" dir="rtl">
-                                    {composedNameAr || '—'}
-                                </p>
-                            </div>
-
-                            <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                                <p className="text-[11px] text-[#857E74]">
-                                    {t('ums.employees.wizard.dependents.totalDependents')}
-                                </p>
-                                <p className="font-mono text-base font-bold text-[#0D0D0D] mt-0.5">
-                                    {form.dependents.length}
-                                </p>
-                            </div>
-
-                            <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                                <p className="text-[11px] text-[#857E74]">
-                                    {t('ums.employees.wizard.dependents.insuredDependents')}
-                                </p>
-                                <p className="font-mono text-base font-bold text-[#037F8C] mt-0.5">
-                                    {form.dependents.filter((d) => d.insuranceIncluded).length}
-                                </p>
-                            </div>
-
-                            <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8]">
-                                <p className="text-[11px] text-[#857E74]">
-                                    {t('ums.employees.wizard.dependents.grossMonthlyPackage')}
-                                </p>
-                                <p
-                                    className="font-mono font-bold text-[#037F8C] text-base mt-0.5"
-                                    dir="ltr"
-                                >
-                                    {calculatedSalary.grossSalary.toLocaleString('en-US')} SAR
-                                </p>
-                            </div>
-                        </div>
-
-                        {liveCompletion &&
-                            (isRtl
-                                ? liveCompletion.missingFieldsAr
-                                : liveCompletion.missingFieldsEn
-                            ).length > 0 && (
-                                <div className="p-3 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs">
-                                    <span className="font-semibold text-[#C28E3A] block mb-1">
-                                        {t('ums.employees.details.incompleteHint')}
-                                    </span>
-                                    <p className="text-[11px] text-[#6E6862]">
-                                        {(isRtl
-                                            ? liveCompletion.missingFieldsAr
-                                            : liveCompletion.missingFieldsEn
-                                        ).join(' · ')}
+                                    <p className="mt-1 text-xs text-[#6E6862]">
+                                        الاسم وبيانات التواصل والمعلومات الشخصية.
                                     </p>
                                 </div>
-                            )}
 
-                        {!isEditMode && (
-                            <div className="p-3.5 rounded-xl bg-[#EAF3EC]/60 border border-[#037F8C]/20 flex items-center justify-between gap-3">
-                                <label className="inline-flex items-center gap-2.5 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.sendInviteOnSave}
-                                        onChange={(e) =>
-                                            onUpdateField('sendInviteOnSave', e.target.checked)
-                                        }
-                                        className="rounded border-[#037F8C] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                                    />
-                                    <span className="text-xs font-semibold text-[#0D0D0D]">
-                                        {t('ums.employees.wizard.sendInviteOnSave')}
-                                    </span>
-                                </label>
+                                {renderFields(PERSONAL_FIELDS)}
+                            </section>
+
+                            <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label htmlFor="gender" className="mb-1 block text-xs font-semibold text-[#0D0D0D]">
+                                            النوع
+                                        </label>
+
+                                        <select id="gender" disabled={isFormDisabled} {...register("gender")} className="w-full rounded-lg border border-[#E5E0D8] bg-white px-3 py-2 text-xs outline-none focus:border-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50">
+                                            <option value="">اختر النوع</option>
+                                            <option value="Male">ذكر</option>
+                                            <option value="Female">أنثى</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="maritalStatus" className="mb-1 block text-xs font-semibold text-[#0D0D0D]">
+                                            الحالة الاجتماعية
+                                        </label>
+
+                                        <select id="maritalStatus" disabled={isFormDisabled} {...register("maritalStatus")} className="w-full rounded-lg border border-[#E5E0D8] bg-white px-3 py-2 text-xs outline-none focus:border-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50">
+                                            <option value="">اختر الحالة الاجتماعية</option>
+                                            <option value="Single">أعزب</option>
+                                            <option value="Married">متزوج</option>
+                                            <option value="Divorced">مطلق</option>
+                                            <option value="Widowed">أرمل</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {currentStep === 1 && (
+                        <div className="space-y-5">
+                            <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                                <div className="mb-4 border-b border-[#E5E0D8] pb-3">
+                                    <h2 className="text-sm font-bold text-[#0D0D0D]">
+                                        العلاقات الوظيفية
+                                    </h2>
+
+                                    <p className="mt-1 text-xs text-[#6E6862]">
+                                        بيانات القوائم التالية تأتي مباشرة من الـ APIs.
+                                    </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {renderApiSelect("branch_id", "الفرع", branches, isLoadingBranches)}
+                                    {renderApiSelect("department_id", "القسم", departments, isLoadingDepartments)}
+                                    {renderApiSelect("designation_id", "المسمى الوظيفي", designations, isLoadingDesignations)}
+                                    {renderApiSelect("role_id", "الدور", roles, isLoadingRoles)}
+                                    {renderApiSelect("reportingTo_id", "المدير المباشر", reportingUsers, isLoadingUsers)}
+                                </div>
+                            </section>
+
+                            <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                                <div className="mb-4 border-b border-[#E5E0D8] pb-3">
+                                    <h2 className="text-sm font-bold text-[#0D0D0D]">
+                                        بيانات الوظيفة والعقد
+                                    </h2>
+                                </div>
+
+                                {renderFields(EMPLOYMENT_FIELDS)}
+                            </section>
+                        </div>
+                    )}
+
+                    {currentStep === 2 && (
+                        <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                            <div className="mb-4 border-b border-[#E5E0D8] pb-3">
+                                <h2 className="text-sm font-bold text-[#0D0D0D]">
+                                    الوثائق والبيانات المالية
+                                </h2>
+
+                                <p className="mt-1 text-xs text-[#6E6862]">
+                                    اختر القسم المطلوب وأدخل البيانات الخاصة به.
+                                </p>
                             </div>
-                        )}
+
+                            <div className="mb-5 flex flex-wrap gap-2">
+                                {DOCUMENT_TABS.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveDocumentTab(tab.id)}
+                                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${activeDocumentTab === tab.id ? "border-[#037F8C] bg-[#037F8C] text-white" : "border-[#E5E0D8] bg-white text-[#45413C] hover:bg-[#FAF8F5]"}`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {renderDocumentFields()}
+
+                            {activeDocumentTab === "salary" && (
+                                <div className="mt-5 rounded-xl border border-[#037F8C]/20 bg-[#EAF3EC] p-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-[#45413C]">
+                                            إجمالي الراتب المحسوب
+                                        </span>
+
+                                        <span className="font-mono text-lg font-bold text-[#037F8C]">
+                                            {calculatedGrossSalary.toLocaleString("en-US")} SAR
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        disabled={isFormDisabled}
+                                        onClick={() => {
+                                            setValue("gross_salary", calculatedGrossSalary);
+                                            setValue("net_salary", calculatedGrossSalary);
+                                        }}
+                                        className="mt-3 rounded-lg border border-[#037F8C]/30 bg-white px-3 py-1.5 text-xs font-semibold text-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        استخدام القيمة المحسوبة
+                                    </button>
+                                </div>
+                            )}
+                        </section>
+                    )}
+
+                    {currentStep === 3 && (
+                        <div className="space-y-5">
+                            <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                                <div className="mb-4 border-b border-[#E5E0D8] pb-3">
+                                    <h2 className="text-sm font-bold text-[#0D0D0D]">
+                                        الخيارات النهائية
+                                    </h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <label htmlFor="dependents" className="mb-1 block text-xs font-semibold text-[#0D0D0D]">
+                                            يوجد تابعون للموظف
+                                        </label>
+
+                                        <select id="dependents" disabled={isFormDisabled} {...register("dependents")} className="w-full rounded-lg border border-[#E5E0D8] bg-white px-3 py-2 text-xs outline-none focus:border-[#037F8C] disabled:cursor-not-allowed disabled:opacity-50">
+                                            <option value="">غير محدد</option>
+                                            <option value="true">نعم</option>
+                                            <option value="false">لا</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section className="rounded-xl border border-[#E5E0D8] bg-white p-5 shadow-2xs">
+                                <h2 className="text-sm font-bold text-[#0D0D0D]">
+                                    مراجعة سريعة
+                                </h2>
+
+                                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] p-3">
+                                        <p className="text-[11px] text-[#857E74]">
+                                            البريد الإلكتروني
+                                        </p>
+
+                                        <p className="mt-1 truncate text-xs font-semibold text-[#0D0D0D]">
+                                            {String(watch("email") || "—")}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] p-3">
+                                        <p className="text-[11px] text-[#857E74]">
+                                            رقم الهاتف
+                                        </p>
+
+                                        <p className="mt-1 text-xs font-semibold text-[#0D0D0D]">
+                                            {String(watch("phone_number") || "—")}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] p-3">
+                                        <p className="text-[11px] text-[#857E74]">
+                                            تاريخ الانضمام
+                                        </p>
+
+                                        <p className="mt-1 text-xs font-semibold text-[#0D0D0D]">
+                                            {String(watch("joining_date") || "—")}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] p-3">
+                                        <p className="text-[11px] text-[#857E74]">
+                                            إجمالي الراتب
+                                        </p>
+
+                                        <p className="mt-1 text-xs font-semibold text-[#037F8C]">
+                                            {calculatedGrossSalary.toLocaleString("en-US")} SAR
+                                        </p>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    )}
+
+                    {!isViewMode && Object.keys(errors).length > 0 && (
+                        <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-xs text-[#DC2626]">
+                            توجد بيانات غير صحيحة. راجع الحقول ثم حاول مرة أخرى.
+                        </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#E5E0D8] bg-white p-4 shadow-2xs">
+                        <div>
+                            {currentStep > 0 && (
+                                <button
+                                    type="button"
+                                    disabled={isSaving}
+                                    onClick={handlePrevious}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E0D8] bg-white px-4 py-2 text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-50"
+                                >
+                                    {isRtl ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
+                                    السابق
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                disabled={isSaving}
+                                onClick={onClose}
+                                className="rounded-lg border border-[#E5E0D8] bg-white px-4 py-2 text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] disabled:opacity-50"
+                            >
+                                رجوع
+                            </button>
+
+                            {isViewMode && currentStep === 3 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onModeChange?.("update")}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#037F8C] px-5 py-2 text-xs font-semibold text-white hover:bg-[#223121]"
+                                >
+                                    <Save size={14} />
+                                    تعديل الموظف
+                                </button>
+                            ) : currentStep < 3 ? (
+                                <button
+                                    key="employee-form-next-step"
+                                    type="button"
+                                    disabled={isSaving}
+                                    onClick={handleNext}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#037F8C] px-4 py-2 text-xs font-semibold text-white hover:bg-[#223121] disabled:opacity-50"
+                                >
+                                    التالي
+                                    {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
+                                </button>
+                            ) : (
+                                <button
+                                    key="employee-form-submit"
+                                    type="submit"
+                                    disabled={isSaving || isViewMode}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#037F8C] px-5 py-2 text-xs font-semibold text-white hover:bg-[#223121] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <Save size={14} />
+                                    {isSaving ? "جارٍ الحفظ..." : isUpdateMode ? "حفظ التعديلات" : "حفظ الموظف"}
+                                </button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-
-            {/* =================================================================== */}
-            {/* WIZARD NAVIGATION FOOTER                                            */}
-            {/* =================================================================== */}
-            <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    {currentStep > 0 ? (
-                        <button
-                            type="button"
-                            disabled={isSubmitting}
-                            onClick={onPrevStep}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#45413C] transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                            {isRtl ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
-                            <span>{t('ums.employees.wizard.prevStep')}</span>
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            disabled={isSubmitting}
-                            onClick={onCancel}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#6E6862] transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                            <span>{t('ums.employees.wizard.cancel')}</span>
-                        </button>
-                    )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2.5">
-                    <button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={() => onSave(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F5] hover:bg-[#EFECE6] border border-[#E5E0D8] text-xs font-semibold text-[#037F8C] transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                        <Save size={14} />
-                        <span>{t('ums.employees.wizard.saveAsDraft')}</span>
-                    </button>
-
-                    {currentStep < 3 ? (
-                        <button
-                            type="button"
-                            disabled={isSubmitting}
-                            onClick={onNextStep}
-                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-                        >
-                            <span>{t('ums.employees.wizard.nextStep')}</span>
-                            {isRtl ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            disabled={isSubmitting}
-                            onClick={() => onSave(false)}
-                            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-                        >
-                            <CheckCircle2 size={15} />
-                            <span>
-                                {isEditMode
-                                    ? t('ums.employees.wizard.submitUpdate')
-                                    : t('ums.employees.wizard.submitCreate')}
-                            </span>
-                        </button>
-                    )}
-                </div>
+                </form>
             </div>
         </div>
     );

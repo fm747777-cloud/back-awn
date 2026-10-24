@@ -16,7 +16,7 @@ import {
 import { toast } from 'sonner';
 import { DataTable } from '../../components/DataTable';
 import { AuditTrailInspectModal } from '../../components/ums/AuditTrailInspectModal';
-import { umsApi } from '../../api/api';
+import { umsApi } from '../../api/umsApi';
 import {
     recordUmsAuditEvent,
     escapeSafeCsvCell,

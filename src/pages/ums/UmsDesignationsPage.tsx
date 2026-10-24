@@ -1,1254 +1,550 @@
-import React, { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { type ColumnDef } from '@tanstack/react-table';
-import {
-    Briefcase,
-    CheckCircle2,
-    XCircle,
-    Users,
-    X,
-    RotateCcw,
-    Download,
-    Plus,
-    Eye,
-    Pencil,
-    Trash2,
-    Power,
-    Building2,
-    ShieldAlert,
-    Copy,
-    Check,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { DataTable } from '../../components/DataTable';
-import { umsApi } from '../../api/api';
-import {
-    DesignationForm,
-    type DesignationFormValues,
-} from '../../components/ums/DesignationForm';
-import {
-    loadDepartments,
-    loadEmployees,
-    generateNextDesignationCode,
-    recordUmsAuditEvent,
-    escapeSafeCsvCell,
-    syncMasterEntityEmployeeCounts,
-    type DesignationRecord,
-    type DepartmentRecord,
-    type EmployeeRecord,
-} from './umsMockData';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Briefcase, Eye, Pencil, Plus, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+
+import { DataTable } from "../../components/DataTable";
+import { DesignationForm, type DesignationFormValues } from "../../components/ums/DesignationForm";
+import { umsApi } from "../../api/api";
+
+interface DesignationRecord {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt?: string;
+}
+
+interface DesignationResponse {
+    data?: DesignationRecord[];
+    items?: DesignationRecord[];
+    results?: DesignationRecord[];
+    totalItems?: number;
+    total?: number;
+    meta?: {
+        total?: number;
+    };
+}
 
 const DEFAULT_FORM_VALUES: DesignationFormValues = {
-    designationName: '',
-    description: '',
+    designationName: "",
+    description: "",
+};
+
+const extractDesignations = (response: DesignationResponse | DesignationRecord[] | undefined): DesignationRecord[] => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.results)) return response.results;
+    return [];
+};
+
+const getErrorMessage = (error: any, fallback: string): string => {
+    const message = error?.response?.data?.message || error?.message;
+    return Array.isArray(message) ? message.join(", ") : message || fallback;
 };
 
 export const UmsDesignationsPage: React.FC = () => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
-    const isRtl = i18n.dir() === 'rtl' || i18n.language.startsWith('ar');
 
-    // Server / Repository State via TanStack Query & umsApi
-    const { data: designations = [], isLoading } = useQuery<DesignationRecord[]>({
-        queryKey: ['ums', 'designations'],
-        queryFn: async () => umsApi.listDesignations(),
-    });
+    const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
 
-    const { data: departments = [] } = useQuery<DepartmentRecord[]>({
-        queryKey: ['ums', 'departments'],
-        queryFn: async () => {
-            const res = await umsApi.listDepartments();
-            return res.data ?? loadDepartments();
-        },
-    });
-
-    const { data: employees = [] } = useQuery<EmployeeRecord[]>({
-        queryKey: ['ums', 'employees'],
-        queryFn: async () => {
-            const res = await umsApi.listEmployees();
-            return res.data ?? loadEmployees();
-        },
-    });
-
-    const saveDesignationsMutation = useMutation({
-        mutationFn: async (updated: DesignationRecord[]) => {
-            umsApi.saveDesignations(updated);
-            syncMasterEntityEmployeeCounts(employees);
-            return umsApi.listDesignations();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['ums', 'designations'] });
-            queryClient.invalidateQueries({ queryKey: ['ums', 'employees'] });
-        },
-    });
-
-    // Resolve live Department display name in active language
-    const resolveDepartmentDisplayName = (item: DesignationRecord): string | undefined => {
-        if (item.departmentId) {
-            const dept = departments.find((d) => d.id === item.departmentId);
-            if (dept) {
-                return isRtl ? dept.nameAr || dept.nameEn : dept.nameEn;
-            }
-        }
-        return item.departmentName;
-    };
-
-    // Filter & Pagination State
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'ALL' | 'Active' | 'Inactive'>('ALL');
-    const [departmentFilter, setDepartmentFilter] = useState<string>('ALL');
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-    // Modals & Drawers State
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingDesignation, setEditingDesignation] = useState<DesignationRecord | null>(null);
     const [viewingDesignation, setViewingDesignation] = useState<DesignationRecord | null>(null);
     const [deletingDesignation, setDeletingDesignation] = useState<DesignationRecord | null>(null);
+
     const [formValues, setFormValues] = useState<DesignationFormValues>(DEFAULT_FORM_VALUES);
-    const [formErrors, setFormErrors] = useState<
-        Partial<Record<keyof DesignationFormValues, string>>
-    >({});
+    const [formErrors, setFormErrors] = useState<Partial<Record<keyof DesignationFormValues, string>>>({});
 
-    // Live count of employees assigned to each designation
-    const employeeCountByDesignation = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const emp of employees) {
-            if (emp.designationId) {
-                counts[emp.designationId] = (counts[emp.designationId] || 0) + 1;
-            }
-        }
-        return counts;
-    }, [employees]);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+        }, 400);
 
-    // Active departments for filter
-    const activeDepartments = useMemo(() => {
-        return departments.filter((d) => d.status === 'Active');
-    }, [departments]);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
-    // Summary KPIs
-    const kpis = useMemo(() => {
-        const total = designations.length;
-        const active = designations.filter((d) => d.status === 'Active').length;
-        const inactive = total - active;
-        const totalAssignedStaff = designations.reduce(
-            (acc, d) => acc + (employeeCountByDesignation[d.id] || 0),
-            0
-        );
-        return { total, active, inactive, totalAssignedStaff };
-    }, [designations, employeeCountByDesignation]);
+    const { data: designationsResponse, isLoading, isError, refetch } = useQuery({
+        queryKey: ["ums", "designations",
+            {
+                page: currentPage + 1,
+                limit: pageSize,
+                search: debouncedSearch,
+            },
+        ],
+        queryFn: () => umsApi.getDesignations({
+            page: currentPage + 1,
+            limit: pageSize,
+            search: debouncedSearch || undefined,
+        }),
+        placeholderData: (previousData) => previousData,
+    });
 
-    // Filtered & Paginated records
-    const filteredDesignations = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        return designations.filter((item) => {
-            if (statusFilter !== 'ALL' && item.status !== statusFilter) {
-                return false;
-            }
-            if (departmentFilter !== 'ALL' && item.departmentId !== departmentFilter) {
-                return false;
-            }
-            if (!query) return true;
-            const linkedDept = item.departmentId
-                ? departments.find((d) => d.id === item.departmentId)
-                : undefined;
-            return (
-                item.code.toLowerCase().includes(query) ||
-                item.titleEn.toLowerCase().includes(query) ||
-                item.titleAr.toLowerCase().includes(query) ||
-                (linkedDept &&
-                    (linkedDept.nameEn.toLowerCase().includes(query) ||
-                        linkedDept.nameAr.toLowerCase().includes(query))) ||
-                (item.departmentName && item.departmentName.toLowerCase().includes(query)) ||
-                item.descriptionEn.toLowerCase().includes(query) ||
-                item.descriptionAr.toLowerCase().includes(query)
-            );
-        });
-    }, [designations, searchQuery, statusFilter, departmentFilter, departments]);
+    const designations = useMemo<DesignationRecord[]>(() => {
+        return extractDesignations(designationsResponse);
+    }, [designationsResponse]);
 
-    const paginatedDesignations = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filteredDesignations.slice(start, start + pageSize);
-    }, [filteredDesignations, currentPage, pageSize]);
+    const totalCount = designationsResponse?.count;
 
-    const hasActiveFilters = statusFilter !== 'ALL' || departmentFilter !== 'ALL';
+    const createMutation = useMutation({
+        mutationFn: (data: { name: string; description?: string }) => umsApi.createDesignation(data),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["ums", "designations"] });
+            toast.success(t("ums.designations.feedback.created", { defaultValue: "Designation created successfully." }));
+            handleCloseForm();
+        },
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error, t("common.somethingWentWrong", { defaultValue: "Something went wrong." })));
+        },
+    });
 
-    // Selection
-    const isAllSelected =
-        paginatedDesignations.length > 0 &&
-        paginatedDesignations.every((d) => selectedIds.includes(d.id));
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: { name: string; description?: string } }) => umsApi.updateDesignation(id, data),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["ums", "designations"] });
+            toast.success(t("ums.designations.feedback.updated", { defaultValue: "Designation updated successfully." }));
+            handleCloseForm();
+        },
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error, t("common.somethingWentWrong", { defaultValue: "Something went wrong." })));
+        },
+    });
 
-    const handleSelectAll = () => {
-        if (isAllSelected) {
-            setSelectedIds((prev) =>
-                prev.filter((id) => !paginatedDesignations.some((d) => d.id === id))
-            );
-        } else {
-            const pageIds = paginatedDesignations.map((d) => d.id);
-            setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
-        }
-    };
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => umsApi.deleteDesignation(id),
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["ums", "designations"] });
+            toast.success(t("ums.designations.feedback.deleted", { defaultValue: "Designation deleted successfully." }));
+            setDeletingDesignation(null);
+        },
+        onError: (error: any) => {
+            toast.error(getErrorMessage(error, t("ums.designations.deleteError", { defaultValue: "Failed to delete designation." })));
+        },
+    });
 
-    const handleToggleSelect = (id: string) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-        );
-    };
+    const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
-    // Copy Code helper
-    const handleCopyCode = (code: string) => {
-        navigator.clipboard?.writeText(code);
-        setCopiedCode(code);
-        toast.success(t('common.copiedToClipboard', { defaultValue: `Copied ${code}` }));
-        setTimeout(() => setCopiedCode(null), 2000);
-    };
-
-    // Reset Filters
-    const handleResetFilters = () => {
-        setSearchQuery('');
-        setStatusFilter('ALL');
-        setDepartmentFilter('ALL');
-        setCurrentPage(1);
-    };
-
-    // Open Create Modal
-    const handleOpenCreate = () => {
+    const handleOpenCreate = useCallback(() => {
         setEditingDesignation(null);
         setFormValues(DEFAULT_FORM_VALUES);
         setFormErrors({});
-        setIsCreateOpen(true);
-    };
+        setIsFormOpen(true);
+    }, []);
 
-    // Open Edit Modal
-    const handleOpenEdit = (designation: DesignationRecord) => {
-        setIsCreateOpen(false);
+    const handleOpenEdit = useCallback((designation: DesignationRecord) => {
         setEditingDesignation(designation);
         setFormValues({
-            designationName: isRtl
-                ? designation.titleAr || designation.titleEn
-                : designation.titleEn || designation.titleAr,
-            description: isRtl
-                ? designation.descriptionAr || designation.descriptionEn
-                : designation.descriptionEn || designation.descriptionAr,
+            designationName: designation.name || "",
+            description: designation.description || "",
         });
         setFormErrors({});
-    };
+        setIsFormOpen(true);
+    }, []);
 
-    // Close Create/Edit Modal
-    const handleCloseForm = () => {
-        setIsCreateOpen(false);
+    const handleCloseForm = useCallback(() => {
+        setIsFormOpen(false);
         setEditingDesignation(null);
+        setFormValues(DEFAULT_FORM_VALUES);
         setFormErrors({});
-    };
+    }, []);
 
-    // Validation
-    const validateForm = (isEditing = false, currentId?: string): boolean => {
+    const validateForm = useCallback((): boolean => {
         const errors: Partial<Record<keyof DesignationFormValues, string>> = {};
-        const trimmedName = formValues.designationName.trim();
-        const trimmedDesc = formValues.description.trim();
+        const name = formValues.designationName.trim();
+        const description = formValues.description.trim();
 
-        if (!trimmedName) {
-            errors.designationName = t('ums.designations.validation.designationNameRequired', {
-                defaultValue: 'Designation Name is required.',
-            });
-        } else {
-            const duplicate = designations.find(
-                (d) =>
-                    (!isEditing || d.id !== currentId) &&
-                    (d.titleEn.trim().toLowerCase() === trimmedName.toLowerCase() ||
-                        d.titleAr.trim().toLowerCase() === trimmedName.toLowerCase())
-            );
-            if (duplicate) {
-                errors.designationName = t('ums.designations.validation.duplicateTitle', {
-                    defaultValue: 'A designation with this name already exists.',
-                });
-            }
+        if (!name) {
+            errors.designationName = t("ums.designations.validation.designationNameRequired", { defaultValue: "Designation name is required." });
         }
 
-        if (!trimmedDesc) {
-            errors.description = t('ums.designations.validation.descriptionRequired', {
-                defaultValue: 'Description is required.',
-            });
+        if (!description) {
+            errors.description = t("ums.designations.validation.descriptionRequired", { defaultValue: "Description is required." });
+        }
+
+        const duplicate = designations.find((designation) => {
+            const isSameRecord = editingDesignation && designation.id === editingDesignation.id;
+            return !isSameRecord && designation.name.trim().toLowerCase() === name.toLowerCase();
+        });
+
+        if (duplicate) {
+            errors.designationName = t("ums.designations.validation.duplicateTitle", { defaultValue: "A designation with this name already exists." });
         }
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
-    };
+    }, [designations, editingDesignation, formValues, t]);
 
-    // Save Create / Edit
-    const handleSubmitForm = (e: React.FormEvent) => {
-        e.preventDefault();
-        const isEditing = Boolean(editingDesignation);
-        if (!validateForm(isEditing, editingDesignation?.id)) return;
+    const handleSubmitForm = useCallback((event: React.FormEvent) => {
+        event.preventDefault();
 
-        const trimmedName = formValues.designationName.trim();
-        const trimmedDesc = formValues.description.trim();
+        if (!validateForm()) return;
 
-        if (editingDesignation) {
-            const updatedDesignation: DesignationRecord = {
-                ...editingDesignation,
-                titleEn: isRtl ? editingDesignation.titleEn || trimmedName : trimmedName,
-                titleAr: isRtl ? trimmedName : editingDesignation.titleAr || trimmedName,
-                descriptionEn: isRtl ? editingDesignation.descriptionEn || trimmedDesc : trimmedDesc,
-                descriptionAr: isRtl ? trimmedDesc : editingDesignation.descriptionAr || trimmedDesc,
-            };
-
-            const updated = designations.map((d) =>
-                d.id === editingDesignation.id ? updatedDesignation : d
-            );
-            saveDesignationsMutation.mutate(updated);
-
-            recordUmsAuditEvent({
-                action: 'UPDATED',
-                resource: 'Designation',
-                resourceId: updatedDesignation.id,
-                resourceName: updatedDesignation.titleEn,
-                detailsEn: `Updated designation ${updatedDesignation.code} (${updatedDesignation.titleEn}).`,
-                detailsAr: `تحديث بيانات المسمى الوظيفي ${updatedDesignation.code} (${updatedDesignation.titleAr}).`,
-                previousState: JSON.stringify(editingDesignation),
-                newState: JSON.stringify(updatedDesignation),
-            });
-
-            toast.success(
-                t('ums.designations.feedback.updated', {
-                    defaultValue: `Designation ${trimmedName} updated successfully.`,
-                    title: trimmedName,
-                })
-            );
-            setEditingDesignation(null);
-            return;
-        }
-
-        const newDesignation: DesignationRecord = {
-            id: `des-${Date.now()}`,
-            code: generateNextDesignationCode(designations),
-            titleEn: trimmedName,
-            titleAr: trimmedName,
-            descriptionEn: trimmedDesc,
-            descriptionAr: trimmedDesc,
-            status: 'Active',
-            employeeCount: 0,
-            createdAt: new Date().toISOString().slice(0, 10),
+        const data = {
+            name: formValues.designationName.trim(),
+            description: formValues.description.trim(),
         };
 
-        const updated = [newDesignation, ...designations];
-        saveDesignationsMutation.mutate(updated);
+        if (editingDesignation) {
+            updateMutation.mutate({
+                id: editingDesignation.id,
+                data,
+            });
+        } else {
+            createMutation.mutate(data);
+        }
+    }, [createMutation, editingDesignation, formValues, updateMutation, validateForm]);
 
-        recordUmsAuditEvent({
-            action: 'CREATED',
-            resource: 'Designation',
-            resourceId: newDesignation.id,
-            resourceName: newDesignation.titleEn,
-            detailsEn: `Created designation ${newDesignation.code} (${newDesignation.titleEn}).`,
-            detailsAr: `إنشاء مسمى وظيفي جديد ${newDesignation.code} (${newDesignation.titleAr}).`,
-            newState: JSON.stringify(newDesignation),
-        });
-
-        toast.success(
-            t('ums.designations.feedback.created', {
-                defaultValue: `Designation ${newDesignation.titleEn} created successfully.`,
-                title: newDesignation.titleEn,
-            })
-        );
-        setIsCreateOpen(false);
-    };
-
-    // Quick Status Toggle
-    const handleToggleStatus = (designation: DesignationRecord) => {
-        const nextStatus: 'Active' | 'Inactive' =
-            designation.status === 'Active' ? 'Inactive' : 'Active';
-        const updated = designations.map((d) =>
-            d.id === designation.id ? { ...d, status: nextStatus } : d
-        );
-        saveDesignationsMutation.mutate(updated);
-
-        const actionType = nextStatus === 'Active' ? 'ACTIVATED' : 'DEACTIVATED';
-        recordUmsAuditEvent({
-            action: actionType,
-            resource: 'Designation',
-            resourceId: designation.id,
-            resourceName: designation.titleEn,
-            detailsEn: `Changed status of ${designation.code} to ${nextStatus}.`,
-            detailsAr: `تغيير حالة المسمى الوظيفي ${designation.code} إلى ${
-                nextStatus === 'Active' ? 'نشط' : 'معطل'
-            }.`,
-        });
-
-        toast.success(
-            t('ums.designations.feedback.statusChanged', {
-                defaultValue: `Designation ${designation.titleEn} is now ${nextStatus}.`,
-                title: designation.titleEn,
-                status: nextStatus,
-            })
-        );
-    };
-
-    // Delete check & action
-    const handleDeleteClick = (designation: DesignationRecord) => {
-        setDeletingDesignation(designation);
-    };
-
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = useCallback(() => {
         if (!deletingDesignation) return;
 
-        const check = umsApi.checkDesignationDeletionEligibility(deletingDesignation.id, employees);
-        if (!check.canDelete) {
-            toast.error(isRtl ? check.reasonAr : check.reasonEn);
+        deleteMutation.mutate(deletingDesignation.id);
+    }, [deleteMutation, deletingDesignation]);
+
+    const handleExportCsv = useCallback(() => {
+        if (!designations.length) {
+            toast.error(t("common.noRecords", { defaultValue: "No records found." }));
             return;
         }
 
-        const updated = designations.filter((d) => d.id !== deletingDesignation.id);
-        saveDesignationsMutation.mutate(updated);
-        setSelectedIds((prev) => prev.filter((id) => id !== deletingDesignation.id));
+        const headers = ["ID", "Designation Name", "Description", "Created At"];
+        const escapeCsvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
-        recordUmsAuditEvent({
-            action: 'DELETED',
-            resource: 'Designation',
-            resourceId: deletingDesignation.id,
-            resourceName: deletingDesignation.titleEn,
-            detailsEn: `Deleted designation ${deletingDesignation.code} (${deletingDesignation.titleEn}).`,
-            detailsAr: `حذف المسمى الوظيفي ${deletingDesignation.code} (${deletingDesignation.titleAr}).`,
-            previousState: JSON.stringify(deletingDesignation),
-        });
-
-        toast.success(
-            t('ums.designations.feedback.deleted', {
-                defaultValue: `Designation ${deletingDesignation.titleEn} deleted successfully.`,
-                title: deletingDesignation.titleEn,
-            })
-        );
-        setDeletingDesignation(null);
-    };
-
-    // Export CSV
-    const handleExportCsv = () => {
-        if (designations.length === 0) {
-            toast.error(t('common.noRecords', { defaultValue: 'No records found' }));
-            return;
-        }
-
-        const headers = [
-            'Designation Code',
-            'Title (English)',
-            'Title (Arabic)',
-            'Department',
-            'Assigned Employees',
-            'Status',
-            'Created Date',
-            'Description (EN)',
-        ];
-
-        const rows = designations.map((d) => [
-            escapeSafeCsvCell(d.code),
-            escapeSafeCsvCell(d.titleEn),
-            escapeSafeCsvCell(d.titleAr),
-            escapeSafeCsvCell(resolveDepartmentDisplayName(d) || 'General / Unassigned'),
-            employeeCountByDesignation[d.id] || 0,
-            escapeSafeCsvCell(d.status),
-            escapeSafeCsvCell(d.createdAt),
-            escapeSafeCsvCell(d.descriptionEn || ''),
+        const rows = designations.map((designation) => [
+            designation.id,
+            designation.name,
+            designation.description || "",
+            designation.createdAt || "",
         ]);
 
-        const csvContent =
-            '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const csvContent = [
+            headers.map(escapeCsvCell).join(","),
+            ...rows.map((row) => row.map(escapeCsvCell).join(",")),
+        ].join("\r\n");
+
+        const blob = new Blob(["\uFEFF", csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
+
         link.href = url;
-        link.setAttribute(
-            'download',
-            `AWN_Designations_${new Date().toISOString().slice(0, 10)}.csv`
-        );
+        link.download = `designations-${new Date().toISOString().slice(0, 10)}.csv`;
+
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.remove();
+
         URL.revokeObjectURL(url);
+    }, [designations, t]);
 
-        recordUmsAuditEvent({
-            action: 'EXPORTED',
-            resource: 'Designation',
-            resourceId: 'ALL',
-            resourceName: 'Designations Catalog',
-            detailsEn: `Exported ${designations.length} designation records to CSV.`,
-            detailsAr: `تصدير ${designations.length} سجل من المسميات الوظيفية إلى ملف CSV.`,
-        });
-
-        toast.success(
-            t('ums.designations.feedback.exported', {
-                defaultValue: 'Designations exported successfully.',
-            })
-        );
-    };
-
-    // Assigned employees for currently viewed designation
-    const viewedEmployees = useMemo(() => {
-        if (!viewingDesignation) return [];
-        return employees.filter((e) => e.designationId === viewingDesignation.id);
-    }, [viewingDesignation, employees]);
-
-    // Deletion eligibility for modal
-    const deletionEligibility = useMemo(() => {
-        if (!deletingDesignation) return null;
-        return umsApi.checkDesignationDeletionEligibility(deletingDesignation.id, employees);
-    }, [deletingDesignation, employees]);
-
-    // Shared DataTable column definitions
-    const columns: ColumnDef<any, any>[] = useMemo(
-        () => [
-            {
-                id: 'select',
-                header: () => (
-                    <input
-                        type="checkbox"
-                        checked={isAllSelected}
-                        onChange={handleSelectAll}
-                        aria-label={t('common.selectAll', { defaultValue: 'Select All' })}
-                        className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                    />
-                ),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    const isSelected = selectedIds.includes(item.id);
-                    return (
-                        <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleToggleSelect(item.id)}
-                            aria-label={`Select ${item.titleEn}`}
-                            className="rounded border-[#E5E0D8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                        />
-                    );
-                },
-            },
-            {
-                accessorKey: 'code',
-                header: t('ums.designations.colCode', { defaultValue: 'Code' }),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    return (
-                        <div className="flex items-center gap-1.5 font-mono text-xs">
-                            <span className="font-semibold text-[#0D0D0D]">{item.code}</span>
-                            <button
-                                type="button"
-                                onClick={() => handleCopyCode(item.code)}
-                                className="text-[#857E74] hover:text-[#0D0D0D] p-0.5 rounded cursor-pointer"
-                                title={t('common.copy', { defaultValue: 'Copy' })}
-                            >
-                                {copiedCode === item.code ? (
-                                    <Check size={12} className="text-[#037F8C]" />
-                                ) : (
-                                    <Copy size={12} />
-                                )}
-                            </button>
-                        </div>
-                    );
-                },
-            },
-            {
-                accessorKey: 'titleEn',
-                header: t('ums.designations.colTitle', { defaultValue: 'Job Title' }),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    return (
-                        <div className="flex flex-col">
-                            <span className="font-bold text-[#0D0D0D]">
-                                {isRtl ? item.titleAr : item.titleEn}
-                            </span>
-                            <span className="text-[11px] text-[#6E6862]">
-                                {isRtl ? item.titleEn : item.titleAr}
-                            </span>
-                        </div>
-                    );
-                },
-            },
-            {
-                id: 'department',
-                header: t('ums.designations.colDepartment', { defaultValue: 'Department' }),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    const deptName = resolveDepartmentDisplayName(item);
-                    return deptName ? (
-                        <div className="flex items-center gap-1.5 text-xs text-[#45413C]">
-                            <Building2 size={13} className="text-[#857E74]" />
-                            <span>{deptName}</span>
-                        </div>
-                    ) : (
-                        <span className="text-xs text-[#857E74] italic">
-                            {t('ums.designations.noDepartment', {
-                                defaultValue: 'General / Unassigned',
-                            })}
-                        </span>
-                    );
-                },
-            },
-            {
-                id: 'staffCount',
-                header: t('ums.designations.colStaff', { defaultValue: 'Staff Count' }),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    const staffCount = employeeCountByDesignation[item.id] || 0;
-                    return (
-                        <button
-                            type="button"
-                            onClick={() => setViewingDesignation(item)}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#037F8C] hover:underline cursor-pointer"
-                            title={t('ums.designations.staffPreview', {
-                                defaultValue: 'View assigned employees',
-                            })}
-                        >
-                            <Users size={13} className="text-[#857E74]" />
-                            <span>
-                                {staffCount > 0
-                                    ? `${staffCount} ${t('ums.designations.staffPreview', {
-                                          defaultValue: 'Employees',
-                                      })}`
-                                    : t('ums.designations.noStaffAssigned', {
-                                          defaultValue: 'No Staff',
-                                      })}
-                            </span>
-                        </button>
-                    );
-                },
-            },
-            {
-                accessorKey: 'status',
-                header: t('common.status', { defaultValue: 'Status' }),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    return (
-                        <button
-                            type="button"
-                            onClick={() => handleToggleStatus(item)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border cursor-pointer transition-colors ${
-                                item.status === 'Active'
-                                    ? 'bg-[#EAF3EC] text-[#037F8C] border-[#037F8C]/20 hover:bg-[#EAF3EC]/80'
-                                    : 'bg-[#FAF8F5] text-[#857E74] border-[#E5E0D8] hover:bg-[#E5E0D8]/40'
-                            }`}
-                            title={t('common.toggleStatus', {
-                                defaultValue: 'Click to toggle status',
-                            })}
-                        >
-                            <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                    item.status === 'Active' ? 'bg-[#037F8C]' : 'bg-[#857E74]'
-                                }`}
-                            />
-                            <span>
-                                {item.status === 'Active'
-                                    ? t('common.active', { defaultValue: 'Active' })
-                                    : t('common.inactive', { defaultValue: 'Inactive' })}
-                            </span>
-                        </button>
-                    );
-                },
-            },
-            {
-                id: 'actions',
-                header: t('common.actions', { defaultValue: 'Actions' }),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    return (
-                        <div className="flex items-center justify-end gap-1">
-                            {/* View */}
-                            <button
-                                type="button"
-                                onClick={() => setViewingDesignation(item)}
-                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                title={t('common.view', { defaultValue: 'View Details' })}
-                            >
-                                <Eye size={14} />
-                            </button>
-
-                            {/* Edit */}
-                            <button
-                                type="button"
-                                onClick={() => handleOpenEdit(item)}
-                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                title={t('common.edit', { defaultValue: 'Edit' })}
-                            >
-                                <Pencil size={14} />
-                            </button>
-
-                            {/* Quick Status Toggle */}
-                            <button
-                                type="button"
-                                onClick={() => handleToggleStatus(item)}
-                                className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                                    item.status === 'Active'
-                                        ? 'text-[#037F8C] hover:bg-[#EAF3EC]'
-                                        : 'text-[#857E74] hover:bg-[#FAF8F5]'
-                                }`}
-                                title={t('common.toggleStatus', { defaultValue: 'Toggle Status' })}
-                            >
-                                <Power size={14} />
-                            </button>
-
-                            {/* Delete */}
-                            <button
-                                type="button"
-                                onClick={() => handleDeleteClick(item)}
-                                className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] transition-colors cursor-pointer"
-                                title={t('common.delete', { defaultValue: 'Delete' })}
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        </div>
-                    );
-                },
-            },
-        ],
-        [
-            isAllSelected,
-            selectedIds,
-            copiedCode,
-            isRtl,
-            t,
-            employeeCountByDesignation,
-            departments,
-            designations,
-        ]
-    );
-
-    const filtersPanel = (
-        <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 bg-white border border-[#E5E0D8] rounded-xl shadow-2xs">
-            <div className="flex flex-wrap items-center gap-2.5">
-                {/* Department Filter */}
-                <div className="min-w-[160px]">
-                    <select
-                        value={departmentFilter}
-                        onChange={(e) => {
-                            setDepartmentFilter(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        aria-label={t('ums.designations.filterDepartment', {
-                            defaultValue: 'Filter Department',
-                        })}
-                        className="w-full px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-xs text-[#45413C] focus:outline-none focus:ring-1 focus:ring-[#037F8C] focus:border-[#037F8C] cursor-pointer"
+    const columns = useMemo<ColumnDef<any, any>[]>(() => [
+        {
+            accessorKey: "codeName",
+            header: t("ums.designations.codeName", { defaultValue: "Code Name" }),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2.5">
+                    <span className="font-semibold text-[#0D0D0D]">
+                        {row.original.codeName}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "name",
+            header: t("ums.designations.colTitle", { defaultValue: "Designation Name" }),
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
+                        <Briefcase size={15} />
+                    </div>
+                    <span className="font-semibold text-[#0D0D0D]">
+                        {row.original.name}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            accessorKey: "description",
+            header: t("ums.designations.form.descriptionField", { defaultValue: "Description" }),
+            cell: ({ row }) => (
+                <span className="block max-w-md truncate text-xs text-[#6E6862]">
+                    {row.original.description || "—"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "createdAt",
+            header: t("common.createdAt", { defaultValue: "Created At" }),
+            cell: ({ row }) => (
+                <span className="font-mono text-xs text-[#6E6862]" dir="ltr">
+                    {row.original.createdAt ? String(row.original.createdAt).slice(0, 10) : "—"}
+                </span>
+            ),
+        },
+        {
+            id: "actions",
+            header: t("common.actions", { defaultValue: "Actions" }),
+            cell: ({ row }) => (
+                <div className="flex items-center justify-end gap-1">
+                    <button
+                        type="button"
+                        onClick={() => setViewingDesignation(row.original)}
+                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] cursor-pointer"
+                        title={t("common.view", { defaultValue: "View" })}
                     >
-                        <option value="ALL">
-                            {t('common.allDepartments', { defaultValue: 'All Departments' })}
-                        </option>
-                        {activeDepartments.map((dept) => (
-                            <option key={dept.id} value={dept.id}>
-                                {isRtl ? dept.nameAr : dept.nameEn}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                        <Eye size={14} />
+                    </button>
 
-                {/* Status Filter Segmented Control */}
-                <div className="flex items-center gap-1 p-1 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg">
-                    {(['ALL', 'Active', 'Inactive'] as const).map((status) => (
-                        <button
-                            key={status}
-                            type="button"
-                            onClick={() => {
-                                setStatusFilter(status);
-                                setCurrentPage(1);
-                            }}
-                            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
-                                statusFilter === status
-                                    ? 'bg-white text-[#0D0D0D] shadow-2xs border border-[#E5E0D8]'
-                                    : 'text-[#6E6862] hover:text-[#0D0D0D]'
-                            }`}
-                        >
-                            {status === 'ALL'
-                                ? t('common.all', { defaultValue: 'All' })
-                                : status === 'Active'
-                                ? t('common.active', { defaultValue: 'Active' })
-                                : t('common.inactive', { defaultValue: 'Inactive' })}
-                        </button>
-                    ))}
-                </div>
-            </div>
+                    <button
+                        type="button"
+                        onClick={() => handleOpenEdit(row.original)}
+                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] cursor-pointer"
+                        title={t("common.edit", { defaultValue: "Edit" })}
+                    >
+                        <Pencil size={14} />
+                    </button>
 
-            {(searchQuery || hasActiveFilters) && (
-                <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                    title={t('common.resetFilters', { defaultValue: 'Reset Filters' })}
-                >
-                    <RotateCcw size={13} />
-                    <span>{t('common.reset', { defaultValue: 'Reset' })}</span>
-                </button>
-            )}
-        </div>
-    );
+                    <button
+                        type="button"
+                        onClick={() => setDeletingDesignation(row.original)}
+                        className="p-1.5 rounded-md text-[#857E74] hover:text-[#DC2626] hover:bg-[#FEE2E2] cursor-pointer"
+                        title={t("common.delete", { defaultValue: "Delete" })}
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            ),
+        },
+    ], [handleOpenEdit, t]);
 
     return (
         <div className="space-y-6 text-start">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-1">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2.5">
                         <h1 className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                            {t('ums.designations.title', { defaultValue: 'Designations Master' })}
+                            {t("ums.designations.title", { defaultValue: "Designations Master" })}
                         </h1>
-                        <span
-                            className="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]"
-                            dir="ltr"
-                        >
+                        <span className="px-2 py-0.5 text-[11px] font-mono font-semibold rounded-md bg-[#FAF8F5] text-[#037F8C] border border-[#E5E0D8]">
                             DES-MST
                         </span>
                     </div>
-                    <p className="text-xs text-[#6E6862] mt-1 font-normal">
-                        {t('ums.designations.subtitle', {
-                            defaultValue:
-                                'Corporate job titles, grade structures, and departmental allocations.',
-                        })}
+
+                    <p className="mt-1 text-xs text-[#6E6862]">
+                        {t("ums.designations.subtitle", { defaultValue: "Manage organizational designations." })}
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto">
+                <div className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={handleExportCsv}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-[#FAF8F5] border border-[#E5E0D8] text-xs font-semibold text-[#45413C] transition-colors cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#E5E0D8] text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] cursor-pointer"
                     >
-                        <Download size={14} className="text-[#857E74]" />
-                        <span>{t('common.export', { defaultValue: 'Export' })}</span>
+                        {t("common.export", { defaultValue: "Export" })}
                     </button>
 
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#223121] text-white text-xs font-semibold cursor-pointer"
                     >
                         <Plus size={14} />
-                        <span>
-                            {t('ums.designations.addDesignation', {
-                                defaultValue: 'Add Designation',
-                            })}
-                        </span>
+                        {t("ums.designations.addDesignation", { defaultValue: "Add Designation" })}
                     </button>
                 </div>
             </div>
 
-            {/* KPI Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.total', {
-                                defaultValue: 'Total Designations',
-                            })}
+                            {t("ums.designations.kpi.total", { defaultValue: "Total Designations" })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
-                            <Briefcase size={16} />
-                        </div>
+                        <Briefcase size={18} className="text-[#037F8C]" />
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                            {kpis.total}
-                        </span>
-                        <span className="text-[11px] font-normal text-[#6E6862]">
-                            {t('ums.designations.kpi.units', { defaultValue: 'Positions' })}
-                        </span>
-                    </div>
+                    <p className="mt-3 text-2xl font-bold text-[#0D0D0D]">
+                        {totalCount}
+                    </p>
                 </div>
 
-                {/* Active */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.active', { defaultValue: 'Active Positions' })}
+                            {t("ums.designations.kpi.loaded", { defaultValue: "Loaded Records" })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#EAF3EC] border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C]">
-                            <CheckCircle2 size={16} />
-                        </div>
+                        <Eye size={18} className="text-[#037F8C]" />
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#037F8C]">
-                            {kpis.active}
-                        </span>
-                        <span className="text-[11px] font-normal text-[#6E6862]">
-                            {t('ums.designations.kpi.operating', { defaultValue: 'Operational' })}
-                        </span>
-                    </div>
+                    <p className="mt-3 text-2xl font-bold text-[#037F8C]">
+                        {designations.length}
+                    </p>
                 </div>
 
-                {/* Inactive */}
                 <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.inactive', {
-                                defaultValue: 'Inactive Positions',
-                            })}
+                            {t("ums.designations.kpi.page", { defaultValue: "Current Page" })}
                         </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#857E74]">
-                            <XCircle size={16} />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#6E6862]">
-                            {kpis.inactive}
-                        </span>
-                        <span className="text-[11px] font-normal text-[#6E6862]">
-                            {t('ums.designations.kpi.suspended', { defaultValue: 'Suspended' })}
+                        <span className="text-xs font-mono text-[#857E74]">
+                            {currentPage + 1}
                         </span>
                     </div>
-                </div>
-
-                {/* Assigned Workforce */}
-                <div className="bg-white border border-[#E5E0D8] rounded-xl p-4 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-[#6E6862]">
-                            {t('ums.designations.kpi.workforce', {
-                                defaultValue: 'Assigned Workforce',
-                            })}
-                        </span>
-                        <div className="w-8 h-8 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
-                            <Users size={16} />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold tracking-tight text-[#0D0D0D]">
-                            {kpis.totalAssignedStaff}
-                        </span>
-                        <span className="text-[11px] font-normal text-[#6E6862]">
-                            {t('ums.designations.kpi.employeesTotal', {
-                                defaultValue: 'Employees',
-                            })}
-                        </span>
-                    </div>
+                    <p className="mt-3 text-2xl font-bold text-[#0D0D0D]">
+                        {pageSize}
+                    </p>
                 </div>
             </div>
 
-            {/* Bulk selection actions bar */}
-            {selectedIds.length > 0 && (
-                <div className="flex items-center justify-between px-3 py-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-lg text-xs">
-                    <span className="font-semibold text-[#037F8C]">
-                        {t('common.selectedCount', {
-                            defaultValue: `${selectedIds.length} item(s) selected`,
-                            count: selectedIds.length,
-                        })}
-                    </span>
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setSelectedIds([])}
-                            className="text-xs text-[#857E74] hover:text-[#0D0D0D] cursor-pointer"
-                        >
-                            {t('common.clearSelection', { defaultValue: 'Clear' })}
-                        </button>
-                    </div>
+            {isError && (
+                <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                    <p className="text-sm text-red-600">
+                        {t("common.somethingWentWrong", { defaultValue: "Failed to load designations." })}
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className="text-sm font-medium text-red-700 underline"
+                    >
+                        {t("common.retry", { defaultValue: "Retry" })}
+                    </button>
                 </div>
             )}
 
-            {/* Shared DataTable */}
             <DataTable
                 columns={columns}
-                data={paginatedDesignations}
-                count={filteredDesignations.length}
+                data={designations}
+                count={totalCount}
                 loading={isLoading}
-                pageIndex={currentPage - 1}
+                pageIndex={currentPage}
                 pageSize={pageSize}
-                onPageChange={(newPageIdx) => setCurrentPage(newPageIdx + 1)}
-                onPageSizeChange={(newSize) => {
-                    setPageSize(newSize);
-                    setCurrentPage(1);
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(0);
                 }}
                 searchValue={searchQuery}
-                onSearchChange={(val) => {
-                    setSearchQuery(val);
-                    setCurrentPage(1);
+                onSearchChange={(value) => {
+                    setSearchQuery(value);
+                    setCurrentPage(0);
                 }}
-                searchPlaceholder={t('ums.designations.searchPlaceholder', {
-                    defaultValue:
-                        'Search designations by code, title, department, or description...',
-                })}
-                title={t('ums.designations.title', { defaultValue: 'Designations Master' })}
-                description={t('ums.designations.subtitle', {
-                    defaultValue:
-                        'Corporate job titles, grade structures, and departmental allocations.',
-                })}
+                searchPlaceholder={t("ums.designations.searchPlaceholder", { defaultValue: "Search designations..." })}
+                title={t("ums.designations.title", { defaultValue: "Designations Master" })}
+                description={t("ums.designations.subtitle", { defaultValue: "Manage organizational designations." })}
                 onAddNew={handleOpenCreate}
-                addNewLabel={t('ums.designations.addDesignation', {
-                    defaultValue: 'Add Designation',
-                })}
+                addNewLabel={t("ums.designations.addDesignation", { defaultValue: "Add Designation" })}
                 onExport={handleExportCsv}
-                onToggleFilters={() => setIsFiltersOpen((prev) => !prev)}
-                isFiltersOpen={isFiltersOpen}
-                hasActiveFilters={hasActiveFilters}
-                filtersContent={filtersPanel}
             />
 
-            {/* Extracted Standalone Designation Form Modal */}
             <DesignationForm
-                isOpen={isCreateOpen || Boolean(editingDesignation)}
+                isOpen={isFormOpen}
                 isEditing={Boolean(editingDesignation)}
                 values={formValues}
                 errors={formErrors}
-                isSubmitting={saveDesignationsMutation.isPending}
+                isSubmitting={isSubmitting}
                 onChange={setFormValues}
                 onCancel={handleCloseForm}
                 onSubmit={handleSubmitForm}
             />
 
-            {/* View Details Drawer or Modal */}
             {viewingDesignation && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs">
-                    <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E0D8]">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-lg overflow-hidden rounded-xl border border-[#E5E0D8] bg-white shadow-xl">
+                        <div className="flex items-center justify-between border-b border-[#E5E0D8] px-6 py-4">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] flex items-center justify-center text-[#037F8C]">
-                                    <Briefcase size={18} />
-                                </div>
-                                <div>
-                                    <h2 className="text-base font-bold text-[#0D0D0D]">
-                                        {isRtl
-                                            ? viewingDesignation.titleAr
-                                            : viewingDesignation.titleEn}
-                                    </h2>
-                                    <span className="font-mono text-xs text-[#6E6862]">
-                                        {viewingDesignation.code}
-                                    </span>
-                                </div>
+                                <Briefcase size={18} className="text-[#037F8C]" />
+                                <h2 className="text-base font-bold text-[#0D0D0D]">
+                                    {viewingDesignation.name}
+                                </h2>
                             </div>
+
                             <button
                                 type="button"
                                 onClick={() => setViewingDesignation(null)}
-                                className="p-1.5 rounded-lg text-[#857E74] hover:text-[#0D0D0D] hover:bg-[#FAF8F5] cursor-pointer"
+                                className="rounded-lg p-1.5 text-[#857E74] hover:bg-[#FAF8F5] hover:text-[#0D0D0D] cursor-pointer"
                             >
-                                <X size={16} />
+                                <X size={17} />
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-5">
-                            {/* Metadata Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl p-4 text-xs">
-                                <div>
-                                    <span className="text-[#857E74] block">
-                                        {t('ums.designations.colDepartment', {
-                                            defaultValue: 'Department',
-                                        })}
-                                    </span>
-                                    <span className="font-semibold text-[#0D0D0D] mt-0.5 block">
-                                        {resolveDepartmentDisplayName(viewingDesignation) ||
-                                            t('ums.designations.noDepartment', {
-                                                defaultValue: 'General',
-                                            })}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-[#857E74] block">
-                                        {t('common.status', { defaultValue: 'Status' })}
-                                    </span>
-                                    <span
-                                        className={`inline-block font-semibold mt-0.5 ${
-                                            viewingDesignation.status === 'Active'
-                                                ? 'text-[#037F8C]'
-                                                : 'text-[#857E74]'
-                                        }`}
-                                    >
-                                        {viewingDesignation.status}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <span className="text-[#857E74] block">
-                                        {t('common.createdAt', { defaultValue: 'Created Date' })}
-                                    </span>
-                                    <span className="font-mono font-medium text-[#45413C] mt-0.5 block">
-                                        {viewingDesignation.createdAt}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Descriptions */}
-                            <div className="space-y-3">
-                                <div>
-                                    <h3 className="text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.designations.form.descEn', {
-                                            defaultValue: 'Description (EN)',
-                                        })}
-                                    </h3>
-                                    <p className="text-xs text-[#6E6862] bg-[#FAF8F5] p-3 rounded-lg border border-[#E5E0D8]">
-                                        {viewingDesignation.descriptionEn ||
-                                            'No English description provided.'}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <h3 className="text-xs font-semibold text-[#45413C] mb-1">
-                                        {t('ums.designations.form.descAr', {
-                                            defaultValue: 'Description (AR)',
-                                        })}
-                                    </h3>
-                                    <p
-                                        dir="rtl"
-                                        className="text-xs text-[#6E6862] bg-[#FAF8F5] p-3 rounded-lg border border-[#E5E0D8]"
-                                    >
-                                        {viewingDesignation.descriptionAr || 'لا يوجد وصف عربي.'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Assigned Employees */}
+                        <div className="space-y-4 p-6">
                             <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-xs font-bold text-[#0D0D0D]">
-                                        {t('ums.designations.staffPreview', {
-                                            defaultValue: 'Assigned Employees',
-                                        })}{' '}
-                                        <span className="text-[#037F8C]">
-                                            ({viewedEmployees.length})
-                                        </span>
-                                    </h3>
-                                </div>
+                                <span className="text-xs font-semibold text-[#857E74]">
+                                    {t("ums.designations.form.descriptionField", { defaultValue: "Description" })}
+                                </span>
+                                <p className="mt-1 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] p-3 text-sm text-[#45413C]">
+                                    {viewingDesignation.description || "—"}
+                                </p>
+                            </div>
 
-                                {viewedEmployees.length === 0 ? (
-                                    <div className="p-4 rounded-lg bg-[#FAF8F5] border border-[#E5E0D8] text-center text-xs text-[#857E74]">
-                                        {t('ums.designations.noStaffAssigned', {
-                                            defaultValue:
-                                                'No employees currently assigned to this designation.',
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="divide-y divide-[#EFECE6] border border-[#E5E0D8] rounded-lg overflow-hidden">
-                                        {viewedEmployees.map((emp) => (
-                                            <div
-                                                key={emp.id}
-                                                className="flex items-center justify-between p-3 bg-white text-xs"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-7 h-7 rounded-full bg-[#037F8C] text-white flex items-center justify-center font-bold text-[11px]">
-                                                        {emp.nameEn.slice(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <span className="font-semibold text-[#0D0D0D] block">
-                                                            {isRtl ? emp.nameAr : emp.nameEn}
-                                                        </span>
-                                                        <span className="text-[11px] text-[#6E6862]">
-                                                            {emp.code} ·{' '}
-                                                            {isRtl
-                                                                ? emp.departmentNameAr ||
-                                                                  emp.departmentName
-                                                                : emp.departmentName}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <span
-                                                    className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                                                        emp.status === 'Active'
-                                                            ? 'bg-[#EAF3EC] text-[#037F8C]'
-                                                            : 'bg-[#FAF8F5] text-[#857E74]'
-                                                    }`}
-                                                >
-                                                    {t(`ums.employees.statuses.${emp.status}`, {
-                                                        defaultValue: emp.status,
-                                                    })}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                            <div>
+                                <span className="text-xs font-semibold text-[#857E74]">
+                                    {t("common.createdAt", { defaultValue: "Created At" })}
+                                </span>
+                                <p className="mt-1 text-sm text-[#45413C]">
+                                    {viewingDesignation.createdAt ? String(viewingDesignation.createdAt).slice(0, 10) : "—"}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end px-6 py-4 border-t border-[#E5E0D8]">
+                        <div className="flex justify-end border-t border-[#E5E0D8] px-6 py-4">
                             <button
                                 type="button"
                                 onClick={() => setViewingDesignation(null)}
-                                className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
+                                className="rounded-lg bg-[#037F8C] px-4 py-2 text-xs font-semibold text-white hover:bg-[#223121] cursor-pointer"
                             >
-                                {t('common.close', { defaultValue: 'Close' })}
+                                {t("common.close", { defaultValue: "Close" })}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Delete Confirmation Modal */}
-            {deletingDesignation && deletionEligibility && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs">
-                    <div className="bg-white rounded-xl border border-[#E5E0D8] shadow-xl w-full max-w-md p-6">
-                        {!deletionEligibility.canDelete ? (
-                            // Blocked Deletion Notice
-                            <div>
-                                <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center mx-auto mb-3">
-                                    <ShieldAlert size={20} />
-                                </div>
-                                <h2 className="text-base font-bold text-[#0D0D0D] text-center mb-1">
-                                    {t('ums.designations.deleteBlockedTitle', {
-                                        defaultValue: 'Cannot Delete Designation',
-                                    })}
-                                </h2>
-                                <p className="text-xs text-[#6E6862] text-center mb-4">
-                                    {isRtl
-                                        ? deletionEligibility.reasonAr
-                                        : deletionEligibility.reasonEn}
-                                </p>
-                                <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#E5E0D8]">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDeletingDesignation(null)}
-                                        className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                    >
-                                        {t('common.close', { defaultValue: 'Close' })}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            handleToggleStatus(deletingDesignation);
-                                            setDeletingDesignation(null);
-                                        }}
-                                        className="px-4 py-2 rounded-lg bg-[#037F8C] text-white text-xs font-semibold hover:bg-[#223121] transition-colors cursor-pointer"
-                                    >
-                                        {t('common.deactivateInstead', {
-                                            defaultValue: 'Deactivate Instead',
-                                        })}
-                                    </button>
-                                </div>
+            {deletingDesignation && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-xl border border-[#E5E0D8] bg-white p-6 shadow-xl">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FEE2E2] text-[#DC2626]">
+                                <Trash2 size={19} />
                             </div>
-                        ) : (
-                            // Allowed Delete Confirmation
+
                             <div>
-                                <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center mx-auto mb-3">
-                                    <Trash2 size={20} />
-                                </div>
-                                <h2 className="text-base font-bold text-[#0D0D0D] text-center mb-1">
-                                    {t('ums.designations.deleteTitle', {
-                                        defaultValue: 'Delete Designation',
-                                    })}
+                                <h2 className="text-base font-bold text-[#0D0D0D]">
+                                    {t("ums.designations.deleteTitle", { defaultValue: "Delete Designation" })}
                                 </h2>
-                                <p className="text-xs text-[#6E6862] text-center mb-4">
-                                    {t('ums.designations.deleteConfirmDesc', {
-                                        defaultValue:
-                                            'Are you sure you want to delete this designation? This action cannot be undone.',
-                                    })}
-                                    <span className="block font-bold text-[#0D0D0D] mt-2">
-                                        {deletingDesignation.code} —{' '}
-                                        {isRtl
-                                            ? deletingDesignation.titleAr
-                                            : deletingDesignation.titleEn}
-                                    </span>
+                                <p className="text-xs text-[#6E6862]">
+                                    {deletingDesignation.name}
                                 </p>
-                                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E0D8]">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDeletingDesignation(null)}
-                                        className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                                    >
-                                        {t('common.cancel', { defaultValue: 'Cancel' })}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleConfirmDelete}
-                                        className="px-4 py-2 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold transition-colors cursor-pointer"
-                                    >
-                                        {t('common.delete', { defaultValue: 'Delete' })}
-                                    </button>
-                                </div>
                             </div>
-                        )}
+                        </div>
+
+                        <p className="mt-4 text-sm text-[#45413C]">
+                            {t("ums.designations.deleteConfirmDesc", { defaultValue: "Are you sure you want to delete this designation?" })}
+                        </p>
+
+                        <div className="mt-6 flex justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setDeletingDesignation(null)}
+                                disabled={deleteMutation.isPending}
+                                className="rounded-lg border border-[#E5E0D8] bg-white px-4 py-2 text-xs font-semibold text-[#45413C] hover:bg-[#FAF8F5] cursor-pointer disabled:opacity-50"
+                            >
+                                {t("common.cancel", { defaultValue: "Cancel" })}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleConfirmDelete}
+                                disabled={deleteMutation.isPending}
+                                className="rounded-lg bg-[#DC2626] px-4 py-2 text-xs font-semibold text-white hover:bg-[#B91C1C] cursor-pointer disabled:opacity-50"
+                            >
+                                {deleteMutation.isPending ? "..." : t("common.delete", { defaultValue: "Delete" })}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
