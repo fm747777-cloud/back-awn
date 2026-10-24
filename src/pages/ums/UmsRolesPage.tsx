@@ -103,12 +103,12 @@ export const UmsRolesPage: React.FC = () => {
 
     const updateRoleMutation = useMutation({
         mutationFn: ({ id, data }: { id: string; data: Partial<RoleRecord> }) => umsApi.updateRole(id, data),
-        onSuccess: (updatedData) => {
+        onSuccess: (updatedData: RoleRecord) => {
             queryClient.invalidateQueries({ queryKey: ['ums', 'roles'] });
             toast.success(t('ums.roles.feedback.updated', { defaultValue: 'Role updated successfully.' }));
             setEditingRole(null);
 
-            if (viewingRole && viewingRole.id === updatedData.id) {
+            if (viewingRole && viewingRole.id === updatedData?.id) {
                 setViewingRole(updatedData);
             }
         },

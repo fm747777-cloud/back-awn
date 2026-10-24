@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, AlertCircle, CheckCircle2, Percent } from 'lucide-react';
+import { X, AlertCircle, Percent } from 'lucide-react';
 import {
     crmTaxInputSchema,
     type CrmTaxInput,
     type CrmTaxRecord,
-    type CrmTaxType,
-    type CrmRecordStatus,
 } from '../../../schemas/crmSchema';
 
 export interface TaxFormDrawerProps {
@@ -29,16 +27,10 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
     onSubmit,
 }) => {
     const { t } = useTranslation();
-    const isEdit = Boolean(editingRecord);
 
     const [nameEn, setNameEn] = useState('');
-    const [nameAr, setNameAr] = useState('');
-    const [taxType, setTaxType] = useState<CrmTaxType>('VAT');
-    const [rate, setRate] = useState<string>('15');
-    const [isDefault, setIsDefault] = useState<boolean>(false);
+    const [rate, setRate] = useState<string>('');
     const [descriptionEn, setDescriptionEn] = useState('');
-    const [descriptionAr, setDescriptionAr] = useState('');
-    const [status, setStatus] = useState<CrmRecordStatus>('active');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
@@ -47,23 +39,13 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
         setPrevSyncKey(currentSyncKey);
         setFieldErrors({});
         if (isOpen && editingRecord) {
-            setNameEn(editingRecord.nameEn);
-            setNameAr(editingRecord.nameAr);
-            setTaxType(editingRecord.taxType);
+            setNameEn(editingRecord.nameEn || editingRecord.nameAr || '');
             setRate(String(editingRecord.rate));
-            setIsDefault(Boolean(editingRecord.isDefault));
-            setDescriptionEn(editingRecord.descriptionEn || '');
-            setDescriptionAr(editingRecord.descriptionAr || '');
-            setStatus(editingRecord.status);
+            setDescriptionEn(editingRecord.descriptionEn || editingRecord.descriptionAr || '');
         } else if (isOpen) {
             setNameEn('');
-            setNameAr('');
-            setTaxType('VAT');
-            setRate('15');
-            setIsDefault(false);
+            setRate('');
             setDescriptionEn('');
-            setDescriptionAr('');
-            setStatus('active');
         }
     }
 
@@ -85,7 +67,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
         const nextErrors: Record<string, string> = {};
 
         const trimmedEn = nameEn.trim();
-        const trimmedAr = nameAr.trim();
+        const trimmedAr = editingRecord?.nameAr?.trim() || trimmedEn;
         const parsedRate = rate.trim() === '' ? Number.NaN : Number(rate);
 
         const duplicateEn = existingRecords.find(
@@ -97,27 +79,21 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
             nextErrors.nameEn = t('crm.master.form.errors.duplicateNameEn');
         }
 
-        const duplicateAr = existingRecords.find(
-            (item) =>
-                item.id !== editingRecord?.id &&
-                item.nameAr.trim().toLowerCase() === trimmedAr.toLowerCase()
-        );
-        if (duplicateAr) {
-            nextErrors.nameAr = t('crm.master.form.errors.duplicateNameAr');
-        }
-
         if (!Number.isFinite(parsedRate) || parsedRate < 0 || parsedRate > 100) {
             nextErrors.rate = t('crm.master.form.errors.invalidRate');
         }
 
+        const isDefault = Boolean(editingRecord?.isDefault);
+        const status = editingRecord?.status ?? 'active';
+
         const parsed = crmTaxInputSchema.safeParse({
             nameEn: trimmedEn,
             nameAr: trimmedAr,
-            taxType,
+            taxType: editingRecord?.taxType ?? 'VAT',
             rate: parsedRate,
             isDefault,
             descriptionEn: descriptionEn.trim() || undefined,
-            descriptionAr: descriptionAr.trim() || undefined,
+            descriptionAr: editingRecord?.descriptionAr || undefined,
             status: isDefault ? 'active' : status,
         });
 
@@ -128,11 +104,9 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                     nextErrors[key] =
                         key === 'nameEn'
                             ? t('crm.master.form.errors.nameEnRequired')
-                            : key === 'nameAr'
-                              ? t('crm.master.form.errors.nameArRequired')
-                              : key === 'rate'
-                                ? t('crm.master.form.errors.invalidRate')
-                                : issue.message;
+                            : key === 'rate'
+                              ? t('crm.master.form.errors.invalidRate')
+                              : issue.message;
                 }
             }
         }
@@ -166,17 +140,8 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                             id="crm-tax-form-title"
                             className="text-base font-bold text-[#0D0D0D]"
                         >
-                            {isEdit
-                                ? t('crm.master.entities.tax.editTitle')
-                                : t('crm.master.entities.tax.createTitle')}
+                            Add New Tax
                         </h2>
-                        <p className="text-xs text-[#6E6862] mt-0.5">
-                            {isEdit
-                                ? t('crm.master.entities.tax.editSubtitle', {
-                                      code: editingRecord?.code || '',
-                                  })
-                                : t('crm.master.entities.tax.createSubtitle')}
-                        </p>
                     </div>
                     <button
                         type="button"
@@ -201,18 +166,18 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                         </div>
                     )}
 
-                    {/* English Name */}
+                    {/* 1. Name* */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="crm-tax-name-en"
                             className="block text-xs font-semibold text-[#0D0D0D]"
                         >
-                            {t('crm.master.form.nameEnLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
+                            Name<span className="text-[#A63A3A]">*</span>
                         </label>
                         <input
                             id="crm-tax-name-en"
                             type="text"
+                            required
                             dir="ltr"
                             value={nameEn}
                             onChange={(e) => {
@@ -221,7 +186,7 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                                     setFieldErrors((prev) => ({ ...prev, nameEn: '' }));
                                 }
                             }}
-                            placeholder={t('crm.master.form.nameEnPlaceholder')}
+                            placeholder="Enter Name"
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameEn
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
@@ -235,204 +200,66 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                         )}
                     </div>
 
-                    {/* Arabic Name */}
+                    {/* 2. Tax Value* */}
                     <div className="space-y-1.5">
                         <label
-                            htmlFor="crm-tax-name-ar"
+                            htmlFor="crm-tax-rate"
                             className="block text-xs font-semibold text-[#0D0D0D]"
                         >
-                            {t('crm.master.form.nameArLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
+                            Tax Value<span className="text-[#A63A3A]">*</span>
                         </label>
-                        <input
-                            id="crm-tax-name-ar"
-                            type="text"
-                            dir="rtl"
-                            value={nameAr}
-                            onChange={(e) => {
-                                setNameAr(e.target.value);
-                                if (fieldErrors.nameAr) {
-                                    setFieldErrors((prev) => ({ ...prev, nameAr: '' }));
-                                }
-                            }}
-                            placeholder={t('crm.master.form.nameArPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
-                                fieldErrors.nameAr
-                                    ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                            }`}
-                        />
-                        {fieldErrors.nameAr && (
+                        <div className="relative">
+                            <input
+                                id="crm-tax-rate"
+                                type="number"
+                                required
+                                min={0}
+                                max={100}
+                                step="0.01"
+                                dir="ltr"
+                                value={rate}
+                                onChange={(e) => {
+                                    setRate(e.target.value);
+                                    if (fieldErrors.rate) {
+                                        setFieldErrors((prev) => ({ ...prev, rate: '' }));
+                                    }
+                                }}
+                                placeholder="Enter Tax Value"
+                                className={`w-full ps-3.5 pe-8 py-2.5 rounded-lg border text-xs font-mono text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
+                                    fieldErrors.rate
+                                        ? 'border-[#A63A3A] focus:border-[#A63A3A]'
+                                        : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                }`}
+                            />
+                            <Percent
+                                size={13}
+                                className="absolute top-1/2 -translate-y-1/2 end-3 text-[#857E74] pointer-events-none"
+                            />
+                        </div>
+                        {fieldErrors.rate && (
                             <p className="text-[11px] font-medium text-[#A63A3A]">
-                                {fieldErrors.nameAr}
+                                {fieldErrors.rate}
                             </p>
                         )}
                     </div>
 
-                    {/* Tax Type & Percentage (0-100) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label
-                                htmlFor="crm-tax-type"
-                                className="block text-xs font-semibold text-[#0D0D0D]"
-                            >
-                                {t('crm.master.form.taxTypeLabel')}
-                            </label>
-                            <select
-                                id="crm-tax-type"
-                                value={taxType}
-                                onChange={(e) => setTaxType(e.target.value as CrmTaxType)}
-                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] cursor-pointer"
-                            >
-                                <option value="VAT">{t('crm.master.form.taxTypeVat')}</option>
-                                <option value="Tax">{t('crm.master.form.taxTypeTax')}</option>
-                            </select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label
-                                htmlFor="crm-tax-rate"
-                                className="block text-xs font-semibold text-[#0D0D0D]"
-                            >
-                                {t('crm.master.form.taxRateLabel')}{' '}
-                                <span className="text-[#A63A3A]">*</span>
-                            </label>
-                            <div className="relative">
-                                <input
-                                    id="crm-tax-rate"
-                                    type="number"
-                                    min={0}
-                                    max={100}
-                                    step="0.01"
-                                    dir="ltr"
-                                    value={rate}
-                                    onChange={(e) => {
-                                        setRate(e.target.value);
-                                        if (fieldErrors.rate) {
-                                            setFieldErrors((prev) => ({ ...prev, rate: '' }));
-                                        }
-                                    }}
-                                    placeholder={t('crm.master.form.taxRatePlaceholder')}
-                                    className={`w-full ps-3.5 pe-8 py-2.5 rounded-lg border text-xs font-mono text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
-                                        fieldErrors.rate
-                                            ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                                    }`}
-                                />
-                                <Percent
-                                    size={13}
-                                    className="absolute top-1/2 -translate-y-1/2 end-3 text-[#857E74] pointer-events-none"
-                                />
-                            </div>
-                            {fieldErrors.rate ? (
-                                <p className="text-[11px] font-medium text-[#A63A3A]">
-                                    {fieldErrors.rate}
-                                </p>
-                            ) : (
-                                <p className="text-[11px] text-[#6E6862]">
-                                    {t('crm.master.form.taxRateHelper')}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Default Tax Toggle */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4">
-                        <label className="flex items-start gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={isDefault}
-                                onChange={(e) => {
-                                    const checked = e.target.checked;
-                                    setIsDefault(checked);
-                                    if (checked) {
-                                        setStatus('active');
-                                    }
-                                }}
-                                className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                            />
-                            <div>
-                                <span className="block text-xs font-semibold text-[#0D0D0D]">
-                                    {t('crm.master.form.isDefaultTaxLabel')}
-                                </span>
-                                <span className="block text-[11px] text-[#6E6862] mt-0.5">
-                                    {t('crm.master.form.isDefaultTaxHelper')}
-                                </span>
-                            </div>
-                        </label>
-                    </div>
-
-                    {/* Descriptions */}
+                    {/* 3. Description */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="crm-tax-desc-en"
                             className="block text-xs font-semibold text-[#0D0D0D]"
                         >
-                            {t('crm.master.form.descriptionEnLabel')}
+                            Description
                         </label>
                         <textarea
                             id="crm-tax-desc-en"
-                            rows={2}
+                            rows={3}
                             dir="ltr"
                             value={descriptionEn}
                             onChange={(e) => setDescriptionEn(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionEnPlaceholder')}
+                            placeholder="Type Your Message"
                             className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-tax-desc-ar"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.descriptionArLabel')}
-                        </label>
-                        <textarea
-                            id="crm-tax-desc-ar"
-                            rows={2}
-                            dir="rtl"
-                            value={descriptionAr}
-                            onChange={(e) => setDescriptionAr(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
-                        />
-                    </div>
-
-                    {/* Status */}
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#0D0D0D]">
-                            {t('crm.master.form.statusLabel')}
-                        </label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            {(['active', 'inactive'] as const).map((option) => {
-                                const selected = status === option;
-                                return (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        onClick={() => setStatus(option)}
-                                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
-                                            selected
-                                                ? option === 'active'
-                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
-                                                    : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D]'
-                                                : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5]'
-                                        }`}
-                                    >
-                                        <CheckCircle2
-                                            size={14}
-                                            className={selected ? 'opacity-100' : 'opacity-40'}
-                                        />
-                                        <span>
-                                            {option === 'active'
-                                                ? t('crm.master.common.active')
-                                                : t('crm.master.common.inactive')}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
                     </div>
 
                     {/* Footer Buttons */}
@@ -443,18 +270,14 @@ export const TaxFormDrawer: React.FC<TaxFormDrawerProps> = ({
                             disabled={isSubmitting}
                             className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
-                            {t('crm.master.common.cancel')}
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
                             className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
                         >
-                            {isSubmitting
-                                ? t('crm.master.common.saving')
-                                : isEdit
-                                  ? t('crm.master.common.saveChanges')
-                                  : t('crm.master.common.createRecord')}
+                            Submit
                         </button>
                     </div>
                 </form>

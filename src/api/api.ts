@@ -1159,7 +1159,6 @@ export const serviceApi = {
             const response = await axiosClient.get('/service-doc', { params: data });
             return response.data;
         } catch {
-
         }
     },
 };
@@ -1241,7 +1240,7 @@ export const userApi = {
     getUsers: async (params: any) => {
         const response = await axiosClient.get('/user', { params });
         return response.data;
-    }
+    },
 }
 
 export const documentApi = {

@@ -1,351 +1,290 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Loader2, X } from 'lucide-react';
 import {
     crmOrganizationalTypeInputSchema,
     type CrmOrganizationalTypeInput,
     type CrmOrganizationalTypeRecord,
-    type CrmRecordStatus,
 } from '../../../schemas/crmSchema';
 
-export interface OrganizationalTypeFormDrawerProps {
+interface OrganizationalTypeFormDrawerProps {
     isOpen: boolean;
     editingRecord: CrmOrganizationalTypeRecord | null;
     existingRecords: CrmOrganizationalTypeRecord[];
-    isSubmitting?: boolean;
-    apiError?: string | null;
+    isSubmitting: boolean;
+    apiError: string | null;
     onClose: () => void;
-    onSubmit: (payload: CrmOrganizationalTypeInput) => Promise<void> | void;
+    onSubmit: (values: CrmOrganizationalTypeInput) => Promise<void> | void;
 }
+
+interface FormState {
+    nameEn: string;
+    nameAr: string;
+    descriptionEn: string;
+}
+
+const DEFAULT_STATE: FormState = {
+    nameEn: '',
+    nameAr: '',
+    descriptionEn: '',
+};
 
 export const OrganizationalTypeFormDrawer: React.FC<OrganizationalTypeFormDrawerProps> = ({
     isOpen,
     editingRecord,
     existingRecords,
-    isSubmitting = false,
-    apiError = null,
+    isSubmitting,
+    apiError,
     onClose,
     onSubmit,
 }) => {
-    const { t } = useTranslation();
-    const isEdit = Boolean(editingRecord);
+    const [formState, setFormState] = useState<FormState>(DEFAULT_STATE);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const [nameEn, setNameEn] = useState('');
-    const [nameAr, setNameAr] = useState('');
-    const [descriptionEn, setDescriptionEn] = useState('');
-    const [descriptionAr, setDescriptionAr] = useState('');
-    const [status, setStatus] = useState<CrmRecordStatus>('active');
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    useEffect(() => {
+        if (!isOpen) return;
 
-    const [prevSyncKey, setPrevSyncKey] = useState('');
-    const currentSyncKey = `${isOpen}-${editingRecord?.id ?? 'new'}`;
-    if (currentSyncKey !== prevSyncKey) {
-        setPrevSyncKey(currentSyncKey);
-        setFieldErrors({});
-        if (isOpen && editingRecord) {
-            setNameEn(editingRecord.nameEn);
-            setNameAr(editingRecord.nameAr);
-            setDescriptionEn(editingRecord.descriptionEn || '');
-            setDescriptionAr(editingRecord.descriptionAr || '');
-            setStatus(editingRecord.status);
-        } else if (isOpen) {
-            setNameEn('');
-            setNameAr('');
-            setDescriptionEn('');
-            setDescriptionAr('');
-            setStatus('active');
+        if (editingRecord) {
+            setFormState({
+                nameEn: editingRecord.nameEn,
+                nameAr: editingRecord.nameAr,
+                descriptionEn: editingRecord.descriptionEn || editingRecord.descriptionAr || '',
+            });
+        } else {
+            setFormState(DEFAULT_STATE);
         }
-    }
+
+        setErrors({});
+    }, [isOpen, editingRecord]);
 
     useEffect(() => {
         if (!isOpen) return;
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
+            if (event.key === 'Escape' && !isSubmitting) {
                 onClose();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isOpen, isSubmitting, onClose]);
 
     if (!isOpen) return null;
 
+    const handleChange = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+        setFormState((prev) => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+            setErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
+    };
+
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
+        setErrors({});
+
+        const normalizedPayload: CrmOrganizationalTypeInput = {
+            nameEn: formState.nameEn.trim(),
+            nameAr: formState.nameAr.trim(),
+            descriptionEn: formState.descriptionEn.trim() || undefined,
+            descriptionAr: editingRecord?.descriptionAr || undefined,
+            status: editingRecord?.status ?? 'active',
+        };
+
+        const parsed = crmOrganizationalTypeInputSchema.safeParse(normalizedPayload);
         const nextErrors: Record<string, string> = {};
-
-        const trimmedEn = nameEn.trim();
-        const trimmedAr = nameAr.trim();
-
-        const duplicateEn = existingRecords.find(
-            (item) =>
-                item.id !== editingRecord?.id &&
-                item.nameEn.trim().toLowerCase() === trimmedEn.toLowerCase()
-        );
-        if (duplicateEn) {
-            nextErrors.nameEn = t('crm.master.form.errors.duplicateNameEn');
-        }
-
-        const duplicateAr = existingRecords.find(
-            (item) =>
-                item.id !== editingRecord?.id &&
-                item.nameAr.trim().toLowerCase() === trimmedAr.toLowerCase()
-        );
-        if (duplicateAr) {
-            nextErrors.nameAr = t('crm.master.form.errors.duplicateNameAr');
-        }
-
-        const parsed = crmOrganizationalTypeInputSchema.safeParse({
-            nameEn: trimmedEn,
-            nameAr: trimmedAr,
-            descriptionEn: descriptionEn.trim() || undefined,
-            descriptionAr: descriptionAr.trim() || undefined,
-            status,
-        });
 
         if (!parsed.success) {
             for (const issue of parsed.error.issues) {
                 const key = String(issue.path[0] || 'form');
                 if (!nextErrors[key]) {
-                    nextErrors[key] =
-                        key === 'nameEn'
-                            ? t('crm.master.form.errors.nameEnRequired')
-                            : key === 'nameAr'
-                              ? t('crm.master.form.errors.nameArRequired')
-                              : issue.message;
+                    nextErrors[key] = issue.message;
                 }
             }
         }
 
-        if (Object.keys(nextErrors).length > 0 || !parsed.success) {
-            setFieldErrors(nextErrors);
+        const duplicateEn = existingRecords.some(
+            (record) =>
+                record.id !== editingRecord?.id &&
+                record.nameEn.trim().toLowerCase() === normalizedPayload.nameEn.toLowerCase()
+        );
+        if (duplicateEn) {
+            nextErrors.nameEn = 'An organizational type with this English name already exists.';
+        }
+
+        const duplicateAr = existingRecords.some(
+            (record) =>
+                record.id !== editingRecord?.id &&
+                record.nameAr.trim() === normalizedPayload.nameAr
+        );
+        if (duplicateAr) {
+            nextErrors.nameAr =
+                'يوجد نوع تنظيمي بنفس الاسم العربي مسبقاً (Arabic organizational type name already exists).';
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+            setErrors(nextErrors);
             return;
         }
 
-        setFieldErrors({});
-        await onSubmit(parsed.data);
+        if (parsed.success) {
+            await onSubmit(parsed.data);
+        }
     };
 
     return (
         <div
-            className="fixed inset-0 z-50 overflow-hidden"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="crm-org-type-form-title"
+            className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-[2px] transition-opacity"
+            onClick={() => {
+                if (!isSubmitting) onClose();
+            }}
         >
             <div
-                className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] transition-opacity"
-                onClick={onClose}
-            />
-
-            <div className="fixed top-0 end-0 h-full w-full max-w-lg bg-white border-s border-[#E5E0D8] shadow-2xl flex flex-col text-start z-10">
-                {/* Header */}
-                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3 shrink-0">
+                className="relative flex h-full w-full max-w-xl flex-col bg-white dark:bg-[#1E293B] shadow-2xl border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200"
+                onClick={(event) => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="org-type-drawer-title"
+            >
+                {/* Drawer Header */}
+                <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-5">
                     <div>
                         <h2
-                            id="crm-org-type-form-title"
-                            className="text-base font-bold text-[#0D0D0D]"
+                            id="org-type-drawer-title"
+                            className="text-lg font-bold text-slate-900 dark:text-white tracking-tight"
                         >
-                            {isEdit
-                                ? t('crm.master.entities.organizationalTypes.editTitle')
-                                : t('crm.master.entities.organizationalTypes.createTitle')}
+                            Add New Organizational Type
                         </h2>
-                        <p className="text-xs text-[#6E6862] mt-0.5">
-                            {isEdit
-                                ? t('crm.master.entities.organizationalTypes.editSubtitle', {
-                                      code: editingRecord?.code || '',
-                                  })
-                                : t('crm.master.entities.organizationalTypes.createSubtitle')}
-                        </p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label={t('crm.master.common.close')}
-                        className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] flex items-center justify-center transition-colors cursor-pointer"
+                        disabled={isSubmitting}
+                        aria-label="Close drawer"
+                        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors disabled:opacity-50"
                     >
-                        <X size={16} />
+                        <X className="h-5 w-5" />
                     </button>
                 </div>
 
-                {/* Form */}
-                <form
-                    onSubmit={handleSubmit}
-                    noValidate
-                    className="flex-1 overflow-y-auto p-6 space-y-5"
-                >
-                    {apiError && (
-                        <div className="rounded-xl border border-[#A63A3A]/30 bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
-                            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                            <span>{apiError}</span>
-                        </div>
-                    )}
-
-                    {/* English Name */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-org-type-name-en"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.nameEnLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
-                        </label>
-                        <input
-                            id="crm-org-type-name-en"
-                            type="text"
-                            dir="ltr"
-                            value={nameEn}
-                            onChange={(e) => {
-                                setNameEn(e.target.value);
-                                if (fieldErrors.nameEn) {
-                                    setFieldErrors((prev) => ({ ...prev, nameEn: '' }));
-                                }
-                            }}
-                            placeholder={t('crm.master.form.nameEnPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
-                                fieldErrors.nameEn
-                                    ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                            }`}
-                        />
-                        {fieldErrors.nameEn && (
-                            <p className="text-[11px] font-medium text-[#A63A3A]">
-                                {fieldErrors.nameEn}
-                            </p>
+                {/* Drawer Form Body */}
+                <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden" noValidate>
+                    <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+                        {apiError && (
+                            <div className="rounded-xl border border-red-200 bg-red-50/90 dark:border-red-900/60 dark:bg-red-950/40 px-4 py-3 text-xs font-medium text-red-700 dark:text-red-300">
+                                {apiError}
+                            </div>
                         )}
-                    </div>
 
-                    {/* Arabic Name */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-org-type-name-ar"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.nameArLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
-                        </label>
-                        <input
-                            id="crm-org-type-name-ar"
-                            type="text"
-                            dir="rtl"
-                            value={nameAr}
-                            onChange={(e) => {
-                                setNameAr(e.target.value);
-                                if (fieldErrors.nameAr) {
-                                    setFieldErrors((prev) => ({ ...prev, nameAr: '' }));
-                                }
-                            }}
-                            placeholder={t('crm.master.form.nameArPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
-                                fieldErrors.nameAr
-                                    ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                            }`}
-                        />
-                        {fieldErrors.nameAr && (
-                            <p className="text-[11px] font-medium text-[#A63A3A]">
-                                {fieldErrors.nameAr}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Description EN */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-org-type-desc-en"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.descriptionEnLabel')}
-                        </label>
-                        <textarea
-                            id="crm-org-type-desc-en"
-                            rows={3}
-                            dir="ltr"
-                            value={descriptionEn}
-                            onChange={(e) => setDescriptionEn(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionEnPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
-                        />
-                    </div>
-
-                    {/* Description AR */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-org-type-desc-ar"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.descriptionArLabel')}
-                        </label>
-                        <textarea
-                            id="crm-org-type-desc-ar"
-                            rows={3}
-                            dir="rtl"
-                            value={descriptionAr}
-                            onChange={(e) => setDescriptionAr(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
-                        />
-                    </div>
-
-                    {/* Status */}
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#0D0D0D]">
-                            {t('crm.master.form.statusLabel')}
-                        </label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            {(['active', 'inactive'] as const).map((option) => {
-                                const selected = status === option;
-                                return (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        onClick={() => setStatus(option)}
-                                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
-                                            selected
-                                                ? option === 'active'
-                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
-                                                    : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D]'
-                                                : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5]'
-                                        }`}
-                                    >
-                                        <CheckCircle2
-                                            size={14}
-                                            className={selected ? 'opacity-100' : 'opacity-40'}
-                                        />
-                                        <span>
-                                            {option === 'active'
-                                                ? t('crm.master.common.active')
-                                                : t('crm.master.common.inactive')}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                        {/* 1. Name (In English)* */}
+                        <div>
+                            <label
+                                htmlFor="org-type-name-en"
+                                className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+                            >
+                                Name (In English)<span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="org-type-name-en"
+                                type="text"
+                                required
+                                maxLength={150}
+                                value={formState.nameEn}
+                                onChange={(event) => handleChange('nameEn', event.target.value)}
+                                placeholder="Enter Name (In English)"
+                                disabled={isSubmitting}
+                                className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-900/80 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                                    errors.nameEn
+                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                                        : 'border-slate-200 dark:border-slate-700 focus:border-[#0052CC] focus:ring-[#0052CC]/20'
+                                }`}
+                            />
+                            {errors.nameEn && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                                    {errors.nameEn}
+                                </p>
+                            )}
                         </div>
-                        <p className="text-[11px] text-[#6E6862]">
-                            {t('crm.master.form.statusHelper')}
-                        </p>
+
+                        {/* 2. Name (In Arabic)* */}
+                        <div>
+                            <label
+                                htmlFor="org-type-name-ar"
+                                className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+                            >
+                                Name (In Arabic)<span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="org-type-name-ar"
+                                type="text"
+                                dir="rtl"
+                                required
+                                maxLength={150}
+                                value={formState.nameAr}
+                                onChange={(event) => handleChange('nameAr', event.target.value)}
+                                placeholder="Enter Name (In Arabic)"
+                                disabled={isSubmitting}
+                                className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-900/80 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                                    errors.nameAr
+                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                                        : 'border-slate-200 dark:border-slate-700 focus:border-[#0052CC] focus:ring-[#0052CC]/20'
+                                }`}
+                            />
+                            {errors.nameAr && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                                    {errors.nameAr}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* 3. Description */}
+                        <div>
+                            <label
+                                htmlFor="org-type-desc"
+                                className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+                            >
+                                Description
+                            </label>
+                            <textarea
+                                id="org-type-desc"
+                                rows={3}
+                                maxLength={500}
+                                value={formState.descriptionEn}
+                                onChange={(event) => handleChange('descriptionEn', event.target.value)}
+                                placeholder="Type Your Message"
+                                disabled={isSubmitting}
+                                className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-900/80 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition-all resize-none ${
+                                    errors.descriptionEn
+                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                                        : 'border-slate-200 dark:border-slate-700 focus:border-[#0052CC] focus:ring-[#0052CC]/20'
+                                }`}
+                            />
+                            {errors.descriptionEn && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                                    {errors.descriptionEn}
+                                </p>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Footer Buttons */}
-                    <div className="pt-4 border-t border-[#E5E0D8] flex items-center justify-end gap-2.5">
+                    {/* Drawer Footer */}
+                    <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 px-6 py-4">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
-                            className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
+                            className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                         >
-                            {t('crm.master.common.cancel')}
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-lg bg-[#0052CC] px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#0047B3] focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 transition-all disabled:opacity-60"
                         >
-                            {isSubmitting
-                                ? t('crm.master.common.saving')
-                                : isEdit
-                                  ? t('crm.master.common.saveChanges')
-                                  : t('crm.master.common.createRecord')}
+                            {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                            <span>Submit</span>
                         </button>
                     </div>
                 </form>

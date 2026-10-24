@@ -87,25 +87,40 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
 
     const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
     const [stepError, setStepError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [isMoreFieldsOpen, setIsMoreFieldsOpen] = useState(false);
     const [selectedDirectoryOwnerId, setSelectedDirectoryOwnerId] = useState<string>('');
+    const [selectedPreOnboardOwnerId, setSelectedPreOnboardOwnerId] = useState<string>('');
 
     const [formState, setFormState] = useState<CrmCompanyInput>({
+        businessType: 'new_business',
         nameEn: '',
         nameAr: '',
         businessName: '',
-        organizationalTypeId: defaultOrgTypeId,
-        ownershipTypeId: defaultOwnTypeId,
+        organizationalTypeId: '',
+        ownershipTypeId: '',
         sectorId: defaultSectorId,
         assignedEmployeeId: '',
+        hasVehicles: false,
+        saudiEmployeesCount: 0,
+        nonSaudiEmployeesCount: 0,
+        hasBranches: false,
         crNumber: '',
         unifiedNumber: '',
         taxNumber: '',
+        buildingNumber: '',
+        street: '',
+        district: '',
+        postalCode: '',
+        province: '',
+        representativeName: '',
+        representativeJobTitle: '',
         email: '',
         phone: '',
         website: '',
         country: 'Saudi Arabia',
         state: 'Riyadh Province',
-        city: 'Riyadh',
+        city: '',
         pinCode: '',
         address: '',
         onboardingStatus: 'pre_onboarding',
@@ -121,10 +136,14 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
         if (isOpen) {
             setCurrentStep(1);
             setStepError(null);
+            setFieldErrors({});
+            setIsMoreFieldsOpen(false);
             setSelectedDirectoryOwnerId('');
+            setSelectedPreOnboardOwnerId('');
 
             if (mode === 'edit' && initialData) {
                 setFormState({
+                    businessType: initialData.businessType || 'existing_business',
                     nameEn: initialData.nameEn,
                     nameAr: initialData.nameAr,
                     businessName: initialData.businessName || initialData.nameEn,
@@ -132,9 +151,20 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                     ownershipTypeId: initialData.ownershipTypeId || defaultOwnTypeId,
                     sectorId: initialData.sectorId,
                     assignedEmployeeId: initialData.assignedEmployeeId || '',
+                    hasVehicles: initialData.hasVehicles ?? false,
+                    saudiEmployeesCount: initialData.saudiEmployeesCount ?? 0,
+                    nonSaudiEmployeesCount: initialData.nonSaudiEmployeesCount ?? 0,
+                    hasBranches: initialData.hasBranches ?? false,
                     crNumber: initialData.crNumber || '',
                     unifiedNumber: initialData.unifiedNumber || '',
                     taxNumber: initialData.taxNumber || '',
+                    buildingNumber: initialData.buildingNumber || '',
+                    street: initialData.street || '',
+                    district: initialData.district || '',
+                    postalCode: initialData.postalCode || '',
+                    province: initialData.province || '',
+                    representativeName: initialData.representativeName || '',
+                    representativeJobTitle: initialData.representativeJobTitle || '',
                     email: initialData.email,
                     phone: initialData.phone,
                     website: initialData.website || '',
@@ -153,40 +183,51 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                     leadId: initialData.leadId,
                 });
             } else {
+                const prefilledOwner =
+                    prefillData?.owners && prefillData.owners.length > 0
+                        ? { ...prefillData.owners[0] }
+                        : createBlankOwner(true);
+
                 setFormState({
+                    businessType: prefillData?.businessType || 'new_business',
                     nameEn: prefillData?.nameEn || '',
                     nameAr: prefillData?.nameAr || prefillData?.nameEn || '',
-                    businessName:
-                        prefillData?.businessName ||
-                        prefillData?.nameEn ||
-                        '',
-                    businessType: prefillData?.businessType || 'existing_business',
-                    organizationalTypeId:
-                        prefillData?.organizationalTypeId || defaultOrgTypeId,
-                    ownershipTypeId:
-                        prefillData?.ownershipTypeId || defaultOwnTypeId,
+                    businessName: prefillData?.businessName || '',
+                    organizationalTypeId: prefillData?.organizationalTypeId || '',
+                    ownershipTypeId: prefillData?.ownershipTypeId || '',
                     sectorId: prefillData?.sectorId || defaultSectorId,
                     assignedEmployeeId: prefillData?.assignedEmployeeId || '',
+                    hasVehicles: prefillData?.hasVehicles ?? false,
+                    saudiEmployeesCount: prefillData?.saudiEmployeesCount ?? 0,
+                    nonSaudiEmployeesCount: prefillData?.nonSaudiEmployeesCount ?? 0,
+                    hasBranches: prefillData?.hasBranches ?? false,
                     crNumber: prefillData?.crNumber || '',
                     unifiedNumber: prefillData?.unifiedNumber || '',
                     taxNumber: prefillData?.taxNumber || '',
+                    buildingNumber: prefillData?.buildingNumber || '',
+                    street: prefillData?.street || '',
+                    district: prefillData?.district || '',
+                    postalCode: prefillData?.postalCode || '',
+                    province: prefillData?.province || '',
+                    representativeName: prefillData?.representativeName || '',
+                    representativeJobTitle: prefillData?.representativeJobTitle || '',
                     email: prefillData?.email || '',
                     phone: prefillData?.phone || '',
                     website: prefillData?.website || '',
                     country: prefillData?.country || 'Saudi Arabia',
-                    state: prefillData?.state || 'Riyadh Province',
-                    city: prefillData?.city || 'Riyadh',
+                    state: prefillData?.state || '',
+                    city: prefillData?.city || '',
                     pinCode: prefillData?.pinCode || '',
                     address: prefillData?.address || '',
                     onboardingStatus: prefillData?.onboardingStatus || 'pre_onboarding',
-                    owners:
-                        prefillData?.owners && prefillData.owners.length > 0
-                            ? prefillData.owners.map((o) => ({ ...o }))
-                            : [createBlankOwner(true)],
+                    owners: [prefilledOwner],
                     notes: prefillData?.notes || '',
                     status: 'active',
                     leadId: prefillData?.leadId,
                 });
+                if (prefilledOwner.ownerId) {
+                    setSelectedPreOnboardOwnerId(prefilledOwner.ownerId);
+                }
             }
         }
     }
@@ -199,6 +240,13 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     ) => {
         setFormState((prev) => ({ ...prev, [field]: value }));
         setStepError(null);
+        if (fieldErrors[field as string]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[field as string];
+                return next;
+            });
+        }
     };
 
     const handleOwnerChange = <K extends keyof CrmCompanyOwnerAssignment>(
@@ -227,6 +275,57 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
             });
             return { ...prev, owners: nextOwners };
         });
+    };
+
+    const handleSelectCreateOwner = (ownerId: string) => {
+        setSelectedPreOnboardOwnerId(ownerId);
+        setStepError(null);
+        setFieldErrors((prev) => {
+            const next = { ...prev };
+            delete next.owner;
+            return next;
+        });
+
+        const currentIsMain = formState.owners[0]?.isMainOwner ?? true;
+        if (!ownerId) {
+            setFormState((prev) => ({
+                ...prev,
+                owners: [createBlankOwner(currentIsMain)],
+            }));
+            return;
+        }
+
+        const found = existingOwners.find((o) => o.id === ownerId);
+        if (found) {
+            const mappedOwner: CrmCompanyOwnerAssignment = {
+                ownerId: found.id,
+                firstName:
+                    found.firstName ||
+                    found.fullNameEn.split(' ')[0] ||
+                    found.fullNameEn,
+                lastName:
+                    found.lastName ||
+                    found.fullNameEn.split(' ').slice(1).join(' ') ||
+                    '',
+                fullNameEn: found.fullNameEn,
+                fullNameAr: found.fullNameAr || found.fullNameEn,
+                gender: found.gender || 'male',
+                nationality: found.nationality || 'Saudi',
+                ownershipTypeId:
+                    found.ownershipTypeId ||
+                    formState.ownershipTypeId ||
+                    defaultOwnTypeId,
+                nationalIdOrIqama: found.nationalIdOrIqama || '',
+                phone: found.phone || formState.phone || '0000000000',
+                email: found.email || '',
+                ownershipPercentage: found.ownershipPercentage || 100,
+                isMainOwner: currentIsMain,
+            };
+            setFormState((prev) => ({
+                ...prev,
+                owners: [mappedOwner],
+            }));
+        }
     };
 
     const handleSetMainOwner = (index: number) => {
@@ -299,12 +398,35 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     };
 
     const validateStep1 = (): boolean => {
+        if (mode === 'create') {
+            const errors: Record<string, string> = {};
+            if (!formState.businessType) {
+                errors.businessType = 'Business Type is required';
+            }
+            if (!formState.nameEn.trim()) {
+                errors.nameEn = 'Company Name is required';
+            }
+            if (!formState.organizationalTypeId) {
+                errors.organizationalTypeId = 'Organizational Type is required';
+            }
+            if (!formState.ownershipTypeId) {
+                errors.ownershipTypeId = 'Ownership Type is required';
+            }
+            if (Object.keys(errors).length > 0) {
+                setFieldErrors(errors);
+                return false;
+            }
+            setFieldErrors({});
+            setStepError(null);
+            return true;
+        }
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (
             !formState.nameEn.trim() ||
-            !formState.nameAr.trim() ||
-            !formState.phone.trim() ||
-            !emailRegex.test(formState.email.trim()) ||
+            !(formState.nameAr || '').trim() ||
+            !(formState.phone || '').trim() ||
+            !emailRegex.test((formState.email || '').trim()) ||
             !formState.organizationalTypeId ||
             !formState.sectorId
         ) {
@@ -316,6 +438,12 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     };
 
     const validateStep2 = (): boolean => {
+        if (mode === 'create') {
+            setFieldErrors({});
+            setStepError(null);
+            return true;
+        }
+
         if (!formState.crNumber || !formState.crNumber.trim()) {
             setStepError(t('crm.customer.companies.wizard.errors.step2Invalid'));
             return false;
@@ -325,6 +453,22 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     };
 
     const validateStep3 = (): boolean => {
+        if (mode === 'create') {
+            const primaryOwner = formState.owners?.[0];
+            const hasOwner =
+                Boolean(selectedPreOnboardOwnerId) ||
+                Boolean(primaryOwner?.ownerId) ||
+                Boolean(primaryOwner?.fullNameEn?.trim());
+
+            if (!hasOwner) {
+                setFieldErrors({ owner: 'Owner is required' });
+                return false;
+            }
+            setFieldErrors({});
+            setStepError(null);
+            return true;
+        }
+
         if (!formState.owners || formState.owners.length === 0) {
             setStepError(t('crm.customer.companies.wizard.errors.noOwners'));
             return false;
@@ -388,7 +532,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
             setCurrentStep(3);
             return;
         }
-        const normalizedOwners = formState.owners.map((o) => ({
+        const normalizedOwners = (formState.owners || []).map((o) => ({
             ...o,
             fullNameEn:
                 o.fullNameEn.trim() ||
@@ -397,16 +541,21 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                 o.fullNameAr?.trim() ||
                 o.fullNameEn.trim() ||
                 [o.firstName?.trim(), o.lastName?.trim()].filter(Boolean).join(' '),
-            ownershipPercentage: Number(o.ownershipPercentage || 0),
+            ownershipTypeId:
+                o.ownershipTypeId || formState.ownershipTypeId || defaultOwnTypeId,
+            phone: o.phone?.trim() || formState.phone?.trim() || '0000000000',
+            ownershipPercentage: Number(o.ownershipPercentage || 100),
         }));
         await onSubmit({
             ...formState,
+            nameAr: formState.nameAr?.trim() || formState.nameEn.trim(),
             businessName: formState.businessName?.trim() || formState.nameEn.trim(),
+            sectorId: formState.sectorId || defaultSectorId,
             owners: normalizedOwners,
         });
     };
 
-    const totalSharePercentage = formState.owners.reduce(
+    const totalSharePercentage = (formState.owners || []).reduce(
         (sum, o) => sum + Number(o.ownershipPercentage || 0),
         0
     );
@@ -420,6 +569,841 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
     const activeSectors = sectors.filter(
         (s) => s.status === 'active' || s.id === formState.sectorId
     );
+
+    if (mode === 'create') {
+        const primaryOwner = formState.owners?.[0] || createBlankOwner(true);
+
+        return (
+            <div
+                className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="company-preonboarding-wizard-title"
+            >
+                <div
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px]"
+                    onClick={onClose}
+                />
+
+                <div className="relative z-10 w-full max-w-4xl max-h-[92vh] rounded-2xl bg-white border border-[#E5E0D8] shadow-2xl flex flex-col overflow-hidden text-start">
+                    {/* Header */}
+                    <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-[#037F8C]/10 border border-[#037F8C]/20 flex items-center justify-center text-[#037F8C] shrink-0 mt-0.5">
+                                <Building2 size={19} />
+                            </div>
+                            <div className="min-w-0">
+                                <h2
+                                    id="company-preonboarding-wizard-title"
+                                    className="text-base font-bold text-[#0D0D0D]"
+                                >
+                                    Company Pre-Onboarding
+                                </h2>
+                                <p className="text-xs text-[#6E6862] mt-0.5">
+                                    Please Perform Your Actions For This Service Using The Provided Template. Ensure All Necessary Details Are Accurately Completed Before Submission.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] flex items-center justify-center cursor-pointer shrink-0"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                    {/* Step Indicator Bar */}
+                    <div className="px-6 py-3.5 border-b border-[#E5E0D8] bg-white grid grid-cols-3 gap-3">
+                        {[
+                            {
+                                step: 1 as const,
+                                title: 'Company Basic Info',
+                            },
+                            {
+                                step: 2 as const,
+                                title: 'Company Business Info',
+                            },
+                            {
+                                step: 3 as const,
+                                title: 'Company Owners',
+                            },
+                        ].map((item) => {
+                            const isActive = currentStep === item.step;
+                            const isDone = currentStep > item.step;
+                            return (
+                                <button
+                                    key={item.step}
+                                    type="button"
+                                    onClick={() => {
+                                        if (item.step === 1) setCurrentStep(1);
+                                        if (item.step === 2 && validateStep1())
+                                            setCurrentStep(2);
+                                        if (
+                                            item.step === 3 &&
+                                            validateStep1() &&
+                                            validateStep2()
+                                        )
+                                            setCurrentStep(3);
+                                    }}
+                                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-start transition-colors cursor-pointer ${
+                                        isActive
+                                            ? 'border-[#037F8C] bg-[#037F8C]/5'
+                                            : isDone
+                                              ? 'border-[#2E6B4E]/30 bg-[#E9F5EE]/50'
+                                              : 'border-[#E5E0D8] bg-[#FAF8F5]'
+                                    }`}
+                                >
+                                    <div
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                                            isActive
+                                                ? 'bg-[#037F8C] text-white'
+                                                : isDone
+                                                  ? 'bg-[#2E6B4E] text-white'
+                                                  : 'bg-white border border-[#E5E0D8] text-[#6E6862]'
+                                        }`}
+                                    >
+                                        {item.step}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-xs font-bold text-[#0D0D0D] truncate">
+                                            {item.title}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Form Body */}
+                    <form
+                        onSubmit={handleFinalSubmit}
+                        className="flex-1 overflow-y-auto p-6 space-y-5"
+                        noValidate
+                    >
+                        {(stepError || serverError) && (
+                            <div className="rounded-xl border border-[#F5C6C6] bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
+                                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                                <span>{stepError || serverError}</span>
+                            </div>
+                        )}
+
+                        {/* STEP 1: Company Basic Info */}
+                        {currentStep === 1 && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Business Type* */}
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Business Type <span className="text-[#A63A3A]">*</span>
+                                        </label>
+                                        <div className="flex items-center gap-4">
+                                            <label
+                                                className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                    formState.businessType === 'new_business'
+                                                        ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                        : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="businessType"
+                                                    value="new_business"
+                                                    checked={
+                                                        formState.businessType === 'new_business'
+                                                    }
+                                                    onChange={() =>
+                                                        handleFieldChange(
+                                                            'businessType',
+                                                            'new_business'
+                                                        )
+                                                    }
+                                                    className="accent-[#037F8C]"
+                                                />
+                                                <span>New Business</span>
+                                            </label>
+                                            <label
+                                                className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                    formState.businessType === 'existing_business'
+                                                        ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                        : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="businessType"
+                                                    value="existing_business"
+                                                    checked={
+                                                        formState.businessType ===
+                                                        'existing_business'
+                                                    }
+                                                    onChange={() =>
+                                                        handleFieldChange(
+                                                            'businessType',
+                                                            'existing_business'
+                                                        )
+                                                    }
+                                                    className="accent-[#037F8C]"
+                                                />
+                                                <span>Existing Business</span>
+                                            </label>
+                                        </div>
+                                        {fieldErrors.businessType && (
+                                            <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                                {fieldErrors.businessType}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Company Name* */}
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Company Name <span className="text-[#A63A3A]">*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formState.nameEn}
+                                            onChange={(e) => {
+                                                handleFieldChange('nameEn', e.target.value);
+                                                handleFieldChange('nameAr', e.target.value);
+                                            }}
+                                            placeholder="Enter Company Name"
+                                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                                fieldErrors.nameEn
+                                                    ? 'border-[#A63A3A]'
+                                                    : 'border-[#E5E0D8]'
+                                            }`}
+                                        />
+                                        {fieldErrors.nameEn && (
+                                            <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                                {fieldErrors.nameEn}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Organizational Type* */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Organizational Type{' '}
+                                            <span className="text-[#A63A3A]">*</span>
+                                        </label>
+                                        <select
+                                            value={formState.organizationalTypeId}
+                                            onChange={(e) =>
+                                                handleFieldChange(
+                                                    'organizationalTypeId',
+                                                    e.target.value
+                                                )
+                                            }
+                                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                                fieldErrors.organizationalTypeId
+                                                    ? 'border-[#A63A3A]'
+                                                    : 'border-[#E5E0D8]'
+                                            }`}
+                                        >
+                                            <option value="">Select Organizational Type</option>
+                                            {activeOrgTypes.map((ot) => (
+                                                <option key={ot.id} value={ot.id}>
+                                                    {isRtl ? ot.nameAr : ot.nameEn}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {fieldErrors.organizationalTypeId && (
+                                            <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                                {fieldErrors.organizationalTypeId}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Ownership Type* */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Ownership Type{' '}
+                                            <span className="text-[#A63A3A]">*</span>
+                                        </label>
+                                        <select
+                                            value={formState.ownershipTypeId || ''}
+                                            onChange={(e) =>
+                                                handleFieldChange(
+                                                    'ownershipTypeId',
+                                                    e.target.value
+                                                )
+                                            }
+                                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                                fieldErrors.ownershipTypeId
+                                                    ? 'border-[#A63A3A]'
+                                                    : 'border-[#E5E0D8]'
+                                            }`}
+                                        >
+                                            <option value="">Select Ownership Type</option>
+                                            {activeOwnTypes.map((ow) => (
+                                                <option key={ow.id} value={ow.id}>
+                                                    {isRtl ? ow.nameAr : ow.nameEn}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {fieldErrors.ownershipTypeId && (
+                                            <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                                {fieldErrors.ownershipTypeId}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Account Manager */}
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Account Manager
+                                        </label>
+                                        <select
+                                            value={formState.assignedEmployeeId || ''}
+                                            onChange={(e) =>
+                                                handleFieldChange(
+                                                    'assignedEmployeeId',
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        >
+                                            <option value="">Select Account Manager</option>
+                                            {employees.map((emp) => (
+                                                <option key={emp.id} value={emp.id}>
+                                                    {isRtl ? emp.nameAr : emp.nameEn}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* More Fields + / More Fields - collapsible control */}
+                                <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsMoreFieldsOpen((prev) => !prev)}
+                                        aria-expanded={isMoreFieldsOpen}
+                                        className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                                    >
+                                        <span>
+                                            {isMoreFieldsOpen ? 'More Fields -' : 'More Fields +'}
+                                        </span>
+                                    </button>
+
+                                    {isMoreFieldsOpen && (
+                                        <div className="p-4 pt-2 border-t border-[#E5E0D8] space-y-4">
+                                            {/* Vehicle Information */}
+                                            <div className="space-y-2">
+                                                <div className="text-xs font-semibold text-[#0D0D0D]">
+                                                    Vehicle Information
+                                                </div>
+                                                <p className="text-xs text-[#6E6862]">
+                                                    Do you have vehicles? If yes, please enter the vehicle details below to help us process your request efficiently.
+                                                </p>
+                                                <div className="flex items-center gap-4">
+                                                    <label
+                                                        className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                            formState.hasVehicles === true
+                                                                ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                                : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="hasVehicles"
+                                                            value="yes"
+                                                            checked={formState.hasVehicles === true}
+                                                            onChange={() =>
+                                                                handleFieldChange(
+                                                                    'hasVehicles',
+                                                                    true
+                                                                )
+                                                            }
+                                                            className="accent-[#037F8C]"
+                                                        />
+                                                        <span>Yes</span>
+                                                    </label>
+                                                    <label
+                                                        className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                            formState.hasVehicles === false
+                                                                ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                                : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name="hasVehicles"
+                                                            value="no"
+                                                            checked={formState.hasVehicles === false}
+                                                            onChange={() =>
+                                                                handleFieldChange(
+                                                                    'hasVehicles',
+                                                                    false
+                                                                )
+                                                            }
+                                                            className="accent-[#037F8C]"
+                                                        />
+                                                        <span>No</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {/* Saudi Employees */}
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                        Saudi Employees
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={formState.saudiEmployeesCount ?? 0}
+                                                        onChange={(e) =>
+                                                            handleFieldChange(
+                                                                'saudiEmployeesCount',
+                                                                Math.max(
+                                                                    0,
+                                                                    Number(e.target.value || 0)
+                                                                )
+                                                            )
+                                                        }
+                                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                                    />
+                                                </div>
+
+                                                {/* Non-Saudi Employees */}
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                        Non-Saudi Employees
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        value={formState.nonSaudiEmployeesCount ?? 0}
+                                                        onChange={(e) =>
+                                                            handleFieldChange(
+                                                                'nonSaudiEmployeesCount',
+                                                                Math.max(
+                                                                    0,
+                                                                    Number(e.target.value || 0)
+                                                                )
+                                                            )
+                                                        }
+                                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2: Company Business Info */}
+                        {currentStep === 2 && (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                                    Business Details
+                                </h3>
+
+                                <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <h4 className="text-xs font-bold text-[#0D0D0D]">
+                                            Branch Information
+                                        </h4>
+                                        <p className="text-xs text-[#6E6862]">
+                                            Do you have branches? If yes, please enter the branch details below to ensure smooth onboarding and management.
+                                        </p>
+                                    </div>
+
+                                    {/* Yes / No */}
+                                    <div className="flex items-center gap-4">
+                                        <label
+                                            className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                formState.hasBranches === true
+                                                    ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                    : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="hasBranches"
+                                                value="yes"
+                                                checked={formState.hasBranches === true}
+                                                onChange={() =>
+                                                    handleFieldChange('hasBranches', true)
+                                                }
+                                                className="accent-[#037F8C]"
+                                            />
+                                            <span>Yes</span>
+                                        </label>
+                                        <label
+                                            className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                formState.hasBranches === false
+                                                    ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                    : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                            }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="hasBranches"
+                                                value="no"
+                                                checked={formState.hasBranches === false}
+                                                onChange={() =>
+                                                    handleFieldChange('hasBranches', false)
+                                                }
+                                                className="accent-[#037F8C]"
+                                            />
+                                            <span>No</span>
+                                        </label>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Business Name */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Business Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.businessName || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        'businessName',
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* CR Number */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                CR Number
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.crNumber || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('crNumber', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* VAT Number */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                VAT Number
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.taxNumber || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('taxNumber', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Building */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Building
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.buildingNumber || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        'buildingNumber',
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Street */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Street
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.street || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('street', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* District */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                District
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.district || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('district', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* City */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                City
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.city || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('city', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Postal Code */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Postal Code
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.postalCode || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        'postalCode',
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Province */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Province
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.province || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('province', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Representative */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Representative
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.representativeName || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        'representativeName',
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Job Title of Representative */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Job Title of Representative
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formState.representativeJobTitle || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange(
+                                                        'representativeJobTitle',
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Phone */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Phone
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value={formState.phone || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('phone', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+
+                                        {/* Email */}
+                                        <div className="sm:col-span-2">
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Email
+                                            </label>
+                                            <input
+                                                type="email"
+                                                value={formState.email || ''}
+                                                onChange={(e) =>
+                                                    handleFieldChange('email', e.target.value)
+                                                }
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D]"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: Company Owners */}
+                        {currentStep === 3 && (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-bold text-[#0D0D0D]">
+                                    Owner Details
+                                </h3>
+
+                                <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
+                                    <div className="text-xs font-bold text-[#0D0D0D]">
+                                        1- New Owner
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                                        {/* Owner -1* */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Owner -1*
+                                            </label>
+                                            <select
+                                                value={
+                                                    selectedPreOnboardOwnerId ||
+                                                    primaryOwner.ownerId ||
+                                                    ''
+                                                }
+                                                onChange={(e) =>
+                                                    handleSelectCreateOwner(e.target.value)
+                                                }
+                                                className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                                    fieldErrors.owner
+                                                        ? 'border-[#A63A3A]'
+                                                        : 'border-[#E5E0D8]'
+                                                }`}
+                                            >
+                                                <option value="">Select Owner</option>
+                                                {existingOwners.map((o) => (
+                                                    <option key={o.id} value={o.id}>
+                                                        {o.code} —{' '}
+                                                        {isRtl
+                                                            ? o.fullNameAr || o.fullNameEn
+                                                            : o.fullNameEn}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {fieldErrors.owner && (
+                                                <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                                    {fieldErrors.owner}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Is Main Owner? */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                                Is Main Owner?
+                                            </label>
+                                            <div className="flex items-center gap-4">
+                                                <label
+                                                    className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                                        primaryOwner.isMainOwner
+                                                            ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                            : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={Boolean(
+                                                            primaryOwner.isMainOwner
+                                                        )}
+                                                        onChange={(e) =>
+                                                            handleOwnerChange(
+                                                                0,
+                                                                'isMainOwner',
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                        className="accent-[#037F8C]"
+                                                    />
+                                                    <span>Is Main Owner?</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Footer Controls */}
+                        <div className="pt-4 border-t border-[#E5E0D8] flex items-center justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+
+                            {currentStep > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setCurrentStep(
+                                            (prev) => (prev - 1) as 1 | 2 | 3
+                                        )
+                                    }
+                                    className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] cursor-pointer"
+                                >
+                                    Back
+                                </button>
+                            )}
+
+                            {currentStep < 3 ? (
+                                <button
+                                    type="button"
+                                    onClick={handleNextStep}
+                                    className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer"
+                                >
+                                    Continue
+                                </button>
+                            ) : (
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="px-5 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                >
+                                    Submit
+                                </button>
+                            )}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -446,7 +1430,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                     className="px-2 py-0.5 rounded-md bg-white border border-[#E5E0D8] text-[11px] font-mono font-semibold text-[#037F8C]"
                                     dir="ltr"
                                 >
-                                    {mode === 'edit' && initialData
+                                    {initialData
                                         ? initialData.code
                                         : t('crm.customer.companies.badge')}
                                 </span>
@@ -461,16 +1445,12 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 id="company-preonboarding-wizard-title"
                                 className="text-base font-bold text-[#0D0D0D] truncate mt-0.5"
                             >
-                                {mode === 'create'
-                                    ? t('crm.customer.companies.wizard.createTitle')
-                                    : t('crm.customer.companies.wizard.editTitle', {
-                                          code: initialData?.code || '',
-                                      })}
+                                {t('crm.customer.companies.wizard.editTitle', {
+                                    code: initialData?.code || '',
+                                })}
                             </h2>
                             <p className="text-xs text-[#6E6862] truncate">
-                                {mode === 'create'
-                                    ? t('crm.customer.companies.wizard.createSubtitle')
-                                    : t('crm.customer.companies.wizard.editSubtitle')}
+                                {t('crm.customer.companies.wizard.editSubtitle')}
                             </p>
                         </div>
                     </div>
@@ -597,7 +1577,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 </label>
                                 <input
                                     type="text"
-                                    value={formState.nameAr}
+                                    value={formState.nameAr || ''}
                                     onChange={(e) =>
                                         handleFieldChange('nameAr', e.target.value)
                                     }
@@ -633,7 +1613,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 </label>
                                 <input
                                     type="text"
-                                    value={formState.phone}
+                                    value={formState.phone || ''}
                                     onChange={(e) =>
                                         handleFieldChange('phone', e.target.value)
                                     }
@@ -650,7 +1630,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 </label>
                                 <input
                                     type="email"
-                                    value={formState.email}
+                                    value={formState.email || ''}
                                     onChange={(e) =>
                                         handleFieldChange('email', e.target.value)
                                     }
@@ -711,7 +1691,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                     <span className="text-[#A63A3A]">*</span>
                                 </label>
                                 <select
-                                    value={formState.sectorId}
+                                    value={formState.sectorId || ''}
                                     onChange={(e) =>
                                         handleFieldChange('sectorId', e.target.value)
                                     }
@@ -878,7 +1858,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                 </label>
                                 <input
                                     type="text"
-                                    value={formState.country}
+                                    value={formState.country || ''}
                                     onChange={(e) =>
                                         handleFieldChange('country', e.target.value)
                                     }
@@ -1401,11 +2381,7 @@ export const CompanyPreOnboardingModal: React.FC<CompanyPreOnboardingModalProps>
                                     <CheckCircle2 size={14} />
                                     {isSubmitting
                                         ? t('crm.customer.common.submitting')
-                                        : mode === 'create'
-                                          ? t(
-                                                'crm.customer.companies.wizard.submitPreOnboarding'
-                                            )
-                                          : t('crm.customer.common.saveChanges')}
+                                        : t('crm.customer.common.saveChanges')}
                                 </button>
                             )}
                         </div>

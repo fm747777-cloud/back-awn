@@ -355,12 +355,12 @@ export const crmOwnerInputSchema = z.object({
     fullNameEn: z.string().trim().min(1, 'Owner English name is required').max(160),
     fullNameAr: z.string().trim().max(160).optional(),
     gender: crmGenderSchema.optional().default('male'),
-    ownershipTypeId: z.string().trim().min(1, 'Ownership type is required'),
+    ownershipTypeId: z.string().trim().optional().default('crm-own-type-1'),
     ownershipTypeNameEn: z.string().trim().optional(),
     ownershipTypeNameAr: z.string().trim().optional(),
     nationalIdOrIqama: z.string().trim().max(40).optional(),
     nationality: z.string().trim().max(100).optional(),
-    phone: z.string().trim().min(1, 'Phone number is required').max(40),
+    phone: z.string().trim().max(40).optional().default(''),
     email: crmOptionalEmailSchema,
     ownershipPercentage: crmPercentageSchema.default(100),
     isMainOwner: z.boolean().default(false),
@@ -439,21 +439,28 @@ export const crmCompanyInputSchema = z.object({
     // Step 1: Company Basic Info
     businessType: crmCompanyBusinessTypeSchema.default('existing_business'),
     nameEn: z.string().trim().min(1, 'Company English name is required').max(200),
-    nameAr: z.string().trim().min(1, 'Company Arabic name is required').max(200),
+    nameAr: z.string().trim().max(200).optional().default(''),
     organizationalTypeId: z.string().trim().min(1, 'Organizational type is required'),
     organizationalTypeNameEn: z.string().trim().optional(),
     organizationalTypeNameAr: z.string().trim().optional(),
     ownershipTypeId: z.string().trim().optional(),
     ownershipTypeNameEn: z.string().trim().optional(),
     ownershipTypeNameAr: z.string().trim().optional(),
-    sectorId: z.string().trim().min(1, 'Sector is required'),
+    sectorId: z.string().trim().optional().default(''),
     sectorNameEn: z.string().trim().optional(),
     sectorNameAr: z.string().trim().optional(),
     assignedEmployeeId: z.string().trim().optional(),
     assignedEmployeeNameEn: z.string().trim().optional(),
     assignedEmployeeNameAr: z.string().trim().optional(),
-    phone: z.string().trim().min(1, 'Phone number is required').max(40),
-    email: z.string().trim().email('Valid email is required'),
+    phone: z.string().trim().max(40).optional().default(''),
+    email: z
+        .string()
+        .trim()
+        .optional()
+        .default('')
+        .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+            message: 'Valid email is required',
+        }),
     website: z.string().trim().max(255).optional(),
     country: z.string().trim().max(120).optional(),
     state: z.string().trim().max(120).optional(),
@@ -504,18 +511,18 @@ export type CrmCompanyRecord = z.infer<typeof crmCompanySchema>;
 
 // 2.4 Lead (with Expandable Additional Fields)
 export const crmLeadInputSchema = z.object({
-    title: z.string().trim().min(1, 'Lead title is required').max(200),
+    title: z.string().trim().max(200).optional().default(''),
     leadType: crmLeadTypeSchema.default('company'),
     leadSourceId: z.string().trim().min(1, 'Lead source is required'),
     leadSourceNameEn: z.string().trim().optional(),
     leadSourceNameAr: z.string().trim().optional(),
-    leadStatusId: z.string().trim().min(1, 'Lead status is required'),
+    leadStatusId: z.string().trim().optional().default(''),
     leadStatusNameEn: z.string().trim().optional(),
     leadStatusNameAr: z.string().trim().optional(),
     assignedEmployeeId: z.string().trim().optional().default(''),
     assignedEmployeeNameEn: z.string().trim().optional(),
     assignedEmployeeNameAr: z.string().trim().optional(),
-    sectorId: z.string().trim().min(1, 'Sector is required'),
+    sectorId: z.string().trim().optional().default(''),
     sectorNameEn: z.string().trim().optional(),
     sectorNameAr: z.string().trim().optional(),
 
@@ -523,7 +530,14 @@ export const crmLeadInputSchema = z.object({
     contactName: z.string().trim().min(1, 'Contact name is required').max(160),
     contactJobTitle: z.string().trim().max(120).optional(),
     contactPhone: z.string().trim().min(1, 'Contact phone is required').max(40),
-    contactEmail: z.string().trim().email('Valid contact email is required'),
+    contactEmail: z
+        .string()
+        .trim()
+        .optional()
+        .default('')
+        .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+            message: 'Valid contact email is required',
+        }),
 
     // Company Information (Temporary vs Existing/Onboarded CRM Company)
     temporaryCompanyName: z.string().trim().max(200).optional(),
@@ -539,7 +553,7 @@ export const crmLeadInputSchema = z.object({
     website: z.string().trim().max(255).optional(),
     city: z.string().trim().max(120).optional(),
     state: z.string().trim().max(120).optional(),
-    country: z.string().trim().max(120).optional().default('Saudi Arabia'),
+    country: z.string().trim().max(120).optional().default(''),
     pinCode: z.string().trim().max(30).optional(),
     address: z.string().trim().max(500).optional(),
     expectedCloseDate: crmOptionalDateStringSchema,

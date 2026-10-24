@@ -13,6 +13,7 @@ import { IS_BACKEND_ENABLED } from '../api/axiosClient';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore, applyThemeToDom } from '../store/useThemeStore';
 import { translateError } from '../i18n';
+import awnLogo from '../assets/awn-logo.png';
 
 export const LoginPage = () => {
     const { t, i18n } = useTranslation();
@@ -186,6 +187,13 @@ export const LoginPage = () => {
 
                     {/* Form Body */}
                     <div className="p-8">
+                        <div className="flex justify-center mb-6">
+                            <img
+                                src={awnLogo}
+                                alt="Logowa Logo"
+                                className="h-14 sm:h-16 w-auto max-w-[180px] sm:max-w-[220px] object-contain select-none"
+                            />
+                        </div>
                         {!IS_BACKEND_ENABLED && (
                             <div
                                 role="status"

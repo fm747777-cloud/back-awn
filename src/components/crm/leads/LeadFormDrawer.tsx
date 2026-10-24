@@ -11,6 +11,8 @@ import {
     Mail,
     MapPin,
     Plus,
+    ChevronDown,
+    ChevronUp,
 } from 'lucide-react';
 import {
     crmLeadInputSchema,
@@ -27,6 +29,26 @@ import {
 } from '../../../schemas/crmSchema';
 import { crmApi, type CrmSalesEmployee } from '../../../api/api';
 import { CompanyPreOnboardingModal } from '../companies/CompanyPreOnboardingModal';
+
+const COMPANY_SIZE_OPTIONS = [
+    '1-10',
+    '11-50',
+    '51-200',
+    '200-500',
+    '500-1000',
+    '1000+',
+] as const;
+
+const COUNTRY_OPTIONS = [
+    'Saudi Arabia',
+    'United Arab Emirates',
+    'Kuwait',
+    'Qatar',
+    'Bahrain',
+    'Oman',
+    'Egypt',
+    'Jordan',
+] as const;
 
 export interface LeadFormDrawerProps {
     isOpen: boolean;
@@ -80,11 +102,11 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
 
     const [formState, setFormState] = useState<CrmLeadInput>({
         title: '',
-        leadType: 'company',
-        leadSourceId: defaultSourceId,
+        leadType: 'individual',
+        leadSourceId: '',
         leadStatusId: defaultStatusId,
         assignedEmployeeId: '',
-        sectorId: defaultSectorId,
+        sectorId: '',
         contactName: '',
         contactJobTitle: '',
         contactPhone: '',
@@ -93,9 +115,9 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
         companyId: '',
         companySize: '',
         estimatedValue: 0,
-        country: 'Saudi Arabia',
-        state: 'Riyadh Province',
-        city: 'Riyadh',
+        country: '',
+        state: '',
+        city: '',
         pinCode: '',
         website: '',
         address: '',
@@ -103,6 +125,8 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
         status: 'active',
     });
 
+    const [leadValueInput, setLeadValueInput] = useState<string>('');
+    const [isMoreFieldsOpen, setIsMoreFieldsOpen] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
     const [isCreatingCompany, setIsCreatingCompany] = useState(false);
@@ -116,6 +140,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
         setPrevSyncKey(currentSyncKey);
         if (isOpen) {
             setFieldErrors({});
+            setIsMoreFieldsOpen(false);
             if (mode === 'edit' && initialData) {
                 setFormState({
                     title: initialData.title,
@@ -141,14 +166,17 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                     notes: initialData.notes || '',
                     status: initialData.status,
                 });
+                setLeadValueInput(
+                    initialData.estimatedValue ? String(initialData.estimatedValue) : ''
+                );
             } else {
                 setFormState({
                     title: '',
-                    leadType: 'company',
-                    leadSourceId: defaultSourceId,
+                    leadType: 'individual',
+                    leadSourceId: '',
                     leadStatusId: defaultStatusId,
                     assignedEmployeeId: '',
-                    sectorId: defaultSectorId,
+                    sectorId: '',
                     contactName: '',
                     contactJobTitle: '',
                     contactPhone: '',
@@ -157,15 +185,16 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                     companyId: '',
                     companySize: '',
                     estimatedValue: 0,
-                    country: 'Saudi Arabia',
-                    state: 'Riyadh Province',
-                    city: 'Riyadh',
+                    country: '',
+                    state: '',
+                    city: '',
                     pinCode: '',
                     website: '',
                     address: '',
                     notes: '',
                     status: 'active',
                 });
+                setLeadValueInput('');
             }
         }
     }
@@ -196,22 +225,47 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
         setFieldErrors({});
+
+        const resolvedTitle =
+            mode === 'create'
+                ? formState.contactName.trim() ||
+                  formState.temporaryCompanyName?.trim() ||
+                  ''
+                : formState.title?.trim() || '';
+
+        const resolvedLeadValue =
+            mode === 'create'
+                ? leadValueInput.trim() === ''
+                    ? 0
+                    : Math.max(0, Number(leadValueInput))
+                : Number(formState.estimatedValue || 0);
+
         const parsed = crmLeadInputSchema.safeParse({
             ...formState,
-            estimatedValue: Number(formState.estimatedValue || 0),
+            title: resolvedTitle,
+            leadStatusId: formState.leadStatusId || defaultStatusId || '',
+            estimatedValue: Number.isFinite(resolvedLeadValue) ? resolvedLeadValue : 0,
             companyId: formState.companyId?.trim() || undefined,
         });
+
+        const errors: Record<string, string> = {};
+        if (mode === 'edit' && !resolvedTitle) {
+            errors.title = 'Lead title is required';
+        }
         if (!parsed.success) {
-            const errors: Record<string, string> = {};
             for (const issue of parsed.error.issues) {
                 const key = String(issue.path[0] || 'form');
                 if (!errors[key]) {
                     errors[key] = issue.message;
                 }
             }
+        }
+
+        if (Object.keys(errors).length > 0 || !parsed.success) {
             setFieldErrors(errors);
             return;
         }
+
         await onSubmit(parsed.data);
     };
 
@@ -254,10 +308,15 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
             ownershipTypes[0]?.id ||
             '';
 
+        const prefillName =
+            formState.temporaryCompanyName?.trim() ||
+            formState.title?.trim() ||
+            formState.contactName.trim();
+
         const prefill: Partial<CrmCompanyInput> = {
-            nameEn: formState.temporaryCompanyName?.trim() || formState.title.trim(),
-            nameAr: formState.temporaryCompanyName?.trim() || formState.title.trim(),
-            businessName: formState.temporaryCompanyName?.trim() || formState.title.trim(),
+            nameEn: prefillName,
+            nameAr: prefillName,
+            businessName: prefillName,
             organizationalTypeId: defaultOrgTypeId,
             ownershipTypeId: defaultOwnTypeId,
             sectorId: formState.sectorId || defaultSectorId,
@@ -402,140 +461,54 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                     </button>
                 </div>
 
-                {/* Form Body */}
-                <form
-                    onSubmit={handleSubmit}
-                    className="flex-1 overflow-y-auto p-6 space-y-6"
-                    noValidate
-                >
-                    {serverError && (
-                        <div className="rounded-xl border border-[#F5C6C6] bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
-                            <AlertCircle size={15} className="shrink-0 mt-0.5" />
-                            <span>{serverError}</span>
-                        </div>
-                    )}
-
-                    {/* Section 1: Lead & Qualification Details */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
-                            <Building2 size={14} />
-                            <span>{t('crm.customer.leads.form.sectionLeadInfo')}</span>
-                        </div>
+                {mode === 'create' ? (
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex-1 overflow-y-auto p-6 space-y-5"
+                        noValidate
+                    >
+                        {serverError && (
+                            <div className="rounded-xl border border-[#F5C6C6] bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
+                                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                                <span>{serverError}</span>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.titleLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.title}
-                                    onChange={(e) => handleChange('title', e.target.value)}
-                                    placeholder={t('crm.customer.leads.form.titlePlaceholder')}
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
-                                        fieldErrors.title
-                                            ? 'border-[#A63A3A]'
-                                            : 'border-[#E5E0D8]'
-                                    }`}
-                                />
-                                {fieldErrors.title && (
-                                    <p className="mt-1 text-[11px] text-[#A63A3A]">
-                                        {fieldErrors.title}
-                                    </p>
-                                )}
-                            </div>
-
+                            {/* 1. Source* */}
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.leadTypeLabel')}
-                                </label>
-                                <select
-                                    value={formState.leadType}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            'leadType',
-                                            e.target.value as 'company' | 'individual'
-                                        )
-                                    }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                >
-                                    <option value="company">
-                                        {t('crm.customer.leads.typeCompany')}
-                                    </option>
-                                    <option value="individual">
-                                        {t('crm.customer.leads.typeIndividual')}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.leadStatusLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
-                                </label>
-                                <select
-                                    value={formState.leadStatusId}
-                                    onChange={(e) =>
-                                        handleChange('leadStatusId', e.target.value)
-                                    }
-                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
-                                        fieldErrors.leadStatusId
-                                            ? 'border-[#A63A3A]'
-                                            : 'border-[#E5E0D8]'
-                                    }`}
-                                >
-                                    {activeStatuses.map((st) => (
-                                        <option key={st.id} value={st.id}>
-                                            #{st.stageOrder} —{' '}
-                                            {isRtl ? st.nameAr : st.nameEn} (
-                                            {st.probability}%)
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.leadSourceLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
+                                    Source <span className="text-[#A63A3A]">*</span>
                                 </label>
                                 <select
                                     value={formState.leadSourceId}
                                     onChange={(e) =>
                                         handleChange('leadSourceId', e.target.value)
                                     }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                        fieldErrors.leadSourceId
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
                                 >
+                                    <option value="">Select Source</option>
                                     {activeSources.map((src) => (
                                         <option key={src.id} value={src.id}>
                                             {isRtl ? src.nameAr : src.nameEn}
                                         </option>
                                     ))}
                                 </select>
+                                {fieldErrors.leadSourceId && (
+                                    <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                        {fieldErrors.leadSourceId}
+                                    </p>
+                                )}
                             </div>
 
+                            {/* 2. Assigned */}
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.sectorLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
-                                </label>
-                                <select
-                                    value={formState.sectorId}
-                                    onChange={(e) => handleChange('sectorId', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                >
-                                    {activeSectors.map((sec) => (
-                                        <option key={sec.id} value={sec.id}>
-                                            {isRtl ? sec.nameAr : sec.nameEn}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.assignedEmployeeLabel')}
+                                    Assigned
                                 </label>
                                 <select
                                     value={formState.assignedEmployeeId || ''}
@@ -544,9 +517,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     }
                                     className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 >
-                                    <option value="">
-                                        {t('crm.customer.common.unassigned')}
-                                    </option>
+                                    <option value="">Select Assigned Lead</option>
                                     {employees.map((emp) => (
                                         <option key={emp.id} value={emp.id}>
                                             {isRtl ? emp.nameAr : emp.nameEn} (
@@ -556,40 +527,57 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                 </select>
                             </div>
 
-                            <div>
+                            {/* 3. Lead Type */}
+                            <div className="sm:col-span-2">
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.estimatedValueLabel')}
+                                    Lead Type
                                 </label>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    step={1000}
-                                    value={formState.estimatedValue ?? 0}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            'estimatedValue',
-                                            Math.max(0, Number(e.target.value || 0))
-                                        )
-                                    }
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                    dir="ltr"
-                                />
+                                <div className="flex items-center gap-4">
+                                    <label
+                                        className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                            formState.leadType === 'individual'
+                                                ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="leadType"
+                                            value="individual"
+                                            checked={formState.leadType === 'individual'}
+                                            onChange={() =>
+                                                handleChange('leadType', 'individual')
+                                            }
+                                            className="accent-[#037F8C]"
+                                        />
+                                        <span>Individual</span>
+                                    </label>
+                                    <label
+                                        className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
+                                            formState.leadType === 'company'
+                                                ? 'border-[#037F8C] bg-[#037F8C]/5 text-[#037F8C]'
+                                                : 'border-[#E5E0D8] bg-white text-[#0D0D0D]'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="leadType"
+                                            value="company"
+                                            checked={formState.leadType === 'company'}
+                                            onChange={() =>
+                                                handleChange('leadType', 'company')
+                                            }
+                                            className="accent-[#037F8C]"
+                                        />
+                                        <span>Organization</span>
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Section 2: Primary Contact Details */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
-                            <Phone size={14} />
-                            <span>{t('crm.customer.leads.form.sectionContactInfo')}</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* 4. Name* */}
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.contactNameLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
+                                    Name <span className="text-[#A63A3A]">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -597,9 +585,7 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     onChange={(e) =>
                                         handleChange('contactName', e.target.value)
                                     }
-                                    placeholder={t(
-                                        'crm.customer.leads.form.contactNamePlaceholder'
-                                    )}
+                                    placeholder="Enter Name"
                                     className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                         fieldErrors.contactName
                                             ? 'border-[#A63A3A]'
@@ -613,37 +599,18 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                 )}
                             </div>
 
+                            {/* 5. Phone* */}
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.contactJobTitleLabel')}
+                                    Phone <span className="text-[#A63A3A]">*</span>
                                 </label>
                                 <input
-                                    type="text"
-                                    value={formState.contactJobTitle || ''}
-                                    onChange={(e) =>
-                                        handleChange('contactJobTitle', e.target.value)
-                                    }
-                                    placeholder={t(
-                                        'crm.customer.leads.form.contactJobTitlePlaceholder'
-                                    )}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.contactPhoneLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
-                                </label>
-                                <input
-                                    type="text"
+                                    type="tel"
                                     value={formState.contactPhone}
                                     onChange={(e) =>
                                         handleChange('contactPhone', e.target.value)
                                     }
-                                    placeholder={t(
-                                        'crm.customer.leads.form.contactPhonePlaceholder'
-                                    )}
+                                    placeholder="Enter Phone Number"
                                     dir="ltr"
                                     className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
                                         fieldErrors.contactPhone
@@ -658,53 +625,55 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                 )}
                             </div>
 
+                            {/* 6. Email Address */}
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.contactEmailLabel')}{' '}
-                                    <span className="text-[#A63A3A]">*</span>
+                                    Email Address
                                 </label>
-                                <div className="relative">
-                                    <Mail
-                                        size={13}
-                                        className="absolute start-3 top-1/2 -translate-y-1/2 text-[#6E6862]"
-                                    />
-                                    <input
-                                        type="email"
-                                        value={formState.contactEmail}
-                                        onChange={(e) =>
-                                            handleChange('contactEmail', e.target.value)
-                                        }
-                                        placeholder={t(
-                                            'crm.customer.leads.form.contactEmailPlaceholder'
-                                        )}
-                                        dir="ltr"
-                                        className={`w-full ps-8 pe-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
-                                            fieldErrors.contactEmail
-                                                ? 'border-[#A63A3A]'
-                                                : 'border-[#E5E0D8]'
-                                        }`}
-                                    />
-                                </div>
+                                <input
+                                    type="email"
+                                    value={formState.contactEmail}
+                                    onChange={(e) =>
+                                        handleChange('contactEmail', e.target.value)
+                                    }
+                                    placeholder="Enter Email Address"
+                                    dir="ltr"
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                        fieldErrors.contactEmail
+                                            ? 'border-[#A63A3A]'
+                                            : 'border-[#E5E0D8]'
+                                    }`}
+                                />
                                 {fieldErrors.contactEmail && (
                                     <p className="mt-1 text-[11px] text-[#A63A3A]">
                                         {fieldErrors.contactEmail}
                                     </p>
                                 )}
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Section 3: Company, Location & Notes */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
-                            <MapPin size={14} />
-                            <span>{t('crm.customer.leads.form.sectionAddressInfo')}</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* 7. Sector */}
                             <div>
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.temporaryCompanyLabel')}
+                                    Sector
+                                </label>
+                                <select
+                                    value={formState.sectorId}
+                                    onChange={(e) => handleChange('sectorId', e.target.value)}
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                >
+                                    <option value="">Select Sector</option>
+                                    {activeSectors.map((sec) => (
+                                        <option key={sec.id} value={sec.id}>
+                                            {isRtl ? sec.nameAr : sec.nameEn}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* 8. Company Name (Temporary) */}
+                            <div>
+                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                    Company Name (Temporary)
                                 </label>
                                 <input
                                     type="text"
@@ -712,17 +681,16 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                     onChange={(e) =>
                                         handleChange('temporaryCompanyName', e.target.value)
                                     }
-                                    placeholder={t(
-                                        'crm.customer.leads.form.temporaryCompanyPlaceholder'
-                                    )}
+                                    placeholder="Enter Company Name (Temporary)"
                                     className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                 />
                             </div>
 
-                            <div className="sm:col-span-2 space-y-2">
-                                <div className="flex items-center justify-between">
+                            {/* 9. Company */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
                                     <label className="block text-xs font-semibold text-[#0D0D0D]">
-                                        {t('crm.customer.leads.form.linkedCompanyLabel')}
+                                        Company
                                     </label>
                                     <button
                                         type="button"
@@ -730,223 +698,862 @@ export const LeadFormDrawer: React.FC<LeadFormDrawerProps> = ({
                                         disabled={isCreatingCompany}
                                         className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#037F8C] hover:text-[#233122] hover:underline cursor-pointer disabled:opacity-50"
                                     >
-                                        <Plus size={13} />
-                                        <span>{t('crm.customer.leads.form.newCompany', '+ New Company')}</span>
+                                        <Plus size={12} />
+                                        <span>
+                                            {t(
+                                                'crm.customer.leads.form.newCompany',
+                                                '+ New Company'
+                                            )}
+                                        </span>
                                     </button>
                                 </div>
-
-                                <div className="flex items-center gap-2">
-                                    <div className="flex-1">
-                                        <select
-                                            value={formState.companyId || ''}
-                                            onChange={(e) => {
-                                                const cid = e.target.value;
-                                                handleChange('companyId', cid);
-                                                if (cid) {
-                                                    const comp = allAvailableCompanies.find((c) => c.id === cid);
-                                                    if (comp && !formState.temporaryCompanyName) {
-                                                        handleChange('temporaryCompanyName', comp.nameEn);
-                                                    }
-                                                }
-                                            }}
-                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                        >
-                                            <option value="">
-                                                {t('crm.customer.leads.form.noLinkedCompany')}
-                                            </option>
-                                            {activeCompanies.map((comp) => (
-                                                <option key={comp.id} value={comp.id}>
-                                                    {comp.code} —{' '}
-                                                    {isRtl ? comp.nameAr : comp.nameEn}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleOpenCreateCompany}
-                                        disabled={isCreatingCompany}
-                                        className="px-3 py-2.5 rounded-lg border border-[#037F8C]/30 bg-[#037F8C]/5 hover:bg-[#037F8C]/10 text-xs font-semibold text-[#037F8C] inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-                                    >
-                                        <Plus size={14} />
-                                        <span>{t('crm.customer.leads.form.newCompany', 'New Company')}</span>
-                                    </button>
-                                </div>
-
+                                <select
+                                    value={formState.companyId || ''}
+                                    onChange={(e) => {
+                                        const cid = e.target.value;
+                                        handleChange('companyId', cid);
+                                        if (cid) {
+                                            const comp = allAvailableCompanies.find(
+                                                (c) => c.id === cid
+                                            );
+                                            if (comp && !formState.temporaryCompanyName) {
+                                                handleChange(
+                                                    'temporaryCompanyName',
+                                                    comp.nameEn
+                                                );
+                                            }
+                                        }
+                                    }}
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                >
+                                    <option value="">Select Company</option>
+                                    {activeCompanies.map((comp) => (
+                                        <option key={comp.id} value={comp.id}>
+                                            {comp.code} — {isRtl ? comp.nameAr : comp.nameEn}
+                                        </option>
+                                    ))}
+                                </select>
                                 {selectedCompany && (
-                                    <div className="rounded-lg border border-[#C5D7C2] bg-[#F2F7F2] p-3 flex items-start justify-between gap-3 text-xs">
-                                        <div className="min-w-0 space-y-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="px-1.5 py-0.5 rounded bg-white border border-[#C5D7C2] font-mono text-[10px] font-bold text-[#037F8C]">
-                                                    {selectedCompany.code}
-                                                </span>
-                                                <span className="font-bold text-[#037F8C] truncate">
-                                                    {isRtl ? selectedCompany.nameAr : selectedCompany.nameEn}
-                                                </span>
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2E6B4E]/10 text-[#2E6B4E] font-medium">
-                                                    {selectedCompany.onboardingStatus}
-                                                </span>
-                                            </div>
-                                            <div className="text-[11px] text-[#6E6862] flex flex-wrap gap-x-3 gap-y-0.5">
-                                                {selectedCompany.crNumber && (
-                                                    <span>CR: {selectedCompany.crNumber}</span>
-                                                )}
-                                                {selectedCompany.taxNumber && (
-                                                    <span>VAT: {selectedCompany.taxNumber}</span>
-                                                )}
-                                                {selectedCompany.city && (
-                                                    <span>{selectedCompany.city}</span>
-                                                )}
-                                            </div>
+                                    <div className="mt-2 rounded-lg border border-[#C5D7C2] bg-[#F2F7F2] px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                                        <div className="min-w-0 flex items-center gap-1.5 truncate">
+                                            <span className="px-1.5 py-0.5 rounded bg-white border border-[#C5D7C2] font-mono text-[10px] font-bold text-[#037F8C]">
+                                                {selectedCompany.code}
+                                            </span>
+                                            <span className="font-semibold text-[#037F8C] truncate">
+                                                {isRtl
+                                                    ? selectedCompany.nameAr
+                                                    : selectedCompany.nameEn}
+                                            </span>
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2E6B4E]/10 text-[#2E6B4E] font-medium">
+                                                {selectedCompany.onboardingStatus}
+                                            </span>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => handleChange('companyId', '')}
                                             className="text-[11px] font-semibold text-[#A63A3A] hover:underline cursor-pointer shrink-0"
                                         >
-                                            {t('crm.customer.leads.form.unlinkCompany', 'Unlink')}
+                                            {t(
+                                                'crm.customer.leads.form.unlinkCompany',
+                                                'Unlink'
+                                            )}
                                         </button>
                                     </div>
                                 )}
                             </div>
 
-                            <div>
+                            {/* 11. Company Size */}
+                            <div className="sm:col-span-2">
                                 <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.companySizeLabel')}
+                                    Company Size
                                 </label>
-                                <input
-                                    type="text"
+                                <select
                                     value={formState.companySize || ''}
                                     onChange={(e) =>
                                         handleChange('companySize', e.target.value)
                                     }
-                                    placeholder={t(
-                                        'crm.customer.leads.form.companySizePlaceholder'
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                >
+                                    <option value="">Select Company Size</option>
+                                    {COMPANY_SIZE_OPTIONS.map((size) => (
+                                        <option key={size} value={size}>
+                                            {size}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Collapsible More Fields Section */}
+                        <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => setIsMoreFieldsOpen((prev) => !prev)}
+                                aria-expanded={isMoreFieldsOpen}
+                                className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-[#037F8C] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                            >
+                                <span>More Fields</span>
+                                {isMoreFieldsOpen ? (
+                                    <ChevronUp size={15} />
+                                ) : (
+                                    <ChevronDown size={15} />
+                                )}
+                            </button>
+
+                            {isMoreFieldsOpen && (
+                                <div className="p-4 pt-2 border-t border-[#E5E0D8] grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* 12. Address */}
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Address
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formState.address || ''}
+                                            onChange={(e) =>
+                                                handleChange('address', e.target.value)
+                                            }
+                                            placeholder="Enter Address"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 13. Position */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Position
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formState.contactJobTitle || ''}
+                                            onChange={(e) =>
+                                                handleChange('contactJobTitle', e.target.value)
+                                            }
+                                            placeholder="Enter Position"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 14. City */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            City
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formState.city || ''}
+                                            onChange={(e) =>
+                                                handleChange('city', e.target.value)
+                                            }
+                                            placeholder="Enter City"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 15. State */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            State
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formState.state || ''}
+                                            onChange={(e) =>
+                                                handleChange('state', e.target.value)
+                                            }
+                                            placeholder="Enter State"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 16. Website */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Website
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={formState.website || ''}
+                                            onChange={(e) =>
+                                                handleChange('website', e.target.value)
+                                            }
+                                            placeholder="Enter URL"
+                                            dir="ltr"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 17. Country */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Country
+                                        </label>
+                                        <select
+                                            value={formState.country || ''}
+                                            onChange={(e) =>
+                                                handleChange('country', e.target.value)
+                                            }
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        >
+                                            <option value="">Select Country</option>
+                                            {COUNTRY_OPTIONS.map((c) => (
+                                                <option key={c} value={c}>
+                                                    {c}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* 18. Pin Code */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Pin Code
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formState.pinCode || ''}
+                                            onChange={(e) =>
+                                                handleChange('pinCode', e.target.value)
+                                            }
+                                            placeholder="Enter Pin Code"
+                                            dir="ltr"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 19. Lead Value */}
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Lead Value
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={leadValueInput}
+                                            onChange={(e) => {
+                                                setLeadValueInput(e.target.value);
+                                                handleChange(
+                                                    'estimatedValue',
+                                                    e.target.value === ''
+                                                        ? 0
+                                                        : Math.max(0, Number(e.target.value))
+                                                );
+                                            }}
+                                            placeholder="Enter Lead Value"
+                                            dir="ltr"
+                                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+
+                                    {/* 20. Notes */}
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                            Notes
+                                        </label>
+                                        <textarea
+                                            rows={3}
+                                            value={formState.notes || ''}
+                                            onChange={(e) =>
+                                                handleChange('notes', e.target.value)
+                                            }
+                                            placeholder="Enter Notes"
+                                            className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer Actions: Cancel and Submit only */}
+                        <div className="pt-2 flex items-center justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                disabled={isSubmitting}
+                                className="px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                                <CheckCircle2 size={14} />
+                                <span>Submit</span>
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    /* Edit Lead Form (Preserved Unchanged) */
+                    <form
+                        onSubmit={handleSubmit}
+                        className="flex-1 overflow-y-auto p-6 space-y-6"
+                        noValidate
+                    >
+                        {serverError && (
+                            <div className="rounded-xl border border-[#F5C6C6] bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
+                                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                                <span>{serverError}</span>
+                            </div>
+                        )}
+
+                        {/* Section 1: Lead & Qualification Details */}
+                        <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
+                                <Building2 size={14} />
+                                <span>{t('crm.customer.leads.form.sectionLeadInfo')}</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.titleLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.title || ''}
+                                        onChange={(e) => handleChange('title', e.target.value)}
+                                        placeholder={t('crm.customer.leads.form.titlePlaceholder')}
+                                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                            fieldErrors.title
+                                                ? 'border-[#A63A3A]'
+                                                : 'border-[#E5E0D8]'
+                                        }`}
+                                    />
+                                    {fieldErrors.title && (
+                                        <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                            {fieldErrors.title}
+                                        </p>
                                     )}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
+                                </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.cityLabel')}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.city || ''}
-                                    onChange={(e) => handleChange('city', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.leadTypeLabel')}
+                                    </label>
+                                    <select
+                                        value={formState.leadType}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                'leadType',
+                                                e.target.value as 'company' | 'individual'
+                                            )
+                                        }
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    >
+                                        <option value="company">
+                                            {t('crm.customer.leads.typeCompany')}
+                                        </option>
+                                        <option value="individual">
+                                            {t('crm.customer.leads.typeIndividual')}
+                                        </option>
+                                    </select>
+                                </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.countryLabel')}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.country || ''}
-                                    onChange={(e) => handleChange('country', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.websiteLabel')}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.website || ''}
-                                    onChange={(e) => handleChange('website', e.target.value)}
-                                    dir="ltr"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.addressLabel')}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formState.address || ''}
-                                    onChange={(e) => handleChange('address', e.target.value)}
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
-                                    {t('crm.customer.leads.form.notesLabel')}
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    value={formState.notes || ''}
-                                    onChange={(e) => handleChange('notes', e.target.value)}
-                                    placeholder={t(
-                                        'crm.customer.leads.form.notesPlaceholder'
-                                    )}
-                                    className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
-                                />
-                            </div>
-
-                            <div className="sm:col-span-2 flex items-center justify-between pt-2 border-t border-[#E5E0D8]">
-                                <span className="text-xs font-semibold text-[#0D0D0D]">
-                                    {t('crm.master.form.statusLabel')}
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleChange('status', 'active')}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                            formState.status === 'active'
-                                                ? 'bg-[#E9F5EE] border-[#2E6B4E]/30 text-[#2E6B4E]'
-                                                : 'bg-white border-[#E5E0D8] text-[#6E6862]'
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.leadStatusLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <select
+                                        value={formState.leadStatusId}
+                                        onChange={(e) =>
+                                            handleChange('leadStatusId', e.target.value)
+                                        }
+                                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                            fieldErrors.leadStatusId
+                                                ? 'border-[#A63A3A]'
+                                                : 'border-[#E5E0D8]'
                                         }`}
                                     >
-                                        {t('crm.customer.common.active')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleChange('status', 'inactive')}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
-                                            formState.status === 'inactive'
-                                                ? 'bg-[#FCECE9] border-[#A63A3A]/30 text-[#A63A3A]'
-                                                : 'bg-white border-[#E5E0D8] text-[#6E6862]'
-                                        }`}
+                                        {activeStatuses.map((st) => (
+                                            <option key={st.id} value={st.id}>
+                                                #{st.stageOrder} —{' '}
+                                                {isRtl ? st.nameAr : st.nameEn} (
+                                                {st.probability}%)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.leadSourceLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <select
+                                        value={formState.leadSourceId}
+                                        onChange={(e) =>
+                                            handleChange('leadSourceId', e.target.value)
+                                        }
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
                                     >
-                                        {t('crm.customer.common.inactive')}
-                                    </button>
+                                        {activeSources.map((src) => (
+                                            <option key={src.id} value={src.id}>
+                                                {isRtl ? src.nameAr : src.nameEn}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.sectorLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <select
+                                        value={formState.sectorId}
+                                        onChange={(e) => handleChange('sectorId', e.target.value)}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    >
+                                        {activeSectors.map((sec) => (
+                                            <option key={sec.id} value={sec.id}>
+                                                {isRtl ? sec.nameAr : sec.nameEn}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.assignedEmployeeLabel')}
+                                    </label>
+                                    <select
+                                        value={formState.assignedEmployeeId || ''}
+                                        onChange={(e) =>
+                                            handleChange('assignedEmployeeId', e.target.value)
+                                        }
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    >
+                                        <option value="">
+                                            {t('crm.customer.common.unassigned')}
+                                        </option>
+                                        {employees.map((emp) => (
+                                            <option key={emp.id} value={emp.id}>
+                                                {isRtl ? emp.nameAr : emp.nameEn} (
+                                                {isRtl ? emp.roleAr : emp.roleEn})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.estimatedValueLabel')}
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step={1000}
+                                        value={formState.estimatedValue ?? 0}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                'estimatedValue',
+                                                Math.max(0, Number(e.target.value || 0))
+                                            )
+                                        }
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                        dir="ltr"
+                                    />
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Footer */}
-                    <div className="pt-2 flex items-center justify-end gap-2.5">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={isSubmitting}
-                            className="px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
-                        >
-                            {t('crm.customer.common.cancel')}
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                        >
-                            <CheckCircle2 size={14} />
-                            {isSubmitting
-                                ? t('crm.customer.common.saving')
-                                : mode === 'create'
-                                  ? t('crm.customer.common.createRecord')
-                                  : t('crm.customer.common.saveChanges')}
-                        </button>
-                    </div>
-                </form>
+                        {/* Section 2: Primary Contact Details */}
+                        <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
+                                <Phone size={14} />
+                                <span>{t('crm.customer.leads.form.sectionContactInfo')}</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.contactNameLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.contactName}
+                                        onChange={(e) =>
+                                            handleChange('contactName', e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'crm.customer.leads.form.contactNamePlaceholder'
+                                        )}
+                                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                            fieldErrors.contactName
+                                                ? 'border-[#A63A3A]'
+                                                : 'border-[#E5E0D8]'
+                                        }`}
+                                    />
+                                    {fieldErrors.contactName && (
+                                        <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                            {fieldErrors.contactName}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.contactJobTitleLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.contactJobTitle || ''}
+                                        onChange={(e) =>
+                                            handleChange('contactJobTitle', e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'crm.customer.leads.form.contactJobTitlePlaceholder'
+                                        )}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.contactPhoneLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.contactPhone}
+                                        onChange={(e) =>
+                                            handleChange('contactPhone', e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'crm.customer.leads.form.contactPhonePlaceholder'
+                                        )}
+                                        dir="ltr"
+                                        className={`w-full px-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                            fieldErrors.contactPhone
+                                                ? 'border-[#A63A3A]'
+                                                : 'border-[#E5E0D8]'
+                                        }`}
+                                    />
+                                    {fieldErrors.contactPhone && (
+                                        <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                            {fieldErrors.contactPhone}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.contactEmailLabel')}{' '}
+                                        <span className="text-[#A63A3A]">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Mail
+                                            size={13}
+                                            className="absolute start-3 top-1/2 -translate-y-1/2 text-[#6E6862]"
+                                        />
+                                        <input
+                                            type="email"
+                                            value={formState.contactEmail}
+                                            onChange={(e) =>
+                                                handleChange('contactEmail', e.target.value)
+                                            }
+                                            placeholder={t(
+                                                'crm.customer.leads.form.contactEmailPlaceholder'
+                                            )}
+                                            dir="ltr"
+                                            className={`w-full ps-8 pe-3.5 py-2.5 rounded-lg border text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20 ${
+                                                fieldErrors.contactEmail
+                                                    ? 'border-[#A63A3A]'
+                                                    : 'border-[#E5E0D8]'
+                                            }`}
+                                        />
+                                    </div>
+                                    {fieldErrors.contactEmail && (
+                                        <p className="mt-1 text-[11px] text-[#A63A3A]">
+                                            {fieldErrors.contactEmail}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Company, Location & Notes */}
+                        <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5]/70 p-4 space-y-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-[#037F8C]">
+                                <MapPin size={14} />
+                                <span>{t('crm.customer.leads.form.sectionAddressInfo')}</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.temporaryCompanyLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.temporaryCompanyName || ''}
+                                        onChange={(e) =>
+                                            handleChange('temporaryCompanyName', e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'crm.customer.leads.form.temporaryCompanyPlaceholder'
+                                        )}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="block text-xs font-semibold text-[#0D0D0D]">
+                                            {t('crm.customer.leads.form.linkedCompanyLabel')}
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenCreateCompany}
+                                            disabled={isCreatingCompany}
+                                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#037F8C] hover:text-[#233122] hover:underline cursor-pointer disabled:opacity-50"
+                                        >
+                                            <Plus size={13} />
+                                            <span>
+                                                {t(
+                                                    'crm.customer.leads.form.newCompany',
+                                                    '+ New Company'
+                                                )}
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1">
+                                            <select
+                                                value={formState.companyId || ''}
+                                                onChange={(e) => {
+                                                    const cid = e.target.value;
+                                                    handleChange('companyId', cid);
+                                                    if (cid) {
+                                                        const comp = allAvailableCompanies.find(
+                                                            (c) => c.id === cid
+                                                        );
+                                                        if (
+                                                            comp &&
+                                                            !formState.temporaryCompanyName
+                                                        ) {
+                                                            handleChange(
+                                                                'temporaryCompanyName',
+                                                                comp.nameEn
+                                                            );
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                            >
+                                                <option value="">
+                                                    {t(
+                                                        'crm.customer.leads.form.noLinkedCompany'
+                                                    )}
+                                                </option>
+                                                {activeCompanies.map((comp) => (
+                                                    <option key={comp.id} value={comp.id}>
+                                                        {comp.code} —{' '}
+                                                        {isRtl ? comp.nameAr : comp.nameEn}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenCreateCompany}
+                                            disabled={isCreatingCompany}
+                                            className="px-3 py-2.5 rounded-lg border border-[#037F8C]/30 bg-[#037F8C]/5 hover:bg-[#037F8C]/10 text-xs font-semibold text-[#037F8C] inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                                        >
+                                            <Plus size={14} />
+                                            <span>
+                                                {t(
+                                                    'crm.customer.leads.form.newCompany',
+                                                    'New Company'
+                                                )}
+                                            </span>
+                                        </button>
+                                    </div>
+
+                                    {selectedCompany && (
+                                        <div className="rounded-lg border border-[#C5D7C2] bg-[#F2F7F2] p-3 flex items-start justify-between gap-3 text-xs">
+                                            <div className="min-w-0 space-y-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="px-1.5 py-0.5 rounded bg-white border border-[#C5D7C2] font-mono text-[10px] font-bold text-[#037F8C]">
+                                                        {selectedCompany.code}
+                                                    </span>
+                                                    <span className="font-bold text-[#037F8C] truncate">
+                                                        {isRtl
+                                                            ? selectedCompany.nameAr
+                                                            : selectedCompany.nameEn}
+                                                    </span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#2E6B4E]/10 text-[#2E6B4E] font-medium">
+                                                        {selectedCompany.onboardingStatus}
+                                                    </span>
+                                                </div>
+                                                <div className="text-[11px] text-[#6E6862] flex flex-wrap gap-x-3 gap-y-0.5">
+                                                    {selectedCompany.crNumber && (
+                                                        <span>CR: {selectedCompany.crNumber}</span>
+                                                    )}
+                                                    {selectedCompany.taxNumber && (
+                                                        <span>VAT: {selectedCompany.taxNumber}</span>
+                                                    )}
+                                                    {selectedCompany.city && (
+                                                        <span>{selectedCompany.city}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleChange('companyId', '')}
+                                                className="text-[11px] font-semibold text-[#A63A3A] hover:underline cursor-pointer shrink-0"
+                                            >
+                                                {t(
+                                                    'crm.customer.leads.form.unlinkCompany',
+                                                    'Unlink'
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.companySizeLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.companySize || ''}
+                                        onChange={(e) =>
+                                            handleChange('companySize', e.target.value)
+                                        }
+                                        placeholder={t(
+                                            'crm.customer.leads.form.companySizePlaceholder'
+                                        )}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.cityLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.city || ''}
+                                        onChange={(e) => handleChange('city', e.target.value)}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.countryLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.country || ''}
+                                        onChange={(e) => handleChange('country', e.target.value)}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.websiteLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.website || ''}
+                                        onChange={(e) => handleChange('website', e.target.value)}
+                                        dir="ltr"
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs font-mono bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.addressLabel')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formState.address || ''}
+                                        onChange={(e) => handleChange('address', e.target.value)}
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-semibold text-[#0D0D0D] mb-1.5">
+                                        {t('crm.customer.leads.form.notesLabel')}
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        value={formState.notes || ''}
+                                        onChange={(e) => handleChange('notes', e.target.value)}
+                                        placeholder={t(
+                                            'crm.customer.leads.form.notesPlaceholder'
+                                        )}
+                                        className="w-full px-3.5 py-2 rounded-lg border border-[#E5E0D8] text-xs bg-white text-[#0D0D0D] focus:outline-none focus:ring-2 focus:ring-[#037F8C]/20"
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2 flex items-center justify-between pt-2 border-t border-[#E5E0D8]">
+                                    <span className="text-xs font-semibold text-[#0D0D0D]">
+                                        {t('crm.master.form.statusLabel')}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleChange('status', 'active')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                                                formState.status === 'active'
+                                                    ? 'bg-[#E9F5EE] border-[#2E6B4E]/30 text-[#2E6B4E]'
+                                                    : 'bg-white border-[#E5E0D8] text-[#6E6862]'
+                                            }`}
+                                        >
+                                            {t('crm.customer.common.active')}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleChange('status', 'inactive')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${
+                                                formState.status === 'inactive'
+                                                    ? 'bg-[#FCECE9] border-[#A63A3A]/30 text-[#A63A3A]'
+                                                    : 'bg-white border-[#E5E0D8] text-[#6E6862]'
+                                            }`}
+                                        >
+                                            {t('crm.customer.common.inactive')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="pt-2 flex items-center justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                disabled={isSubmitting}
+                                className="px-4 py-2.5 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-semibold text-[#0D0D0D] transition-colors cursor-pointer"
+                            >
+                                {t('crm.customer.common.cancel')}
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                                <CheckCircle2 size={14} />
+                                {isSubmitting
+                                    ? t('crm.customer.common.saving')
+                                    : t('crm.customer.common.saveChanges')}
+                            </button>
+                        </div>
+                    </form>
+                )}
             </div>
 
             {isCompanyModalOpen && (

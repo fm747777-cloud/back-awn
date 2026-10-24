@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import {
     crmLeadSourceInputSchema,
     type CrmLeadSourceInput,
     type CrmLeadSourceRecord,
-    type CrmRecordStatus,
 } from '../../../schemas/crmSchema';
 
 export interface LeadSourceFormDrawerProps {
@@ -28,13 +27,10 @@ export const LeadSourceFormDrawer: React.FC<LeadSourceFormDrawerProps> = ({
     onSubmit,
 }) => {
     const { t } = useTranslation();
-    const isEdit = Boolean(editingRecord);
 
     const [nameEn, setNameEn] = useState('');
     const [nameAr, setNameAr] = useState('');
-    const [descriptionEn, setDescriptionEn] = useState('');
-    const [descriptionAr, setDescriptionAr] = useState('');
-    const [status, setStatus] = useState<CrmRecordStatus>('active');
+    const [description, setDescription] = useState('');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
@@ -45,15 +41,11 @@ export const LeadSourceFormDrawer: React.FC<LeadSourceFormDrawerProps> = ({
         if (isOpen && editingRecord) {
             setNameEn(editingRecord.nameEn);
             setNameAr(editingRecord.nameAr);
-            setDescriptionEn(editingRecord.descriptionEn || '');
-            setDescriptionAr(editingRecord.descriptionAr || '');
-            setStatus(editingRecord.status);
+            setDescription(editingRecord.descriptionEn || editingRecord.descriptionAr || '');
         } else if (isOpen) {
             setNameEn('');
             setNameAr('');
-            setDescriptionEn('');
-            setDescriptionAr('');
-            setStatus('active');
+            setDescription('');
         }
     }
 
@@ -98,9 +90,9 @@ export const LeadSourceFormDrawer: React.FC<LeadSourceFormDrawerProps> = ({
         const parsed = crmLeadSourceInputSchema.safeParse({
             nameEn: trimmedEn,
             nameAr: trimmedAr,
-            descriptionEn: descriptionEn.trim() || undefined,
-            descriptionAr: descriptionAr.trim() || undefined,
-            status,
+            descriptionEn: description.trim() || undefined,
+            descriptionAr: editingRecord?.descriptionAr || undefined,
+            status: editingRecord?.status ?? 'active',
         });
 
         if (!parsed.success) {
@@ -140,29 +132,23 @@ export const LeadSourceFormDrawer: React.FC<LeadSourceFormDrawerProps> = ({
 
             <div className="fixed top-0 end-0 h-full w-full max-w-lg bg-white border-s border-[#E5E0D8] shadow-2xl flex flex-col text-start z-10">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-center justify-between gap-3 shrink-0">
+                <div className="px-6 py-4 border-b border-[#E5E0D8] bg-[#FAF8F5] flex items-start justify-between gap-3 shrink-0">
                     <div>
                         <h2
                             id="crm-lead-source-form-title"
                             className="text-base font-bold text-[#0D0D0D]"
                         >
-                            {isEdit
-                                ? t('crm.master.entities.leadSource.editTitle')
-                                : t('crm.master.entities.leadSource.createTitle')}
+                            Add New Source
                         </h2>
-                        <p className="text-xs text-[#6E6862] mt-0.5">
-                            {isEdit
-                                ? t('crm.master.entities.leadSource.editSubtitle', {
-                                      code: editingRecord?.code || '',
-                                  })
-                                : t('crm.master.entities.leadSource.createSubtitle')}
+                        <p className="text-xs text-[#6E6862] mt-1 leading-relaxed">
+                            Enter Key Details Such As Source Name, Type, And Description To Efficiently Track Lead Origins. Enhance Your Strategy By Organizing And Analyzing Sources For Better Decision-Making And Business Growth.
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label={t('crm.master.common.close')}
-                        className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] flex items-center justify-center transition-colors cursor-pointer"
+                        aria-label="Close"
+                        className="w-8 h-8 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-[#6E6862] hover:text-[#0D0D0D] flex items-center justify-center transition-colors cursor-pointer shrink-0"
                     >
                         <X size={16} />
                     </button>
@@ -172,180 +158,121 @@ export const LeadSourceFormDrawer: React.FC<LeadSourceFormDrawerProps> = ({
                 <form
                     onSubmit={handleSubmit}
                     noValidate
-                    className="flex-1 overflow-y-auto p-6 space-y-5"
+                    className="flex-1 overflow-y-auto p-6 space-y-5 flex flex-col justify-between"
                 >
-                    {apiError && (
-                        <div className="rounded-xl border border-[#A63A3A]/30 bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
-                            <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                            <span>{apiError}</span>
-                        </div>
-                    )}
-
-                    {/* English Name */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-lead-source-name-en"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.nameEnLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
-                        </label>
-                        <input
-                            id="crm-lead-source-name-en"
-                            type="text"
-                            dir="ltr"
-                            value={nameEn}
-                            onChange={(e) => {
-                                setNameEn(e.target.value);
-                                if (fieldErrors.nameEn) {
-                                    setFieldErrors((prev) => ({ ...prev, nameEn: '' }));
-                                }
-                            }}
-                            placeholder={t('crm.master.form.nameEnPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
-                                fieldErrors.nameEn
-                                    ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                            }`}
-                        />
-                        {fieldErrors.nameEn && (
-                            <p className="text-[11px] font-medium text-[#A63A3A]">
-                                {fieldErrors.nameEn}
-                            </p>
+                    <div className="space-y-5">
+                        {apiError && (
+                            <div className="rounded-xl border border-[#A63A3A]/30 bg-[#FCECE9] p-3.5 flex items-start gap-2.5 text-xs text-[#A63A3A]">
+                                <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                <span>{apiError}</span>
+                            </div>
                         )}
-                    </div>
 
-                    {/* Arabic Name */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-lead-source-name-ar"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.nameArLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
-                        </label>
-                        <input
-                            id="crm-lead-source-name-ar"
-                            type="text"
-                            dir="rtl"
-                            value={nameAr}
-                            onChange={(e) => {
-                                setNameAr(e.target.value);
-                                if (fieldErrors.nameAr) {
-                                    setFieldErrors((prev) => ({ ...prev, nameAr: '' }));
-                                }
-                            }}
-                            placeholder={t('crm.master.form.nameArPlaceholder')}
-                            className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
-                                fieldErrors.nameAr
-                                    ? 'border-[#A63A3A] focus:border-[#A63A3A]'
-                                    : 'border-[#E5E0D8] focus:border-[#037F8C]'
-                            }`}
-                        />
-                        {fieldErrors.nameAr && (
-                            <p className="text-[11px] font-medium text-[#A63A3A]">
-                                {fieldErrors.nameAr}
-                            </p>
-                        )}
-                    </div>
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-[#6E6862] border-b border-[#E5E0D8] pb-2">
+                                Source Information
+                            </h3>
 
-                    {/* Description EN */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-lead-source-desc-en"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.descriptionEnLabel')}
-                        </label>
-                        <textarea
-                            id="crm-lead-source-desc-en"
-                            rows={3}
-                            dir="ltr"
-                            value={descriptionEn}
-                            onChange={(e) => setDescriptionEn(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionEnPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
-                        />
-                    </div>
+                            {/* 1. Source Name* */}
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="crm-lead-source-name-en"
+                                    className="block text-xs font-semibold text-[#0D0D0D]"
+                                >
+                                    Source Name <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <input
+                                    id="crm-lead-source-name-en"
+                                    type="text"
+                                    value={nameEn}
+                                    onChange={(e) => {
+                                        setNameEn(e.target.value);
+                                        if (fieldErrors.nameEn) {
+                                            setFieldErrors((prev) => ({ ...prev, nameEn: '' }));
+                                        }
+                                    }}
+                                    placeholder="Enter Source Name"
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
+                                        fieldErrors.nameEn
+                                            ? 'border-[#A63A3A] focus:border-[#A63A3A]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                    }`}
+                                />
+                                {fieldErrors.nameEn && (
+                                    <p className="text-[11px] font-medium text-[#A63A3A]">
+                                        {fieldErrors.nameEn}
+                                    </p>
+                                )}
+                            </div>
 
-                    {/* Description AR */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-lead-source-desc-ar"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.descriptionArLabel')}
-                        </label>
-                        <textarea
-                            id="crm-lead-source-desc-ar"
-                            rows={3}
-                            dir="rtl"
-                            value={descriptionAr}
-                            onChange={(e) => setDescriptionAr(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
-                        />
-                    </div>
+                            {/* 2. Source Name (In Arabic)* */}
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="crm-lead-source-name-ar"
+                                    className="block text-xs font-semibold text-[#0D0D0D]"
+                                >
+                                    Source Name (In Arabic) <span className="text-[#A63A3A]">*</span>
+                                </label>
+                                <input
+                                    id="crm-lead-source-name-ar"
+                                    type="text"
+                                    value={nameAr}
+                                    onChange={(e) => {
+                                        setNameAr(e.target.value);
+                                        if (fieldErrors.nameAr) {
+                                            setFieldErrors((prev) => ({ ...prev, nameAr: '' }));
+                                        }
+                                    }}
+                                    placeholder="Enter Source Name (In Arabic)"
+                                    className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
+                                        fieldErrors.nameAr
+                                            ? 'border-[#A63A3A] focus:border-[#A63A3A]'
+                                            : 'border-[#E5E0D8] focus:border-[#037F8C]'
+                                    }`}
+                                />
+                                {fieldErrors.nameAr && (
+                                    <p className="text-[11px] font-medium text-[#A63A3A]">
+                                        {fieldErrors.nameAr}
+                                    </p>
+                                )}
+                            </div>
 
-                    {/* Status */}
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#0D0D0D]">
-                            {t('crm.master.form.statusLabel')}
-                        </label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            {(['active', 'inactive'] as const).map((option) => {
-                                const selected = status === option;
-                                return (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        onClick={() => setStatus(option)}
-                                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
-                                            selected
-                                                ? option === 'active'
-                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
-                                                    : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D]'
-                                                : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5]'
-                                        }`}
-                                    >
-                                        <CheckCircle2
-                                            size={14}
-                                            className={selected ? 'opacity-100' : 'opacity-40'}
-                                        />
-                                        <span>
-                                            {option === 'active'
-                                                ? t('crm.master.common.active')
-                                                : t('crm.master.common.inactive')}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                            {/* 3. Description */}
+                            <div className="space-y-1.5">
+                                <label
+                                    htmlFor="crm-lead-source-description"
+                                    className="block text-xs font-semibold text-[#0D0D0D]"
+                                >
+                                    Description
+                                </label>
+                                <textarea
+                                    id="crm-lead-source-description"
+                                    rows={4}
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Type Your Message"
+                                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
+                                />
+                            </div>
                         </div>
-                        <p className="text-[11px] text-[#6E6862]">
-                            {t('crm.master.form.statusHelper')}
-                        </p>
                     </div>
 
-                    {/* Footer Buttons inside form */}
-                    <div className="pt-4 border-t border-[#E5E0D8] flex items-center justify-end gap-2.5">
+                    {/* Footer Buttons */}
+                    <div className="pt-4 border-t border-[#E5E0D8] flex items-center justify-end gap-2.5 shrink-0">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={isSubmitting}
                             className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
-                            {t('crm.master.common.cancel')}
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
                             className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
                         >
-                            {isSubmitting
-                                ? t('crm.master.common.saving')
-                                : isEdit
-                                  ? t('crm.master.common.saveChanges')
-                                  : t('crm.master.common.createRecord')}
+                            Submit
                         </button>
                     </div>
                 </form>

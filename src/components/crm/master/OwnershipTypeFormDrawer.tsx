@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import {
     crmOwnershipTypeInputSchema,
     type CrmOwnershipTypeInput,
     type CrmOwnershipTypeRecord,
-    type CrmRecordStatus,
 } from '../../../schemas/crmSchema';
 
 export interface OwnershipTypeFormDrawerProps {
@@ -28,14 +27,10 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
     onSubmit,
 }) => {
     const { t } = useTranslation();
-    const isEdit = Boolean(editingRecord);
 
     const [nameEn, setNameEn] = useState('');
     const [nameAr, setNameAr] = useState('');
-    const [allowsForeignOwnership, setAllowsForeignOwnership] = useState<boolean>(false);
     const [descriptionEn, setDescriptionEn] = useState('');
-    const [descriptionAr, setDescriptionAr] = useState('');
-    const [status, setStatus] = useState<CrmRecordStatus>('active');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [prevSyncKey, setPrevSyncKey] = useState('');
@@ -46,17 +41,11 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
         if (isOpen && editingRecord) {
             setNameEn(editingRecord.nameEn);
             setNameAr(editingRecord.nameAr);
-            setAllowsForeignOwnership(Boolean(editingRecord.allowsForeignOwnership));
-            setDescriptionEn(editingRecord.descriptionEn || '');
-            setDescriptionAr(editingRecord.descriptionAr || '');
-            setStatus(editingRecord.status);
+            setDescriptionEn(editingRecord.descriptionEn || editingRecord.descriptionAr || '');
         } else if (isOpen) {
             setNameEn('');
             setNameAr('');
-            setAllowsForeignOwnership(false);
             setDescriptionEn('');
-            setDescriptionAr('');
-            setStatus('active');
         }
     }
 
@@ -101,10 +90,10 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
         const parsed = crmOwnershipTypeInputSchema.safeParse({
             nameEn: trimmedEn,
             nameAr: trimmedAr,
-            allowsForeignOwnership,
+            allowsForeignOwnership: editingRecord?.allowsForeignOwnership ?? false,
             descriptionEn: descriptionEn.trim() || undefined,
-            descriptionAr: descriptionAr.trim() || undefined,
-            status,
+            descriptionAr: editingRecord?.descriptionAr || undefined,
+            status: editingRecord?.status ?? 'active',
         });
 
         if (!parsed.success) {
@@ -150,17 +139,8 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                             id="crm-ownership-type-form-title"
                             className="text-base font-bold text-[#0D0D0D]"
                         >
-                            {isEdit
-                                ? t('crm.master.entities.ownershipTypes.editTitle')
-                                : t('crm.master.entities.ownershipTypes.createTitle')}
+                            Add New Ownership Type
                         </h2>
-                        <p className="text-xs text-[#6E6862] mt-0.5">
-                            {isEdit
-                                ? t('crm.master.entities.ownershipTypes.editSubtitle', {
-                                      code: editingRecord?.code || '',
-                                  })
-                                : t('crm.master.entities.ownershipTypes.createSubtitle')}
-                        </p>
                     </div>
                     <button
                         type="button"
@@ -185,18 +165,18 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                         </div>
                     )}
 
-                    {/* English Name */}
+                    {/* 1. Name (In English)* */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="crm-ownership-type-name-en"
                             className="block text-xs font-semibold text-[#0D0D0D]"
                         >
-                            {t('crm.master.form.nameEnLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
+                            Name (In English)<span className="text-[#A63A3A]">*</span>
                         </label>
                         <input
                             id="crm-ownership-type-name-en"
                             type="text"
+                            required
                             dir="ltr"
                             value={nameEn}
                             onChange={(e) => {
@@ -205,7 +185,7 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                                     setFieldErrors((prev) => ({ ...prev, nameEn: '' }));
                                 }
                             }}
-                            placeholder={t('crm.master.form.nameEnPlaceholder')}
+                            placeholder="Enter Name (In English)"
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameEn
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
@@ -219,18 +199,18 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                         )}
                     </div>
 
-                    {/* Arabic Name */}
+                    {/* 2. Name (In Arabic)* */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="crm-ownership-type-name-ar"
                             className="block text-xs font-semibold text-[#0D0D0D]"
                         >
-                            {t('crm.master.form.nameArLabel')}{' '}
-                            <span className="text-[#A63A3A]">*</span>
+                            Name (In Arabic)<span className="text-[#A63A3A]">*</span>
                         </label>
                         <input
                             id="crm-ownership-type-name-ar"
                             type="text"
+                            required
                             dir="rtl"
                             value={nameAr}
                             onChange={(e) => {
@@ -239,7 +219,7 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                                     setFieldErrors((prev) => ({ ...prev, nameAr: '' }));
                                 }
                             }}
-                            placeholder={t('crm.master.form.nameArPlaceholder')}
+                            placeholder="Enter Name (In Arabic)"
                             className={`w-full px-3.5 py-2.5 rounded-lg border text-xs text-[#0D0D0D] bg-[#FAF8F5] focus:bg-white focus:outline-hidden transition-colors ${
                                 fieldErrors.nameAr
                                     ? 'border-[#A63A3A] focus:border-[#A63A3A]'
@@ -253,33 +233,13 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                         )}
                     </div>
 
-                    {/* Foreign Ownership Toggle */}
-                    <div className="rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] p-4">
-                        <label className="flex items-start gap-3 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={allowsForeignOwnership}
-                                onChange={(e) => setAllowsForeignOwnership(e.target.checked)}
-                                className="mt-0.5 w-4 h-4 rounded-xs border-[#C9C2B8] text-[#037F8C] focus:ring-[#037F8C] cursor-pointer"
-                            />
-                            <div>
-                                <span className="block text-xs font-semibold text-[#0D0D0D]">
-                                    {t('crm.master.form.allowsForeignOwnershipLabel')}
-                                </span>
-                                <span className="block text-[11px] text-[#6E6862] mt-0.5">
-                                    {t('crm.master.form.allowsForeignOwnershipHelper')}
-                                </span>
-                            </div>
-                        </label>
-                    </div>
-
-                    {/* Description EN */}
+                    {/* 3. Description */}
                     <div className="space-y-1.5">
                         <label
                             htmlFor="crm-ownership-type-desc-en"
                             className="block text-xs font-semibold text-[#0D0D0D]"
                         >
-                            {t('crm.master.form.descriptionEnLabel')}
+                            Description
                         </label>
                         <textarea
                             id="crm-ownership-type-desc-en"
@@ -287,67 +247,9 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                             dir="ltr"
                             value={descriptionEn}
                             onChange={(e) => setDescriptionEn(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionEnPlaceholder')}
+                            placeholder="Type Your Message"
                             className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
                         />
-                    </div>
-
-                    {/* Description AR */}
-                    <div className="space-y-1.5">
-                        <label
-                            htmlFor="crm-ownership-type-desc-ar"
-                            className="block text-xs font-semibold text-[#0D0D0D]"
-                        >
-                            {t('crm.master.form.descriptionArLabel')}
-                        </label>
-                        <textarea
-                            id="crm-ownership-type-desc-ar"
-                            rows={3}
-                            dir="rtl"
-                            value={descriptionAr}
-                            onChange={(e) => setDescriptionAr(e.target.value)}
-                            placeholder={t('crm.master.form.descriptionArPlaceholder')}
-                            className="w-full px-3.5 py-2.5 rounded-lg border border-[#E5E0D8] bg-[#FAF8F5] focus:bg-white focus:border-[#037F8C] focus:outline-hidden text-xs text-[#0D0D0D] transition-colors resize-none"
-                        />
-                    </div>
-
-                    {/* Status */}
-                    <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-[#0D0D0D]">
-                            {t('crm.master.form.statusLabel')}
-                        </label>
-                        <div className="grid grid-cols-2 gap-2.5">
-                            {(['active', 'inactive'] as const).map((option) => {
-                                const selected = status === option;
-                                return (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        onClick={() => setStatus(option)}
-                                        className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
-                                            selected
-                                                ? option === 'active'
-                                                    ? 'bg-[#EAF3EC] border-[#037F8C] text-[#037F8C]'
-                                                    : 'bg-[#FAF8F5] border-[#037F8C] text-[#0D0D0D]'
-                                                : 'bg-white border-[#E5E0D8] text-[#6E6862] hover:bg-[#FAF8F5]'
-                                        }`}
-                                    >
-                                        <CheckCircle2
-                                            size={14}
-                                            className={selected ? 'opacity-100' : 'opacity-40'}
-                                        />
-                                        <span>
-                                            {option === 'active'
-                                                ? t('crm.master.common.active')
-                                                : t('crm.master.common.inactive')}
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <p className="text-[11px] text-[#6E6862]">
-                            {t('crm.master.form.statusHelper')}
-                        </p>
                     </div>
 
                     {/* Footer Buttons */}
@@ -358,18 +260,14 @@ export const OwnershipTypeFormDrawer: React.FC<OwnershipTypeFormDrawerProps> = (
                             disabled={isSubmitting}
                             className="px-4 py-2 rounded-lg border border-[#E5E0D8] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#6E6862] hover:text-[#0D0D0D] transition-colors cursor-pointer"
                         >
-                            {t('crm.master.common.cancel')}
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
                             className="px-4 py-2 rounded-lg bg-[#037F8C] hover:bg-[#233122] text-xs font-semibold text-[#FAF8F5] transition-colors cursor-pointer disabled:opacity-60"
                         >
-                            {isSubmitting
-                                ? t('crm.master.common.saving')
-                                : isEdit
-                                  ? t('crm.master.common.saveChanges')
-                                  : t('crm.master.common.createRecord')}
+                            Submit
                         </button>
                     </div>
                 </form>

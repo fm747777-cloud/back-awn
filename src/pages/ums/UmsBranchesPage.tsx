@@ -91,12 +91,12 @@ export const UmsBranchesPage: React.FC = () => {
 
     const updateBranchMutation = useMutation({
         mutationFn: ({ id, data }: { id: string; data: Partial<BranchRecord> }) => umsApi.updateBranch(id, data),
-        onSuccess: (updatedData) => {
+        onSuccess: (updatedData: BranchRecord) => {
             queryClient.invalidateQueries({ queryKey: ['ums', 'branches'] });
             toast.success(t('ums.branches.feedback.updated', { defaultValue: 'Branch updated successfully.' }));
             setEditingBranch(null);
 
-            if (viewingBranch && viewingBranch.id === updatedData.id) {
+            if (viewingBranch && viewingBranch.id === updatedData?.id) {
                 setViewingBranch(updatedData);
             }
         },
